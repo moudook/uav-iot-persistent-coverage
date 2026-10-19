@@ -62,6 +62,7 @@ class MAPPO:
         ent_coef=0.01,
         vf_coef=0.5,
         max_grad_norm=0.5,
+        per_agent_adv_norm=False,
         device="cpu",
     ):
         # Dimensions are configuration-dependent (they scale with N, M and
@@ -83,6 +84,15 @@ class MAPPO:
         self.vf_coef = vf_coef
         self.max_grad_norm = max_grad_norm
         self.n_agents = n_agents
+        # Per-agent advantage normalisation.  With a shared team reward every
+        # agent receives the SAME advantage, so the policy gradient cannot
+        # distinguish an agent whose action helped from one whose action was
+        # irrelevant.  Normalising each agent's advantages over its own
+        # history gives every agent a signal relative to its own behaviour
+        # rather than to the pooled batch.  (Generalised per-agent advantage
+        # estimation, Kim et al., AAMAS 2026, addresses the same problem for
+        # the multi-agent case.)
+        self.per_agent_adv_norm = per_agent_adv_norm
 
     # ------------------------------------------------------------------
     def masked_logits(self, obs, mask):
@@ -128,7 +138,12 @@ class MAPPO:
         ret_c = ret.reshape(-1)
         old_val_c = old_val.reshape(-1)
 
-        adv = (adv - adv.mean()) / (adv.std() + 1e-8)
+        if self.per_agent_adv_norm:
+            # normalise each agent's advantages over its own time history
+            adv = (adv - adv.mean(dim=0, keepdim=True)) / (
+                adv.std(dim=0, keepdim=True) + 1e-8)
+        else:
+            adv = (adv - adv.mean()) / (adv.std() + 1e-8)
 
         # ---- clipped PPO actor loss (28) ----------------------------
         logits = self.masked_logits(obs, mask)

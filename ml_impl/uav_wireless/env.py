@@ -74,6 +74,11 @@ class SimConfig:
     use_charging_arbitration: bool = True
     use_action_mask: bool = True
     mask_horizon: int = 3         # H-step connectivity lookahead in the mask
+    # Initial deployment.  False: a centred ring that already covers most of
+    # the field (little headroom).  True: a connected cluster in one corner
+    # that covers little, so the policy must deploy while keeping the graph
+    # connected -- the regime in which the constraint actually binds.
+    start_clustered: bool = False
     seed: int = 0
 
     def dict(self):
@@ -176,12 +181,42 @@ class UAVIoTEnv:
     def _connected_initial_positions(self):
         """Place N UAVs so the communication graph is connected from t=0.
 
-        A ring of radius R_local centred in the region, plus any extra UAVs
-        inside the ring. R_local is chosen as a fraction of R_comm so that
-        every ring neighbour is well within communication range even after
-        the PHY rate check.
+        Two deployments are supported.
+
+        ``start_clustered=False`` (default): a ring of radius R_local centred
+        in the region, plus any extra UAVs inside the ring.  R_local is
+        chosen as a fraction of R_comm so that every ring neighbour is well
+        within communication range even after the PHY rate check.  This is
+        the deployment a dispatcher would actually use, but it has a
+        property worth stating: on an 80x80 m field with R_cov = 35 m the
+        ring already covers most of the sensor set, so the achievable range
+        for any controller is roughly [0.9, 1.0] and the task has little
+        headroom.
+
+        ``start_clustered=True``: every UAV starts in one connected blob
+        near a corner.  The swarm is connected from t=0 (so the invariant
+        is still checkable) but the initial coverage is low, and the policy
+        has to deploy across the field while keeping the graph connected.
+        This is the standard benchmark arrangement for persistent coverage
+        and it is the regime in which the connectivity constraint and the
+        feasibility mask actually bind.
         """
         c = self.cfg
+        if c.start_clustered:
+            # A tight connected chain: consecutive UAVs are one hop apart,
+            # so the graph is connected, but the blob covers only a small
+            # part of the field.
+            r_local = min(0.25 * c.R_comm, 0.12 * c.side)
+            corner = np.array([0.15 * c.side, 0.15 * c.side])
+            n_ring = max(c.N - 1, 1)
+            ang = np.linspace(0, 2 * np.pi, n_ring, endpoint=False)
+            pos = [corner + r_local * np.array([np.cos(a), np.sin(a)])
+                   for a in ang]
+            while len(pos) < c.N:
+                pos.append(corner + self.rng.normal(0, 0.08 * r_local, size=2))
+            pos = np.array(pos[: c.N])
+            return np.clip(pos, 0.0, c.side)
+
         centre = np.array([c.side / 2.0, c.side / 2.0])
         r_local = min(0.45 * c.R_comm, 0.30 * c.side)
         n_ring = max(c.N - 1, 1)

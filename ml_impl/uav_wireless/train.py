@@ -148,10 +148,12 @@ def agent_obs_dim(agent):
 # ----------------------------------------------------------------------
 # Training
 # ----------------------------------------------------------------------
-def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10, verbose=True):
+def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
+               verbose=True, per_agent_adv_norm=False, ent_coef=0.01):
     torch.manual_seed(seed)
     env = UAVIoTEnv(cfg)
-    agent = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim, state_dim=env.state_dim)
+    agent = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim, state_dim=env.state_dim,
+                  per_agent_adv_norm=per_agent_adv_norm, ent_coef=ent_coef)
     hist = []
     for ep in range(episodes):
         B, summ = collect_rollout(env, agent, n_steps)

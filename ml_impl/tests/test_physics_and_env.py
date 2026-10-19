@@ -913,3 +913,47 @@ class TestTerminationVsTruncation:
         assert "truncated = (t == n_steps) and (not done)" not in src, (
             "collect_rollout still infers truncation from `done`, which cannot "
             "distinguish a time limit from a terminal state")
+
+
+# ======================================================================
+# Initial deployment
+# ======================================================================
+class TestInitialDeployment:
+    """Both deployments must be connected from t=0; only one may pre-solve
+    the task.
+
+    The centred ring already covers most of the field, so every controller
+    scores the same and the comparison cannot separate them.  The clustered
+    deployment keeps the connectivity invariant checkable while leaving the
+    controller real work to do.
+    """
+
+    def test_clustered_start_is_connected_and_leaves_headroom(self):
+        c = SimConfig(N=8, K=2, R_cov=35.0, M=20, episode_len=50, seed=0,
+                      start_clustered=True)
+        e = UAVIoTEnv(c)
+        e.reset()
+        act, adj, _ = e.comm_graph()
+        assert e.is_connected(adj), "clustered start must be connected at t=0"
+        nc = e.coverage_counts()
+        ck0 = float(np.mean(nc >= c.K))
+        assert ck0 < 0.5, f"clustered start still pre-solves the task (CK={ck0})"
+
+    def test_ring_start_is_connected(self):
+        c = SimConfig(N=8, K=2, R_cov=35.0, M=20, episode_len=50, seed=0,
+                      start_clustered=False)
+        e = UAVIoTEnv(c)
+        e.reset()
+        act, adj, _ = e.comm_graph()
+        assert e.is_connected(adj), "ring start must be connected at t=0"
+
+    def test_both_deployments_are_connected_over_many_seeds(self):
+        for cl in (False, True):
+            for s in range(10):
+                c = SimConfig(N=8, K=2, R_cov=35.0, M=20, episode_len=50,
+                              seed=s, start_clustered=cl)
+                e = UAVIoTEnv(c)
+                e.reset()
+                act, adj, _ = e.comm_graph()
+                assert e.is_connected(adj), (
+                    f"disconnected start (clustered={cl}, seed={s})")
