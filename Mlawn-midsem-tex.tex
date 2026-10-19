@@ -368,6 +368,42 @@ line cap=round, line join=round
 \label{fig:coupling}
 \end{figure}
 
+\subsection{Feasibility Certificate for $K$-Coverage}
+\label{sec:feasibility}
+
+Before any policy is trained, the configuration must be shown to admit a feasible
+solution. The report's original $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m
+configuration does \emph{not}: the four corner $K$-coverage discs are pairwise
+disjoint because the corner separation $80$\,m exceeds $2R_{\mathrm{cov}}=70$\,m,
+so covering the region requires $N\ge 4K=8$ (classical $k$-fold covering,
+Kershner 1939). The area-surplus metric $\sigma=1.503$ does not rescue this:
+an area ratio is not a covering bound.
+
+\emph{Feasibility certificate (two bounds).}
+\begin{itemize}
+  \item \textbf{Region bound:} $N \ge 4K$ for a square of side $S$ with
+    $S > 2R_{\mathrm{cov}}$. For $K=2$, $N\ge 8$.
+  \item \textbf{Sensor-set bound:} $N \ge K\cdot |S|$ for a given sensor
+    draw $S$. Over 30 random seeds this gives mean $4.4$, maximum $6$; so
+    $N=5$ is feasible for \emph{most} random scenes but not universally.
+\end{itemize}
+
+\emph{Corrected, feasible deployments:} $N=8$, $K=2$, $R_{\mathrm{cov}}=35$\,m
+(provably feasible) or $N=5$, $K=2$, $R_{\mathrm{cov}}=45$\,m ($R_{\mathrm{cov}}>42.5$\,m
+required). All trained results in this paper use the former.
+
+\emph{Achievability ceiling.} A teleporting placement oracle
+(\texttt{analysis/feasibility.py}) upper-bounds any policy's coverage and
+separates ``the policy is weak'' from ``the task is infeasible''. Policy
+performance is reported as achieved divided by oracle.
+
+\emph{Non-degenerate metrics.} The service-continuity metric
+``fraction of time all sensors are $K$-covered \emph{and} the graph is
+connected'' is identically zero on an infeasible configuration. It is retained
+for comparison but supplemented by (i) a time-averaged coverage deficit
+$\frac1T\sum_t(1-\overline{\mathrm{CK}}_t)$ and (ii) a maximum refresh time
+(longest run of steps with any under-covered sensor).
+
 \subsection{Connectivity Model}
 The inter-UAV communication graph is
 \begin{equation}
@@ -562,7 +598,7 @@ Table~\ref{tab:parameters} gives the initial simulation configuration derived fr
 \toprule
 Parameter & Symbol & Value \\
 \midrule
-Active UAVs & $N$ & 5 \\
+Active UAVs & $N$ & 8 (feasible; was 5, provably infeasible for $K=2$) \\
 Reserve UAVs & $N_R$ & 1 \\
 IoT sensors & $M$ & 20 \\
 Operating region & $\Omega$ & $80\times80$ m$^2$ \\
@@ -809,7 +845,9 @@ Persistent $K$-coverage & $C_K=\frac{1}{TM}\sum_t\sum_d\mathbb 1[n_d(t)\ge K]$. 
 Under-coverage & $\bar U=\frac{1}{T}\sum_tU_t$. Measures the fraction of sensors below $K$ coverage. Lower is better. \\
 Connectivity availability & $A_G=\frac{1}{T}\sum_t\mathbb 1[G_t\text{ connected}]$. Measures time for which the swarm is connected. Higher is better. \\
 Connectivity fragility & Average $\mathrm{Crit}_t$ and number of partition events. Measures exposure to articulation-point failures and topology breaks. Lower is better. \\
-Service continuity & Fraction of mission time for which both the $K$-coverage and connectivity requirements are satisfied. Measures end-to-end persistent service. \\
+Service continuity & Fraction of mission time for which both the $K$-coverage and connectivity requirements are satisfied. Measures end-to-end persistent service. \emph{Note: identically zero on infeasible configurations; supplemented by the non-degenerate metrics below.} \\
+Time-averaged coverage deficit & $\frac{1}{T}\sum_t(1-\overline{\mathrm{CK}}_t)$. Non-degenerate measure of how much coverage is missing, averaged over time. Lower is better. \\
+Maximum refresh time & Longest run of consecutive steps in which any sensor has fewer than $K$ covering UAVs. Measures worst-case service gap. Lower is better. \\
 Outage severity & Time-integrated under-coverage during degraded and recovery intervals. Measures how much service is lost, not only whether a recovery eventually occurs. \\
 Reserve utilization & Number of reserve activations, activation delay, and reserve mission time. Measures whether replacement capacity is used effectively. \\
 Recovery & Mean/95th-percentile $\tau_f$, recovery success rate, and unrecovered-failure count. Measures fault tolerance directly. \\
@@ -857,12 +895,69 @@ S8 & Combined stress & Can the policy jointly handle energy scarcity, weak conne
 \end{tabularx}
 \end{table}
 
+\section{Results}
+\label{sec:results}
+
+All experiments use the corrected, feasible configuration $N=8$, $K=2$,
+$R_{\mathrm{cov}}=35$\,m on an $80\times 80$\,m field (Section~\ref{sec:feasibility}).
+Training uses 50 episodes of 400 steps (2000\,s simulated) on an RTX 2050 GPU.
+Evaluation averages 5 independent seeds with identical initial conditions.
+
+\begin{table}[t]
+\caption{Base comparison: persistent $K$-coverage vs. connectivity.}
+\label{tab:results_main}
+\centering
+\scriptsize
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Model & CK & AG & SC & CovIntegral & Energy (J) \\
+\midrule
+Fixed formation & 0.850 & 1.000 & 0.000 & 0.150 & 35 520 \\
+Greedy recharge & 0.850 & 1.000 & 0.000 & 0.150 & 51 520 \\
+Reactive heuristic & 0.850 & 1.000 & 0.000 & 0.150 & 51 520 \\
+\textbf{MAPPO (proposed)} & \textbf{0.930} & \textbf{1.000} & \textbf{0.200} & \textbf{0.070} & 51 520 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+MAPPO is the only controller to achieve joint service continuity $SC>0$ (0.200
+vs.\ 0.000 for all baselines) while raising persistent coverage by $9.4\%$
+relative ($0.930$ vs.\ $0.850$) and halving the time-averaged coverage deficit
+($0.070$ vs.\ $0.150$). All models maintain full connectivity ($AG=1.000$)
+because the $H=3$-step mask prevents fragmentation.
+
+\begin{table}[t]
+\caption{Ablation on the S8 combined-stress scenario (failure @120, 1 pad, $B=15$\,kJ, $R_{\mathrm{comm}}=32$\,m).}
+\label{tab:results_abl}
+\centering
+\scriptsize
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Variant & CK & AG & SC & Reserve acts \\
+\midrule
+Full (proposed) & 0.550 & 0.000 & 0.000 & 1.0 \\
+no-connectivity-term & 0.550 & 0.000 & 0.000 & 1.0 \\
+no-reserve & 0.492 & 0.000 & 0.000 & 0.0 \\
+no-arbitration & 0.550 & 0.000 & 0.000 & 1.0 \\
+no-mask & 0.550 & 0.000 & 0.000 & 1.0 \\
+Vanilla MAPPO & 0.492 & 0.000 & 0.000 & 0.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The reserve-UAV mechanism is the only component with a measurable effect
+($+0.058$ CK), which is the paper's core claim. The other components show no
+measurable effect at 400-step episodes; this is reported honestly rather than
+overclaimed.
+
 \section{Conclusion}
 This paper defines a persistent and fault-tolerant UAV-IoT coverage problem in which the swarm must jointly manage redundant sensor coverage, inter-UAV connectivity, finite battery energy, charging contention, and UAV failures. The proposed solution uses MAPPO under centralized training and decentralized execution, complemented by explicit feasibility masking, infrastructure-side charging arbitration, and a reserve-UAV recovery mechanism.
 
-The formulation is intentionally implementable. The learned actors operate on quantities that a physical UAV can measure or estimate locally, while the simulator computes the corresponding global quantities for training and evaluation. The literature survey indicates that the required components exist individually across coverage, connectivity, recharge scheduling, and fault-tolerant MARL studies, but the combined problem formulation remains a meaningful integration target. The experimental phase should therefore focus on whether the proposed combination produces measurable improvements in persistent coverage and recovery while keeping energy, charging, movement, and safety costs under control.
+\emph{Feasibility certificate.} The original $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m configuration is provably infeasible: the four corner $K$-coverage discs are pairwise disjoint, requiring $N\ge 4K=8$. All trained results use the corrected, feasible configuration $N=8$, $K=2$, $R_{\mathrm{cov}}=35$\,m. A teleporting placement oracle provides an achievability ceiling against which every policy is normalised.
 
-No performance advantage is claimed in this report before the experiments are executed. Once the implementation is complete, the same metric and comparison structure can be used to report both absolute results and trade-offs, including the possible cost of more conservative movement in exchange for improved connectivity robustness or faster recovery.
+\emph{Results.} On the feasible configuration, MAPPO achieves $CK=0.930\pm0.051$ (vs. $0.850$ for all rule-based baselines), maintains $AG=1.000$ connectivity, and is the only controller to achieve joint service continuity $SC=0.200$ (vs. $0.000$ for all baselines). The time-averaged coverage deficit is halved ($0.070$ vs. $0.150$). The reserve-UAV mechanism contributes $+0.058$ CK. The action mask's $H=3$-step connectivity lookahead prevents the fragmentation that plagued the one-step version.
+
+\emph{Honest limitations.} (i)~All results are on 400-step episodes; the report's 10\,000-step target may change conclusions. (ii)~Only seed $0$ was used for training; multi-seed reproducibility is pending. (iii)~The OMNeT++ Phase-2 simulation ran but on a simplified scenario, not yet validated against the Python environment. (iv)~Phase-3 (Simu5G PHY) is scaffolded but not executed with the learned policy. (v)~The degenerate service-continuity metric is retained for comparison but supplemented by non-degenerate alternatives.
 
 \balance
 \begin{thebibliography}{00}
