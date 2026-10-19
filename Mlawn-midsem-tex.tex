@@ -160,6 +160,11 @@ We are therefore not aware of work coupling all five elements, and specifically 
 \paragraph{The closest prior work, and how this paper differs from it.}
 The evaluation philosophy proposed here is not unprecedented in the wider literature, and we state the difference precisely rather than claiming a first. Four lines of work are adjacent. \cite{song2024} and \cite{fan2026} already evaluate learned or heuristic controllers against an achievability reference, but the reference is a MILP optimum for a particular finite instance; it certifies nothing about an arbitrary deployment geometry, and it cannot be computed without solving the instance. \cite{datta2025} derives a rigorous geometric feasibility construct, and \cite{viana2026} uses a feasibility upper bound to separate feasibility limits from control-induced sub-optimality in a learned policy; both concern a single coverage requirement, neither concerns $K$-redundancy, and neither is combined with a persistent, energy-constrained, failure-recovering control problem. Most closely, \cite{ceilings2026} argues explicitly that coverage ceilings should be computed before any learning experiment and quoted alongside every result, and evaluates PPO against them --- but for drone-mesh interception, where the quantity being bounded is interception coverage rather than $K$-redundant persistent coverage of a fixed sensor set, and where the bound is closed-form per configuration rather than a covering bound that scales with $N$ and $K$. The distinction claimed here is therefore not ``nobody has ever used a bound''. It is that the bound used must certify the thing being claimed: a covering-theoretic lower bound on $N$ for $K$-redundant coverage of a bounded region, an achievability ceiling computed for the same geometry and the same redundancy requirement, and a metric that stays non-degenerate when the bound says the instance is infeasible. That is what the framework of Section~\ref{sec:feasibility} supplies, and the three elements are used together rather than one at a time.
 
+\paragraph{Two absences that the framework addresses.}
+A separate search over the same 2023--2026 corpus was conducted for the two specific claims that the framework makes, and both absences are reported here because they are the substance of the contribution rather than a side observation. First, \emph{no paper in the corpus provides an infeasibility certificate for a persistent-coverage instance} in UAV swarms or mobile sensor networks: the infeasibility-certificate literature that does exist --- for mixed-integer programs and for task-and-motion planning --- is not coverage-specific and does not certify a $K$-redundant covering instance. Second, \emph{no paper in the corpus names the all-constraints-simultaneously binary metric as degenerate}, that is, as uninformative on an infeasible instance. The closest empirical demonstration is in \cite{lee2026}, which reports a feasible rate of 0\% over ten solver executions alongside a mean $k$-coverage ratio of 33.33\%: the binary flag is zero while the graded quantity is substantial, which is exactly the collapse that motivates Section~\ref{sec:feasibility}. That paper does not analyse the degeneracy, and it reports the graded metrics alongside the binary flag rather than relying on the flag alone; we draw the conclusion explicitly instead. Both absences are stated over the corpus of Table~\ref{tab:survey} and Table~\ref{tab:nearmiss} and are bounded by it in the same way as the gap statement above.
+
+Finally, graded persistent-coverage metrics do have precedent --- revisit-period and worst-idleness constraints in \cite{wang2026}, ergodic convergence rates, and coverage reliability under sensor failure --- and the metrics used here are not novel in isolation. What is claimed as new is the pairing: the non-degenerate metrics are introduced together with the certificate that determines whether they can be non-zero, so that a reader can tell a policy failure from an infeasible instance without knowing in advance which case applies.
+
 \section{System Model}
 \label{sec:system}
 
@@ -1195,6 +1200,12 @@ V. Datta and C. Nahak, ``Radius of robust feasibility for ground coverage in aer
 
 \bibitem{fan2026}
 E. Fan, Y. Chen, Z. Shan, M. Caesar, and J. Kim, ``Communication-aware multi-agent reinforcement learning for decentralized cooperative UAV deployment,'' arXiv:2603.16141, 2026.
+
+\bibitem{lee2026}
+H. Lee, S. Jeong, N. Y. Kim, and J. Seo, ``Quantum-based $k$-coverage optimization for UAV-aided search and rescue missions,'' arXiv:2609.01930, 2026.
+
+\bibitem{wang2026}
+B. Wang, Y. Wang, and S. Huang, ``Priority-aware persistent coverage with unbalanced revisit period constraints,'' in \emph{Proc. 6th Int. Conf. Computer, Control and Robotics (ICCCR)}, 2026, pp. 406--411.
 
 \end{thebibliography}
 
