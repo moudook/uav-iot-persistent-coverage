@@ -584,7 +584,7 @@ For reinforcement learning, the constrained objective is converted into a shared
 \begin{aligned}
 r_t=-\big(&\lambda_O U_t+\lambda_E E_t^{\mathrm{cons}}+
           \lambda_D D_t^{\mathrm{deg}}+\lambda_W W_t^{\mathrm{mov}}\\
-&+\lambda_R R_t^{\mathrm{rec}}+\lambda_C\mathrm{Crit}_t\big).
+&+\lambda_R R_t^{\mathrm{rec}}+\lambda_C\mathrm{Crit}_t+\lambda_B B_t\big).
 \end{aligned}
 \label{eq:reward}
 \end{equation}
@@ -606,11 +606,29 @@ $D_t^{\mathrm{deg}}$ & 1 if any service requirement is violated & $\lambda_D = 2
 $W_t^{\mathrm{mov}}$ & distance flown $/$ distance that changed coverage & $\lambda_W = 0.05$ \\
 $R_t^{\mathrm{rec}}$ & normalized recovery delay during recovery & $\lambda_R = 0.30$ \\
 $\mathrm{Crit}_t$ & Articulation-point average, \eqref{eq:crit} & $\lambda_C = 0.50$ \\
+$B_t$ & mean fractional shortfall below the return threshold & $\lambda_B$ (measured; see below) \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-All six quantities are dimensionless and lie in $[0,1]$, so the weights are directly comparable; $U_t$ and $\mathrm{Crit}_t$ are already normalized in \eqref{eq:Ut} and \eqref{eq:crit}. The values are initial settings to be tuned on a validation set. The implemented values raise $\lambda_D$ above $\lambda_O$ so that a degraded-service step is penalised more heavily than a merely under-covered one; $\lambda_C$ is likewise raised so that connectivity loss is not drowned out by coverage. The ordering on which the formulation depends is $\lambda_D \ge \lambda_O \ge \lambda_C \ge \lambda_R > \lambda_E \ge \lambda_W$.
+All seven quantities are dimensionless and lie in $[0,1]$, so the weights are directly comparable; $U_t$ and $\mathrm{Crit}_t$ are already normalized in \eqref{eq:Ut} and \eqref{eq:crit}. The values are initial settings to be tuned on a validation set. The implemented values raise $\lambda_D$ above $\lambda_O$ so that a degraded-service step is penalised more heavily than a merely under-covered one; $\lambda_C$ is likewise raised so that connectivity loss is not drowned out by coverage. The ordering on which the formulation depends is $\lambda_D \ge \lambda_O \ge \lambda_C \ge \lambda_R > \lambda_E \ge \lambda_W$.
+
+\paragraph{The energy-threshold term, and why a consumption term is not
+enough.} $E_t^{\mathrm{cons}}$ prices what is \emph{consumed}. That is not
+the quantity that determines whether a UAV survives the mission: flying
+$30$~m to a charging pad costs about $480$~J, which is $1.6\%$ of a
+$30$~kJ pack, so the consumption term contributes about $0.0016$ to the
+cost, whereas the consequence of not going --- a UAV that cannot reach a
+pad leaves the swarm, stops covering, and may fragment the graph --- is paid
+\emph{late} and by the team. A controller that is only told what it has
+spent therefore has no reason to turn back before the consequence arrives.
+$B_t$ is the mean fractional shortfall below the return threshold of
+\eqref{eq:ereq}, i.e.\ the quantity the observation already carries as the
+return-urgency feature, and it is the term the paper's own metric table
+asks for when it lists ``minimum battery level, and threshold violations''
+under Energy. Section~\ref{sec:results} reports a controlled measurement of
+the effect of this term and of the alternative hypothesis that the energy
+constraint is simply too tight for the episode length.
 
 \begin{table}[t]
 \caption{Hard constraints versus learned trade-offs.}
