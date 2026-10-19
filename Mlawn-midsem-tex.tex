@@ -485,6 +485,8 @@ E_i^{\mathrm{req}}(t)=E_i^{\mathrm{pad}}(t)+E_i^{\mathrm{rejoin}}(t)+E^{\mathrm{
 \end{equation}
 and a return is mandatory when $E_i(t)\le E_i^{\mathrm{req}}(t)$.
 
+Two properties of this model are easy to state and easy to implement incorrectly, and both were implemented incorrectly in the first version of the simulator, so both are pinned by tests. First, the return is a \emph{physical} transition and not a decision available to the policy: the simulator makes it, so that the reward, the metrics and the charging arbitration can all see it. If the simulator does not make it, then a learned policy has no way to express the return at all, the arbitration is never entered, and the reserve mechanism has nothing to recover --- the three mechanisms this paper proposes are then present in the model and absent from the experiment. Second, a UAV that is docked and charging has its rotors idle and draws only the avionics and communications baseline; if it is billed the hover power, the pack loses more energy to the rotors than the pad puts back, no UAV can ever recover, and the charging coordination is unusable. A UAV whose pack empties away from a pad is out of service: it can no longer fly, and it must not continue to count towards coverage or towards the connectivity graph.
+
 \begin{figure}[t]
 \centering
 \resizebox{\columnwidth}{!}{%
@@ -680,7 +682,7 @@ Within scope are spatial $K$-coverage, range-limited UAV connectivity, battery d
 The audit of Section~\ref{sec:validation} also records the derived physical
 quantities, so that the modelling choices are explicit rather than implicit.
 The endurance implied by $B^{\max}$ and $P_{\mathrm{hover}}$ is
-$30{,}000/50=600$~s (10~min); the power ratio $P_{\mathrm{move}}/P_{\mathrm{hover}}=1.5$ is conservative against the 1.09 measured by Datsko et al.~\cite{datsko2024} for energy-optimal multirotor flight; and the charge increment of $2\times10^{-4}$ of the pack per step corresponds to a full charge in 1000~s, i.e.\ a 3.6~C rate, which is above the $\le 1$~C of hobby LiPo and is therefore an explicit modelling assumption rather than a physical prediction. Two further observations matter for the interpretation of the results. First, the separation constraint is enforced at the sample rate: two UAVs closing head-on at $2v_{\max}$ have a braking distance of $v_{\mathrm{close}}^{2}/(2a)=25$~m at $a=2$~m/s$^2$, five times $d_{\mathrm{safe}}$, so the mask guarantees sample-time separation and not braking. Second, at $N=8$ on an $80\times80$~m field the inter-UAV graph is dense (mean node degree $4.25$ at $R_{\mathrm{comm}}=40$~m), so $R_{\mathrm{comm}}$ does not bind in the nominal deployment; connectivity becomes the binding constraint only once a failure removes one UAV, which is precisely the regime protected by the $H$-step mask and the reserve mechanism. All four quantities are reported rather than silently adjusted, because changing them would change the measured results and the results are the claim.
+$30{,}000/50=600$~s (10~min); the power ratio $P_{\mathrm{move}}/P_{\mathrm{hover}}=1.5$ is conservative against the 1.09 measured by Datsko et al.~\cite{datsko2024} for energy-optimal multirotor flight; and the charge increment of $2\times10^{-4}$ of the pack per step corresponds to a full charge in 1000~s, i.e.\ a 3.6~C rate, which is above the $\le 1$~C of hobby LiPo and is therefore an explicit modelling assumption rather than a physical prediction. Two further observations matter for the interpretation of the results. First, the separation constraint is enforced at the sample rate: two UAVs closing head-on at $2v_{\max}$ have a braking distance of $v_{\mathrm{close}}^{2}/(2a)=25$~m at $a=2$~m/s$^2$, five times $d_{\mathrm{safe}}$, so the mask guarantees sample-time separation and not braking. Second, at $N=8$ on an $80\times80$~m field the inter-UAV graph is not always dense: measured over a 2000-step flight in the deployed regime, the mean node degree is $4.01$ of a possible $7$, the graph is complete in only $12\%$ of steps, and nodes of degree $\le 1$ --- whose removal would isolate part of the swarm --- occur in a substantial fraction of UAV-steps. Connectivity is therefore a live constraint throughout the mission and not only after a failure, which is what makes the $H$-step mask and the reserve mechanism load-bearing rather than decorative. All four quantities are reported rather than silently adjusted, because changing them would change the measured results and the results are the claim.
 
 
 \begin{figure*}[t]
@@ -729,6 +731,7 @@ Parameter sharing is appropriate when (i) the environment is equivariant to agen
 For a collected rollout, the temporal-difference residual is
 \begin{equation}
 \delta_t=R_t+\gamma V_{\phi}(\mathbf s_{t+1})-V_{\phi}(\mathbf s_t),
+\label{eq:tdres}
 \end{equation}
 and the generalized advantage estimate (GAE) is
 \begin{equation}
@@ -755,7 +758,17 @@ L^{\mathrm{critic}}(\phi)=\mathbb E_t\!\left[\max\!\left((V_\phi(\mathbf s_t)-\w
 V_{\phi_{\mathrm{old}}}(\mathbf s_t)+\epsilon)-\widehat R_t)^2\right)\right],
 \label{eq:criticloss}
 \end{equation}
-where $\widehat R_t=\widehat A_t+V_{\phi_{\mathrm{old}}}(\mathbf s_t)$ is the TD($\lambda$) lambda-return, computed once per rollout and treated as a constant (gradients are not propagated through it). The report matches the reference implementation (\texttt{r\_mappo.py}), which computes $\mathrm{gae}+\mathrm{value\_preds}$ rather than the Monte-Carlo return-to-go described in MAPPO's Appendix A prose. Value normalisation (running mean/std, PopArt) is used to stabilise regression when returns are of order $10^2$.
+where $\widehat R_t=\widehat A_t+V_{\phi_{\mathrm{old}}}(\mathbf s_t)$ is the TD($\lambda$) lambda-return, computed once per rollout and treated as a constant (gradients are not propagated through it). The report matches the reference implementation (\texttt{r\_mappo.py}), which computes $\mathrm{gae}+\mathrm{value\_preds}$ rather than the Monte-Carlo return-to-go described in MAPPO's Appendix A prose.
+
+\paragraph{Value normalisation, and the scale trap inside it.}
+Value normalisation is one of the components the MAPPA/MAPPO literature identifies as load-bearing, and it was missing from the implementation while the earlier revision of this report asserted it. It is now present, and the details matter. The critic is trained to predict the returns in a \emph{normalised} space defined by running statistics of the return distribution, maintained as an exponential moving average with $\beta=0.99$:
+\begin{equation}
+\widehat R_t^{\mathrm{norm}}=\frac{\widehat R_t-\mu}{\sigma+\epsilon},
+\label{eq:valuenorm}
+\end{equation}
+where $\mu$ and $\sigma$ are updated from the current rollout's returns. The consequence is easy to get wrong: the critic's \emph{raw} output is then the normalised value, so the temporal-difference residual of Eq.~\eqref{eq:tdres}, the advantage recursion of Eq.~\eqref{eq:gae}, and the bootstrap at a truncation boundary must all \emph{un-normalise} it before use, as $V(\mathbf s)=\sigma\,\hat V_\phi(\mathbf s)+\mu$. Reading the raw critic output at any of those three points is a silent scale error in the advantage estimates: the training loss still decreases, the entropy still falls, and the policy is simply trained against the wrong signal. The implementation therefore exposes a single accessor for the value and the test suite asserts that the rollout uses it rather than the raw output; a second test asserts that the value-clipping auxiliary term compares two quantities in the same space, since the recorded old value is in the original scale.
+
+The advantage is normalised as well, by the mean and standard deviation of the batch. We also implemented a per-agent variant, in which each agent's advantages are normalised over its own history rather than over the pooled batch, and we report the measurement in Section~\ref{sec:results}: with a shared team reward every agent's advantage sequence is nearly identical, so the per-agent normalisation is close to a rescaling and does not change the credit assignment, which is the limitation of shared team rewards rather than a normalisation choice.
 
 \subsection{Action Feasibility Mask}
 Before the sampled action is executed, the simulator evaluates the predicted next position and applies the following checks: workspace bounds, maximum speed, minimum UAV separation, charge validity, and connectivity-preservation constraints. If a candidate movement would disconnect the communication graph, it is masked in normal operation. During an active recovery event, the connectivity rule remains a hard constraint unless the simulator enters a predefined recovery mode in which temporary reconnection is required by the recovery objective.
@@ -1063,6 +1076,62 @@ configuration is retained in the repository
 (\texttt{PhyValidationControl}) so that the check is repeatable. We report
 this as a methodological point rather than a result: a physical-layer claim
 that has not been subjected to a negative control is not yet a measurement.
+
+\emph{The second candidate observable, and why the runtime cross-validation
+still does not exist.} The obvious way to make a runtime cross-validation is
+to read the received SNR per receiver rather than a MAC-layer count, and
+INET's \texttt{Radio} module does expose exactly such a statistic, the
+\texttt{minSnir} histogram. We therefore built a proper negative control for
+it: a transmit-power sweep in which the only quantity that changes is the
+UAV's transmit power, over a 117~dB range, with receivers at 10, 30, 50 and
+80~m and a UAV at 50~m altitude (\texttt{run\_phy\_probe.sh},
+\texttt{analysis/phy\_runtime\_probe.py}). The result is specific, and it is
+reported here in full because it is the evidence for what the paper does and
+does not claim.
+
+\begin{table}[t]
+\caption{OMNeT++/INET runtime probe. The only difference between the rows is
+the UAV's transmit power. ``Receptions'' is the number of packets the receiver
+radio delivered to the upper layer; ``$SNIR_{\mathrm{INET}}$'' is the
+reported \texttt{minSnir} statistic.}
+\label{tab:phyprobe}
+\centering
+\scriptsize
+\begin{tabular}{@{}llccccr@{}}
+\toprule
+& & \multicolumn{4}{c}{Receptions at} & \\
+Config & $P_{\mathrm{tx}}$ & 10 m & 30 m & 50 m & 80 m & $SNIR_{\mathrm{INET}}$ \\
+\midrule
+A & 0.5 W ($-3$ dBm)   & 500 & 500 & 500 & 500 & 46.96 dB \\
+B & 1 mW ($-30$ dBm)  & 500 & 500 & 500 & 500 & 19.97 dB \\
+C & 1 $\mu$W ($-60$ dBm) & 0 & 0 & 0 & 0 & --- \\
+D & 1 pW ($-120$ dBm) & 0 & 0 & 0 & 0 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three things follow. First, the control works: the reception count falls
+from 500 to 0 as the transmit power is reduced by 117~dB, so the radio chain
+is live and is genuinely being exercised. Second, the statistic tracks the
+transmit power exactly --- a 27.0~dB reduction of $P_{\mathrm{tx}}$ produces
+a 27.0~dB reduction of the reported SNR --- so it is not simply a frozen
+constant. Third, and decisively, it does \emph{not} track the receiver
+distance: the same value is reported for receivers at 10, 30, 50 and 80~m,
+although the configured path loss differs by 13.7~dB between the nearest and
+the farthest of them, and the link-closure threshold is the same at every
+distance when the configured path loss requires it to be 13.7~dB lower at
+80~m. The quantity a path-loss cross-validation needs is the SNR as a
+function of distance, and that is exactly what this statistic does not
+report.
+
+The consequence for this paper is stated plainly. We therefore do
+\emph{not} claim a runtime cross-validation of the physical layer. What we
+do claim is the algebraic equivalence of the two path-loss functions,
+established from INET's own source and its recorded parameters, to
+0.012~dB. The broader methodological conclusion --- that an instrument must
+be shown to respond to a control before its readings can be believed --- is
+the part we would ask a reader to carry away, and the probe is included in
+the repository so that the conclusion can be re-checked.
 
 \emph{Plasticity of the learned policy.} A failure mode that does not appear
 in reward curves or training loss is known in the MAPPO literature: the

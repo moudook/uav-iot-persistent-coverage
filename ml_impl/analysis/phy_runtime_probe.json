@@ -1,0 +1,82 @@
+{
+  "sweep": [
+    {
+      "tag": "0.5W",
+      "tx_w": 0.5,
+      "tx_dbm": -3.010299956639812,
+      "receptions": {
+        "sensor[0]": 500.0,
+        "sensor[1]": 500.0,
+        "sensor[2]": 500.0,
+        "sensor[3]": 500.0
+      },
+      "min_snir_db": 46.96029995663981,
+      "min_snir_spread_db": 0.0
+    },
+    {
+      "tag": "1mW",
+      "tx_w": 0.001,
+      "tx_dbm": -30.0,
+      "receptions": {
+        "sensor[0]": 500.0,
+        "sensor[1]": 500.0,
+        "sensor[2]": 500.0,
+        "sensor[3]": 500.0
+      },
+      "min_snir_db": 19.97059991327962,
+      "min_snir_spread_db": 0.0
+    },
+    {
+      "tag": "1uW",
+      "tx_w": 1e-06,
+      "tx_dbm": -60.0,
+      "receptions": {
+        "sensor[0]": 0.0,
+        "sensor[1]": 0.0,
+        "sensor[2]": 0.0,
+        "sensor[3]": 0.0
+      },
+      "min_snir_db": null,
+      "min_snir_spread_db": null
+    },
+    {
+      "tag": "1pW",
+      "tx_w": 1e-12,
+      "tx_dbm": -120.0,
+      "receptions": {
+        "sensor[0]": 0.0,
+        "sensor[1]": 0.0,
+        "sensor[2]": 0.0,
+        "sensor[3]": 0.0
+      },
+      "min_snir_db": null,
+      "min_snir_spread_db": null
+    }
+  ],
+  "checks": [
+    {
+      "check": "minSnir tracks the transmit power",
+      "ok": true,
+      "measured": "delta SNR = 26.990 dB for delta TX = 26.990 dB",
+      "note": "the statistic is therefore not a pure constant"
+    },
+    {
+      "check": "minSnir tracks the receiver distance",
+      "ok": false,
+      "measured": "spread over 10-80 m = 0.0000 dB (the configured path loss differs by 13.7 dB)",
+      "note": "FAIL: this is the quantity a path-loss cross-validation needs, and the statistic does not report it"
+    },
+    {
+      "check": "the reception decision is distance-dependent",
+      "ok": false,
+      "measured": "the link is open at -3 dBm and closed at -60 dBm, at the SAME threshold for every receiver distance (10, 30, 50, 80 m)",
+      "note": "FAIL: the configured path loss implies a 13.7 dB spread in the closure boundary between 10 m and 80 m"
+    },
+    {
+      "check": "a negative control exists and the observable responds to it",
+      "ok": true,
+      "measured": "a 117 dB transmit-power sweep closes the link; the reception count falls from 500 to 0",
+      "note": "PASS: the control works, and it is what shows that the distance dependence is missing rather than the whole chain being inert"
+    }
+  ]
+}
