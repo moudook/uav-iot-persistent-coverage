@@ -5,16 +5,36 @@ This module is the answer to the professor's main criticism: the earlier draft
 modelled coverage and connectivity as *abstract discs*. Here every link is
 computed from an actual radio model:
 
-    distance -> path loss (log-distance, LoS / NLoS) -> received power
-             -> SINR (with interference from other transmitters)
-             -> achievable rate (Shannon, clipped by 802.11 MCS table)
+    distance -> path loss (log-distance, LoS / NLoS blend) -> shadowing
+             -> received power -> SINR (access) / SNR (relay)
+             -> achievable rate (802.11 OFDM MCS table)
 
 Both the UAV-UAV relay graph and the UAV-sensor access links go through this,
-so `connectivity` and `K-coverage` in the simulator are PHY-derived rather
-than geometric.
+so `connectivity` and `K-coverage` in the simulator are PHY-derived rather than
+geometric.
 
-References: 3GPP TR 36.777 (UAV channel models), Al-Hourani et al. 2014
-(air-to-ground LoS probability), IEEE 802.11 OFDM MCS sensitivity table.
+References
+----------
+- 3GPP TR 36.777, "Enhanced LTE support for aerial vehicles" (UAV channel).
+- Al-Hourani, Kandeepan, Lardner (2014), air-to-ground LoS probability.
+- IEEE 802.11-2016, OFDM MCS sensitivity/rate table (20 MHz channel).
+
+Design rules
+------------
+1. **Reciprocity.** The channel between two nodes is one physical link. Shadow
+   fading is a property of the propagation path, so S(i,j) == S(j,i). A
+   per-element random draw would violate this.
+2. **Reproducibility.** Every random quantity comes from this object's own
+   seeded generator, never from the global numpy RNG. Otherwise the physics
+   perturb the agent's action sampling and no run can be replayed.
+3. **Index stability.** Channels are addressed by *global node index*, not by
+   position in the active subset. When a UAV fails, the remaining links keep
+   exactly the channel they had; otherwise the failure experiment silently
+   re-draws the whole propagation environment.
+4. **Timescale.** The decision interval is dt = 0.2 s. Slow shadowing (seconds)
+   is included; fast Rayleigh fading (milliseconds) averages out over 200 ms
+   and is therefore off by default. It remains available via `add_fading` for
+   a future study at a different timescale.
 """
 
 from __future__ import annotations
@@ -22,69 +42,95 @@ from __future__ import annotations
 import numpy as np
 
 # --------------------------------------------------------------------------
-# IEEE 802.11 OFDM MCS sensitivity table (802.11n/ac, 20 MHz, SGI).
+# IEEE 802.11 OFDM MCS sensitivity table (802.11n/ac, 20 MHz, GI 800 ns).
 # Maps required RX SNR (dB) -> PHY rate (Mbit/s).
 # --------------------------------------------------------------------------
 MCS_TABLE = np.array(
     [
-        [2.0, 6.5],
-        [4.0, 9.0],
-        [5.5, 12.0],
-        [6.5, 13.5],  # legacy non-HT
-        [8.0, 15.0],
+        [2.0, 6.5],     # MCS 0  BPSK 1/2        (minimum usable rate)
+        [4.0, 9.0],     # MCS 0  duplicate
+        [5.5, 12.0],    # MCS 1  QPSK 1/2
+        [6.5, 13.5],
+        [8.0, 15.0],    # MCS 2  QPSK 3/4
         [8.5, 18.0],
-        [9.0, 20.0],
+        [9.0, 20.0],    # MCS 3  16-QAM 1/2
         [10.0, 26.0],
-        [11.0, 29.0],
+        [11.0, 29.0],   # MCS 4  16-QAM 3/4
         [12.0, 31.5],
-        [13.0, 34.5],
+        [13.0, 34.5],   # MCS 5  64-QAM 2/3
         [14.0, 38.5],
-        [15.0, 42.0],
+        [15.0, 42.0],   # MCS 6  64-QAM 3/4
         [16.0, 45.0],
-        [17.0, 49.5],
+        [17.0, 49.5],   # MCS 7  64-QAM 5/6
     ]
 )
 
+#: SNR (dB) below which no MCS is usable at all.
+SNR_SENSITIVITY_DB = float(MCS_TABLE[0, 0])
 
-def snr_to_rate(snr_db: np.ndarray | float, mcs_shift: int = 0) -> np.ndarray | float:
-    """Map instantaneous SNR to achievable PHY rate via the MCS table.
 
-    `mcs_shift` moves the operating point: negative = more robust (used for
-    inter-UAV relay links that must not drop), positive = faster (used for
-    sensor access links that carry bulk traffic).
+def snr_to_rate(snr_db, mcs_shift: int = 0):
+    """Highest MCS rate (Mbit/s) whose SNR requirement is met.
+
+    Returns 0.0 below the receiver sensitivity. Returning the lowest MCS
+    instead would be wrong in a way that silently disables the PHY gate: the
+    simulator accepts a sensor link only when `rate >= rate_min_mbps`, and
+    `rate_min_mbps` *is* the lowest MCS, so a floor at 6.5 makes that test
+    always true.
+
+    An earlier revision used `side='left'` searching, which returns the first
+    entry with `threshold >= snr`. At SNR = 3.9 dB that selects the 9 Mbit/s
+    MCS whose requirement is 4.0 dB -- claiming a rate the link cannot carry.
+    The correct selection is the last entry with `threshold <= snr`.
+
+    `mcs_shift` is an implementation margin in dB (negative = more
+    conservative back-off), not a mode switch.
     """
-    snr_db = np.asarray(snr_db, dtype=np.float64)
-    idx = np.clip(
-        np.searchsorted(MCS_TABLE[:, 0], snr_db + mcs_shift),
-        0,
-        len(MCS_TABLE) - 1,
-    )
-    rate = MCS_TABLE[idx, 1]
-    if np.isscalar(snr_db) or np.ndim(snr_db) == 0:
+    v = np.asarray(snr_db, dtype=np.float64) + mcs_shift
+    idx = np.searchsorted(MCS_TABLE[:, 0], v, side="right") - 1
+    rate = np.where(idx >= 0, MCS_TABLE[np.clip(idx, 0, None), 1], 0.0)
+    if np.ndim(snr_db) == 0:
         return float(rate)
     return rate
 
 
-def log_distance_pl(d_3d: np.ndarray, f_hz: float, alpha: float, d0: float = 1.0):
-    """Log-distance path loss in dB (returns PL, positive loss)."""
-    d = np.maximum(d_3d, d0)
-    return 20.0 * np.log10(d / d0) + 20.0 * np.log10(4.0 * np.pi * f_hz / 299_792_458.0) + alpha * np.log10(d / d0)
+def log_distance_pl(d_3d, f_hz: float, n: float, d0: float = 1.0):
+    """Log-distance path loss in dB (positive = loss).
+
+    Standard form, with the reference loss evaluated at d0:
+
+        PL(d) = 20*log10(4*pi*d0*f/c) + 10*n*log10(d/d0)
+
+    `n` is the path-loss exponent: n = 2.0 for free space, ~2.0-2.5 for a
+    clear air-to-ground LoS path, ~3.5-4.0 when the path is obstructed.
+
+    An earlier revision wrote the exponent additively on top of the
+    free-space slope, `20*log10(d) + C + alpha*log10(d)`. That makes the
+    effective exponent (20 + alpha)/10, so the intended Los n=2.0 / NLoS
+    n=3.5 pair was really (20+2.0)/10 = 2.2 versus (20+3.5)/10 = 2.35 --
+    almost no difference, which silently erased the LoS/NLoS distinction the
+    whole air-to-ground model depends on.
+    """
+    d = np.maximum(np.asarray(d_3d, dtype=np.float64), d0)
+    pl_d0 = 20.0 * np.log10(4.0 * np.pi * d0 * f_hz / 299_792_458.0)
+    return pl_d0 + 10.0 * n * np.log10(d / d0)
 
 
-def path_loss_db(d_3d, los_prob, f_hz, alpha_los=2.0, alpha_nlos=3.5):
+def path_loss_db(d_3d, los_prob, f_hz, n_los=2.0, n_nlos=3.5):
     """Blend LoS and NLoS path loss according to the LoS probability."""
-    pl_los = log_distance_pl(d_3d, f_hz, alpha_los)
-    pl_nlos = log_distance_pl(d_3d, f_hz, alpha_nlos)
+    pl_los = log_distance_pl(d_3d, f_hz, n_los)
+    pl_nlos = log_distance_pl(d_3d, f_hz, n_nlos)
     return los_prob * pl_los + (1.0 - los_prob) * pl_nlos
 
 
-def los_probability(d_3d: np.ndarray, z0: float, h_building: float = 15.0, a: float = 9.61, b: float = 0.16):
+def los_probability(d_3d, z0: float, a: float = 9.61, b: float = 0.16):
     """
     Al-Hourani (2014) air-to-ground LoS probability.
 
-        P(LoS) = 1 / (1 + a * exp(-b * (theta - a)))    theta in degrees
+        P(LoS) = 1 / (1 + a * exp(-b * (theta - a))),   theta in degrees
 
-    theta is the elevation angle of the UAV as seen from the user.
+    theta is the elevation angle of the UAV as seen from the ground node, so a
+    higher-altitude or closer UAV has a better chance of a clear path.
     """
     d_3d = np.maximum(np.asarray(d_3d, dtype=np.float64), 1e-6)
     theta = np.degrees(np.arcsin(np.clip(z0 / d_3d, 0.0, 1.0)))
@@ -92,112 +138,183 @@ def los_probability(d_3d: np.ndarray, z0: float, h_building: float = 15.0, a: fl
 
 
 class WirelessModel:
-    """Radio parameters shared by every link in the simulator."""
+    """Radio parameters and the seeded propagation environment."""
 
     def __init__(
         self,
         f_hz: float = 2.4e9,
-        p_tx: float = 0.5,          # W, radiated RF power (<=1 W 802.11 ceiling)
+        p_tx: float = 0.5,             # W radiated (<= 1 W EIRP ceiling)
         noise_fig_db: float = 7.0,
-        bandwidth_hz: float = 20e6,  # 20 MHz channel
-        alpha_los: float = 2.0,
-        alpha_nlos: float = 3.5,
+        bandwidth_hz: float = 20e6,
+        alpha_los: float = 2.0,         # path-loss exponent, clear LoS path
+        alpha_nlos: float = 3.5,        # path-loss exponent, obstructed path
         z0: float = 50.0,
-        snr_min_db: float = 2.0,      # below this the link is unusable
-        rate_min_mbps: float = 6.5,   # minimum usable service rate for a sensor
+        rate_min_mbps: float = 6.5,    # minimum usable service rate
         shadowing_sigma_db: float = 4.0,
         rayleigh_scale: float = 1.0,
         mcs_shift_access: int = 0,
-        mcs_shift_backhaul: int = -2,
+        mcs_shift_backhaul: int = -2,  # relay keeps a 2 dB margin
+        access_cochannel: int = 0,     # other UAVs sharing a sensor's channel
+        use_fading: bool = False,      # fast fading is sub-dt; see module docstring
     ):
         self.f_hz = f_hz
         self.p_tx = p_tx
         self.bandwidth_hz = bandwidth_hz
-        self.alpha_los = alpha_los
-        self.alpha_nlos = alpha_nlos
+        self.n_los = float(alpha_los)
+        self.n_nlos = float(alpha_nlos)
         self.z0 = z0
-        self.snr_min_db = snr_min_db
         self.rate_min_mbps = rate_min_mbps
         self.shadowing_sigma_db = shadowing_sigma_db
         self.rayleigh_scale = rayleigh_scale
         self.mcs_shift_access = mcs_shift_access
         self.mcs_shift_backhaul = mcs_shift_backhaul
-        self.noise_w = 10 ** ((-174.0 + noise_fig_db + 10 * np.log10(bandwidth_hz)) / 10.0)
+        self.access_cochannel = int(access_cochannel)
+        self.use_fading = use_fading
+
+        # Thermal noise: -174 dBm/Hz + NF + 10log10(B), converted to watts.
+        self.noise_w = 10.0 ** (
+            (-174.0 + noise_fig_db + 10.0 * np.log10(bandwidth_hz)) / 10.0
+        ) / 1000.0
+
+        # Dedicated generator: never touch the global RNG.
+        self.rng = np.random.default_rng(0)
+        self.shadow_uu_db: np.ndarray | None = None   # (N, N) symmetric, zero diag
+        self.shadow_su_db: np.ndarray | None = None   # (M, N)
+        self.n_uav = 0
+        self.n_sensor = 0
+
+    # -- propagation environment ------------------------------------------
+    def reset_links(self, n_uav: int, n_sensor: int, seed: int | None = None):
+        """Draw the quasi-static shadowing environment for one episode.
+
+        Called once per episode, not per step: shadowing is a property of the
+        scene, so it must persist across the whole run. Channels are addressed
+        by global node index, so a UAV dropping out does not re-draw the links
+        that remain.
+        """
+        if seed is not None:
+            self.rng = np.random.default_rng(seed)
+        self.n_uav = int(n_uav)
+        self.n_sensor = int(n_sensor)
+
+        z = self.rng.normal(0.0, self.shadowing_sigma_db, size=(self.n_uav, self.n_uav))
+        z = np.triu(z, 1)                    # strict upper triangle only
+        self.shadow_uu_db = z + z.T          # mirror => S(i,j) == S(j,i)
+        self.shadow_su_db = self.rng.normal(
+            0.0, self.shadowing_sigma_db, size=(self.n_sensor, self.n_uav)
+        )
+
+    def _shadow_uu(self, idx):
+        if self.shadow_uu_db is None:
+            return None
+        idx = np.asarray(idx, dtype=int)
+        return self.shadow_uu_db[np.ix_(idx, idx)]
+
+    def _shadow_su(self, uav_idx):
+        if self.shadow_su_db is None:
+            return None
+        return self.shadow_su_db[:, np.asarray(uav_idx, dtype=int)]
 
     # -- helpers -----------------------------------------------------------
-    def to_3d(self, p_xy: np.ndarray) -> np.ndarray:
-        """Add the common nominal altitude to a horizontal position."""
-        return np.sqrt(np.sum(np.square(p_xy), axis=-1) + self.z0 ** 2)
+    def received_w(self, d_3d, los_prob, shadow_db=None, add_fading: bool = False):
+        """Received power in watts: path loss, plus optional shadow / fading.
 
-    def received_w(self, d_3d, los_prob):
-        """Path loss + shadowing + fading -> received power in W."""
-        pl = path_loss_db(d_3d, los_prob, self.f_hz, self.alpha_los, self.alpha_nlos)
-        shadow = np.random.normal(0.0, self.shadowing_sigma_db, size=np.shape(pl))
-        rayleigh = np.random.gamma(shape=1.0, scale=self.rayleigh_scale, size=np.shape(pl))
-        return self.p_tx * rayleigh * 10 ** (-(pl + shadow) / 10.0)
+        With `shadow_db=None` this is the deterministic mean link budget, which
+        is what the regression tests assert against.
+        """
+        pl = path_loss_db(d_3d, los_prob, self.f_hz, self.n_los, self.n_nlos)
+        if shadow_db is not None:
+            pl = pl + shadow_db
+        rx = self.p_tx * 10.0 ** (-pl / 10.0)
+        if add_fading or self.use_fading:
+            rx = rx * self.rng.gamma(
+                shape=1.0, scale=self.rayleigh_scale, size=np.shape(pl)
+            )
+        return rx
 
     def rate_mbps(self, snr_db):
+        """Achievable access-link rate (Mbit/s) for an SNR in dB."""
         return snr_to_rate(snr_db, self.mcs_shift_access)
 
+    def snr_db(self, linear):
+        """Linear power ratio to dB, floored so log10 never sees zero."""
+        return 10.0 * np.log10(np.maximum(linear, 1e-30))
+
     # -- link evaluation ---------------------------------------------------
-    def snr_db(self, sinr_linear):
-        return 10.0 * np.log10(np.maximum(sinr_linear, 1e-12))
+    def uu_geometry(self, uav_xy):
+        """Slant distance and LoS probability matrices for all UAV pairs."""
+        d = np.linalg.norm(uav_xy[:, None, :] - uav_xy[None, :, :], axis=-1)
+        d3 = np.sqrt(d ** 2 + self.z0 ** 2)
+        return d, d3, los_probability(d3, self.z0)
 
-    def access_sinr(self, uav_xy, sensor_xy, interferer_xy):
+    def access_sinr(self, sensor_xy, uav_xy, uav_idx=None,
+                    cochannel: int | None = None, add_fading: bool = False):
+        """(M, K) SINR for every sensor against every listed UAV.
+
+        `cochannel` is how many *other* UAVs share the channel of the serving
+        UAV. A sensor's serving link is the strongest one; only the strongest
+        `cochannel` of the remaining UAVs are summed as interference. With
+        `cochannel = 0` the access link is noise-limited, which is the default
+        because the UAVs are assigned orthogonal 20 MHz channels.
+
+        Modelling every other UAV as a co-channel interferer is not defensible
+        in a K-coverage study: K-coverage asks whether K UAVs are *able* to
+        serve a sensor, not whether all K transmit on the same resource at the
+        same instant. The aggressive version made `phy_ok` false even when a
+        UAV was sitting directly on top of its sensor, because a nearer
+        non-serving UAV dominated the sum.
+
+        `uav_idx` selects the shadowing columns by *global* id.
         """
-        SINR of each sensor served by its UAV, with interference summed from
-        every *other* UAV that is also transmitting.
+        m, k = len(sensor_xy), len(uav_xy)
+        if m == 0 or k == 0:
+            return np.zeros((m, k))
 
-        uav_xy       : (N, 2)
-        sensor_xy    : (M, 2)
-        interferer_xy: (N, 2) positions of the interfering transmitters
-                       (same as uav_xy for full interference accounting)
-        returns      : (M,) SINR for sensor->its assigned UAV link
-        """
-        n_uav = len(uav_xy)
-        m = len(sensor_xy)
-        if n_uav == 0 or m == 0:
-            return np.zeros(m)
+        d = np.linalg.norm(sensor_xy[:, None, :] - uav_xy[None, :, :], axis=-1)
+        d3 = np.sqrt(d ** 2 + self.z0 ** 2)
+        los = los_probability(d3, self.z0)
+        idx = np.arange(k) if uav_idx is None else np.asarray(uav_idx, dtype=int)
+        rx = self.received_w(d3, los, self._shadow_su(idx), add_fading)   # (M, K)
 
-        # each sensor is attached to the UAV that currently covers it
-        d_all = np.linalg.norm(
-            sensor_xy[:, None, :] - uav_xy[None, :, :], axis=-1
-        )                                    # (M, N)
-        d3_all = np.sqrt(d_all ** 2 + self.z0 ** 2)
-        los_all = los_probability(d3_all, self.z0)
-        rx_all = self.received_w(d3_all, los_all)          # (M, N)
-        self.p_ = rx_all
+        cch = self.access_cochannel if cochannel is None else int(cochannel)
+        if cch <= 0 or k < 2:
+            return rx / self.noise_w
 
-        # serving link = argmax received power among active transmitters
-        serving = np.argmax(rx_all, axis=1)
-        rx_serv = rx_all[np.arange(m), serving]
+        # Drop the strongest (that is the serving link), sum the next `cch`.
+        ordered = np.sort(rx, axis=1)[:, ::-1]
+        inter = ordered[:, 1:cch + 1].sum(axis=1, keepdims=True)
+        return rx / (inter + self.noise_w)
 
-        # interference = all other transmitters transmitting the same signal
-        inter = rx_all.sum(axis=1) - rx_serv
-        sinr = rx_serv / (inter + self.noise_w)
-        return sinr
+    def backhaul_snr(self, uav_xy, uav_idx=None, add_fading: bool = False):
+        """SNR matrix for the inter-UAV relay link. Index (i,j) = i hears j.
 
-    def backhaul_sinr(self, uav_xy):
-        """SNR matrix between UAVs for the relay (backhaul) link.
+        The relay is not co-channel with the access links -- in an aerial mesh
+        the backhaul runs on its own channel or is time-slotted -- so other
+        UAVs are not interferers here. Modelling them as interferers produced a
+        spurious ~-14 dB even at 28 m separation, which made the connectivity
+        invariant unachievable and drove AG to 0.2 in the first experiment run.
 
-        Backhaul is NOT co-channel with the access links: in a real aerial
-        network the inter-UAV relay runs on a separate channel (or is
-        time-slotted), so the other UAVs are not interferers here. Treating
-        them as interferers produced a spurious ~-14 dB SINR and made the
-        connectivity invariant unachievable, which is why AG collapsed to 0
-        in the first experiment run. The link budget is therefore SNR.
+        The result is symmetric because the underlying geometry and shadowing
+        are symmetric: one physical link, one channel.
         """
         n = len(uav_xy)
         if n == 0:
             return np.zeros((0, 0))
-        d = np.linalg.norm(uav_xy[:, None, :] - uav_xy[None, :, :], axis=-1)
-        d3 = np.sqrt(d ** 2 + self.z0 ** 2)
-        los = los_probability(d3, self.z0)
-        rx = self.received_w(d3, los)
+        _, d3, los = self.uu_geometry(uav_xy)
+        idx = np.arange(n) if uav_idx is None else np.asarray(uav_idx, dtype=int)
+        rx = self.received_w(d3, los, self._shadow_uu(idx), add_fading)
         snr = rx / self.noise_w
+        snr = 0.5 * (snr + snr.T)          # enforce reciprocity exactly
         np.fill_diagonal(snr, 0.0)
         return snr
+
+    # Retained under the old name so existing call sites keep working.
+    backhaul_sinr = backhaul_snr
 
     def link_rate_mbps(self, snr_db, backhaul: bool = False):
         shift = self.mcs_shift_backhaul if backhaul else self.mcs_shift_access
         return snr_to_rate(snr_db, shift)
+
+    def usable(self, snr_db, backhaul: bool = False):
+        """Boolean link-quality gate: can this link carry the minimum service?"""
+        return self.link_rate_mbps(snr_db, backhaul) >= self.rate_min_mbps
