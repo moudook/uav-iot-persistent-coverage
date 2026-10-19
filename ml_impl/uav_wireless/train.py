@@ -120,8 +120,13 @@ def collect_rollout(env, agent, n_steps, deterministic=False):
         last_gae = delta + agent_gamma(agent) * agent_lam(agent) * last_gae
         adv[step] = last_gae
     B["adv"] = adv
-    B["ret"] = adv + B["values"][:t]
+    # The batch must be truncated to the number of steps actually collected
+    # BEFORE the returns are formed.  The episode now ends early whenever a
+    # UAV failure terminates the mission, so t is not always n_steps, and
+    # forming the returns from the untruncated advantage array gave a
+    # shape mismatch (and would have silently mis-aligned the targets).
     B = {k: v[:t] for k, v in B.items()}
+    B["ret"] = B["adv"] + B["values"]
     return B, env.summary()
 
 

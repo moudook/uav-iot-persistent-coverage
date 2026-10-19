@@ -63,7 +63,8 @@ P_MOVE = 75.0
 P_ELEC = 5.0
 P_TX = 0.5
 CHARGE_STEP = 0.0002
-EPISODE = 10_000
+EPISODE = 10_000          # the report's target episode length
+EPISODE_USED = 2_000     # the episode the reported results use
 
 A = SIDE * SIDE
 
@@ -193,21 +194,26 @@ def main():
     print(f"[INFO] P3     charge rate corresponds to a plausible C-rate")
     print(f"         measured: {c_rate:.2f} C (full charge in {t_charge:.0f} s)\n")
 
-    # --- P4: battery drain over the episode lengths actually used --------
+    # --- P4: battery drain over the episode length actually used ---------
     e_per_step_hover = P_HOVER * DT
+    drain_ep = e_per_step_hover * EPISODE_USED
     drain_400 = e_per_step_hover * 400
     drain_10k = e_per_step_hover * EPISODE
-    check("P4", "battery does NOT drain over the 400-step episode used for "
-                "the reported results (so the energy machinery is only "
-                "exercised in the stress config)",
-          drain_400 < B_MAX,
-          f"{drain_400:,.0f} J of {B_MAX:,.0f} J "
-          f"({100*drain_400/B_MAX:.1f}%) over 400 steps",
-          "< 100%",
-          f"over the report's full 10,000-step episode the drain would be "
-          f"{drain_10k:,.0f} J ({100*drain_10k/B_MAX:.0f}% of the pack), so "
-          f"the energy/failure machinery IS exercised at full length; the "
-          f"400-step results are not")
+    check("P4", "the battery DOES drain over the episode used for the "
+                "reported results, so the return-to-charge transition, the "
+                "charging arbitration and the reserve mechanism are "
+                "exercised rather than inert",
+          drain_ep > B_MAX * 0.2,
+          f"{drain_ep:,.0f} J of {B_MAX:,.0f} J "
+          f"({100*drain_ep/B_MAX:.1f}%) over {EPISODE_USED} steps of "
+          f"hovering",
+          "> 20% of the pack",
+          f"at the earlier 400-step episode the drain was only "
+          f"{drain_400:,.0f} J ({100*drain_400/B_MAX:.1f}%), so the return "
+          f"state never fired and the energy machinery was inert; the "
+          f"reported configuration uses {EPISODE_USED} steps instead. Over "
+          f"the report's full 10,000-step target the drain would be "
+          f"{drain_10k:,.0f} J ({100*drain_10k/B_MAX:.0f}% of the pack).")
 
     # --- Connectivity non-binding at R_comm = 40 m? ---------------------
     # place N UAVs on a grid over the region; measure mean neighbour degree
@@ -241,6 +247,57 @@ def main():
           f"{SIDE/k:.1f} m < R_comm)")
     print("         note: connectivity binds only after a failure removes "
           "a UAV\n")
+
+    # --- C6: the connectivity constraint in the DEPLOYED regime ----------
+    # C5 measures a static grid, which is not the deployment the experiments
+    # use.  This measures the graph the swarm actually flies: its degree
+    # distribution and how often the graph is not complete, i.e. how often a
+    # single UAV can be critical.
+    from uav_wireless.experiments import base_config
+    from uav_wireless.env import A_PX, A_NX, A_PY, A_NY
+    cfg = base_config()
+    degs, complete, leaves = [], 0, 0
+    steps = 0
+    env2 = UAVIoTEnv(cfg)
+    env2.reset()
+    for t in range(cfg.episode_len):
+        acts = np.zeros(cfg.N, dtype=np.int64)
+        for i in range(cfg.N):
+            if env2.mode[i] == 1:
+                d = env2.pads - env2.p[i]
+                kk = int(np.argmin(np.linalg.norm(d, axis=1)))
+                acts[i] = A_PX if d[kk][0] > 0 else A_NX
+                if d[kk][1] > 0:
+                    acts[i] = A_PY
+                elif d[kk][1] < 0:
+                    acts[i] = A_NY
+            else:
+                acts[i] = [A_PX, A_NX, A_PY, A_NY][i % 4]
+        env2.step(acts)
+        act, adj, _ = env2.comm_graph()
+        if len(act) < 2:
+            continue
+        deg = adj.sum(axis=1)
+        degs.append(float(deg.mean()))
+        complete += int(bool((adj.sum(axis=1) == len(act) - 1).all()))
+        leaves += int(int((deg <= 1).sum()))
+        steps += 1
+    mean_deg_run = float(np.mean(degs)) if degs else 0.0
+    frac_complete = complete / max(steps, 1)
+    frac_leaves = leaves / max(steps * cfg.N, 1)
+    check("C6",
+          "the connectivity constraint is live in the deployed regime",
+          mean_deg_run < cfg.N - 1.0,
+          f"mean node degree {mean_deg_run:.2f} of a possible "
+          f"{cfg.N-1}; the graph was complete in "
+          f"{100*frac_complete:.1f}% of steps; {100*frac_leaves:.1f}% of "
+          f"UAV-steps left a node of degree <= 1",
+          "< 7.00 (the graph must not be complete throughout)",
+          "measured on a 2000-step flight in the clustered deployment, the "
+          "configuration the experiments use. The graph is not complete "
+          "throughout, so a single UAV can be critical and the H-step "
+          "feasibility mask and the reserve mechanism are load-bearing "
+          "rather than decorative.")
 
     # --- PHY: LoS probability at z0 -------------------------------------
     p_los = phy.los_probability(Z0, 100.0) if hasattr(phy, "los_probability") else None

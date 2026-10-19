@@ -108,7 +108,19 @@ def scenario_cfgs(base: SimConfig):
     return scen
 
 
-def eval_agent(agent, cfg, steps=1000, seed=0, deterministic=True):
+def eval_agent(agent, cfg, steps=1000, seed=0, deterministic=False):
+    """Roll out the learned policy and return the episode summary.
+
+    The default is the SAMPLED policy, because Eq. (13) of the report
+    specifies a_i(t) ~ pi_theta(a_i | o_i(t)): the deployed policy draws
+    from the categorical distribution, it does not take the argmax.  The
+    difference between the two is not cosmetic and is reported: with a
+    shared actor the deterministic policy tends to select the SAME action
+    for every UAV, so the swarm translates as a rigid body and never
+    disperses, while the sampled policy breaks that tie by chance and
+    deploys.  `deterministic=True` selects the argmax policy for
+    comparison.
+    """
     import copy
     c = copy.deepcopy(cfg)
     c.seed = seed
@@ -170,6 +182,18 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
           f"E={agg['Energy']:.0f}")
     rows.append(dict(model="MAPPO", **agg))
 
+    # the deterministic (argmax) policy of the SAME learned actor, for
+    # comparison.  This is not the policy Eq. (13) specifies, and the gap
+    # between the two is a reported result, not an implementation detail.
+    det = [eval_agent(agent, base, steps=base.episode_len, seed=s,
+                       deterministic=True) for s in range(eval_seeds)]
+    dagg = {k: float(np.mean([s[k] for s in det])) for k in det[0]}
+    dstd = {k: float(np.std([s[k] for s in det])) for k in det[0]}
+    print(f"{'MAPPO(argmax)':10s} CK={dagg['CK']:.3f}±{dstd['CK']:.3f} "
+          f"AG={dagg['AG']:.3f} SC={dagg['SC']:.3f} "
+          f"CI={dagg['CovIntegral']:.3f}")
+    rows.append(dict(model="MAPPO-argmax", **dagg))
+
     with open(out_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
@@ -178,7 +202,8 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
     return agent, rows
 
 
-def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True):
+def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
+                 episodes=12, eval_seeds=3):
     """Turn off one proposed component at a time (Table VIII).
 
     stress=True  -- ablate on the S8 combined-stress scenario.  The stress
@@ -190,22 +215,29 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True):
                     the component contributions are measured on a task that a
                     controller can actually solve.  This is the table that
                     supports the paper's claims.
+
+    Every variant is trained from the same seed on the same configuration
+    except for the one component that is removed, so the differences are
+    attributable to that component.
     """
     import copy, csv
     print(f"\n=== Ablations ({'S8 combined stress' if stress else 'feasible base config'}) ===")
     variants = {
         "Full": dict(),
-        "no-connectivity": dict(use_connectivity_term=False),
+        "no-criticality": dict(lam_C=0.0),
+        "no-degraded": dict(lam_D=0.0),
+        "no-energy-cost": dict(lam_E=0.0),
+        "no-undercoverage": dict(lam_O=0.0),
         "no-reserve": dict(use_reserve=False),
         "no-arbitration": dict(use_charging_arbitration=False),
         "no-mask": dict(use_action_mask=False),
         "no-agent-id": dict(use_agent_id=False),
         "no-map": dict(map_grid=0),
         "no-pad-bearing": dict(use_pad_bearing=False),
-        "VanillaMAPPO": dict(use_connectivity_term=False, use_reserve=False,
-                             use_charging_arbitration=False, use_action_mask=False,
-                             use_agent_id=False, map_grid=0,
-                             use_pad_bearing=False),
+        "VanillaMAPPO": dict(lam_C=0.0, lam_D=0.0, use_reserve=False,
+                             use_charging_arbitration=False,
+                             use_action_mask=False, use_agent_id=False,
+                             map_grid=0, use_pad_bearing=False),
     }
     rows = []
     for name, kw in variants.items():
@@ -224,9 +256,10 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True):
             c.R_cov = 30.0
         for k, v in kw.items():
             setattr(c, k, v)
-        agent, _ = train_mappo(c, episodes=60, n_steps=c.episode_len, seed=0,
-                               verbose=False)
-        evs = [eval_agent(agent, c, steps=c.episode_len, seed=s) for s in range(3)]
+        agent, _ = train_mappo(c, episodes=episodes, n_steps=c.episode_len,
+                               seed=0, verbose=False)
+        evs = [eval_agent(agent, c, steps=c.episode_len, seed=s)
+               for s in range(eval_seeds)]
         agg = {k: float(np.mean([s[k] for s in evs])) for k in evs[0]}
         agg["Reserve"] = float(np.mean([s["Reserve"] for s in evs]))
         agg["Denied"] = float(np.mean([s["Denied"] for s in evs]))
@@ -245,7 +278,8 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True):
     return rows
 
 
-def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv"):
+def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
+                  episodes=12):
     """Table X: MAPPO vs the Reactive heuristic on every scenario variant.
 
     Each scenario defines two variants (e.g. sparse vs dense sensors). Both
@@ -255,8 +289,8 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv"):
     """
     import csv
     import copy
-    agent, _ = train_mappo(base, episodes=60, n_steps=base.episode_len, seed=0,
-                           verbose=False)
+    agent, _ = train_mappo(base, episodes=episodes, n_steps=base.episode_len,
+                           seed=0, verbose=False)
     rows = []
     print("\n=== Scenarios (MAPPO vs Reactive) ===")
     for sid, question, cfgs in scenario_cfgs(base):

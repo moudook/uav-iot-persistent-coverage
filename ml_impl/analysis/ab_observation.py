@@ -48,7 +48,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 
 from uav_wireless.env import SimConfig, UAVIoTEnv
-from uav_wireless.experiments import eval_agent
+from uav_wireless.experiments import base_config, eval_agent
 from uav_wireless.train import (train_mappo, baseline_fixed, baseline_greedy,
                                  baseline_reactive)
 
@@ -87,18 +87,20 @@ def main():
     ap.add_argument("--eval-seeds", type=int, default=3)
     args = ap.parse_args()
 
-    base = SimConfig(N=8, K=2, R_cov=35.0, M=20, episode_len=400, seed=0,
-                     start_clustered=True)
+    base = base_config()
     arms = [
-        ("A local only", dict(use_agent_id=False, map_grid=0)),
-        ("B + identity", dict(use_agent_id=True, map_grid=0)),
-        ("C + identity + map", dict(use_agent_id=True, map_grid=4)),
+        ("A local only", dict(use_agent_id=False, map_grid=0,
+                              use_pad_bearing=False)),
+        ("B + identity", dict(use_agent_id=True, map_grid=0,
+                              use_pad_bearing=False)),
+        ("C + identity + map", dict(use_agent_id=True, map_grid=4,
+                                    use_pad_bearing=True)),
     ]
 
     print("=" * 78)
     print(" A/B/C: what the local observation must contain")
     print(f" clustered start, N=8, K=2, R_cov=35, M=20, {args.episodes} "
-          f"episodes x 400 steps, {args.seeds} training seeds, "
+          f"episodes x {base.episode_len} steps, {args.seeds} training seeds, "
           f"{args.eval_seeds} eval seeds")
     print("=" * 78)
 
@@ -133,7 +135,8 @@ def main():
         for s in range(args.seeds):
             t0 = time.time()
             c = SimConfig(**{**base.dict(), "seed": s, **delta})
-            agent, hist = train_mappo(c, episodes=args.episodes, n_steps=400,
+            agent, hist = train_mappo(c, episodes=args.episodes,
+                                      n_steps=c.episode_len,
                                       seed=s, verbose=False)
             evs = [eval_agent(agent, c, steps=c.episode_len, seed=e)
                    for e in range(args.eval_seeds)]
@@ -144,11 +147,11 @@ def main():
             bests.append(max(h["CK"] for h in hist))
             print(f"  seed {s}: CK={agg['CK']:.3f} AG={agg['AG']:.3f} "
                   f"SC={agg['SC']:.3f} CI={agg['CovIntegral']:.3f} "
-                  f"distinct={nd:.2f}/8 spread={sp:5.1f} m "
+                  f"distinct(argmax)={nd:.2f}/8 spread={sp:5.1f} m "
                   f"best_ck={bests[-1]:.3f} ({time.time()-t0:.0f}s)", flush=True)
         print(f"  {name:22s} CK={np.mean(cks):.3f}±{np.std(cks):.3f} "
               f"AG={np.mean(ags):.3f} SC={np.mean(scs):.3f} "
-              f"CI={np.mean(cis):.3f} distinct={np.mean(nds):.2f}/8 "
+              f"CI={np.mean(cis):.3f} distinct(argmax)={np.mean(nds):.2f}/8 "
               f"spread={np.mean(sps):.1f} m best_ck={np.mean(bests):.3f}",
               flush=True)
         rows.append(dict(arm=name, kind="learned",

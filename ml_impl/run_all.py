@@ -1,25 +1,34 @@
 """
-Full experiment matrix, in one reproducible run.
+Full experiment matrix, one reproducible run.
 
-Run:  python run_all.py [--quick]
+Run:  python run_all.py [--quick] [--stage STAGE]
 
-Produces, in the ml_impl directory:
-    mappo_base.pt              trained MAPPO policy (feasible config)
-    hist_base.json             training curve
-    results_main.csv           baselines vs MAPPO, 5 seeds
-    results_ablation.csv       component ablation, S8 combined stress
-    results_ablation_feasible.csv   component ablation, feasible base config
-    results_scenarios.csv      S1..S8 design matrix, every variant
-    dormancy.json              plasticity probe of the trained actor
+Stages (all write their artefacts into the ml_impl directory):
+    obs       A/B/C: what the local observation must contain
+    base      base comparison: rule baselines vs the proposed MAPPO
+    abl       component ablation on the base configuration and on S8
+    scen      S1..S9 design matrix
+    all       every stage, in that order
 
-Every baseline honours the seed it is given, and the environment reports
-termination separately from truncation, so the GAE bootstrap is correct at
-every episode boundary.
+Artefacts:
+    mappo_base.pt                 the trained policy of the base configuration
+    hist_base.json                training curve of the base policy
+    results_main.csv              base comparison
+    results_ablation.csv          ablation on the base configuration
+    results_ablation_stress.csv   ablation on the S8 combined-stress scenario
+    results_scenarios.csv         S1..S9 design matrix
+    analysis/ab_observation.json  the A/B/C numbers
+    analysis/dormancy.json        plasticity probe of the trained actor
+
+Every configuration is built from experiments.base_config(), so the numbers
+in the paper, the numbers in the CSVs and the numbers in the audit all
+describe the same experiment.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import time
@@ -29,91 +38,148 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 import torch
 
-from uav_wireless import SimConfig
-from uav_wireless.experiments import (run_base_comparison, run_ablation,
-                                       run_scenarios)
 from uav_wireless.env import UAVIoTEnv
+from uav_wireless.experiments import (base_config, run_base_comparison,
+                                       run_ablation, run_scenarios)
 from uav_wireless.mappo import MAPPO
-from uav_wireless.train import train_mappo
+from uav_wireless.train import train_mappo, collect_rollout
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ANALYSIS = os.path.join(HERE, "analysis")
 
 
-def base_cfg():
-    """Feasible configuration: N=8 meets the corner-packing bound N>=4K=8."""
-    return SimConfig(N=8, K=2, R_cov=35.0, episode_len=400, seed=0)
+def stage_observation(episodes, seeds, eval_seeds):
+    """A/B/C: identity, coverage-map summary, pad bearing."""
+    from analysis.ab_observation import main as ab_main
+    sys.argv = ["ab_observation", "--episodes", str(episodes),
+                "--seeds", str(seeds), "--eval-seeds", str(eval_seeds)]
+    return ab_main()
+
+def stage_base(episodes, train_seeds, eval_seeds):
+    cfg = base_config()
+    print("=" * 78)
+    print(f" BASE COMPARISON  N={cfg.N} K={cfg.K} M={cfg.M} "
+          f"episode={cfg.episode_len} steps")
+    print(f" training: {episodes} episodes x {train_seeds} seeds; "
+          f"evaluation: {eval_seeds} seeds")
+    print("=" * 78, flush=True)
+    rows = []
+    for s in range(train_seeds):
+        t0 = time.time()
+        c = base_config(seed=s)
+        agent, hist = train_mappo(c, episodes=episodes, n_steps=c.episode_len,
+                                  seed=s, log_every=max(1, episodes // 5),
+                                  verbose=True)
+        if s == 0:
+            agent.save("mappo_base.pt")
+            with open("hist_base.json", "w", encoding="utf-8") as f:
+                json.dump(hist, f, indent=2)
+        evs = [__import__("uav_wireless.experiments", fromlist=["eval_agent"])
+               .eval_agent(agent, c, steps=c.episode_len, seed=e)
+               for e in range(eval_seeds)]
+        agg = {k: float(np.mean([x[k] for x in evs])) for k in evs[0]}
+        std = {k: float(np.std([x[k] for x in evs])) for k in evs[0]}
+        print(f"  seed {s}: CK={agg['CK']:.3f}±{std['CK']:.3f} "
+              f"AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
+              f"CI={agg['CovIntegral']:.3f} "
+              f"best_ck={max(h['CK'] for h in hist):.3f} "
+              f"({time.time()-t0:.0f}s)", flush=True)
+        rows.append(dict(train_seed=s, **{k: agg[k] for k in
+                                          ("CK", "AG", "SC", "CovIntegral")},
+                         **{f"{k}_std": std[k] for k in ("CK", "AG", "SC")},
+                         best_ck=float(max(h["CK"] for h in hist)),
+                         final_ck=float(hist[-1]["CK"])))
+    out = os.path.join(ANALYSIS, "base_training_seeds.json")
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(rows, f, indent=2)
+    print(f"  saved -> {out}\n", flush=True)
+    return rows
+
+
+def stage_dormancy():
+    """Plasticity probe of the trained actor."""
+    ck = os.path.join(HERE, "mappo_base.pt")
+    if not os.path.exists(ck):
+        print("  no trained policy yet; skipping the plasticity probe")
+        return
+    from analysis.dormancy import probe, summarise
+    cfg = base_config()
+    env = UAVIoTEnv(cfg)
+    agent = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim,
+                   state_dim=env.state_dim)
+    agent.load(ck)
+    batch, _ = collect_rollout(env, agent, n_steps=200)
+    rows = summarise(probe(agent, batch))
+    out = os.path.join(ANALYSIS, "dormancy.json")
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(rows, f, indent=2)
+    for r in rows:
+        print(f"  {r['layer']}: dormant={r['dormant_frac_0.01']:.3f} "
+              f"silent={r['silent_frac_0.01']:.3f} "
+              f"dead={r['dead_frac_0.01']:.3f}")
+    print(f"  saved -> {out}\n")
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--quick", action="store_true",
-                    help="shorter training and fewer evaluation seeds")
+    ap.add_argument("--quick", action="store_true")
+    ap.add_argument("--stage", default="all",
+                    choices=["obs", "base", "abl", "scen", "all"])
     args = ap.parse_args()
 
     quick = args.quick
-    cfg = base_cfg()
-    episodes = 20 if quick else 50
-    n_steps = 400
+    episodes = 6 if quick else 20
+    train_seeds = 2 if quick else 5
     eval_seeds = 2 if quick else 5
+    abl_episodes = 3 if quick else 12
 
     t0 = time.time()
     print("=" * 78)
     print(" UAV-IoT PERSISTENT COVERAGE -- FULL EXPERIMENT MATRIX")
-    print(f" config: N={cfg.N} K={cfg.K} R_cov={cfg.R_cov} "
-          f"episode_len={cfg.episode_len}  episodes={episodes}  "
-          f"eval seeds={eval_seeds}")
-    print("=" * 78 + "\n")
+    c = base_config()
+    print(f" config: N={c.N} K={c.K} R_cov={c.R_cov} M={c.M} "
+          f"episode={c.episode_len} steps  B_max={c.B_max:.0f} J")
+    print(f" episodes={episodes} train_seeds={train_seeds} "
+          f"eval_seeds={eval_seeds}")
+    print("=" * 78 + "\n", flush=True)
 
-    # ---- 1. train the proposed policy --------------------------------
-    print("[1/5] training MAPPO on the feasible configuration ...", flush=True)
-    agent, hist = train_mappo(cfg, episodes=episodes, n_steps=n_steps,
-                               seed=0, log_every=max(1, episodes // 5),
-                               verbose=True)
-    agent.save("mappo_base.pt")
-    import json
-    with open("hist_base.json", "w") as f:
-        json.dump(hist, f)
-    best = max(h["CK"] for h in hist)
-    print(f"      done: {len(hist)} episodes, best CK={best:.3f}, "
-          f"final CK={hist[-1]['CK']:.3f}\n", flush=True)
+    if args.stage in ("obs", "all"):
+        print("[1/4] observation A/B/C ...", flush=True)
+        stage_observation(episodes, 3 if not quick else 2, eval_seeds)
+        print()
 
-    # ---- 2. plasticity probe ----------------------------------------
-    print("[2/5] plasticity probe of the trained actor ...", flush=True)
-    try:
-        from analysis.dormancy import probe, summarise
-        from uav_wireless.train import collect_rollout
-        env = UAVIoTEnv(cfg)
-        batch, _ = collect_rollout(env, agent, n_steps=200)
-        rows = summarise(probe(agent, batch))
-        with open(os.path.join("analysis", "dormancy.json"), "w") as f:
-            json.dump(rows, f, indent=2)
-        for r in rows:
-            print(f"      {r['layer']}: dormant={r['dormant_frac_0.01']:.3f} "
-                  f"silent={r['silent_frac_0.01']:.3f} "
-                  f"dead={r['dead_frac_0.01']:.3f}", flush=True)
-    except Exception as exc:  # pragma: no cover
-        print(f"      skipped: {exc}")
-    print()
+    if args.stage in ("base", "all"):
+        print("[2/4] base comparison ...", flush=True)
+        stage_base(episodes, train_seeds, eval_seeds)
+        stage_dormancy()
+        # the rule baselines on the same scenes
+        from uav_wireless.experiments import run_base_comparison
+        cfg = base_config()
+        agent = MAPPO(n_agents=cfg.N, obs_dim=UAVIoTEnv(cfg).obs_dim,
+                       state_dim=UAVIoTEnv(cfg).state_dim)
+        agent.load("mappo_base.pt")
+        run_base_comparison(cfg, "results_main.csv", eval_seeds=eval_seeds,
+                            train=False, agent=agent)
+        print()
 
-    # ---- 3. base comparison -----------------------------------------
-    print("[3/5] base comparison (baselines vs MAPPO) ...", flush=True)
-    run_base_comparison(cfg, "results_main.csv", eval_seeds=eval_seeds,
-                        train=False, agent=agent)
-    print()
+    if args.stage in ("abl", "all"):
+        print("[3/4] ablations ...", flush=True)
+        cfg = base_config()
+        run_ablation(cfg, "results_ablation.csv", stress=False,
+                     episodes=abl_episodes)
+        print()
+        run_ablation(cfg, "results_ablation_stress.csv", stress=True,
+                     episodes=abl_episodes)
+        print()
 
-    # ---- 4. ablations ------------------------------------------------
-    print("[4/5] ablation on the S8 combined-stress scenario ...", flush=True)
-    run_ablation(cfg, "results_ablation.csv", stress=True)
-    print()
-    print("[4b/5] ablation on the feasible base configuration ...", flush=True)
-    run_ablation(cfg, "results_ablation_feasible.csv", stress=False)
-    print()
-
-    # ---- 5. scenario matrix ------------------------------------------
-    print("[5/5] S1..S8 design matrix ...", flush=True)
-    run_scenarios(cfg, "results_scenarios.csv")
-    print()
+    if args.stage in ("scen", "all"):
+        print("[4/4] scenario matrix ...", flush=True)
+        run_scenarios(base_config(), "results_scenarios.csv",
+                      episodes=abl_episodes)
+        print()
 
     print("=" * 78)
-    print(f" ALL DONE in {time.time() - t0:.0f} s")
+    print(f" DONE in {time.time() - t0:.0f} s")
     print("=" * 78)
     return 0
 

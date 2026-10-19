@@ -657,12 +657,22 @@ Move power & $P_{\mathrm{move}}$ & 75 W \\
 Avionics and comms power & $P_{\mathrm{elec}}$ & 5 W \\
 RF transmit power & $P_{\mathrm{tx}}$ & 0.5 W \\
 Charge increment & -- & 0.0002 battery fraction/step \\
-Episode length & $T$ & 10\,000 steps ($2000$ s) \\
+Episode length & $T$ & 2000 steps (400\,s) \\
+Initial deployment & -- & connected cluster in one corner \\
+Map summary grid & $G$ & $4\times4$ cells \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 The control interval is chosen so that the relative displacement between two consecutive steps, $2 v_{\max}\Delta t = 2$ m, is smaller than the safety distance $d_{\mathrm{safe}} = 5$ m; a coarser step would allow a closing pair to cross the separation constraint between two samples. The charge increment is quoted per step and is therefore scaled with $\Delta t$. The resulting charge time is shorter than a real constant-current pack of this capacity would require, because a real pack would not complete a full charge within a tractable episode; this is stated as a modelling assumption rather than a physical prediction, and it means the cost of charging contention in \eqref{tab:metrics} is a lower bound. The nominal altitude is consistent with the coverage radius: a $74^\circ$ downward sensor at 50 m yields a footprint half-width of 37 m. The two power entries are distinct: $P_{\mathrm{elec}}$ is the total avionics and communications budget, whereas $P_{\mathrm{tx}}$ is the radiated transmit power, which is bounded by the 1 W ceiling of IEEE 802.11 and is two orders of magnitude below the avionics budget. The chosen $v_{\max}=5$~m/s is conservative but not arbitrary: Luna et al.~\cite{luna2022} report a real three-UAV coverage mission flown at 5~m/s cruise and 20~m altitude, and Datsko et al.~\cite{datsko2024} measure the energy-optimal multirotor cruise speed at 8.39~m/s.
+
+\paragraph{The initial deployment and the episode length are experimental choices,
+and they are stated as such.}
+Two parameters of Table~\ref{tab:parameters} deserve an explicit justification, because the results are sensitive to both and a reader should be able to see why they were chosen.
+
+\emph{Initial deployment.} The swarm starts as a connected cluster in one corner of the region, not as a deployed formation. The reason is measurable: a centred ring deployment already covers 17 of the 20 sensors at $t=0$, so every controller --- including one that never moves --- scores $CK=0.850$, the achievable range is roughly $[0.85,1.0]$, and the comparison cannot separate the methods. The clustered deployment is connected at $t=0$, so the connectivity invariant remains checkable from the first step, but it covers only 3 of the 20 sensors, so the controller has to deploy across the field while holding $K=2$ redundancy. This is the standard arrangement for a persistent-coverage benchmark, and the pre-deployed arrangement is retained as scenario S9 so that the sensitivity is reported rather than hidden.
+
+\emph{Episode length.} The episode is 2000 control steps, i.e.\ 400\,s of flight. At the 400-step episodes used in an earlier revision the pack never depleted: the swarm spent at most 13\% of a 600\,s pack, so the return-to-charge transition never fired, the charging arbitration was never entered, the reserve UAV had nothing to recover, and the three mechanisms the paper proposes were never exercised. A sweep over the candidate configurations (\texttt{analysis/energy\_regime.py}) shows that at 2000 steps the energy constraint binds --- 283 return-to-charge transitions and 0.7 stranded UAVs per episode under the Reactive heuristic --- while the mission remains achievable. The report's 10\,000-step target is a different question, and the results here are explicitly 400\,s results.
 
 Within scope are spatial $K$-coverage, range-limited UAV connectivity, battery depletion, charging contention, single-UAV failure recovery, collision avoidance, and decentralized motion-policy execution. The primary model intentionally abstracts stochastic PHY-layer fading, detailed aerodynamic dynamics, obstacles, wind, battery aging, GPS denial, sensor failures, and multiple simultaneous UAV failures. These can be introduced as subsequent stress-test layers after the base control problem is validated.
 

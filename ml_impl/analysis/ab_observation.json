@@ -1,0 +1,83 @@
+[
+  {
+    "arm": "Fixed",
+    "kind": "baseline",
+    "CK": 0.15000000000000022,
+    "CK_std": 0.0,
+    "AG": 1.0,
+    "SC": 0.0,
+    "CovIntegral": 0.8500000000000005
+  },
+  {
+    "arm": "Greedy",
+    "kind": "baseline",
+    "CK": 0.501875,
+    "CK_std": 0.0,
+    "AG": 1.0,
+    "SC": 0.0,
+    "CovIntegral": 0.4981249999999998
+  },
+  {
+    "arm": "Reactive",
+    "kind": "baseline",
+    "CK": 0.5537499999999993,
+    "CK_std": 0.0,
+    "AG": 1.0,
+    "SC": 0.0,
+    "CovIntegral": 0.4462500000000006
+  },
+  {
+    "arm": "A local only",
+    "kind": "learned",
+    "use_agent_id": false,
+    "map_grid": 0,
+    "use_pad_bearing": false,
+    "CK": 0.15000000000000022,
+    "CK_std": 0.0,
+    "AG": 1.0,
+    "SC": 0.0,
+    "CovIntegral": 0.8500000000000005,
+    "distinct_actions": 1.5,
+    "mean_spread_m": 11.549103465720457,
+    "best_ck": 0.19874999999999995,
+    "per_seed_CK": [
+      0.15000000000000022
+    ]
+  },
+  {
+    "arm": "B + identity",
+    "kind": "learned",
+    "use_agent_id": true,
+    "map_grid": 0,
+    "use_pad_bearing": false,
+    "CK": 0.21187499999999995,
+    "CK_std": 0.0,
+    "AG": 1.0,
+    "SC": 0.0,
+    "CovIntegral": 0.7881249999999997,
+    "distinct_actions": 3.15,
+    "mean_spread_m": 6.783844563460294,
+    "best_ck": 0.18375,
+    "per_seed_CK": [
+      0.21187499999999995
+    ]
+  },
+  {
+    "arm": "C + identity + map",
+    "kind": "learned",
+    "use_agent_id": true,
+    "map_grid": 4,
+    "use_pad_bearing": true,
+    "CK": 0.17874999999999977,
+    "CK_std": 0.0,
+    "AG": 1.0,
+    "SC": 0.0,
+    "CovIntegral": 0.8212499999999988,
+    "distinct_actions": 1.4625,
+    "mean_spread_m": 8.190035155531168,
+    "best_ck": 0.15250000000000025,
+    "per_seed_CK": [
+      0.17874999999999977
+    ]
+  }
+]
