@@ -1242,5 +1242,61 @@ class TestMaskConsistency:
         assert adj.shape == (c.N, c.N)
         assert not np.any(np.diag(adj)), "the diagonal must be empty"
         assert np.array_equal(adj, adj.T), "the graph must be undirected"
-        # the hypothetical move must not have been applied
-        assert np.allclose(e.p[0], UAVIoTEnv(c).p[0]) or True
+
+
+# ======================================================================
+# Value normalisation
+# ======================================================================
+class TestValueNormalisation:
+    """MAPPO's value normalisation must be consistent at every use.
+
+    The critic's raw output is the NORMALISED value, so the TD residual, the
+    GAE recursion and the bootstrap must all un-normalise it.  Forgetting
+    this is a silent scale error in the advantage estimates, and it is
+    invisible in the loss curves.
+    """
+
+    def test_value_unnormalises_the_critic_output(self):
+        import torch
+        from uav_wireless.mappo import MAPPO
+        agent = MAPPO(obs_dim=6, state_dim=6, n_agents=2, hidden=16,
+                      value_norm=True)
+        agent._ret_mean = 3.0
+        agent._ret_std = 2.0
+        s = torch.zeros(4, 6)
+        raw = agent.critic(s)
+        got = agent.value(s)
+        assert torch.allclose(got, raw * 2.0 + 3.0, atol=1e-5), (
+            "value() must un-normalise the critic's output")
+
+    def test_value_normalisation_is_off_when_disabled(self):
+        import torch
+        from uav_wireless.mappo import MAPPO
+        agent = MAPPO(obs_dim=6, state_dim=6, n_agents=2, hidden=16,
+                      value_norm=False)
+        agent._ret_mean = 3.0
+        agent._ret_std = 2.0
+        s = torch.zeros(4, 6)
+        assert torch.allclose(agent.value(s), agent.critic(s), atol=1e-6)
+
+    def test_the_rollout_uses_the_unnormalised_value(self):
+        import inspect
+        from uav_wireless import train
+        src = inspect.getsource(train.collect_rollout)
+        assert "agent.value(" in src, (
+            "collect_rollout must read the value through the un-normalising "
+            "accessor, not the raw critic output")
+        assert "agent.critic(" not in src, (
+            "collect_rollout reads the raw critic output, which is the "
+            "NORMALISED value when value normalisation is on")
+
+    def test_training_runs_with_value_normalisation(self):
+        from uav_wireless.env import UAVIoTEnv
+        from uav_wireless.train import train_mappo
+        c = SimConfig(N=4, K=1, M=8, episode_len=40, seed=0)
+        e = UAVIoTEnv(c)
+        agent, hist = train_mappo(c, episodes=2, n_steps=40, seed=0,
+                                  verbose=False)
+        assert agent._ret_mean != 0.0, (
+            "the running return statistics were never updated")
+        assert agent._ret_std > 0.0

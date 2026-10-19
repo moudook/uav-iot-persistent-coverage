@@ -67,7 +67,7 @@ def collect_rollout(env, agent, n_steps, deterministic=False):
 
         import torch
         with torch.no_grad():
-            v = agent.critic(torch.as_tensor(state, dtype=torch.float32, device=agent.device)).cpu().numpy()
+            v = agent.value(torch.as_tensor(state, dtype=torch.float32, device=agent.device)).cpu().numpy()
         v = np.full(n, float(v))                   # team value broadcast
 
         B["obs"][t] = obs
@@ -105,7 +105,7 @@ def collect_rollout(env, agent, n_steps, deterministic=False):
     if truncated and agent is not None and terminal_state is not None:
         import torch
         with torch.no_grad():
-            v_boot = agent.critic(
+            v_boot = agent.value(
                 torch.as_tensor(terminal_state, dtype=torch.float32, device=agent.device)
             ).cpu().numpy()
         bootstrap_val = np.full(n, float(v_boot))
@@ -154,11 +154,13 @@ def agent_obs_dim(agent):
 # Training
 # ----------------------------------------------------------------------
 def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
-               verbose=True, per_agent_adv_norm=False, ent_coef=0.01):
+               verbose=True, per_agent_adv_norm=False, ent_coef=0.01,
+               value_norm=True):
     torch.manual_seed(seed)
     env = UAVIoTEnv(cfg)
     agent = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim, state_dim=env.state_dim,
-                  per_agent_adv_norm=per_agent_adv_norm, ent_coef=ent_coef)
+                  per_agent_adv_norm=per_agent_adv_norm, ent_coef=ent_coef,
+                  value_norm=value_norm)
     hist = []
     for ep in range(episodes):
         B, summ = collect_rollout(env, agent, n_steps)

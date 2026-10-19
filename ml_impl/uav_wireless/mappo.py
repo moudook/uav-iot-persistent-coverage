@@ -63,6 +63,7 @@ class MAPPO:
         vf_coef=0.5,
         max_grad_norm=0.5,
         per_agent_adv_norm=False,
+        value_norm=True,
         device="cpu",
     ):
         # Dimensions are configuration-dependent (they scale with N, M and
@@ -93,6 +94,13 @@ class MAPPO:
         # estimation, Kim et al., AAMAS 2026, addresses the same problem for
         # the multi-agent case.)
         self.per_agent_adv_norm = per_agent_adv_norm
+        # MAPPO's value normalisation.  The critic predicts the returns in a
+        # normalised space defined by running statistics of the return
+        # distribution; the value is un-normalised at every point of use.
+        self.value_norm = value_norm
+        self.ret_ema_beta = 0.99
+        self._ret_mean = 0.0
+        self._ret_std = 1.0
 
     # ------------------------------------------------------------------
     def masked_logits(self, obs, mask):
@@ -117,6 +125,20 @@ class MAPPO:
         return a.cpu().numpy()
 
     # ------------------------------------------------------------------
+    def value(self, states):
+        """The value of a batch of global states, in the ORIGINAL reward scale.
+
+        With value normalisation the critic's raw output is the NORMALISED
+        value, so every place that uses V(s) -- the TD residual, the GAE
+        recursion and the bootstrap at a truncation boundary -- must
+        un-normalise it first.  Forgetting this is the classic way to
+        introduce a silent scale error into the advantage estimates.
+        """
+        v = self.critic(states)
+        if self.value_norm:
+            v = v * self._ret_std + self._ret_mean
+        return v
+
     def update(self, batch):
         obs = torch.as_tensor(batch["obs"], dtype=torch.float32, device=self.device)
         mask = torch.as_tensor(batch["mask"], dtype=torch.bool, device=self.device)
@@ -161,7 +183,27 @@ class MAPPO:
 
         # ---- critic loss (29) --------------------------------------
         new_val = self.critic(states_c)
-        critic_loss = ((new_val - ret_c) ** 2).mean()
+        if self.value_norm:
+            # MAPPO's value normalisation.  The critic is trained to predict
+            # the RETURNS in a normalised space, using running statistics of
+            # the return distribution; the value is un-normalised wherever it
+            # is used (the TD residual, the GAE recursion and the
+            # bootstrap).  Without it the critic has to fit a target whose
+            # absolute scale drifts with the reward balance, which is one of
+            # the components the MAPPO paper identifies as load-bearing.
+            with torch.no_grad():
+                b = self.ret_ema_beta
+                self._ret_mean = (1 - b) * self._ret_mean + b * float(ret_c.mean())
+                self._ret_std = (1 - b) * self._ret_std + b * float(ret_c.std())
+            target_c = (ret_c - self._ret_mean) / (self._ret_std + 1e-8)
+            critic_loss = ((new_val - target_c) ** 2).mean()
+            # The value-clipping auxiliary term compares the new prediction
+            # with the old one, so both must live in the SAME space.  The
+            # recorded old value is in the original scale, so it has to be
+            # normalised before the comparison.
+            old_val_c = (old_val_c - self._ret_mean) / (self._ret_std + 1e-8)
+        else:
+            critic_loss = ((new_val - ret_c) ** 2).mean()
         adv_l2 = ((new_val - old_val_c) ** 2).mean()
 
         loss = actor_loss + self.ent_coef * ent + self.vf_coef * critic_loss + 0.01 * adv_l2
@@ -181,7 +223,9 @@ class MAPPO:
 
     def save(self, path):
         torch.save(
-            dict(actor=self.actor.state_dict(), critic=self.critic.state_dict()),
+            dict(actor=self.actor.state_dict(), critic=self.critic.state_dict(),
+                 value_norm=self.value_norm,
+                 ret_mean=self._ret_mean, ret_std=self._ret_std),
             path,
         )
 
@@ -189,3 +233,6 @@ class MAPPO:
         d = torch.load(path, map_location=self.device)
         self.actor.load_state_dict(d["actor"])
         self.critic.load_state_dict(d["critic"])
+        if "ret_mean" in d:
+            self._ret_mean = float(d["ret_mean"])
+            self._ret_std = float(d["ret_std"])
