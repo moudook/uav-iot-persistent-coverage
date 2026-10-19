@@ -1245,6 +1245,77 @@ class TestMaskConsistency:
 
 
 # ======================================================================
+# Joint connectivity projection
+# ======================================================================
+class TestJointProjection:
+    """A set of individually admissible moves can jointly disconnect the swarm.
+
+    The per-agent feasibility mask is evaluated against the pre-move state
+    and every agent moves at the same time, so two UAVs can each step away
+    from a third in a way that is admissible for both and fatal for the
+    third.  The joint configuration must therefore be projected back onto
+    the connected set.
+    """
+
+    def test_the_projection_keeps_the_swarm_connected(self):
+        """With the projection on, the post-move graph must be connected."""
+        import numpy as np
+        from uav_wireless.env import A_NX, A_PX, A_HOVER
+        c = SimConfig(N=6, K=1, M=10, episode_len=50, seed=0, R_comm=25.0,
+                      use_joint_projection=True)
+        e = UAVIoTEnv(c)
+        e.reset()
+        # place the swarm in a line, so that stepping apart disconnects it
+        e.p[:] = np.array([[10.0, 0.0], [12.0, 0.0], [14.0, 0.0],
+                            [16.0, 0.0], [18.0, 0.0], [20.0, 0.0]])
+        acts = np.array([A_NX] * 3 + [A_PX] * 3)
+        for _ in range(30):
+            e.step(acts)
+            act, adj, _ = e.comm_graph()
+            assert e.is_connected(adj), (
+                "the joint projection failed to keep the swarm connected")
+
+    def test_the_projection_can_be_switched_off(self):
+        """The ablation switch must actually change the behaviour."""
+        from uav_wireless.env import A_NX, A_PX
+        import numpy as np
+        c = SimConfig(N=6, K=1, M=10, episode_len=50, seed=0, R_comm=25.0,
+                      use_joint_projection=False)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.p[:] = np.array([[10.0, 0.0], [12.0, 0.0], [14.0, 0.0],
+                            [16.0, 0.0], [18.0, 0.0], [20.0, 0.0]])
+        acts = np.array([A_NX] * 3 + [A_PX] * 3)
+        for _ in range(30):
+            e.step(acts)
+        assert e.projection_revisions == 0, (
+            "the projection fired although it is switched off")
+
+    def test_revisions_are_counted(self):
+        from uav_wireless.env import A_NX, A_PX
+        import numpy as np
+        c = SimConfig(N=6, K=1, M=10, episode_len=50, seed=0, R_comm=25.0,
+                      use_joint_projection=True)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.p[:] = np.array([[10.0, 0.0], [12.0, 0.0], [14.0, 0.0],
+                            [16.0, 0.0], [18.0, 0.0], [20.0, 0.0]])
+        acts = np.array([A_NX] * 3 + [A_PX] * 3)
+        for _ in range(30):
+            e.step(acts)
+        assert e.projection_revisions > 0, (
+            "the projection never fired on a configuration designed to "
+            "disconnect the swarm")
+
+    def test_the_summary_reports_the_projection(self):
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.step(np.zeros(c.N, dtype=np.int64))
+        assert "ProjectionRevisions" in e.summary()
+
+
+# ======================================================================
 # Value normalisation
 # ======================================================================
 class TestValueNormalisation:

@@ -68,11 +68,24 @@ class SimConfig:
     lam_W: float = 0.05           # unnecessary movement
     lam_R: float = 0.30           # recovery delay
     lam_C: float = 0.50           # articulation-point criticality
+    # Energy-threshold violation: the mean fractional shortfall below the
+    # return threshold.  Without it the controller learns to keep covering
+    # and never turns back in time: measured on the corrected simulator, the
+    # learned policy stranded all 8 UAVs per episode while a rule-based
+    # heuristic stranded 0.7, because the consumption term is two orders of
+    # magnitude too small to price the consequence of an empty pack.
+    lam_B: float = 0.0
     # ablations (Table VIII / vanilla MAPPO)
     use_connectivity_term: bool = True
     use_reserve: bool = True
     use_charging_arbitration: bool = True
     use_action_mask: bool = True
+    # Joint connectivity projection.  The per-agent mask is evaluated against
+    # the pre-move state and the agents move simultaneously, so individually
+    # admissible moves can jointly disconnect the swarm.  With the
+    # projection off, the learned policy deploys (coverage 0.898) and the
+    # swarm is disconnected 39% of the time.
+    use_joint_projection: bool = True
     mask_horizon: int = 3         # H-step connectivity lookahead in the mask
     # Initial deployment.  False: a centred ring that already covers most of
     # the field (little headroom).  True: a connected cluster in one corner
@@ -202,6 +215,7 @@ class UAVIoTEnv:
         self.return_events = 0      # serve -> return transitions
         self.stranded = 0           # UAVs that ran out of energy away from a pad
         self.reserve_activations = 0
+        self.projection_revisions = 0   # moves reverted by the joint projection
 
         self.ep = self.metrics()
         self._under_streak = 0
@@ -525,6 +539,40 @@ class UAVIoTEnv:
         self.p[i] = saved
         return adj
 
+    def _project_connected(self, old_p, moved):
+        """Revert the fewest moves needed to keep the swarm connected.
+
+        The per-agent feasibility mask is evaluated against the pre-move
+        state, and all the agents move simultaneously, so a set of
+        individually admissible moves can jointly disconnect the swarm.  The
+        joint configuration is therefore projected back onto the connected
+        set: the first single reversion that restores connectivity is
+        applied, and if no single reversion does, every mover is held.
+
+        Returns the number of moves that were reverted, which is reported
+        as a metric so that the cost of the projection is visible.
+        """
+        act, adj, _ = self.comm_graph()
+        if self.is_connected(adj):
+            return 0
+        for i in moved:
+            cur = self.p[i].copy()
+            self.p[i] = old_p[i]
+            _, adj2, _ = self.comm_graph()
+            if self.is_connected(adj2):
+                self.v[i] = np.zeros(2)      # it is holding position
+                return 1
+            self.p[i] = cur
+        # No single reversion restores connectivity.  Hold every mover: the
+        # swarm stays together, which is the invariant the paper claims.
+        n = 0
+        for i in moved:
+            if not np.allclose(self.p[i], old_p[i]):
+                self.p[i] = old_p[i]
+                self.v[i] = np.zeros(2)
+                n += 1
+        return n
+
     def _h_step_safe(self, i, p_new, horizon=3, adj=None):
         """Reject a move that leaves the swarm unable to stay connected.
 
@@ -752,6 +800,7 @@ class UAVIoTEnv:
         # pre-move state, so that the swarm moves simultaneously and the
         # mask is not recomputed per action.
         masks = [self.action_mask(i) for i in range(c.N)]
+        old_p = self.p.copy()
         for i in self._active_idx():
             a = int(actions[i])
             if a in (A_PX, A_NX, A_PY, A_NY):
@@ -776,6 +825,24 @@ class UAVIoTEnv:
                 self.p[i] = p_new
             elif a in (A_PX, A_NX, A_PY, A_NY):
                 pass    # masked movement -> hold position (mask made this infeasible)
+
+        # --- 1b. joint connectivity projection ------------------------
+        # The per-agent mask checks each candidate move against the PRE-move
+        # state, but all the agents move at the same time, so a set of
+        # individually admissible moves can jointly disconnect the swarm: two
+        # UAVs can each step away from a third in a way that is admissible
+        # for both and fatal for the third.  Measured on the corrected
+        # simulator, this is exactly what happened: the learned policy
+        # learned to deploy (coverage 0.898) and the swarm was disconnected
+        # 39% of the time, because the per-agent mask could not see the
+        # joint move.  The joint configuration is therefore projected back
+        # onto the connected set.
+        if c.use_joint_projection:
+            moved = [i for i in self._active_idx()
+                     if not np.allclose(self.p[i], old_p[i])]
+            if moved:
+                self.projection_revisions += self._project_connected(old_p,
+                                                                     moved)
 
         # --- 2. failure injection --------------------------------------
         if self.failure_t >= 0 and self.t == self.failure_t:
@@ -916,11 +983,25 @@ class UAVIoTEnv:
         crit = float(self.articulation_points(adj).mean()) if len(adj) else 1.0
         R_rec = rec_delay
 
+        # B_t: the mean fractional shortfall below the return threshold.
+        # A UAV that is below its return threshold cannot get home, and the
+        # consequence of that arrives late, so the consumption term alone
+        # cannot teach the controller to turn back in time.  The feature is
+        # the one the observation already carries as the return urgency.
+        act_now = self._active_idx()
+        if len(act_now):
+            shortfalls = [max(0.0, self.return_threshold(i) - self.E[i])
+                          / max(self.cfg.B_max, 1.0) for i in act_now]
+            B_t = float(np.mean(shortfalls))
+        else:
+            B_t = 0.0
+
         # Terms are exposed so eq. (23) can be checked as an equation rather
         # than by inspecting its side effects. See tests/test_physics_and_env.py
         # ::TestRewardEquation and tests/mutation_check.py.
         self.last_cost = dict(
             U_t=U_t, E_t=E_cons, D_t=D_t, W_t=W_t, R_t=R_rec, Crit_t=crit,
+            B_t=B_t,
         )
         r = self.reward_from_terms(self.last_cost)
 
@@ -965,6 +1046,16 @@ class UAVIoTEnv:
         )
         if c.use_connectivity_term:
             cost += c.lam_C * terms["Crit_t"]
+        if c.lam_B:
+            # Energy-threshold violation.  The energy term prices what is
+            # CONSUMED, which is tiny compared with the cost of a UAV that
+            # runs out of power away from a pad: a UAV that cannot get home
+            # leaves the swarm, stops covering and may fragment the graph,
+            # and all of that arrives LATE, so a consumption term alone
+            # cannot teach the controller to turn back in time.  This term
+            # is the shortfall below the return threshold, which the
+            # observation already carries as the return-urgency feature.
+            cost += c.lam_B * terms["B_t"]
         return -float(cost)
 
     # ------------------------------------------------------------------
@@ -988,6 +1079,7 @@ class UAVIoTEnv:
         m["reserve_activations"] = self.reserve_used
         m["return_events"] = self.return_events
         m["stranded"] = self.stranded
+        m["projection_revisions"] = self.projection_revisions
         # fraction of the swarm currently in the return-to-charge state
         m["returning"] += float(np.mean(self.mode[self._active_idx()] == 1)) \
             if len(self._active_idx()) else 0.0
@@ -1005,6 +1097,7 @@ class UAVIoTEnv:
             service_cont=0.0, crit=0.0, energy=0.0, distance=0.0,
             min_batt=float("inf"), steps=0, denied=0, reserve_activations=0,
             return_events=0, stranded=0, returning=0.0,
+            projection_revisions=0,
             # Non-degenerate metrics (Deep Research recommendation):
             # time-averaged coverage deficit and worst-case refresh streak.
             cov_integral=0.0, max_under_streak=0,
@@ -1029,6 +1122,7 @@ class UAVIoTEnv:
             ReturnEvents=self.ep["return_events"],
             Stranded=self.ep["stranded"],
             Returning=self.ep["returning"] / s,
+            ProjectionRevisions=self.ep["projection_revisions"],
             # Non-degenerate metrics (Deep Research recommendation):
             # CovIntegral = time-averaged coverage deficit (0 = perfect coverage)
             # MaxRefresh  = longest run of steps with any under-covered sensor
