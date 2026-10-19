@@ -756,3 +756,66 @@ class TestMetrics:
             e.step(np.zeros(c.N, dtype=np.int64))
         s = e.summary()
         assert s["CovIntegral"] < 1e-9, f"expected ~0, got {s['CovIntegral']}"
+
+
+# ======================================================================
+# Dormancy / plasticity probe (analysis/dormancy.py)
+# ======================================================================
+class TestDormancyProbe:
+    """The probe must be able to DETECT dormancy, not just report zero.
+
+    A diagnostic that cannot fail is decoration. These tests deliberately
+    kill neurons and assert that the probe notices.
+    """
+
+    @staticmethod
+    def _tiny_batch(n_steps=6, n_agents=3, obs_dim=8):
+        rng = np.random.default_rng(0)
+        return dict(
+            obs=rng.normal(size=(n_steps, n_agents, obs_dim)).astype(np.float32),
+            mask=np.ones((n_steps, n_agents, N_ACTIONS), bool),
+            acts=rng.integers(0, N_ACTIONS, size=(n_steps, n_agents)),
+            logp=rng.normal(size=(n_steps, n_agents)).astype(np.float32) * 0.1,
+            adv=rng.normal(size=(n_steps, n_agents)).astype(np.float32),
+        )
+
+    def test_probe_runs_and_reports_both_directions(self):
+        import torch
+        from analysis.dormancy import probe, summarise
+        agent = MAPPO(obs_dim=8, state_dim=8, n_agents=3, hidden=16)
+        stats = probe(agent, self._tiny_batch())
+        rows = summarise(stats)
+        assert len(rows) >= 1, "no layers probed"
+        for r in rows:
+            for key in ("dormant_frac_0.01", "silent_frac_0.01",
+                        "dead_frac_0.01"):
+                assert key in r, f"missing {key}"
+                assert 0.0 <= r[key] <= 1.0
+
+    def test_probe_detects_killed_neurons(self):
+        """Zeroing a neuron's incoming weights must make it dormant."""
+        import torch
+        from analysis.dormancy import probe, summarise
+        agent = MAPPO(obs_dim=8, state_dim=8, n_agents=3, hidden=16)
+        # kill the first 8 neurons of the first hidden layer
+        with torch.no_grad():
+            agent.actor.net[0].weight[:8] = 0.0
+            agent.actor.net[0].bias[:8] = 0.0
+        stats = probe(agent, self._tiny_batch())
+        rows = summarise(stats)
+        first = rows[0]
+        assert first["dormant_frac_0.01"] > 0.25, (
+            f"probe failed to detect 8 killed neurons out of 16 "
+            f"(dormant_frac={first['dormant_frac_0.01']})")
+
+    def test_probe_reports_healthy_network_as_alive(self):
+        """A freshly initialised network must not look dead."""
+        from analysis.dormancy import probe, summarise
+        agent = MAPPO(obs_dim=8, state_dim=8, n_agents=3, hidden=16)
+        stats = probe(agent, self._tiny_batch())
+        rows = summarise(stats)
+        for r in rows:
+            assert r["dormant_frac_0.01"] < 0.25, (
+                f"healthy network reported {r['dormant_frac_0.01']:.3f} dormant")
+            assert r["dead_frac_0.01"] < 0.25, (
+                f"healthy network reported {r['dead_frac_0.01']:.3f} dead")

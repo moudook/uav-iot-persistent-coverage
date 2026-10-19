@@ -180,6 +180,7 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv"):
     retrained per scenario.
     """
     import csv
+    import copy
     agent, _ = train_mappo(base, episodes=60, n_steps=300, seed=0, verbose=False)
     rows = []
     print("\n=== Scenarios (MAPPO vs Reactive) ===")

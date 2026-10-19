@@ -106,7 +106,6 @@ The survey is restricted to work that is directly related to at least one of fou
 \begin{tabularx}{\textwidth}{@{}L{0.5cm}L{2.5cm}L{1.9cm}L{4.6cm}L{4.0cm}Y@{}}
 \toprule
 Ref. & Problem addressed & Method & Key findings / contribution & Limitation relative to this work & Relevance \\
-\midrule
 \cite{liu2018} & Energy-efficient and fair UAV communication coverage. & DRL-based UAV control. & Jointly considers coverage, fairness, connectivity, and energy efficiency. & Does not model explicit UAV-failure recovery, charging-pad contention, or a persistent $K$-coverage SLA. & Baseline for coverage--connectivity--energy trade-offs. \\
 \cite{qiu2019} & Multi-aerial-base-station placement with irregular 3D coverage. & Prioritized-replay DDQN and two-level placement. & Uses a spatial representation to improve multi-ABS placement under terrain/blockage effects. & Primarily a placement problem; no persistent battery lifecycle or swarm fault recovery. & Motivates learning-based spatial control and size-invariant state representations. \\
 \cite{omoniwa2022} & Energy-efficiency optimization for multiple UAVs serving static/mobile users. & Cooperative MAD-DDQN. & Jointly optimizes 3D trajectories and user service while accounting for interference. & Energy efficiency is central; persistent $K$-coverage, charging coordination, and failure recovery are not jointly modelled. & Strong value-based MARL benchmark. \\
@@ -117,22 +116,49 @@ Ref. & Problem addressed & Method & Key findings / contribution & Limitation rel
 \cite{trotta2018} & Joint coverage, connectivity, and charging for distributed UAV networks. & Centralised optimal positioning + distributed game-theoretic scheduling + bio-inspired positioning. & Couples coverage, connectivity, and charging with rigorous performance bounds. & No failure model, no reserve UAV, no $K$-multiplicity, no learned policy. & Closest prior work on the joint problem; cited to delimit the gap. \\
 \cite{jiang2024} & Fault-tolerant multi-UAV exploration with changing UAV health. & Fault-tolerant MARL with temporal information and health/topology inputs. & Allows UAV health degradation and faults during the mission and learns cooperative recovery behavior. & Exploration is the task; persistent sensor $K$-coverage and charging-pad contention are outside the main formulation. & Closest fault-aware MARL direction. \\
 \cite{khan2025} & Robust UAV wireless coverage using multi-agent deep RL. & Centralized and decentralized deep Q-learning variants with a shared network. & Studies decentralized autonomous UAV coverage and compares centralized and decentralized control. & Focuses on coverage rather than explicit persistent redundancy, graph fault tolerance, and charging. & Recent decentralized coverage-learning benchmark. \\
-\cite{mei2026} & Energy-aware persistent multi-UAV coverage with outage history. & POGS-QMIX with priority/outage guidance and return-energy masking. & Explicitly combines persistent coverage, outage memory, battery limits, and periodic recharging. & Uses a centralized online coordination layer and does not directly target articulation-point preservation plus reserve-UAV failure recovery in the same formulation. & Recent persistent-coverage benchmark and a key comparison model. \\
-\cite{scherer2016} & Persistent multi-UAV surveillance under energy and communication constraints. & Multi-robot surveillance with energy and communication constraints. & Couples persistent surveillance, finite energy and communication limits in one multi-UAV problem. & No failure-triggered reserve-UAV recovery and no decentralised learned policy. & Near-miss on (i)+(ii)+(iii). \\
-\cite{hartuv2018} & Sizing a spare-drone fleet under energy constraints. & Combinatorial scheduling of spare drones. & Sizes a reserve fleet for persistent task performance under energy limits. & No coverage multiplicity and no connectivity criticality. & Near-miss on (iii)+(iv). \\
-\cite{shi2025} & Decentralized UAV swarm communication coverage. & Symmetry-informed MARL with parameter sharing. & Closest published competitor; benchmarks against \cite{liu2018} and \cite{yu2022}. & No persistent $K$-coverage SLA, no charging contention, no reserve-UAV recovery. & Near-miss on (i)+(ii)+(v). \\
 \bottomrule
 \end{tabularx}
 \end{table*}
 
+
+\begin{table*}[t]
+\caption{Near-misses: works that combine two or more of the elements the proposed framework targets. Each is the paper a reader is most likely to raise, together with what it lacks.}
+\label{tab:nearmiss}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}L{0.5cm}L{2.5cm}L{1.9cm}L{4.6cm}L{4.0cm}Y@{}}
+\toprule
+Ref. & Problem addressed & Method & Key findings / contribution & Limitation relative to this work & Relevance \\
+\cite{mei2026} & Energy-aware persistent multi-UAV coverage with outage history. & POGS-QMIX with priority/outage guidance and return-energy masking. & Explicitly combines persistent coverage, outage memory, battery limits, and periodic recharging. & Uses a centralized online coordination layer and does not directly target articulation-point preservation plus reserve-UAV failure recovery in the same formulation. & Recent persistent-coverage benchmark and a key comparison model. \\
+\cite{scherer2016} & Persistent multi-UAV surveillance under energy and communication constraints. & Multi-robot surveillance with energy and communication constraints. & Couples persistent surveillance, finite energy and communication limits in one multi-UAV problem. & No failure-triggered reserve-UAV recovery and no decentralised learned policy. & Near-miss on (i)+(ii)+(iii). \\
+\cite{hartuv2018} & Sizing a spare-drone fleet under energy constraints. & Combinatorial scheduling of spare drones. & Sizes a reserve fleet for persistent task performance under energy limits. & No coverage multiplicity and no connectivity criticality. & Near-miss on (iii)+(iv). \\
+\cite{shi2025} & Decentralized UAV swarm communication coverage. & Symmetry-informed MARL with parameter sharing. & Closest published competitor; benchmarks against \cite{liu2018} and \cite{yu2022}. & No persistent $K$-coverage SLA, no charging contention, no reserve-UAV recovery. & Near-miss on (i)+(ii)+(v). \\
+\cite{song2024} & K-coverage lifetime with recharging in IoT. & MILP benchmark evaluated with MPC and MCTS. & Reports MPC and MCTS at 81.0\% and 67.1\% of the MILP optimum, i.e.\ against an achievability reference. & The reference is an optimisation benchmark for a finite instance, not a geometric certificate valid for arbitrary policies. & Near-miss: achievability reference already used in K-coverage. \\
+\cite{fan2026} & Decentralized cooperative UAV deployment. & Communication-aware MARL compared against a MILP upper bound. & Reports 74\% coverage against an offline MILP bound, i.e.\ with an achievability reference. & The bound is an optimisation benchmark, not a geometric $K$-coverage certificate; no $K$-multiplicity. & Near-miss: achievability reference already used. \\
+\cite{datta2025} & Ground coverage under positional uncertainty. & Exact radius of robust feasibility. & A rigorous geometric feasibility construct for aerial sensor coverage, embedded as a constraint. & No reinforcement-learning policy is evaluated against it. & Near-miss on feasibility bounds alone. \\
+\cite{viana2026} & Offline RL for UAV relaying. & Candidate-set feasibility upper bound (CS-FUB). & Explicitly separates feasibility limits from control-induced sub-optimality in a learned policy. & UAV relaying, not persistent $K$-coverage; the bound is over a restricted candidate set. & Near-miss: feasibility bound used to evaluate RL. \\
+\cite{ceilings2026} & Drone-mesh interception. & Closed-form feasibility ceilings computed before learning. & Argues that coverage ceilings ``should be computed before any learning experiment and quoted alongside every result''. & Drone-mesh interception, not persistent $K$-coverage in IoT; no redundancy, no charging, no failure recovery. & Closest prior work on the evaluation philosophy. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+
 A further recent line of work integrates communication and control directly within MARL. MAPPO itself is adopted from Yu et al. \cite{yu2022}. Sun et al. formulate joint resource allocation and 3D trajectory control and use action masking for constrained hybrid actions \cite{sun2025}. Carvalho and Aguiar address decentralized multi-agent coverage path planning with parameter sharing, CTDE, safety filtering, and zero-shot generalization \cite{carvalho2026}. Zhuang Chen et al. formulate UAV trajectory design for emergency communication as a constrained MDP and explicitly account for energy and turning behavior \cite{zhuang2025}. These works reinforce the practicality of CTDE, action masking, and structured rewards, but their primary objectives differ from persistent redundant coverage with explicit failure recovery.
 
 \subsection{Research Gap}
-The literature can be grouped into complementary but incomplete directions. Energy-efficient coverage works jointly address coverage and energy, and some include connectivity, but they generally do not treat UAV failure and limited charging infrastructure as first-class elements of the same control problem \cite{liu2018,omoniwa2022}. Connectivity research provides decentralized graph conditions and topology-repair mechanisms, but does not integrate persistent sensor coverage and energy-aware learning \cite{zareh2016,basu2004}. Persistent-service studies explicitly model recharge schedules and energy limitations, yet typically assume fixed service locations and a planned fleet or replacement process rather than autonomous failure-driven reconfiguration \cite{mathew2015,arribas2023}. Recent fault-tolerant MARL and persistent-coverage MARL move closer to the target setting, but address different combinations of health state, outage memory, target assignment, or coverage objectives \cite{jiang2024,mei2026}.
+The literature can be grouped into complementary but incomplete directions, and Table~\ref{tab:survey} lists the focused survey while Table~\ref{tab:nearmiss} lists the near-misses --- the works that already combine two or more of the elements this paper targets, and the works a reader is most likely to raise when judging the novelty claim. Energy-efficient coverage works jointly address coverage and energy, and some include connectivity, but they generally do not treat UAV failure and limited charging infrastructure as first-class elements of the same control problem \cite{liu2018,omoniwa2022}. Connectivity research provides decentralized graph conditions and topology-repair mechanisms, but does not integrate persistent sensor coverage and energy-aware learning \cite{zareh2016,basu2004}. Persistent-service studies explicitly model recharge schedules and energy limitations, yet typically assume fixed service locations and a planned fleet or replacement process rather than autonomous failure-driven reconfiguration \cite{mathew2015,arribas2023}. Recent fault-tolerant MARL and persistent-coverage MARL move closer to the target setting, but address different combinations of health state, outage memory, target assignment, or coverage objectives \cite{jiang2024,mei2026}.
 
 Each of the five elements (i)--(v) has been studied in combination with one or two others, and the near-misses are named explicitly so that the claim can be checked. Trotta et al.~\cite{trotta2018} couple coverage, connectivity and charging with rigorous performance bounds, but have no failure model, no reserve UAV, no $K$-multiplicity and no learned policy. Scherer and Rinner~\cite{scherer2016} couple persistent surveillance, energy and communication constraints, but not fleet-level failure recovery or decentralised execution. Hartuv et al.~\cite{hartuv2018} size a spare-drone fleet under energy constraints, without coverage multiplicity or connectivity criticality. Shi et al.~\cite{shi2025} provide the closest published competitor, a symmetry-informed decentralised swarm controller for communication coverage, without a persistent $K$-coverage SLA, charging contention, or reserve-UAV recovery. Qiu et al.~\cite{qiu2020} optimise aerial base-station placement, which is a placement problem rather than a persistent-control problem, and Liu et al.~\cite{liu2018} provide the energy-efficient coverage baseline that the others build on.
 
 We are therefore not aware of work coupling all five elements, and specifically not of any doing so with a learned decentralised policy executed under centralized training with decentralized execution (CTDE). This is a survey-derived gap statement over the works listed in Table~\ref{tab:survey} and the near-misses discussed above, not a claim that no related component has ever appeared in the broader literature. Two of the near-misses --- \cite{trotta2018} and \cite{shi2025} --- post-date or parallel the works most often cited for the individual elements, and are the two a reader is most likely to raise.
+
+\paragraph{The closest prior work, and how this paper differs from it.}
+The evaluation philosophy proposed here is not unprecedented in the wider literature, and we state the difference precisely rather than claiming a first. Four lines of work are adjacent. \cite{song2024} and \cite{fan2026} already evaluate learned or heuristic controllers against an achievability reference, but the reference is a MILP optimum for a particular finite instance; it certifies nothing about an arbitrary deployment geometry, and it cannot be computed without solving the instance. \cite{datta2025} derives a rigorous geometric feasibility construct, and \cite{viana2026} uses a feasibility upper bound to separate feasibility limits from control-induced sub-optimality in a learned policy; both concern a single coverage requirement, neither concerns $K$-redundancy, and neither is combined with a persistent, energy-constrained, failure-recovering control problem. Most closely, \cite{ceilings2026} argues explicitly that coverage ceilings should be computed before any learning experiment and quoted alongside every result, and evaluates PPO against them --- but for drone-mesh interception, where the quantity being bounded is interception coverage rather than $K$-redundant persistent coverage of a fixed sensor set, and where the bound is closed-form per configuration rather than a covering bound that scales with $N$ and $K$. The distinction claimed here is therefore not ``nobody has ever used a bound''. It is that the bound used must certify the thing being claimed: a covering-theoretic lower bound on $N$ for $K$-redundant coverage of a bounded region, an achievability ceiling computed for the same geometry and the same redundancy requirement, and a metric that stays non-degenerate when the bound says the instance is infeasible. That is what the framework of Section~\ref{sec:feasibility} supplies, and the three elements are used together rather than one at a time.
 
 \section{System Model}
 \label{sec:system}
@@ -688,6 +714,7 @@ and the generalized advantage estimate (GAE) is
 \widehat A_t=\sum_{l=0}^{T-t-1}(\gamma\lambda)^l\delta_{t+l}.
 \label{eq:gae}
 \end{equation}
+A fixed-length rollout ends either in a genuine terminal state or in a time-limit truncation, and the two must not be conflated. At a truncation boundary the last state is not absorbing, so the advantage recursion must cut without treating the state as terminal; the correct treatment is to bootstrap the temporal-difference residual from $V(\mathbf s_{T})$ rather than from zero~\cite{pardo2018}. Conflating the two injects a systematic downward bias into the advantage estimates, which is precisely the failure mode this implementation exhibited before it was corrected: the bootstrap at the horizon was zero even when the episode was truncated, and the fix is verified by a unit test that distinguishes the two cases.
 The probability ratio is
 \begin{equation}
 r_t(\theta)=\frac{\pi_\theta(a_t\mid o_t)}{\pi_{\theta_{\mathrm{old}}}(a_t\mid o_t)}.
@@ -713,6 +740,8 @@ where $\widehat R_t=\widehat A_t+V_{\phi_{\mathrm{old}}}(\mathbf s_t)$ is the TD
 Before the sampled action is executed, the simulator evaluates the predicted next position and applies the following checks: workspace bounds, maximum speed, minimum UAV separation, charge validity, and connectivity-preservation constraints. If a candidate movement would disconnect the communication graph, it is masked in normal operation. During an active recovery event, the connectivity rule remains a hard constraint unless the simulator enters a predefined recovery mode in which temporary reconnection is required by the recovery objective.
 
 This separation between policy learning and hard feasibility is important. The neural network learns how to trade off several feasible actions, while the safety layer prevents the network from selecting actions that violate non-negotiable physical constraints.
+
+The masking is applied at the logit level, before the softmax, so that the policy that is sampled from, the importance ratio that is computed against, and the entropy bonus that is regularised are all the same masked distribution. This is the mechanism that Huang and Onta~$n$~\cite{huang2022} show to correspond to a valid policy-gradient update rather than a biased surrogate: masking is implemented as a state-dependent differentiable transformation of the action-probability distribution, which is exactly what setting the masked logits to $-\infty$ before the softmax does. We note the limit of that result, which was stated explicitly in the same work and is repeated in the UAV action-masking literature~\cite{rizvi2025}: the validity argument is formulated for a single policy, and extending it to a centralized critic with heterogeneous per-agent masks requires the critic's training distribution to be consistent with the induced joint-action support. We therefore apply the identical mask to the rollout distribution, the stored log-probabilities and the update, and we verify this by construction in the test suite rather than by assumption.
 
 \subsection{Failure-Aware Execution}
 When a failure event is detected, the environment removes the failed UAV from the active graph, activates the reserve UAV if the reserve is available, and updates the local observations. The reserve UAV uses the same shared actor after insertion into the mission. The other UAVs also re-evaluate their local bridge-risk and coverage information. No prediction of the failure event is required; the controller reacts to the observed state change.
@@ -1013,6 +1042,52 @@ configuration is retained in the repository
 this as a methodological point rather than a result: a physical-layer claim
 that has not been subjected to a negative control is not yet a measurement.
 
+\emph{Plasticity of the learned policy.} A failure mode that does not appear
+in reward curves or training loss is known in the MAPPO literature: the
+accumulation of dormant neurons in shared-parameter policies, which
+\cite{prime2026} report at 40--45\% for vanilla MAPPO, and which
+\cite{ceilings2026} and the graph-attention line of work~\cite{shi2025} treat
+as a structural limitation of MLP critics. We therefore probe the trained
+shared actor directly. The probe retains the hidden-layer activations and
+performs \emph{one backward pass per agent}, so that each agent's gradient
+contribution to each neuron is separable; a single shared backward pass would
+expose only the summed gradient and would hide exactly the per-agent effect
+that \cite{prime2026} warns about. A neuron is called dormant when its mean
+absolute activation falls below a fraction of the layer mean, silent when its
+mean absolute gradient does, and dead when it is both.
+
+Table~\ref{tab:dormancy} reports the result for the trained policy. The
+actor has \textbf{no forward-dormant neurons} in either hidden layer at any
+threshold from $10^{-3}$ to $10^{-1}$ of the layer mean, and consequently no
+dead neurons, in contrast to the 40--45\% dormancy reported for vanilla
+MAPPO. Roughly a fifth to a third of first-layer neurons are gradient-silent,
+which is the expected and benign consequence of a low-dimensional observation
+feeding a 128-unit layer, and no neuron is dormant for one agent while alive
+for another. The probe is not decorative: a test kills half the neurons of a
+hidden layer by zeroing their incoming weights and asserts that the probe
+reports them as dormant, and a second test asserts that a healthy network is
+not reported as dead.
+
+\begin{table}[t]
+\caption{Plasticity probe of the trained shared actor (128 units per hidden
+layer). ``Dormant'' means the mean absolute activation is below the stated
+fraction of the layer mean; ``silent'' is the same test on the mean absolute
+per-agent gradient; ``dead'' is both.}
+\label{tab:dormancy}
+\centering
+\scriptsize
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Layer & $\tau$ & Dormant & Silent & Dead & Dormant for some agent only \\
+\midrule
+Hidden 1 & $10^{-3}$ & 0.000 & 0.203 & 0.000 & 0 \\
+Hidden 1 & $10^{-1}$ & 0.000 & 0.305 & 0.000 & 0 \\
+Hidden 2 & $10^{-3}$ & 0.000 & 0.156 & 0.000 & 0 \\
+Hidden 2 & $10^{-1}$ & 0.000 & 0.219 & 0.000 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Conclusion}
 This paper defines a persistent and fault-tolerant UAV-IoT coverage problem in which the swarm must jointly manage redundant sensor coverage, inter-UAV connectivity, finite battery energy, charging contention, and UAV failures. The proposed solution uses MAPPO under centralized training and decentralized execution, complemented by explicit feasibility masking, infrastructure-side charging arbitration, and a reserve-UAV recovery mechanism.
 
@@ -1093,6 +1168,33 @@ H. Fu, H. Yu, T. Xu, H. Yang, and W. Wu, ``Revisiting some common practices in c
 
 \bibitem{qiu2020}
 J. Qiu, J. Lyu, and L. Fu, ``Placement optimization of aerial base stations with deep reinforcement learning,'' in \emph{Proc. IEEE Int. Conf. Communications (ICC)}, 2020, pp. 1--6, doi: 10.1109/ICC40277.2020.9149258.
+
+\bibitem{huang2022}
+S. Huang and S. Onta~$n$, ``A closer look at invalid action masking in policy gradient algorithms,'' in \emph{Proc. Int. FLAIRS Conf.}, vol. 35, 2022, doi: 10.32473/flairs.v35i.130584.
+
+\bibitem{pardo2018}
+F. Pardo, A. Tavakoli, V. Levdik, and P. Kormushev, ``Time limits in reinforcement learning,'' in \emph{Proc. 35th Int. Conf. Machine Learning (ICML)}, 2018, pp. 4042--4051.
+
+\bibitem{song2024}
+Z. Song, K.-W. Chin, C. Yang, and M. Ros, ``Methods to assign UAVs for K-coverage and recharging in IoT networks,'' \emph{IEEE Transactions on Mobile Computing}, vol. 23, no. 4, pp. 2504--2519, 2024, doi: 10.1109/TMC.2023.3259461.
+
+\bibitem{rizvi2025}
+D. Rizvi and D. Boyle, ``Multi-agent reinforcement learning with action masking for UAV-enabled mobile communications,'' \emph{IEEE Transactions on Machine Learning in Communications and Networking}, vol. 3, pp. 117--132, 2025, doi: 10.1109/TMLCN.2024.3521876.
+
+\bibitem{prime2026}
+W. Qiu, Z. He, W. Zhao, and H. Masui, ``PRIME: Plasticity recovery in multi-agent environments for UAV-assisted emergency communication networks,'' arXiv:2607.17922, 2026.
+
+\bibitem{ceilings2026}
+``Feasibility ceilings before learning: Sizing and timing bounds for drone-mesh interception,'' arXiv:2610.20823, Oct. 2026.
+
+\bibitem{viana2026}
+J. Viana, V. R. Balaji, B. Galkin, L. Ho, and H. Claussen, ``Learning compact terrain-context representations for feasibility-aware offline reinforcement learning in UAV relaying networks,'' arXiv:2604.00224, 2026.
+
+\bibitem{datta2025}
+V. Datta and C. Nahak, ``Radius of robust feasibility for ground coverage in aerial sensor networks,'' arXiv:2510.20213, 2025.
+
+\bibitem{fan2026}
+E. Fan, Y. Chen, Z. Shan, M. Caesar, and J. Kim, ``Communication-aware multi-agent reinforcement learning for decentralized cooperative UAV deployment,'' arXiv:2603.16141, 2026.
 
 \end{thebibliography}
 
