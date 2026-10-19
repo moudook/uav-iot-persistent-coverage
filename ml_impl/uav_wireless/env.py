@@ -89,6 +89,14 @@ class SimConfig:
     # disperses.  Measured: 1.00 distinct actions out of 8 with the identity
     # absent.
     use_agent_id: bool = False
+    # Coarse coverage-map summary in the observation, as a G x G grid of the
+    # share of under-covered sensors in each cell of the region.  The
+    # infrastructure already owns the charging pads and aggregates the IoT
+    # service reports, so a broadcast map summary is a communication
+    # assumption rather than an oracle.  Without it the agent knows HOW MANY
+    # sensors it covers but not WHICH are uncovered, so there is no gradient
+    # signal that points it towards the deficit.
+    map_grid: int = 0
     seed: int = 0
 
     def dict(self):
@@ -99,10 +107,13 @@ def obs_dim(cfg: SimConfig) -> int:
     """Length of the per-agent observation for this configuration (Eq. 4).
 
     own(7) + 4 neighbour slots x 4 + tail(7), plus a one-hot agent identity
-    of length N when `use_agent_id` is set.
+    of length N when `use_agent_id` is set, plus a G x G coverage-map summary
+    when `map_grid` is set.
     """
     base = 7 + 4 * 4 + 7            # own(7) + 4 neighbour slots x 4 + tail(7)
-    return base + (cfg.N if cfg.use_agent_id else 0)
+    base += cfg.N if cfg.use_agent_id else 0
+    base += cfg.map_grid ** 2 if cfg.map_grid else 0
+    return base
 
 
 def state_dim(cfg: SimConfig) -> int:
@@ -187,6 +198,7 @@ class UAVIoTEnv:
         self._under_streak = 0
         self.truncated = False
         self.terminated = False
+        self._map_sum = self.coverage_map_summary()
         self.prev_metrics = dict(self.ep)
         return self.local_obs(), self.global_state()
 
@@ -509,6 +521,41 @@ class UAVIoTEnv:
     # ------------------------------------------------------------------
     # Observations
     # ------------------------------------------------------------------
+    def coverage_map_summary(self, ncov=None):
+        """Coarse broadcast summary of where the coverage deficit is.
+
+        A G x G grid over the region.  Cell (gx, gy) holds the share of ALL
+        sensors that lie in that cell and are currently under-covered
+        (n_d(t) < K).  Normalising by M rather than by the cell population
+        makes the value a global quantity: the agent learns both where the
+        deficit is and how large it is, and the encoding is independent of
+        M.
+
+        The value is a *communication* assumption, not an oracle: the
+        infrastructure that owns the charging pads also aggregates the IoT
+        service reports and broadcasts this summary to the swarm.  The
+        summary is fixed size, so the observation does not grow with the
+        number of sensors.
+        """
+        c = self.cfg
+        G = c.map_grid
+        out = np.zeros(G * G, dtype=np.float32)
+        if not G:
+            return out
+        if ncov is None:
+            ncov = self.coverage_counts()
+        if len(ncov) == 0:
+            return out
+        under = ncov < c.K
+        if not np.any(under):
+            return out
+        gx = np.clip((self.sensors[:, 0] / c.side * G).astype(int), 0, G - 1)
+        gy = np.clip((self.sensors[:, 1] / c.side * G).astype(int), 0, G - 1)
+        cell = gy * G + gx
+        w = under.astype(np.float32) / max(c.M, 1)
+        out = np.bincount(cell, weights=w, minlength=G * G).astype(np.float32)
+        return out
+
     def local_obs(self):
         """o_i(t) = [p_i, v_i, b_i, N_i, C_i^local, rho_i, tau_i^return, E_i^pad]. Eq. (4).
 
@@ -583,6 +630,9 @@ class UAVIoTEnv:
             ], dtype=np.float32)
 
             row = np.concatenate([own, nb, tail])
+            if c.map_grid:
+                # broadcast coverage-map summary (see coverage_map_summary)
+                row = np.concatenate([row, self._map_sum])
             if c.use_agent_id:
                 # one-hot identity so that a SHARED network can specialise.
                 # Without it, agents in a symmetric cluster have identical
@@ -727,6 +777,10 @@ class UAVIoTEnv:
 
         # --- 5. recovery detection -------------------------------------
         ncov = self.coverage_counts()
+        # The broadcast coverage-map summary is computed once per step, from
+        # the post-move coverage counts, so that every agent sees the same
+        # summary at the same decision point.
+        self._map_sum = self.coverage_map_summary(ncov)
         _, adj, _ = self.comm_graph()
         connected_now = self.is_connected(adj)
         # D_t must not duplicate U_t. U_t already carries coverage continuously,

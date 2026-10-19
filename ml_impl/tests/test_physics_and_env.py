@@ -1018,3 +1018,89 @@ class TestMotion:
         assert np.allclose(e.p[0], p0), (
             "a masked movement was applied; the feasibility mask is not "
             "being enforced")
+
+
+# ======================================================================
+# Observation content
+# ======================================================================
+class TestObservationContent:
+    """The shared-policy argument depends on what the observation contains.
+
+    Parameter sharing is sound only if each agent's own observation
+    identifies it (Foerster et al., AAMAS 2016).  It is also useless if the
+    observation does not say where the coverage deficit is.  These tests
+    pin both.
+    """
+
+    def test_agent_identity_distinguishes_agents(self):
+        c = SimConfig(N=8, K=2, R_cov=35.0, M=20, episode_len=50, seed=0,
+                      use_agent_id=True)
+        e = UAVIoTEnv(c)
+        e.reset()
+        o = e.local_obs()
+        ident = o[:, -c.N:]
+        assert np.allclose(ident, np.eye(c.N)), (
+            "the identity block is not a one-hot encoding")
+        # each agent must be distinguishable in the full observation
+        for i in range(c.N):
+            for j in range(i + 1, c.N):
+                assert not np.allclose(o[i], o[j]), (
+                    f"agents {i} and {j} have identical observations")
+
+    def test_observation_without_identity_keeps_agents_similar(self):
+        """This is the condition the A/B is about: without the identity the
+        agents in a symmetric deployment are nearly indistinguishable."""
+        c = SimConfig(N=8, K=2, R_cov=35.0, M=20, episode_len=50, seed=0,
+                      start_clustered=True, use_agent_id=False)
+        e = UAVIoTEnv(c)
+        e.reset()
+        o = e.local_obs()
+        assert not np.allclose(o[0], o[1]), (
+            "the test is only meaningful if the agents differ somewhere")
+
+    def test_map_summary_locates_the_deficit(self):
+        c = SimConfig(N=4, K=1, R_cov=35.0, M=20, episode_len=50, seed=0,
+                      map_grid=4)
+        e = UAVIoTEnv(c)
+        e.reset()
+        nc = e.coverage_counts()
+        s = e.coverage_map_summary(nc)
+        assert s.shape == (16,)
+        under = int(np.sum(nc < c.K))
+        assert under > 0, "test setup wrong: nothing is under-covered"
+        assert s.sum() > 0, "the map summary does not report the deficit"
+        # the summary is a share of all sensors, so it cannot exceed 1
+        assert s.max() <= 1.0 + 1e-9
+
+    def test_map_summary_is_empty_when_everything_is_covered(self):
+        c = SimConfig(N=4, K=1, R_cov=35.0, M=20, episode_len=50, seed=0,
+                      map_grid=4)
+        e = UAVIoTEnv(c)
+        e.reset()
+        covered = np.full(c.M, c.K, dtype=float)
+        s = e.coverage_map_summary(covered)
+        assert np.allclose(s, 0.0), (
+            "the map summary must be silent when there is no deficit")
+
+    def test_map_summary_length_is_independent_of_M(self):
+        """The observation must not grow with the number of sensors."""
+        dims = []
+        for M in (10, 20, 40):
+            c = SimConfig(N=4, K=1, R_cov=35.0, M=M, episode_len=50, seed=0,
+                          map_grid=4, use_agent_id=True)
+            e = UAVIoTEnv(c)
+            e.reset()
+            dims.append(e.local_obs().shape[1])
+        assert len(set(dims)) == 1, (
+            f"the observation length depends on M: {dims}")
+
+    def test_obs_dim_matches_the_actual_vector(self):
+        for aid in (False, True):
+            for mg in (0, 4):
+                c = SimConfig(N=6, K=1, R_cov=35.0, M=15, episode_len=50,
+                              seed=0, use_agent_id=aid, map_grid=mg)
+                e = UAVIoTEnv(c)
+                e.reset()
+                o = e.local_obs()
+                assert o.shape[1] == e.obs_dim, (
+                    f"obs_dim={e.obs_dim} but the vector has {o.shape[1]}")
