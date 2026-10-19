@@ -114,6 +114,7 @@ Ref. & Problem addressed & Method & Key findings / contribution & Limitation rel
 \cite{basu2004} & Fault-tolerant ad hoc robot networks. & Movement-control and topology-repair algorithms. & Formalizes self-forming, self-healing, and self-organizing communication networks after node loss. & Focuses on network topology rather than persistent sensor coverage and battery-aware learning. & Provides the network-level motivation for failure recovery. \\
 \cite{mathew2015} & Recharging coordination for persistent multi-robot missions. & Combinatorial rendezvous planning with mobile charging robots. & Couples charging schedules with persistent task execution and routing constraints. & Charging is the main focus; UAV coverage/connectivity/failure are not unified in the same learned controller. & Supports explicit charging-resource modelling. \\
 \cite{arribas2023} & Persistent aerial service under limited flight and recharge times. & HORR and PHeRR scheduling schemes. & Provides fleet-size and recharge scheduling models for persistent service under energy constraints. & Service locations are scheduled rather than dynamically reconfigured after UAV failure. & Direct motivation for finite-energy persistent operation. \\
+\cite{trotta2018} & Joint coverage, connectivity, and charging for distributed UAV networks. & Centralised optimal positioning + distributed game-theoretic scheduling + bio-inspired positioning. & Couples coverage, connectivity, and charging with rigorous performance bounds. & No failure model, no reserve UAV, no $K$-multiplicity, no learned policy. & Closest prior work on the joint problem; cited to delimit the gap. \\
 \cite{jiang2024} & Fault-tolerant multi-UAV exploration with changing UAV health. & Fault-tolerant MARL with temporal information and health/topology inputs. & Allows UAV health degradation and faults during the mission and learns cooperative recovery behavior. & Exploration is the task; persistent sensor $K$-coverage and charging-pad contention are outside the main formulation. & Closest fault-aware MARL direction. \\
 \cite{khan2025} & Robust UAV wireless coverage using multi-agent deep RL. & Centralized and decentralized deep Q-learning variants with a shared network. & Studies decentralized autonomous UAV coverage and compares centralized and decentralized control. & Focuses on coverage rather than explicit persistent redundancy, graph fault tolerance, and charging. & Recent decentralized coverage-learning benchmark. \\
 \cite{mei2026} & Energy-aware persistent multi-UAV coverage with outage history. & POGS-QMIX with priority/outage guidance and return-energy masking. & Explicitly combines persistent coverage, outage memory, battery limits, and periodic recharging. & Uses a centralized online coordination layer and does not directly target articulation-point preservation plus reserve-UAV failure recovery in the same formulation. & Recent persistent-coverage benchmark and a key comparison model. \\
@@ -410,7 +411,7 @@ The inter-UAV communication graph is
 G_t=(V_t,E_t),\qquad E_t=\{(i,j):\|\mathbf p_i-\mathbf p_j\|_2\le R_{\mathrm{comm}}\}.
 \label{eq:graph}
 \end{equation}
-The swarm is connected when $G_t$ has one connected component. For analysis, the exact articulation-point indicator, where $G_t^{-i}$ denotes $G_t$ with vertex $i$ and its incident edges removed, is
+The ground data sink is treated as an additional vertex with edges to every UAV within $R_{\mathrm{comm}}$; the swarm is connected when $G_t$ (including the sink) has one connected component. For analysis, the exact articulation-point indicator, where $G_t^{-i}$ denotes $G_t$ with vertex $i$ and its incident edges removed, is
 \begin{equation}
 \kappa_i(t)=\mathbb 1\left[G_t^{-i}\;\text{is disconnected}\right].
 \label{eq:articulation}
@@ -665,7 +666,7 @@ The proposed algorithm uses parameter-shared MAPPO. During training, the central
 a_i(t)\sim\pi_{\theta}\left(a_i\mid\mathbf o_i(t)\right).
 \label{eq:policy}
 \end{equation}
-Parameter sharing is appropriate because the active UAVs have the same action semantics and physical model. It also avoids maintaining a separate actor network for each UAV.
+Parameter sharing is appropriate when (i) the environment is equivariant to agent permutations---identical observation and action spaces and identical transition/reward structure---and (ii) each agent's own observation identifies it, so a shared network can still specialise (Foerster et al. \cite{foerster2016}). Condition (ii) holds because $\mathbf o_i(t)$ contains the UAV's own position, battery and mode. The known limitation (Fu et al. \cite{fu2022}, Theorem 4.2) is that a shared policy provably cannot learn an optimal policy for non-symmetric tasks such as the XOR game; this does not apply here because the swarm is homogeneous. If grounded or docked UAVs with heterogeneous roles are introduced, parameters must not be shared.
 
 For a collected rollout, the temporal-difference residual is
 \begin{equation}
@@ -688,12 +689,14 @@ L^{\mathrm{actor}}(\theta)=-\mathbb E_t\big[\min(&r_t\widehat A_t,\\
 \end{aligned}
 \label{eq:actorloss}
 \end{equation}
-The critic is trained with
+The critic is trained with the clipped MAPPO form (Yu et al. 2022, Appendix A):
 \begin{equation}
-L^{\mathrm{critic}}(\phi)=\mathbb E_t\left[(\widehat R_t-V_\phi(\mathbf s_t))^2\right],
+L^{\mathrm{critic}}(\phi)=\mathbb E_t\!\left[\max\!\left((V_\phi(\mathbf s_t)-\widehat R_t)^2,\;
+(\mathrm{clip}(V_\phi(\mathbf s_t),V_{\phi_{\mathrm{old}}}(\mathbf s_t)-\epsilon,
+V_{\phi_{\mathrm{old}}}(\mathbf s_t)+\epsilon)-\widehat R_t)^2\right)\right],
 \label{eq:criticloss}
 \end{equation}
-where $\widehat R_t=\widehat A_t+V_\phi(\mathbf s_t)$.
+where $\widehat R_t=\widehat A_t+V_{\phi_{\mathrm{old}}}(\mathbf s_t)$ is the TD($\lambda$) lambda-return, computed once per rollout and treated as a constant (gradients are not propagated through it). The report matches the reference implementation (\texttt{r\_mappo.py}), which computes $\mathrm{gae}+\mathrm{value\_preds}$ rather than the Monte-Carlo return-to-go described in MAPPO's Appendix A prose. Value normalisation (running mean/std, PopArt) is used to stabilise regression when returns are of order $10^2$.
 
 \subsection{Action Feasibility Mask}
 Before the sampled action is executed, the simulator evaluates the predicted next position and applies the following checks: workspace bounds, maximum speed, minimum UAV separation, charge validity, and connectivity-preservation constraints. If a candidate movement would disconnect the communication graph, it is masked in normal operation. During an active recovery event, the connectivity rule remains a hard constraint unless the simulator enters a predefined recovery mode in which temporary reconnection is required by the recovery objective.
@@ -757,7 +760,7 @@ The initial training configuration follows the values in the project presentatio
 \toprule
 Parameter & Symbol & Initial value \\
 \midrule
-Active UAVs & $N$ & 5 \\
+Active UAVs & $N$ & 8 \\
 IoT sensors & $M$ & 20 \\
 Discount factor & $\gamma$ & 0.99 \\
 PPO clipping & $\epsilon$ & 0.20 \\
