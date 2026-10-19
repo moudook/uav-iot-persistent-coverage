@@ -518,15 +518,15 @@ Term & Definition & Weight \\
 \midrule
 $U_t$ & Under-coverage rate, \eqref{eq:Ut} & $\lambda_O = 1.00$ \\
 $E_t^{\mathrm{cons}}$ & $\sum_i\Delta E_i(t)\,/\,(N B^{\max})$ & $\lambda_E = 0.10$ \\
-$D_t^{\mathrm{deg}}$ & 1 if any service requirement is violated & $\lambda_D = 0.50$ \\
+$D_t^{\mathrm{deg}}$ & 1 if any service requirement is violated & $\lambda_D = 2.00$ \\
 $W_t^{\mathrm{mov}}$ & distance flown $/$ distance that changed coverage & $\lambda_W = 0.05$ \\
 $R_t^{\mathrm{rec}}$ & normalized recovery delay during recovery & $\lambda_R = 0.30$ \\
-$\mathrm{Crit}_t$ & Articulation-point average, \eqref{eq:crit} & $\lambda_C = 0.20$ \\
+$\mathrm{Crit}_t$ & Articulation-point average, \eqref{eq:crit} & $\lambda_C = 0.50$ \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-All six quantities are dimensionless and lie in $[0,1]$, so the weights are directly comparable; $U_t$ and $\mathrm{Crit}_t$ are already normalized in \eqref{eq:Ut} and \eqref{eq:crit}. The values are initial settings to be tuned on a validation set; the ordering $\lambda_O \gg \lambda_D \ge \lambda_R > \lambda_C \ge \lambda_E \ge \lambda_W$ is the part on which the formulation depends.
+All six quantities are dimensionless and lie in $[0,1]$, so the weights are directly comparable; $U_t$ and $\mathrm{Crit}_t$ are already normalized in \eqref{eq:Ut} and \eqref{eq:crit}. The values are initial settings to be tuned on a validation set. The implemented values raise $\lambda_D$ above $\lambda_O$ so that a degraded-service step is penalised more heavily than a merely under-covered one; $\lambda_C$ is likewise raised so that connectivity loss is not drowned out by coverage. The ordering on which the formulation depends is $\lambda_D \ge \lambda_O \ge \lambda_C \ge \lambda_R > \lambda_E \ge \lambda_W$.
 
 \begin{table}[t]
 \caption{Hard constraints versus learned trade-offs.}

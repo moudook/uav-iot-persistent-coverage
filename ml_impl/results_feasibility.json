@@ -1,0 +1,252 @@
+{
+  "config": {
+    "N": 5,
+    "N_reserve": 1,
+    "M": 20,
+    "side": 80.0,
+    "R_cov": 35.0,
+    "R_comm": 40.0,
+    "z0": 50.0,
+    "K": 2,
+    "dt": 0.2,
+    "v_max": 5.0,
+    "d_safe": 5.0,
+    "B_max": 30000.0,
+    "P_hover": 50.0,
+    "P_move": 75.0,
+    "P_elec": 5.0,
+    "P_tx": 0.5,
+    "charge_rate": 0.0002,
+    "episode_len": 1000,
+    "n_pads": 2,
+    "pad_service_radius": 15.0,
+    "E_reserve": 2000.0,
+    "failure_enabled": false,
+    "failure_time": -1,
+    "lam_O": 1.0,
+    "lam_E": 0.1,
+    "lam_D": 2.0,
+    "lam_W": 0.05,
+    "lam_R": 0.3,
+    "lam_C": 0.5,
+    "use_connectivity_term": true,
+    "use_reserve": true,
+    "use_charging_arbitration": true,
+    "use_action_mask": true,
+    "mask_horizon": 3,
+    "seed": 0
+  },
+  "region_bound": {
+    "min_corner_separation_m": 80.0,
+    "two_R_cov_m": 70.0,
+    "corner_discs_disjoint": true,
+    "N_required_for_corners": 8,
+    "N_available": 5,
+    "corners_feasible": false
+  },
+  "surplus": {
+    "surplus_sigma": 1.5033011721279284,
+    "field_area_m2": 6400.0,
+    "total_disc_area_m2": 19242.255003237482,
+    "area_required_for_K_m2": 12800.0,
+    "region_diagonal_m": 113.13708498984761,
+    "max_chain_span_m": 160.0,
+    "span_slack_m": 46.86291501015239
+  },
+  "oracle": [
+    {
+      "seed": 0,
+      "oracle_CK_unconstrained": 1.0,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": true,
+      "oracle_pos_connected": [
+        [
+          65.91,
+          46.1
+        ],
+        [
+          45.43,
+          70.47
+        ],
+        [
+          22.63,
+          62.54
+        ],
+        [
+          11.19,
+          37.48
+        ],
+        [
+          43.84,
+          22.96
+        ]
+      ],
+      "required_UAVs_sensor_packing": 4,
+      "packing_size": 2,
+      "N": 5,
+      "K": 2
+    }
+  ],
+  "sweep": [
+    {
+      "N": 5,
+      "K": 1,
+      "R_cov": 35.0,
+      "R_comm": 40.0,
+      "N_required_corners": 4,
+      "corners_feasible": true,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": 1.0
+    },
+    {
+      "N": 5,
+      "K": 1,
+      "R_cov": 25.0,
+      "R_comm": 40.0,
+      "N_required_corners": 4,
+      "corners_feasible": true,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": 1.0
+    },
+    {
+      "N": 5,
+      "K": 2,
+      "R_cov": 35.0,
+      "R_comm": 40.0,
+      "N_required_corners": 8,
+      "corners_feasible": false,
+      "oracle_CK_connected": 0.9833333333333334,
+      "oracle_SC_reachable": 0.6666666666666666
+    },
+    {
+      "N": 5,
+      "K": 2,
+      "R_cov": 25.0,
+      "R_comm": 40.0,
+      "N_required_corners": 8,
+      "corners_feasible": false,
+      "oracle_CK_connected": 0.7166666666666667,
+      "oracle_SC_reachable": 0.0
+    },
+    {
+      "N": 6,
+      "K": 1,
+      "R_cov": 35.0,
+      "R_comm": 40.0,
+      "N_required_corners": 4,
+      "corners_feasible": true,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": 1.0
+    },
+    {
+      "N": 6,
+      "K": 1,
+      "R_cov": 25.0,
+      "R_comm": 40.0,
+      "N_required_corners": 4,
+      "corners_feasible": true,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": 1.0
+    },
+    {
+      "N": 6,
+      "K": 2,
+      "R_cov": 35.0,
+      "R_comm": 40.0,
+      "N_required_corners": 8,
+      "corners_feasible": false,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": 1.0
+    },
+    {
+      "N": 6,
+      "K": 2,
+      "R_cov": 25.0,
+      "R_comm": 40.0,
+      "N_required_corners": 8,
+      "corners_feasible": false,
+      "oracle_CK_connected": 0.8833333333333334,
+      "oracle_SC_reachable": 0.0
+    },
+    {
+      "N": 8,
+      "K": 1,
+      "R_cov": 35.0,
+      "R_comm": 40.0,
+      "N_required_corners": 4,
+      "corners_feasible": true,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": 1.0
+    },
+    {
+      "N": 8,
+      "K": 1,
+      "R_cov": 25.0,
+      "R_comm": 40.0,
+      "N_required_corners": 4,
+      "corners_feasible": true,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": 1.0
+    },
+    {
+      "N": 8,
+      "K": 2,
+      "R_cov": 35.0,
+      "R_comm": 40.0,
+      "N_required_corners": 8,
+      "corners_feasible": true,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": 1.0
+    },
+    {
+      "N": 8,
+      "K": 2,
+      "R_cov": 25.0,
+      "R_comm": 40.0,
+      "N_required_corners": 8,
+      "corners_feasible": true,
+      "oracle_CK_connected": 0.9833333333333334,
+      "oracle_SC_reachable": 0.6666666666666666
+    },
+    {
+      "N": 10,
+      "K": 1,
+      "R_cov": 35.0,
+      "R_comm": 40.0,
+      "N_required_corners": 4,
+      "corners_feasible": true,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": 1.0
+    },
+    {
+      "N": 10,
+      "K": 1,
+      "R_cov": 25.0,
+      "R_comm": 40.0,
+      "N_required_corners": 4,
+      "corners_feasible": true,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": 1.0
+    },
+    {
+      "N": 10,
+      "K": 2,
+      "R_cov": 35.0,
+      "R_comm": 40.0,
+      "N_required_corners": 8,
+      "corners_feasible": true,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": 1.0
+    },
+    {
+      "N": 10,
+      "K": 2,
+      "R_cov": 25.0,
+      "R_comm": 40.0,
+      "N_required_corners": 8,
+      "corners_feasible": true,
+      "oracle_CK_connected": 1.0,
+      "oracle_SC_reachable": 1.0
+    }
+  ]
+}

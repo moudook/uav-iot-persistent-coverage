@@ -164,6 +164,7 @@ class UAVIoTEnv:
         self.denied_charge = 0
 
         self.ep = self.metrics()
+        self._under_streak = 0
         self.prev_metrics = dict(self.ep)
         return self.local_obs(), self.global_state()
 
@@ -737,8 +738,9 @@ class UAVIoTEnv:
     def _update_metrics(self, ncov, adj, draw, w_dist):
         c = self.cfg
         m = self.ep
+        kcov_frac_this = float(np.mean(ncov >= c.K))
         m["Kcov_ok"] += float(np.all(ncov >= c.K))
-        m["Kcov_frac"] += float(np.mean(ncov >= c.K))
+        m["Kcov_frac"] += kcov_frac_this
         m["under_cov"] += float(np.mean(ncov < c.K))
         m["connected"] += float(self.is_connected(adj))
         m["service_cont"] += float(np.all(ncov >= c.K) and self.is_connected(adj))
@@ -749,12 +751,22 @@ class UAVIoTEnv:
         m["steps"] += 1
         m["denied"] += self.denied_charge
         m["reserve_activations"] = self.reserve_used
+        # Non-degenerate metrics: time-averaged coverage deficit + worst refresh.
+        m["cov_integral"] += (1.0 - kcov_frac_this)
+        if kcov_frac_this < 1.0:
+            self._under_streak += 1
+            m["max_under_streak"] = max(m["max_under_streak"], self._under_streak)
+        else:
+            self._under_streak = 0
 
     def metrics(self):
         return dict(
             Kcov_ok=0.0, Kcov_frac=0.0, under_cov=0.0, connected=0.0,
             service_cont=0.0, crit=0.0, energy=0.0, distance=0.0,
             min_batt=float("inf"), steps=0, denied=0, reserve_activations=0,
+            # Non-degenerate metrics (Deep Research recommendation):
+            # time-averaged coverage deficit and worst-case refresh streak.
+            cov_integral=0.0, max_under_streak=0,
         )
 
     def summary(self):
@@ -773,4 +785,9 @@ class UAVIoTEnv:
             Distance=self.ep["distance"],
             Denied=self.ep["denied"],
             Reserve=self.ep["reserve_activations"],
+            # Non-degenerate metrics (Deep Research recommendation):
+            # CovIntegral = time-averaged coverage deficit (0 = perfect coverage)
+            # MaxRefresh  = longest run of steps with any under-covered sensor
+            CovIntegral=self.ep["cov_integral"] / s,
+            MaxRefresh=self.ep["max_under_streak"],
         )

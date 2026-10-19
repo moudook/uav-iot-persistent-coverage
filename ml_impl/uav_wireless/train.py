@@ -43,6 +43,7 @@ def collect_rollout(env, agent, n_steps, deterministic=False):
     )
 
     t = 0
+    truncated = False
     while t < n_steps:
         mask = np.stack([env.action_mask(i) for i in range(n)])
         if mask.sum(axis=1).min() == 0:            # never leave an agent stuck
@@ -81,12 +82,33 @@ def collect_rollout(env, agent, n_steps, deterministic=False):
         t += 1
         if done:
             break
+    # Track whether we hit the horizon without natural termination (truncation).
+    # `done` here is from the last step; state is the (next) state to bootstrap from.
+    truncated = (t == n_steps) and (not done)
+    terminal_state = state if truncated else None
 
-    # ---- GAE (26) with bootstrap value 0 at the horizon -------------
+    # ---- GAE (26) with bootstrap at truncation -----------------------
+    # At a natural termination, the bootstrap value is 0. At a truncation
+    # (hit the horizon without done), we must bootstrap with V(s_{t+1}) so
+    # the value target is not biased downward. A previous revision used 0 in
+    # both cases, underestimating returns at the horizon.
     adv = np.zeros_like(B["adv"])
     last_gae = np.zeros(n, np.float32)
+    # Bootstrap value for the boundary (only used when truncated).
+    if truncated and agent is not None and terminal_state is not None:
+        import torch
+        with torch.no_grad():
+            v_boot = agent.critic(
+                torch.as_tensor(terminal_state, dtype=torch.float32, device=agent.device)
+            ).cpu().numpy()
+        bootstrap_val = np.full(n, float(v_boot))
+    else:
+        bootstrap_val = np.zeros(n, np.float32)
     for step in reversed(range(t)):
-        next_val = B["values"][step + 1] if step + 1 < t else np.zeros(n, np.float32)
+        if step + 1 < t:
+            next_val = B["values"][step + 1]
+        else:
+            next_val = bootstrap_val
         delta = B["adv"][step] + agent_gamma(agent) * next_val - B["values"][step]
         last_gae = delta + agent_gamma(agent) * agent_lam(agent) * last_gae
         adv[step] = last_gae
