@@ -547,7 +547,7 @@ The environment enforces
 \end{split}
 \label{eq:safety}
 \end{equation}
-An action is masked if it violates a locally predictable hard constraint such as workspace bounds, speed, minimum separation, or invalid charging. Connectivity is not assumed to be perfectly predictable from one-hop observations; instead, the actor receives the local bridge-risk feature $\rho_i$ and the team reward explicitly penalizes connectivity fragility. This avoids claiming a global connectivity guarantee from purely local information.
+An action is masked if it violates a locally predictable hard constraint such as workspace bounds, speed, minimum separation, or invalid charging. Connectivity is handled differently, and the distinction matters. The \emph{policy} is not assumed to predict connectivity from one-hop observations; it receives the local bridge-risk feature $\rho_i$ and the team reward penalises connectivity fragility, so nothing in the learning signal claims a global guarantee from purely local information. The \emph{simulator}, however, is a safety filter: it evaluates the prospective communication graph for every candidate action and masks any move that would leave the swarm unable to remain connected, including the $H$-step lookahead of Section~\ref{sec:algorithm}. The guarantee therefore comes from the safe-filter architecture, in which the filter has access to the true state, and not from the policy's own foresight. The distinction is the standard one between learning which action to take and being told which actions are admissible.
 
 \subsection{Failure and Recovery}
 A failure event changes $F_i$ from $0$ to $1$ at the detection instant $t_f$. One reserve UAV is maintained with sufficient energy for deployment when feasible. After a detected failure, the reserve is activated and the active UAVs continue using their decentralized policies. The recovery time is defined as
@@ -556,6 +556,8 @@ A failure event changes $F_i$ from $0$ to $1$ at the detection instant $t_f$. On
 \label{eq:recovery}
 \end{equation}
 when recovery is achieved before the evaluation horizon. If recovery is impossible under the available fleet, the event is reported as an unrecovered failure rather than assigning an artificial recovery time.
+
+A second mode of loss of an active UAV is exhaustion rather than failure: a UAV whose pack empties while it is away from a charging pad can neither fly nor serve, and it is removed from the active set. Such a UAV is out of service rather than failed, and the same reserve mechanism can re-seat it. This distinction is not cosmetic. If an exhausted UAV were left in the active set it would continue to count towards coverage and towards the connectivity graph while being unable to do either, and the reported coverage would be optimistic by exactly the number of sensors such a UAV was covering.
 
 A recovery-time guarantee is therefore conditional: the reserve mechanism can reduce the time required for reconfiguration, but it cannot mathematically guarantee restoration for arbitrary sensor layouts, fleet sizes, or multiple simultaneous failures. This distinction is important for a realistic system model.
 
