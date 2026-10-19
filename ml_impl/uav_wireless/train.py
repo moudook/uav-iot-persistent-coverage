@@ -1,0 +1,220 @@
+"""
+Rollout collector + MAPPO training loop + rule-based baselines (Table VIII).
+
+Baselines:
+  Fixed          — hold initial formation, recharge at a fixed threshold
+  Greedy         — lowest battery wins the pad, same motion rule
+  Reactive       — deterministic uncovered-sensor + connectivity heuristic
+  Vanilla MAPPO  — same learner with the proposed design switched off
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import torch
+
+from .env import (
+    A_HOVER, A_PX, A_NX, A_PY, A_NY, A_CHARGE, N_ACTIONS,
+    UAVIoTEnv, SimConfig,
+)
+from .mappo import MAPPO
+
+
+# ----------------------------------------------------------------------
+# Rollout buffer
+# ----------------------------------------------------------------------
+def collect_rollout(env, agent, n_steps, deterministic=False):
+    """
+    Roll out one episode, recording per-agent transitions for the MAPPO update.
+    Shared (team) reward is broadcast to every agent (Dec-POMDP, eq. 23).
+    """
+    obs, state = env.reset()
+    n = env.cfg.N
+
+    B = dict(
+        obs=np.zeros((n_steps, n, agent_obs_dim(agent)), np.float32),
+        mask=np.zeros((n_steps, n, N_ACTIONS), bool),
+        acts=np.zeros((n_steps, n), np.int64),
+        logp=np.zeros((n_steps, n), np.float32),
+        adv=np.zeros((n_steps, n), np.float32),
+        ret=np.zeros((n_steps, n), np.float32),
+        states=np.zeros((n_steps, UAVIoTEnv.STATE_DIM), np.float32),
+        values=np.zeros((n_steps, n), np.float32),
+    )
+
+    t = 0
+    while t < n_steps:
+        mask = np.stack([env.action_mask(i) for i in range(n)])
+        if mask.sum(axis=1).min() == 0:            # never leave an agent stuck
+            for i in range(n):
+                if mask[i].sum() == 0:
+                    mask[i] = True
+                    mask[i, A_HOVER] = True
+
+        if agent is None:
+            acts = np.zeros(n, dtype=np.int64)
+            logp = np.zeros(n, np.float32)
+        else:
+            import torch
+            acts = agent.act(obs, mask, deterministic=deterministic)
+            obs_t = torch.as_tensor(obs, dtype=torch.float32, device=agent.device)
+            mask_t = torch.as_tensor(mask, dtype=torch.bool, device=agent.device)
+            with torch.no_grad():
+                lp = torch.log_softmax(agent.masked_logits(obs_t, mask_t), -1)
+                logp = lp.gather(-1, torch.as_tensor(acts, device=lp.device).unsqueeze(-1)).squeeze(-1)
+                logp = logp.cpu().numpy()
+
+        import torch
+        with torch.no_grad():
+            v = agent.critic(torch.as_tensor(state, dtype=torch.float32, device=agent.device)).cpu().numpy()
+        v = np.full(n, float(v))                   # team value broadcast
+
+        B["obs"][t] = obs
+        B["mask"][t] = mask
+        B["acts"][t] = acts
+        B["logp"][t] = logp
+        B["states"][t] = state
+        B["values"][t] = v
+
+        obs, state, r, done, _ = env.step(acts)
+        B["adv"][t] = r
+        t += 1
+        if done:
+            break
+
+    # ---- GAE (26) with bootstrap value 0 at the horizon -------------
+    adv = np.zeros_like(B["adv"])
+    last_gae = np.zeros(n, np.float32)
+    for step in reversed(range(t)):
+        next_val = B["values"][step + 1] if step + 1 < t else np.zeros(n, np.float32)
+        delta = B["adv"][step] + agent_gamma(agent) * next_val - B["values"][step]
+        last_gae = delta + agent_gamma(agent) * agent_lam(agent) * last_gae
+        adv[step] = last_gae
+    B["adv"] = adv
+    B["ret"] = adv + B["values"][:t]
+    B = {k: v[:t] for k, v in B.items()}
+    return B, env.summary()
+
+
+def agent_gamma(agent):
+    return agent.gamma if agent else 0.99
+
+
+def agent_lam(agent):
+    return agent.lam if agent else 0.95
+
+
+def agent_obs_dim(agent):
+    return 32
+
+
+# ----------------------------------------------------------------------
+# Training
+# ----------------------------------------------------------------------
+def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10, verbose=True):
+    torch.manual_seed(seed)
+    env = UAVIoTEnv(cfg)
+    agent = MAPPO(n_agents=cfg.N)
+    hist = []
+    for ep in range(episodes):
+        B, summ = collect_rollout(env, agent, n_steps)
+        losses = agent.update(B)
+        rec = dict(episode=ep, mean_reward=float(B["adv"][:, 0].mean()), **losses)
+        rec.update({k: float(v) for k, v in summ.items()})
+        hist.append(rec)
+        if verbose and (ep % log_every == 0 or ep == episodes - 1):
+            print(
+                f"[MAPPO ep {ep:3d}] R={rec['mean_reward']:+.4f} "
+                f"CK={rec.get('CK',0):.3f} AG={rec.get('AG',0):.3f} "
+                f"Crit={rec.get('Crit',0):.3f} ent={rec['entropy']:.3f}"
+            )
+    return agent, hist
+
+
+# ----------------------------------------------------------------------
+# Rule-based baselines (Table VIII)
+# ----------------------------------------------------------------------
+def _move_toward(env, i, target):
+    c = env.cfg
+    d = target - env.p[i]
+    if np.linalg.norm(d) < 1e-6:
+        return A_HOVER
+    step = c.v_max * c.dt
+    # snap to the dominant cardinal axis (discrete action space)
+    if abs(d[0]) >= abs(d[1]):
+        return A_PX if d[0] > 0 else A_NX
+    return A_PY if d[1] > 0 else A_NY
+
+
+def _uncovered_target(env):
+    ncov = env.coverage_counts()
+    under = np.where(ncov < env.cfg.K)[0]
+    if len(under):
+        return env.sensors[under[np.argmin(np.linalg.norm(env.sensors[under] - env.p.mean(0), axis=1))]]
+    return env.pads[0]
+
+
+def baseline_fixed(cfg: SimConfig, steps=1000, seed=0):
+    env = UAVIoTEnv(cfg)
+    obs, st = env.reset()
+    for _ in range(steps):
+        acts = np.zeros(cfg.N, dtype=np.int64)
+        for i in env._active_idx():
+            if env.E[i] <= env.return_threshold(i):
+                # walk straight to the nearest pad, charge on arrival
+                if np.min(np.linalg.norm(env.pads - env.p[i], axis=1)) <= env.cfg.pad_service_radius:
+                    acts[i] = A_CHARGE
+                else:
+                    acts[i] = _move_toward(env, i, env.pads[int(np.argmin(np.linalg.norm(env.pads - env.p[i], axis=1)))])
+            else:
+                acts[i] = A_HOVER
+        obs, st, r, done, _ = env.step(acts)
+        if done:
+            break
+    return env.summary()
+
+
+def baseline_greedy(cfg: SimConfig, steps=1000, seed=0):
+    env = UAVIoTEnv(cfg)
+    obs, st = env.reset()
+    for _ in range(steps):
+        acts = np.zeros(cfg.N, dtype=np.int64)
+        for i in env._active_idx():
+            if env.E[i] <= env.return_threshold(i):
+                if np.min(np.linalg.norm(env.pads - env.p[i], axis=1)) <= env.cfg.pad_service_radius:
+                    acts[i] = A_CHARGE
+                else:
+                    acts[i] = _move_toward(env, i, env.pads[int(np.argmin(np.linalg.norm(env.pads - env.p[i], axis=1)))])
+            else:
+                acts[i] = _move_toward(env, i, _uncovered_target(env))
+        obs, st, r, done, _ = env.step(acts)
+        if done:
+            break
+    return env.summary()
+
+
+def baseline_reactive(cfg: SimConfig, steps=1000, seed=0):
+    """Deterministic coverage + connectivity heuristic (no learning)."""
+    env = UAVIoTEnv(cfg)
+    obs, st = env.reset()
+    for _ in range(steps):
+        acts = np.zeros(cfg.N, dtype=np.int64)
+        ncov = env.coverage_counts()
+        under = np.where(ncov < cfg.K)[0]
+        for k, i in enumerate(env._active_idx()):
+            if env.E[i] <= env.return_threshold(i):
+                if np.min(np.linalg.norm(env.pads - env.p[i], axis=1)) <= cfg.pad_service_radius:
+                    acts[i] = A_CHARGE
+                else:
+                    acts[i] = _move_toward(env, i, env.pads[int(np.argmin(np.linalg.norm(env.pads - env.p[i], axis=1)))])
+                continue
+            if len(under) == 0:
+                acts[i] = A_HOVER
+                continue
+            # assign the k-th uncovered sensor round-robin so the swarm splits up
+            tgt = env.sensors[under[k % len(under)]]
+            acts[i] = _move_toward(env, i, tgt)
+        obs, st, r, done, _ = env.step(acts)
+        if done:
+            break
+    return env.summary()

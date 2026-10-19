@@ -1,0 +1,50 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# ---- Model checkpoints (regenerate, do not version) ----
+*.pt
+*.pth
+*.ckpt
+
+# ---- LaTeX build artefacts ----
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.bbl
+*.blg
+*.nav
+*.snm
+*.vrb
+*.xdv
+
+# ---- OMNeT++ / opp_env build ----
+*.o
+*.so
+*.a
+*.d
+Makefile.deps
+out/
+results/
+*.sca
+*.vec
+*.vci
+*.elog
+
+# ---- Intermediate PDF renders used for reading feedback ----
+_fbpg-*.png
+_fb.txt
+_rep.txt
+
+# ---- OS ----
+Thumbs.db
+desktop.ini
+.DS_Store

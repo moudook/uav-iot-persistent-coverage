@@ -1,0 +1,152 @@
+\documentclass[10pt,a4paper]{report}
+\usepackage[margin=2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs,array,tabularx,longtable}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{upquote}
+\usepackage{textcomp}
+\usepackage{longtable}
+\usepackage{calc}
+\usepackage{amssymb}
+\usepackage{newunicodechar}
+\usepackage{tcolorbox}
+\newcounter{none}
+\tcbuselibrary{breakable,skins}
+
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+\providecommand{\pandocbounded}[1]{#1}
+\makeatletter\@ifpackageloaded{bookmark}{}{\usepackage{bookmark}}\makeatother
+
+% --- pandoc code-highlighting token macros (defined as pass-through) --------
+\providecommand{\NormalTok}[1]{#1}
+\providecommand{\AlertTok}[1]{#1}
+\providecommand{\AttributeTok}[1]{#1}
+\providecommand{\BaseNTok}[1]{#1}
+\providecommand{\BuiltInTok}[1]{#1}
+\providecommand{\CharTok}[1]{#1}
+\providecommand{\CommentTok}[1]{#1}
+\providecommand{\ControlFlowTok}[1]{#1}
+\providecommand{\DataTypeTok}[1]{#1}
+\providecommand{\DecValTok}[1]{#1}
+\providecommand{\ExtensionTok}[1]{#1}
+\providecommand{\FloatTok}[1]{#1}
+\providecommand{\FunctionTok}[1]{#1}
+\providecommand{\ImportTok}[1]{#1}
+\providecommand{\KeywordTok}[1]{#1}
+\providecommand{\OperatorTok}[1]{#1}
+\providecommand{\OtherTok}[1]{#1}
+\providecommand{\PreprocessorTok}[1]{#1}
+\providecommand{\SpecialCharTok}[1]{#1}
+\providecommand{\SpecialStringTok}[1]{#1}
+\providecommand{\StringTok}[1]{#1}
+\providecommand{\VariableTok}[1]{#1}
+
+\definecolor{hdr}{RGB}{37,99,235}
+\tcbset{colback=orange!4,colframe=orange!70!black,fonttitle=\bfseries,
+       arc=2pt,left=6pt,right=6pt,top=5pt,bottom=5pt}
+
+\hypersetup{colorlinks=true,linkcolor=hdr,urlcolor=hdr,citecolor=hdr}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small\textbf{Mawn Mid-Sem Report} --- Research Bundle}
+\fancyhead[R]{\small 29 Sep 2026}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}{\Large\bfseries\color{hdr}}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection.}{0.5em}{}
+\titlespacing*{\section}{0pt}{16pt}{8pt}
+
+\lstset{basicstyle=\ttfamily\scriptsize,breaklines=true,frame=single,
+        backgroundcolor=\color{gray!5},columns=fullflexible,showstringspaces=false}
+
+\newcommand{\partdiv}[1]{\clearpage\begin{center}\Huge\bfseries\color{hdr}#1\end{center}\vspace{1.5em}}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{2.5cm}
+{\Huge\bfseries Persistent and Fault-Tolerant UAV-IoT Coverage\par}
+\vspace{1cm}
+{\Large Research Bundle\par}
+\vspace{0.5cm}
+{\large Mawn Mid-Semester Report --- supporting material\par}
+\vspace{2cm}
+
+\begin{minipage}{0.86\textwidth}
+\begin{tcolorbox}[title={\bfseries The one thing you must know}]
+The report's parameter table currently makes the stated objective
+\emph{physically unachievable}.
+
+With $|\Omega|=100\times100$~m$^2$, $M=20$ sensors, $N=5$ UAVs, $K=2$ and
+$R_{\mathrm{cov}}=15$~m, the fleet supplies
+\[
+  N\pi R_{\mathrm{cov}}^2 = 3\,534\ \text{m}^2
+\]
+of coverage against a requirement of
+\[
+  KA = 2\times 10\,000 = 20\,000\ \text{m}^2 ,
+\]
+only \(17.7\%\) of what is needed. The necessary condition is
+\[
+  R_{\mathrm{cov}} \;\ge\; \sqrt{\frac{KA}{\pi N}} \;=\; 35.68\ \text{m},
+\]
+and the table says \(15\) m.
+
+\textbf{Fix:} $\Omega = 80\times80$ m, $R_{\mathrm{cov}}=35$ m,
+$R_{\mathrm{comm}}=45$ m, $B^{\mathrm{max}}=60$ kJ, charge $0.001$/step.
+Surplus ratio $\sigma = 1.50$, dropping to $1.20$ after a failure.
+
+Two further must-fixes: the articulation indicator $a_i$ collides with the
+action $a_i$ (rename to $\kappa_i$), and reference \texttt{chen2025} is
+attributed to the wrong author (Zhuang Chen, not Chen).
+\end{tcolorbox}
+\end{minipage}
+
+\vfill
+{\large 29 September 2026}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+\partdiv{Part I --- What to do tonight}
+
+\input{src_00_INDEX.tex}
+\clearpage
+\input{src_10_REPORT_BACKBONE.tex}
+
+\partdiv{Part II --- The audit and the fix}
+
+\input{src_00_MATH_AUDIT.tex}
+\clearpage
+\input{src_01_PROBLEM_FORMULATION.tex}
+\clearpage
+\input{src_02_FEASIBILITY_AND_PARAMETERS.tex}
+\clearpage
+\input{src_09_REFERENCES_VERIFIED.tex}
+
+\partdiv{Part III --- Theoretical background}
+
+\input{src_04_MARL_THEORY.tex}
+
+\partdiv{Part IV --- Coverage, graph and energy theory}
+
+\input{src_05_07_THEORY_COVERAGE_GRAPH_ENERGY.tex}
+
+\partdiv{Part V --- Simulation and wireless}
+
+\input{src_03_WIRELESS_MODELS.tex}
+
+\partdiv{Part VI --- Toolchain}
+
+\input{src_08_SIMULATION_STACK.tex}
+
+\end{document}

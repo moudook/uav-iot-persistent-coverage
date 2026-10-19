@@ -1,0 +1,1160 @@
+================================================================================
+FINDINGS.txt
+Independent review of: Mlawn_midsem_report.pdf  (9 pages, IEEEtran)
+Source reviewed : Mlawn-midsem-tex.tex           (805 lines)
+Subject         : Machine Learning in Wireless Networks -- Project 1
+Date            : 29 September 2026
+
+--------------------------------------------------------------------------------
+HOW TO READ THIS FILE
+--------------------------------------------------------------------------------
+  Section A   What was checked and found CORRECT. Read this first -- it is
+              roughly 60% of the report, and it is sound.
+  Section B   Two errors found in an intermediate review that are NOT in the
+              paper. Do not act on them. They are listed so that nobody
+              repeats them.
+  Section C   Correctness findings, ordered by severity. Each has: the
+              location, the check, the arithmetic, the source, the fix.
+  Section D   Literature and positioning findings.
+  Section E   Recommended order of work.
+  Section F   Sources consulted, so any claim here can be re-checked.
+
+  Every location is given as: .tex line number, PDF page, and equation/table
+  number. Every external claim carries a citation with a DOI or arXiv ID.
+
+  Nothing in this file is a stylistic opinion. Every item is either a
+  mathematical inconsistency, a citation error, or a departure from a
+  published source.
+
+================================================================================
+SECTION A -- CHECKED AND FOUND CORRECT
+================================================================================
+  These were verified and need no change. Listed so the effort goes to the
+  items that matter.
+
+A1  The RL core is mathematically sound. Verified against Schulman et al.
+    2017 (PPO, arXiv:1707.06347) and Schulman et al. 2016 (GAE,
+    arXiv:1506.02438):
+
+      - TD residual, Eq. (30) at L532-L533:
+        delta_t = R_t + gamma V(s_{t+1}) - V(s_t)
+        Matches PPO Eq. (12) exactly. Sign, gamma power, and bootstrap all
+        correct.
+
+      - GAE, Eq. (31) at L535-L537:
+        A_hat_t = sum_{l=0}^{T-t-1} (gamma lambda)^l delta_{t+l}
+        CORRECT, and the truncation index T-t-1 is more correct than the
+        printed PPO paper, which has an off-by-one at Eq. (11). The absence
+        of a 1/(1-gamma lambda) normalisation is also correct -- that factor
+        cancels in the derivation (GAE paper Eqs. 16-18).
+
+      - Clipped surrogate, Eq. (32) at L545-L550: correct against PPO Eq. (7).
+        Clip range [1-eps, 1+eps] is standard.
+
+      - Horizon consistency: T-1 in the objective (Eq. 2) with T-t-1 in GAE
+        is the correct pairing for a T-transition rollout with one bootstrap
+        state s_T.
+
+A2  Coverage model, Eqs. (7)-(11) at L249-L266. All correct:
+      x_id(t) = 1[||p_i - q_d|| <= R_cov]
+      n_d(t)  = sum_{i in V_t^act} x_id(t)
+      C_t     = (1/M) sum_d min(n_d/K, 1)
+      U_t     = (1/M) sum_d 1[n_d < K]
+    C_t = 1 if and only if n_d >= K for all d. Both metrics are sound.
+
+A3  Connectivity model, Eqs. (12)-(13) at L313-L321. The articulation-point
+    indicator and the Crit_t average are correct definitions. (The SYMBOL is
+    reused -- see C4 -- but the mathematics is right.)
+
+A4  Battery model, Eqs. (14)-(15) at L327-L339. The clip-to-[0, B_max]
+    update and the action-dependent power split are correct. The return
+    condition "E_i(t) <= E_i^req(t)" at L341 has the correct inequality
+    direction.
+
+A5  Charging assignment, Eq. (18) at L375-L383. A correct linear assignment
+    problem: the constraints sum_s y_is <= 1 and sum_i y_is <= 1 enforce
+    one-to-one matching, which is the right model for a pairwise assignment
+    solvable by the Hungarian algorithm (Kuhn 1955; Munkres 1957, O(n^3)).
+
+A6  Recovery time, Eq. (22) at L398-L401. tau_f = inf{tau >= 0 : n_d(t_f+tau)
+    >= K for all d} is correct, and the report correctly handles the empty
+    set (see A7).
+
+A7  Four self-stated limitations that are mathematically correct and should
+    be preserved verbatim:
+
+      L116  "This is a survey-derived gap statement, not a claim that no
+            related component has ever appeared in the broader literature."
+
+      L394  "Connectivity is not assumed to be perfectly predictable from
+            one-hop observations... This avoids claiming a global
+            connectivity guarantee from purely local information."
+            Correct: a UAV provably cannot detect a global articulation
+            point from 1-hop information.
+
+      L402  "If recovery is impossible under the available fleet, the event
+            is reported as an unrecovered failure rather than assigning an
+            artificial recovery time."
+            Correct handling of the infimum over an empty set.
+
+      L457  "These are implementation parameters for the proposed simulator
+            rather than experimentally calibrated real-flight values."
+
+A8  Action-space count is internally consistent. L66 states six actions and
+    6^N; Eq. (4) at L217 states |A_i| = 6. No discrepancy. (An earlier draft
+    of this review claimed a 5^N / 6^N mismatch; that claim is wrong and is
+    recorded in Section B.)
+
+A9  Reference entries [1]-[11] and [13]-[14] were checked against Crossref,
+    arXiv and publisher records. Author lists, titles, venues, years,
+    volumes, page ranges and DOIs match. No fabricated references in the
+    bibliography.
+
+================================================================================
+SECTION B -- TWO ERRORS IN AN INTERMEDIATE REVIEW (NOT IN THE PAPER)
+================================================================================
+  Recorded so nobody acts on them or repeats them.
+
+B1  FALSE: "Reference 'Scherer & Rinner, CASE 2016' does not exist; the real
+    paper is IROS 2017."
+
+    BOTH papers are real and they are DIFFERENT papers:
+
+      J. Scherer and B. Rinner, "Persistent multi-UAV surveillance with energy
+      and communication constraints," IEEE CASE 2016, pp. 1225-1230,
+      doi: 10.1109/COASE.2016.7743546
+
+      J. Scherer and B. Rinner, "Short and Full Horizon Motion Planning for
+      Persistent Multi-UAV Surveillance with Energy and Communication
+      Constraints," IEEE/RSJ IROS 2017, pp. 230-235
+
+    Verified via the author's own publication list (bernhardrinner.com),
+    Google Scholar, and a Springer citation (J. Intell. Robot Syst. 2020,
+    doi 10.1007/s10846-020-01156-6) which lists both with the correct venues.
+    The CASE 2016 paper is a legitimate citation and can stay.
+
+B2  FALSE: "arribas2023 venue unverified."
+
+    Verified: E. Arribas, V. Cholvi, V. Mancuso, IEEE Transactions on
+    Robotics, vol. 39, no. 4, pp. 2639-2653, Aug. 2023,
+    doi: 10.1109/TRO.2023.3263077. Confirmed via ORCID
+    0000-0001-5395-7015, the IMDEA Networks repository, and the CEU
+    institutional record. The entry as printed is correct.
+
+================================================================================
+SECTION C -- CORRECTNESS FINDINGS
+================================================================================
+
+--------------------------------------------------------------------------------
+C1  [HIGHEST] dt, d_safe and v_max are mutually inconsistent
+--------------------------------------------------------------------------------
+  LOCATION : Table IV, .tex L475 (dt = 1 s), L476 (v_max = 5 m/s),
+             L477 (d_safe = 5 m); constraint at Eq. (20), .tex L389-L391
+
+  THE CHECK
+    Two UAVs converging head-on at 5 m/s each close at 10 m/s. Between two
+    consecutive control steps they move 10 m relative to each other. The
+    separation constraint is 5 m. A pair can pass from +7 m apart to -3 m
+    apart with no sampled violation.
+
+    Required stopping distance at a = 2 m/s^2:
+      d_stop = v^2 / (2a) = 100 / 4 = 25 m
+    This is 5x the declared d_safe of 5 m.
+
+    Resolution of the separation constraint requires
+      2 * R_cov must be resolvable in at least 2 d_safe steps, and
+      the per-step relative displacement 2 * v_max * dt must be
+      much smaller than d_safe.
+
+      as printed:  2 * 5 * 1 = 10 m per step  vs  d_safe = 5 m
+
+  WHY THIS MATTERS
+    This is an internal logical contradiction, visible by comparing Table IV
+    against Eq. (20). It does not require any external knowledge to find.
+    A discrete-time simulator with this step size cannot enforce the
+    constraint it claims to enforce.
+
+  SOURCES
+    Datsko, Nekovar, Penicka, Saska, "Energy-Aware Multi-UAV Coverage Mission
+    Planning With Optimal Speed of Flight," IEEE RA-L 9(3):2893-2900, 2024,
+    doi: 10.1109/LRA.2024.3358581 -- uses continuous TOPPRA time
+    parameterisation with an analytic a_max-limited turn model, not
+    stepwise motion.
+
+    UAV AoI / MEC literature convention: time slots of 0.1-1 s, position
+    update p(t+tau) = p(t) + v*tau (e.g. arXiv:2205.00692).
+
+  FIX
+    dt = 0.2 s  (1 m/step, 5x finer than d_safe = 5 m), or
+    d_safe = 10-15 m together with dt = 0.2 s.
+    If a 1 s decision interval is needed, decouple it: update positions at
+    0.2 s, run the policy every 1 s, and state both in Table IV.
+
+--------------------------------------------------------------------------------
+C2  [HIGH] P_comm = 10 W exceeds every radio power limit the toolchain models
+--------------------------------------------------------------------------------
+  LOCATION : Table IV, .tex L481; toolchain commitment at L631-L652
+
+  THE CHECK
+    10 W = 40 dBm. Regulatory and standards limits:
+
+      IEEE 802.11        FCC 15.247 / ETSI EN 300 328   <= 30 dBm (1 W)
+      IEEE 802.15.4      Silicon Labs RF guidance       <= 20 dBm (100 mW)
+      LTE / 5G UE        3GPP UE power class            <= 23 dBm (2 W peak)
+
+    Realistic figures: RF transmit 0.1-1 W; total avionics + comms +
+    flight controller + compute = 3-15 W.
+
+  WHY THIS MATTERS
+    Section IV-G commits to OMNeT++/INET (which model 802.11 and 802.15.4)
+    and Simu5G (which models 3GPP NR/LTE). Those simulators model exactly the
+    standards above. A 40 dBm transmitter is not constructible in any of
+    them, so the number is inconsistent with the stated methodology.
+
+  FIX
+    Either rename the row P_avionics and state what it includes (3-15 W), or
+    set it to 5 W, and add a separate row for RF transmit power at 0.5 W
+    (17 dBm).
+
+--------------------------------------------------------------------------------
+C3  [HIGH] Nominal altitude z0 is mentioned but never assigned a value
+--------------------------------------------------------------------------------
+  LOCATION : L160 ("the UAVs fly at a common nominal altitude z0");
+             Table IV, .tex L459-L485 -- no altitude row
+
+  THE CHECK
+    R_cov = 35 m at z0 = 100 m is not self-consistent with any real payload.
+    A Phantom 4 Pro has a 73.7 deg horizontal field of view, giving a
+    footprint half-width of 1.503 * h:
+      at 100 m altitude -> R_cov = 75 m
+      R_cov = 35 m requires altitude ~47 m
+    As a radio, 35 m at 100 m implies a 38.6 deg full 3-dB beamwidth, which
+    needs a ~0.64 m aperture at 2.4 GHz -- not mountable on a light UAV.
+
+  SOURCES
+    Qureshi and Imran, "On the Tradeoffs Between Coverage Radius, Altitude,
+    and Beamwidth for Practical UAV Deployments," arXiv:2006.05555 -- shows
+    coverage radius is NON-MONOTONIC in altitude for a realistic 3-D
+    pattern. A paper asserting a fixed radius with no beamwidth and no z0 is
+    the simplification that paper criticises.
+
+    Luna et al., "Fast Multi-UAV Path Planning for Optimal Area Coverage,"
+    Sensors 22(6):2297, 2022, doi: 10.3390/s17040808 -- real 3-UAV flight
+    at 20 m altitude, 5 m/s cruise. A citable operating point.
+
+  FIX
+    Add a Table IV row. z0 = 50 m makes R_cov = 35 m self-consistent as a
+    camera footprint; alternatively keep z0 = 100 m and set R_cov = 75 m.
+
+--------------------------------------------------------------------------------
+C4  [HIGH] R_cov = 15 m cannot satisfy the paper's own K-coverage condition
+--------------------------------------------------------------------------------
+  LOCATION : Table IV, .tex L472; condition stated at L268; Eq. (8) at L255
+
+  THE CHECK
+    K-coverage of all M sensors requires at least K*M = 40 sensor-UAV
+    incidence pairs. With uniform sensors in area A, one UAV covers on
+    average (M/A) * pi * R_cov^2 sensors.
+
+      expected pairs = N * (M/A) * pi * R_cov^2
+                     = 5 * (20/10,000) * pi * 15^2
+                     = 5 * 0.002 * 706.858 = 7.07
+      required pairs = K*M = 40
+      ratio          = 7.07 / 40 = 0.1767
+
+    In area units:
+      supplied  N * pi * R_cov^2 = 3,534.29 m^2
+      required  K * |Omega|      = 20,000.00 m^2
+
+    K_max = floor(0.1767) = 0. The K = 1 condition also fails.
+
+    Solving N pi R^2 = K A for the radius:
+      R_cov = sqrt(K |Omega| / (pi N)) = sqrt(20,000 / 15.708) = 35.68 m
+    With congruent-disk packing density delta = pi/(2 sqrt 3) = 0.90690:
+      R_cov = sqrt(20,000 / 14.245) = 37.47 m
+
+    Grid check, 5 x 4 sensors over 100 x 100 m, spacing 20.0 x 25.0 m: a
+    15 m disk contains 1 sensor. N = 5 gives 5 pairs against 40 required.
+    Best-case placement does not help.
+
+  WHY THIS MATTERS
+    With the ratio below 1, n_d(t) >= K is unsatisfiable for any policy. The
+    dominant reward term lambda_O * U_t at Eq. (28) is then constant at its
+    maximum, every baseline scores identically, and the coverage experiment
+    produces no learning signal.
+
+  FIX
+      .tex L471  Omega   100 x 100 m  ->   80 x 80 m
+      .tex L472  R_cov       15 m    ->    35 m
+    With these: N pi R^2 = 19,242 m^2 against K A = 12,800 m^2, ratio 1.50.
+    After one UAV fails the ratio is 1.20, still above 1, so the reserve UAV
+    is a safety factor rather than the only route to feasibility.
+    R_cov minimum for these values: 28.55 m counting, 29.98 m packing.
+
+  SOURCES for the bound
+    Classical disk-covering result: the densest packing of congruent disks
+    has density delta = pi/(2 sqrt 3) = 0.90690, giving the covering count
+    N >= 2A / (3 sqrt 3 r^2). Note the constant 1/(2 sqrt 3) is a PACKING
+    density and is sometimes misread as a covering bound; the covering
+    constant is 2/(3 sqrt 3). The necessary condition used above,
+    N pi r^2 >= K A, is the weaker area-counting statement and is sufficient
+    for the purpose of Table IV.
+
+--------------------------------------------------------------------------------
+C5  [MEDIUM] Symbol a_i is bound to two different quantities
+--------------------------------------------------------------------------------
+  LOCATION : PDF pp. 4-5
+
+    ROLE A -- the action
+      L525  Eq. (29)      a_i(t) ~ pi_theta( a_i | o_i(t) )
+      L577  Algorithm 1   Sample a_i(t) ~ pi_theta( . | o_i(t) )
+      L333  Eq. (16)      P_i(t) = P_hover * 1[a_i = Hover] + ...
+      L141  Fig. 1        pi_theta(a_i | o_i)
+      L502  Fig. 4        pi_theta(a_i | o_i)
+
+    ROLE B -- the articulation-point indicator
+      L315  Eq. (12)      a_i(t) = 1[ G_t - i is disconnected ]
+      L320  Eq. (13)      Crit_t = (1/|V_t^act|) sum_i a_i(t)
+
+    Eq. (13) is defined in terms of ROLE B; Eq. (16) and Eq. (29) use ROLE A.
+
+  FIX
+    Rename the indicator to kappa_i at L315 and L320. Keep a_i for the
+    action. Also change "G_t - i" to "G_t^{-i}" and add one sentence
+    defining it as G_t with vertex i and its incident edges removed.
+    rho_i (L188, Table II) is a distinct quantity and is unaffected.
+
+--------------------------------------------------------------------------------
+C6  [MEDIUM] V_t^act is used in two equations and never defined in a
+      displayed equation
+--------------------------------------------------------------------------------
+  LOCATION : L255 Eq. (8), L320 Eq. (13)
+
+  L180 states the property in prose ("A failed UAV is removed from the
+  active set used in coverage and connectivity calculations") but no
+  displayed equation gives the set.
+
+  FIX
+    Add after Eq. (3), at L168:
+      V_t^act = { i in {1,...,N} : F_i(t) = 0 }
+
+--------------------------------------------------------------------------------
+C7  [HIGH] The critic loss is PPO's, not MAPPO's
+--------------------------------------------------------------------------------
+  LOCATION : L553-L556
+
+  AS PRINTED
+    L_critic(phi) = E_t[ (R_hat_t - V_phi(s_t))^2 ]
+
+  MAPPO SPECIFIES
+    L(phi) = (1/B_n) sum_{i,k} max[ (V_phi(s) - R_hat)^2,
+                                   (clip(V_phi(s), V_phi_old(s) - eps,
+                                        V_phi_old(s) + eps) - R_hat)^2 ]
+
+  THREE DEVIATIONS
+    (a) Value clipping is absent. This is one of MAPPO's five named factors
+        (Yu et al. 2022, Sec. 5.4).
+    (b) Huber loss is absent. The reference implementation defaults to
+        use_huber_loss = True, huber_delta = 10.0.
+    (c) Normalised targets are absent -- see C8.
+
+  SOURCES
+    C. Yu et al., "The surprising effectiveness of PPO in cooperative
+    multi-agent games," NeurIPS 2022, Appendix A (critic loss),
+    Sec. 5.4 (PPO clipping ablation), reference code r_mappo.py lines 62-80.
+
+  FIX
+    Replace Eq. (34) with the clipped form above.
+
+--------------------------------------------------------------------------------
+C8  [HIGH] Value normalisation is absent -- MAPPO's most important component
+--------------------------------------------------------------------------------
+  LOCATION : not present anywhere in the document
+
+  MAPPO'S FINDING
+    "we find that using value normalization never hurts training and often
+    improves the final performance of MAPPO significantly. In Spread, where
+    the episode returns range from below -200 to 0, value normalization is
+    CRITICAL to strong performance."
+    -- Yu et al. 2022, Sec. 5.1, Suggestion 1 of 5
+
+    The mechanism: standardise value-function targets with a running mean
+    and standard deviation; the network regresses to normalised targets; the
+    running mean is used to DENORMALISE the network output when computing
+    GAE.
+
+  WHY THIS MATTERS HERE
+    Eq. (28) at L425-L430 sums six weighted terms, so R_t is plausibly of
+    order 10^2. Unnormalised value regression at that scale is the most
+    likely reason a MAPPO reproduction underperforms.
+
+  SOURCES
+    C. Yu et al., NeurIPS 2022, Sec. 5.1, Algorithm 1 (PopArt steps).
+    M. Hessel et al., "Ray RLlib: A composable library for distributed
+    deep RL," ICLR 2019, arXiv:1905.12865 -- the PopArt reference.
+
+  ALSO ABSENT (all standard in MAPPO, all additive)
+    - Advantage normalisation              Sec. 3.3
+    - Entropy bonus, sigma = 0.01           Appendix A
+    - Orthogonal init, gain 0.01            Algorithm 1 line 1
+    - Gradient clipping, max-norm 10        reference config.py
+    - Observation LayerNorm                 reference config.py
+    - <= 15 epochs, minibatch = 1           Sec. 5.3, Suggestion 3
+    - epsilon < 0.2, same value for policy and critic   Sec. 5.4
+
+--------------------------------------------------------------------------------
+C9  [MEDIUM] The value target is not stated to be detached
+--------------------------------------------------------------------------------
+  LOCATION : L556  "where R_hat_t = A_hat_t + V_phi(s_t)"
+
+  THE MATHEMATICS IS CORRECT
+    A_hat_t is the GAE advantage; A_hat_t + V(s_t) is exactly the
+    TD(lambda) lambda-return:
+      A_hat_t = G^lambda_t - V(s_t)   =>   R_hat_t = G^lambda_t
+    This is the standard semi-gradient target and is unbiased when V is
+    exact. Verified by expansion against Sutton and Barto, Reinforcement
+    Learning: An Introduction, 2nd ed., Ch. 12.
+
+  THE OMISSION
+    The document does not state that R_hat is treated as a CONSTANT during
+    the critic update. If gradients flow through it, the critic chases a
+    self-referential target. The standard implementation computes the
+    returns once into a buffer before the update loop.
+
+    There is also a known discrepancy to be aware of: MAPPO's Appendix A
+    prose calls R_hat "the discounted reward-to-go" (Monte Carlo), while the
+    reference code computes gae + value_preds, i.e. the lambda-return. The
+    report as written matches the CODE, not the prose. Say so explicitly,
+    or a reader will "correct" it wrongly.
+
+  SOURCES
+    J. Schulman et al., "High-Dimensional Continuous Control Using
+    Generalized Advantage Estimation," ICLR 2016, arXiv:1506.02438, Eq. 16.
+    R. Sutton and A. Barto, Reinforcement Learning: An Introduction, 2nd ed.,
+    MIT Press 2018, Ch. 12 (lambda-returns).
+    MAPPO reference code, onpolicy/utils/shared_buffer.py line 258.
+
+  FIX
+    Add one sentence: "The target R_hat is computed once per rollout and
+    treated as a constant; gradients are not propagated through it."
+
+--------------------------------------------------------------------------------
+C10 [MEDIUM] The parameter-sharing justification names the wrong condition
+--------------------------------------------------------------------------------
+  LOCATION : L528
+    "Parameter sharing is appropriate because the active UAVs have the same
+     action semantics and physical model."
+
+  THE ACTUAL CONDITION has two parts:
+    (i) the environment is equivariant to permutations of agents --
+        identical observation and action spaces AND identical
+        transition/reward structure; and
+    (ii) each agent's own observation identifies it, so a shared network can
+         still specialise.
+    Foerster et al. state this directly: "the agents can still behave
+    differently because they receive different observations... In addition,
+    each agent receives its own index i as input, allowing it to specialise."
+    Condition (ii) is absent from the report's justification.
+
+  THERE IS ALSO A FORMAL RESULT AGAINST IT
+    Fu, Yu, Xu, Yang, Wu, "Revisiting Some Common Practices in Cooperative
+    Multi-Agent Reinforcement Learning," ICML 2022, arXiv:2206.07505,
+    Theorem 4.2: a shared policy provably CANNOT learn an optimal policy for
+    the XOR game. MAPPO cites this itself in its own Appendix C.2.
+    Christianos et al., ICML 2021, reach a compatible conclusion: "naive
+    parameter sharing... can be detrimental to final convergence in many
+    environments."
+
+  DOMAIN NOTE
+    If all N UAVs are active and identical, sharing is well motivated. If
+    any are grounded, docked, or hold heterogeneous roles, the agents are
+    non-homogeneous; MAPPO explicitly does NOT share parameters in that case
+    (MPE Comm) and the ICML 2022 result applies directly. Note that m_i
+    (operating mode) at L180 may encode a role.
+
+  FIX
+    Restate using conditions (i) and (ii), cite Foerster 2016, and cite the
+    ICML 2022 result as the known limitation. Cite MAPPO Appendix C.2 Table 4
+    for the empirical gap, e.g. MMM2 90.6 with sharing versus 13.0 without.
+
+--------------------------------------------------------------------------------
+C11 [MEDIUM] The UAV-to-sink link is never defined
+--------------------------------------------------------------------------------
+  LOCATION : L62 and L122 (prose only), L134 and L143-L144 (Fig. 1 only)
+
+  L122 states: "Sensor data reaches the sink through the UAV communication
+  graph whenever the graph is connected."
+
+  THE CHECK
+    The document defines exactly two links mathematically:
+      UAV <-> sensor   Eq. (7)  L250, radius R_cov
+      UAV <-> UAV      Eq. (9)  L310, radius R_comm
+    There is no equation, radius or link budget for UAV <-> sink.
+
+    Connectivity of G_t only says the UAVs can reach each other. It does not
+    imply that any UAV is within range of the sink. Placing the sink in a
+    corner with the swarm spread out yields a connected G_t with no UAV in
+    range of the sink, under full K-coverage, with no data reaching the
+    ground station.
+
+  FIX
+    Either add the sink as a vertex, V_t = {0} union V_t^act, extending
+    Eq. (9); or add a separate requirement with radius R_sink and report
+    sink availability as a metric alongside the connectivity-availability
+    metric already defined at L701.
+
+--------------------------------------------------------------------------------
+C12 [MEDIUM] Pad occupancy is in the state but not in the observation
+--------------------------------------------------------------------------------
+  LOCATION : L177 (state) versus L185 (observation)
+
+  Q_t in {0,1}^S appears in the global state at L177. It does NOT appear in
+  o_i(t) at L185, nor in Table II at L202-L209.
+
+  WHY THIS MATTERS
+    Section III-H states the flow "RL request -> Station assignment ->
+    Return trajectory" (L229-L235). The ACTOR issues the request. The critic
+    sees pad occupancy; the actor does not. With S = 2 pads and N = 5 UAVs,
+    several UAVs can be energy-critical simultaneously. An actor that cannot
+    observe pad occupancy cannot distinguish "pads free, charge now" from
+    "pads busy, stay and cover", so it cannot learn to defer. This is a
+    missing input, not a training difficulty.
+
+  FIX
+    Append a per-pad vector to Eq. (4):
+      q_i(t) = [ d_i1, ..., d_iS, u_i1, ..., u_iS, h_i ]
+    where d_is is the distance to pad s, u_is its occupancy, and h_i flags
+    whether the UAV already has a pending request. For S = 2 this adds 5
+    scalars.
+
+    This preserves decentralised execution: an occupied pad has a UAV docked
+    at it, and that UAV is within R_comm, so occupancy is detectable by the
+    same neighbour-exchange mechanism already used for rho_i at L188.
+
+  RELATED, at L604
+    "A recurrent policy should be introduced only if experiments show that
+    instantaneous observations do not provide sufficient temporal
+    information."
+    The trigger cannot fire here: the information is definitionally absent
+    from o_i, not empirically absent. Either fix the observation as above, or
+    make the actor recurrent and state what the recurrent state encodes.
+
+--------------------------------------------------------------------------------
+C13 [MEDIUM] Objective is written as a minimisation, the RL objective as a
+      maximisation, and no sentence connects them
+--------------------------------------------------------------------------------
+  LOCATION : Eq. (2) L169-L171, Eq. (25) L408-L410, Eq. (26) L415-L420,
+             Eq. (28) L425-L430
+
+  Eq. (2) maximises. Eq. (26) minimises. Eq. (28) is the negated weighted
+  cost. The three are mutually consistent up to sign, but no sentence states
+  the relationship.
+
+  FIX
+    Add after Eq. (28): "Since the learner maximises expected return while
+    the control objective of (26) is a minimisation, the team reward of (28)
+    is the negated weighted cost, and the two are equivalent up to sign."
+
+--------------------------------------------------------------------------------
+C14 [MEDIUM] Physical parameters in Table IV
+--------------------------------------------------------------------------------
+  LOCATION : Table IV, .tex L468-L482
+
+  C14a  B_max = 30,000 J and P_hover = 50 W do not correspond to one aircraft
+         Endurance = 30,000/50 = 600 s = 10 min hovering. Fitting
+         P_hover ~ C m^1.3 to DJI data gives 51.6 W at 0.5 kg AUW, so 50 W is
+         a valid light-platform figure, but that class packs 18-45 Wh
+         (64,800-162,000 J), not 8.33 Wh.
+         Reference points: DJI Mini 3, 18.1 Wh, 34 min; DJI Mavic 2, 43.6 Wh,
+         24 min hover; DJI Phantom 4 Pro, 89.2 Wh, ~30 min.
+         Datsko et al. (doi: 10.1109/LRA.2024.3358581) use a 130 Wh energy
+         budget with P_hover = 426.03 W on a 4.5 kg Tarot T650, validated
+         against 7 real flights.
+         FIX: B_max = 60,000 J gives 20 min hover and is internally
+         consistent with 50 W. Or keep 30 kJ and drop P_hover to ~15 W.
+
+  C14b  P_move / P_hover = 75/50 = 1.5 is too high
+         Datsko et al. measured P_r / P_h = 465.23 / 426.03 = 1.09, with
+         P_r at the energy-optimal 8.39 m/s. Forward flight adds a v^3
+         profile-drag term that is small for a multirotor at 5 m/s.
+         FIX: P_move = 55-60 W, cite Datsko et al.
+
+  C14c  Charge rate 0.01 per step is ~36 C; 0.001 per step is ~3.6 C
+         At B_max = 30,000 J = 8.33 Wh and 1000 s, the average charger
+         power is 30 W = 1.97 A, about 3.6 C. LiPo is rated at 2 C maximum
+         (Bitcraze 250 mAh / 2C specification); hobby practice is <= 1 C.
+         Reference point: DJI Mavic Pro, 43.6 Wh, ~80 min at 1C.
+         FIX: 0.0002-0.0005 per step, and state the C-rate and the CC-to-CV
+         taper in the text.
+
+  C14d  v_max = 5 m/s is realistic but conservative
+         Luna et al., Sensors 22(6):2297, 2022, doi: 10.3390/s17040808
+         report a real 3-UAV coverage mission at 5 m/s cruise and 20 m
+         altitude -- an almost exact match to this setting, and a useful
+         citation. Energy-optimal multirotor speed is 8.39 m/s (Datsko) and
+         11.0-16.5 m/s (Bauersfeld and Scaramuzza, "Range, Endurance, and
+         Optimal Speed Estimates for Multicopters," IEEE RA-L 7(2):2953-2960,
+         2022, doi: 10.1109/LRA.2022.3145063).
+
+  C14e  d_safe = 5 m is defensible for a ~1 kg airframe but is unresolved
+         against C1
+         Marek et al., "Collision Avoidance Mechanism for Swarms of Drones,"
+         PLOS ONE 20:e0352858, 2025, doi: 10.1371/journal.pone.0352858 use
+         an initial inter-drone distance of 5 m. For nano-scale platforms,
+         Hönig et al., "Crazyswarm," Behavioural Robotics 2021, use
+         sub-metre separations. See C1 for the time-step interaction.
+
+  C14f  R_comm = 45 m may make connectivity non-binding
+         With R_cov = 35 m over an 80 x 80 m region, 5 UAVs sit roughly 40 m
+         apart, and 45 m links connect every adjacent pair, so G_t is often
+         already connected. If that is intended, state it, because it means
+         the multi-hop and connectivity terms contribute little. If not
+         intended, R_comm below 2 R_cov forces a genuine multi-hop topology.
+         Link budget at 45 m, 2.4 GHz, 20 dBm: free-space path loss 73.1 dB
+         gives 29 dB margin against 802.11 sensitivity; with log-distance
+         n = 3.32 (Faria and Kuhn, Stanford technical report) the margin
+         falls to about 7 dB, which is tight at high MCS.
+         For reference, INET 4.6's own tutorial configures a 500 m range
+         for its unit-disk medium, so 45 m is a deliberate and defensible
+         choice -- but it should be a stated choice.
+
+  Note on all of C14: L457 already states these are "implementation
+  parameters for the proposed simulator rather than experimentally calibrated
+  real-flight values." That framing is honest and makes most of C14
+  presentational rather than correctness issues. C1, C2 and C3 are not
+  covered by that hedge, because they are internal contradictions rather
+  than calibration choices.
+
+--------------------------------------------------------------------------------
+C15 [HIGH] The project name "Swift" is used but never defined
+--------------------------------------------------------------------------------
+  LOCATION : L567 (Algorithm 1 caption) and L722 (Section VI-A, last paragraph)
+
+  AS PRINTED
+    L567  \caption{Swift MAPPO training}
+    L722  "...the comparison between full Swift and vanilla MAPPO is
+           necessary to distinguish improvements caused by MAPPO itself from
+           improvements caused by the domain-specific system design."
+
+  THE CHECK
+    The word "Swift" occurs exactly twice in the document, at L567 and L722.
+    It does not appear in:
+      - the title, L39 ("Persistent and Fault-Tolerant UAV-IoT Coverage: A
+        Multi-Agent Reinforcement Learning Framework for Joint Coverage,
+        Connectivity, and Energy Management")
+      - the abstract, L51-L53
+      - the keyword list, L55-L57
+      - the author or institute block, L41-L46
+    No line anywhere defines "Swift" as a system name, an acronym, or a
+    component of the framework.
+
+  WHY THIS MATTERS
+    This is the most visible single error in the report. A reader reaches
+    Algorithm 1 on PDF page 7 and encounters a name that has never been
+    introduced. It reads as a leftover from a different project, and it
+    undermines confidence in the rest of the document -- particularly
+    because the surrounding text is otherwise carefully written.
+
+  SECOND ISSUE AT L722
+    "vanilla MAPPO" is named as a baseline but does not appear in Table VI
+    (comparison models, L659-L677). The six baselines listed there are fixed
+    formation, greedy lowest-battery, reactive reconfiguration, MAD-DDQN,
+    POGS-QMIX and MAHPPO-AM. A reader cannot tell whether vanilla MAPPO is a
+    seventh baseline, an alias for one of the six, or a different method.
+
+  FIX
+    Either (a) remove "Swift" from both locations, or (b) define it once in
+    Section III-A and keep it. If keeping it, the definition must appear
+    before L567. Then add vanilla MAPPO as a named row in Table VI, or remove
+    the reference at L722.
+
+--------------------------------------------------------------------------------
+C16 [HIGH] Three further symbol collisions in the reward
+--------------------------------------------------------------------------------
+  Beyond a_i (see C5), three more symbols are bound to two meanings each.
+
+  C16a  E_t is the graph EDGE SET and the ENERGY TERM
+
+    Eq. (9), L310:
+      G_t = (V_t, E_t),  E_t = { (i,j) : ||p_i - p_j||_2 <= R_comm }
+    Here E_t is a SET of graph edges.
+
+    Eq. (28), L427:
+      r_t = -( lambda_O U_t + lambda_E E_t + lambda_D D_t + ... )
+    Here E_t is an energy-consumption quantity.
+
+    Two different objects, same symbol, adjacent sections. An examiner
+    reading Eq. (28) after Eq. (9) will not resolve this without effort.
+
+  C16b  R_t is the IMMEDIATE REWARD and a REWARD-COMPONENT TERM
+
+    As immediate reward, in the learning machinery:
+      Eq. (2),  L170    max_pi E_pi[ sum_t gamma^t R_t ]
+      Eq. (30), L532    delta_t = R_t + gamma V(s_{t+1}) - V(s_t)
+      L546, L547        the PPO ratio r_t(theta) and clipped objective
+      L553, L556        the critic loss and R_hat_t = A_hat_t + V(s_t)
+      L588              Algorithm 1, "Compute R_t from (28)"
+
+    As a component term, in the reward itself:
+      Eq. (28), L428    r_t = -( ... + lambda_R R_t + ... )
+
+    R_t is therefore the quantity being predicted, and simultaneously a term
+    inside the quantity being predicted. The symbol is circular.
+
+  C16c  D_t occurs exactly once in the whole document
+
+    Eq. (28), L427 is the only occurrence. It is never defined, never
+    listed in a table, and never given a formula. The descriptive text at
+    L422 calls it "degraded-service time", which is the only indication of
+    what it means.
+
+  FIX
+    Rename the reward components so that none collides with an existing
+    symbol, and define all of them. For example:
+
+      r_t = -( lambda_O U_t + lambda_E E_t^cons + lambda_D D_t^deg
+               + lambda_W W_t^mov + lambda_R R_t^rec
+               + lambda_C Crit_t )
+
+    Then add a short table, either in Section III-L or as a new subsection,
+    giving one row per term: symbol, definition, and formula. At minimum,
+    give formulas for the two that currently have none:
+
+      D_t^deg  (degraded-service time) and W_t^mov (unnecessary-movement
+      ratio). W_t is named but never formulated -- see C17.
+
+--------------------------------------------------------------------------------
+C17 [MEDIUM] Four of the six reward terms have no formula anywhere
+--------------------------------------------------------------------------------
+  LOCATION : Eq. (28) at L425-L430; descriptive text at L422;
+             Table VII at L689-L715
+
+  WHAT IS DEFINED
+      U_t      Eq. (10), L265-L266   under-coverage rate
+      Crit_t   Eq. (13), L318-L321   articulation-point average
+
+  WHAT IS NOT DEFINED BY ANY EQUATION
+      E_t      energy expenditure       4 occurrences, no formula
+      D_t      degraded-service time     1 occurrence,  no formula
+      W_t      unnecessary movement      2 occurrences, no formula
+      R_t      recovery delay           10 occurrences, but all are the
+                                        immediate reward, none is the
+                                        recovery-delay term
+
+  TABLE VII COMPOUNDS THIS
+    Of the thirteen rows in Table VII, only two carry a formula:
+      L699  C_K = (1/TM) sum_t sum_d 1[n_d(t) >= K]
+      L701  A_G = (1/T)  sum_t 1[G_t connected]
+    The remaining eleven rows, including the Energy row at L707 and the
+    Movement row at L709, are described in prose. Row L709 names W_t but
+    supplies no expression for it.
+
+  WHY THIS MATTERS
+    Eq. (28) is the central equation of the paper -- it is what the learner
+    actually optimises. Four of its six terms are not reproducible from the
+    document. A reader cannot implement the reward, and cannot verify that
+    the reported metrics correspond to the optimised quantity. The five
+    lambda weights at L427-L428 are also unquantified.
+
+  FIX
+    Add a term-definition table in Section III-L with six rows, one per
+    reward term, giving symbol, meaning, and formula. State the lambda values
+    in Table V alongside gamma, epsilon and lambda_GAE, or state that they
+    are tuned on a validation set. For reference, the aligned terms are
+    common in the literature; keep the normalisation consistent with the
+    per-step scales of U_t and Crit_t, which are already in [0,1].
+
+  NOTE ON L422
+    The sentence at L422 is itself accurate as a list of names:
+    "The secondary terms represent energy expenditure, degraded-service
+    time, unnecessary movement, recovery delay, and topology criticality,
+    respectively." The problem is that it describes terms that are never
+    then defined.
+
+--------------------------------------------------------------------------------
+C18 [LOW] Metric/requirement inconsistency in Table VIII
+--------------------------------------------------------------------------------
+  LOCATION : Table VIII, L444-L451
+
+    L444  Speed                  ||v_i|| <= v_max        masked
+    L445  Workspace              p_i in Omega            masked
+    L446  Separation             ||p_i - p_j|| >= d_safe masked
+    L447  Battery reachability   E_i >= E_i^req          before departure
+    L448  Charging capacity      at most one UAV per pad assignment
+    L449  K-coverage             n_d(t) >= K             collective metric
+    L450  Connectivity           G_t connected           reward + metric
+    L451  Recovery               tau_f <= tau_max        scenario requirement
+
+  THE INCONSISTENCY
+    Coverage and connectivity are enforced on every step of the simulation,
+    yet both are listed in the same column as recovery, which Table VII at
+    L706 defines as a quantity MEASURED ACROSS EPISODES. If K-coverage and
+    connectivity are soft objectives, Table VII is right to report them as
+    metrics; if they are constraints, they belong in the enforced group at
+    L444-L448. The table currently mixes the two without saying which.
+
+  FIX
+    One sentence, either in the Table VIII caption or in Section III-J:
+    "Requirements are enforced per step where locally checkable; the
+    collective properties are evaluated per episode and reported as metrics
+    rather than enforced."
+
+  This also sharpens the boundary already drawn at L394, which correctly
+  states that connectivity cannot be guaranteed from one-hop observations.
+
+--------------------------------------------------------------------------------
+C19 [LOW] Two baselines named in the text are absent from Table VI
+--------------------------------------------------------------------------------
+  LOCATION : L672 and L674 (Table VI rows) versus L722 (Section VI-A)
+
+  Table VI lists exactly six models:
+    fixed formation + threshold recharge        L669
+    greedy lowest-battery recharge             L670
+    reactive reconfiguration                   L671
+    MAD-DDQN (omoniwa2022)                     L672
+    POGS-QMIX (mei2026)                        L673
+    MAHPPO-AM (sun2025)                        L674
+
+  Section VI-A at L722 refers to a comparison between "full Swift and
+  vanilla MAPPO" and says this is "necessary". Neither "Swift" (see C15) nor
+  "vanilla MAPPO" appears in Table VI. A reader has no list to check this
+  against.
+
+  FIX
+    Add vanilla MAPPO as a seventh row, or state in Section VI-A which of
+  the six named models it refers to. The ablation is the standard way to
+  separate "the algorithm helps" from "the system design helps", so it is
+  worth keeping -- it just needs a row.
+
+--------------------------------------------------------------------------------
+C20 [LOW] No consistent system name, and no short title for running heads
+--------------------------------------------------------------------------------
+  LOCATION : L39 (\title), L567 (Algorithm 1 caption), L523 (Section IV-A)
+
+  THE CHECK
+    L39 declares the title without the optional short form:
+      \title{Persistent and Fault-Tolerant UAV-IoT Coverage: ...}
+    There is no \title[short]{long} and no \markboth in the document, so no
+    short title exists for the running head. This is a formatting omission
+    rather than an error, and is only worth noting because the template
+    normally supplies one.
+
+  THE NAMING INCONSISTENCY
+    Three different names are used for the same system:
+      L39   "Persistent and Fault-Tolerant UAV-IoT Coverage"  (title)
+      L567  "Swift MAPPO training"                            (Algorithm 1)
+      L523  "parameter-shared MAPPO"                         (Section IV-A)
+    "Swift" is the outlier, since it is never defined -- see C15. The other
+    two are descriptive rather than names, which is acceptable, but the
+    paper would read better with one declared name.
+
+  FIX
+    Add a running-head short title, and either define "Swift" before L567 or
+    remove it. The same fix as C15.
+
+================================================================================
+SECTION D -- LITERATURE AND POSITIONING
+================================================================================
+
+--------------------------------------------------------------------------------
+D1  [HIGHEST IN THIS SECTION] Trotta et al. 2018 is missing
+--------------------------------------------------------------------------------
+  A. Trotta, M. Di Felice, F. Montori, K. R. Chowdhury, L. Bononi,
+  "Joint Coverage, Connectivity, and Charging Strategies for Distributed UAV
+  Networks," IEEE Transactions on Robotics, vol. 34, no. 4, pp. 883-900,
+  Aug. 2018, doi: 10.1109/TRO.2018.2839087. 151 citations.
+
+  VERIFIED via dblp record journals/trob/TrottaFMCB18, the University of
+  Bologna institutional repository copy, and IEEE Xplore document 8382297.
+
+  WHY IT MATTERS
+    The title is literally elements (i) + (ii) + (iii) of the report's own
+    claimed gap -- coverage, connectivity, and charging for distributed UAV
+    networks. It is in IEEE T-RO, the same venue as two existing rows
+    (mathew2015, arribas2023), and it is from 2018.
+
+    Its absence from a table whose stated purpose is to show that no prior
+    work combines coverage, connectivity and charging is visible
+    cherry-picking to any reviewer in the field.
+
+  WHAT IT ACTUALLY COVERS (from the abstract)
+    A centralised optimal solution for the joint problem of UAV positioning
+    for a target coverage ratio and scheduling of charging operations;
+    a distributed game-theoretic scheduling strategy with rigorous
+    performance bounds; a bio-inspired distributed positioning scheme.
+    Results use 1-hop messaging. It has no failure model, no reserve UAV, no
+    K-multiplicity, and no learned policy.
+
+  FIX
+    Add it to Table I with the limitation column stating those four
+    absences, and reference it in Section II-C.
+
+--------------------------------------------------------------------------------
+D2  [HIGH] The gap statement is constructed in a way that guarantees "no"
+--------------------------------------------------------------------------------
+  LOCATION : L116, Table I (L86-L109)
+
+  The ten surveyed papers partition as:
+      4  wireless-DRL coverage      (liu2018, qiu2019, omoniwa2022, khan2025)
+      2  pure connectivity control  (zareh2016, basu2004)
+      2  pure recharge scheduling   (mathew2015, arribas2023)
+      2  pure fault tolerance       (basu2004, jiang2024)
+      0  hybrid papers
+
+  No paper in the set is a plausible 4-of-5 candidate, so the conjunction in
+  L116 is near-vacuous. A reader cannot distinguish "the field was surveyed
+  and a gap was found" from "the field was partitioned into four
+  non-overlapping buckets and no single paper is in all four."
+
+  The hedge in L116 correctly bounds the epistemic claim, which is good
+  practice. It does not address the selection mechanism.
+
+  ADDITIONAL ISSUE: the buckets are not co-extensive with the five elements
+    in L116. "Fair communication coverage" is not K-coverage of fixed
+    sensors; "fault-tolerant" is not reserve-UAV recovery. So the tabulation
+  does not test the stated claim even in principle.
+
+  FIX
+    (a) State an a-priori inclusion criterion, for example: papers whose
+        abstracts contain at least two of the five keywords, screened over a
+        stated venue list and year range.
+    (b) Add a near-miss appendix listing papers that cover three of the five
+        elements, with a per-element matrix. This strengthens the claim
+        because it shows the counterexamples were sought.
+    (c) Rewrite the closing sentence to name the counterexamples and state
+        precisely which element each is missing. For example:
+
+        "Each of (i)-(v) has been studied in combination with one or two
+         others. Trotta et al. (2018) couple coverage, connectivity and
+         charging without a failure model or learning; Scherer and Rinner
+         (2016) couple persistence, energy and communication constraints
+         without a fleet-level failure-recovery policy or decentralised
+         execution; Hartuv et al. (2018) size a spare-drone fleet under
+         energy constraints without coverage multiplicity or connectivity
+         criticality. We are not aware of work coupling all five, and
+         specifically not of any doing so with a learned decentralised
+         policy executed under CTDE."
+
+        This version is honest, citable, and stronger, because it names what
+        each near-miss lacks.
+
+--------------------------------------------------------------------------------
+D3  [MEDIUM] Contribution 2 is prior art, not a contribution
+--------------------------------------------------------------------------------
+  LOCATION : L75
+    "A CTDE MAPPO framework with parameter-shared decentralized actors, a
+     centralized training critic, hard action feasibility masks, and an
+     explicit reserve-UAV recovery mechanism."
+
+  CTDE with a centralised critic and parameter-shared actors is the standard
+  MAPPO instantiation, not a contribution.
+    - Parameter sharing as a standard MARL technique originates with Kiryo,
+      van der Hoek, de Witt, "Value Function Factorization in Deep
+      Multi-Agent Reinforcement Learning," AAMAS 2020, arXiv:1808.00062.
+    - CTDE-MAPPO for multi-UAV problems already exists: Sun et al.,
+      arXiv:2509.23905; MAPPO for cellular-connected UAV swarms,
+      arXiv:2606.16386.
+
+  FIX
+    Reframe as a design choice plus what the work adds:
+    "We adopt CTDE MAPPO with parameter-shared actors as the learning
+     substrate, and identify the state and action abstractions required to
+     expose contested-pad contention (Section III-D) and reserve-UAV
+     activation (Section III-K) to a decentralised actor."
+
+--------------------------------------------------------------------------------
+D4  [MEDIUM] Citation additions, with what each covers
+--------------------------------------------------------------------------------
+  E. Hartuv, N. Agmon, S. Kraus, "Scheduling spare Drones for Persistent Task
+  Performance under Energy Constraints," AAMAS 2018, pp. 532-540.
+    Covers reserve/spare drones under energy limits = element (iv), combined
+    with (iii). Uncited.
+
+  R. Shi, X. Yu, Y. Wang, Y. Tian, Z. Liu, W. Wu, X.-P. Zhang, M. M. Veloso,
+  "Symmetry-Informed MARL: A Decentralized and Cooperative UAV Swarm Control
+  Approach for Communication Coverage," IEEE Trans. Mobile Computing,
+  vol. 24, no. 9, pp. 8039-8056, Sep. 2025, doi: 10.1109/TMC.2025.3553285.
+    Closest published competitor. Benchmarks against both liu2018 and yu2022.
+    Covers (i), (ii), (v). Uncited.
+
+  J. Scherer, B. Rinner, "Persistent multi-UAV surveillance with energy and
+  communication constraints," IEEE CASE 2016, pp. 1225-1230,
+  doi: 10.1109/COASE.2016.7743546.
+    Covers (i), (ii), (iii). Note: distinct from their IROS 2017 paper
+    (see B1). Suitable as a Table I row with the missing (iv) and (v) noted.
+
+  D. Datsko, F. Nekovar, R. Penicka, M. Saska, "Energy-Aware Multi-UAV
+  Coverage Mission Planning With Optimal Speed of Flight," IEEE RA-L, 9(3),
+  pp. 2893-2900, 2024, doi: 10.1109/LRA.2024.3358581.
+    First multi-UAV coverage method enforcing battery capacity during
+    planning, validated on 7 real flights. The baseline an examiner is most
+    likely to name. Uncited.
+
+  Y. Li, X. Xia, "LF-TF-CPO," Drones 10(5):356, 2026.
+    Explicitly frames existing work as lacking dynamic fault tolerance.
+    Same journal as two existing rows, which makes the omission conspicuous.
+
+--------------------------------------------------------------------------------
+D5  [LOW] Two citation-form corrections
+--------------------------------------------------------------------------------
+  L762 (qiu2019): a peer-reviewed version exists.
+    J. Qiu, J. Lyu, L. Fu, "Placement Optimization of Aerial Base Stations
+    With Deep Reinforcement Learning," IEEE ICC 2020, pp. 1-6,
+    doi: 10.1109/ICC40277.2020.9149258. The entry as printed gives 2019,
+    which is the arXiv preprint date. Either use the ICC 2020 record or mark
+    the entry as a preprint.
+
+  L780 (mathew2015): the IEEE T-RO published title is "Multirobot Rendezvous
+    Planning for Recharging in Persistent Tasks" -- one word, no hyphen.
+    "Multi-robot" is the preprint form.
+
+================================================================================
+SECTION E -- RECOMMENDED ORDER OF WORK
+================================================================================
+  Group 1 -- visible on the page, no external knowledge needed
+    C15   "Swift" undefined; vanilla MAPPO not in Table VI
+    C1    dt / d_safe / v_max consistency
+    C2    P_comm power level
+    C3    z0 assigned
+    C4    R_cov and Omega in Table IV
+    C5    a_i renamed to kappa_i
+    C16   E_t, R_t collisions; D_t undefined
+
+  Group 2 -- the RL section; all additive, no new derivations
+    C7    MAPPO critic loss with value clipping
+    C8    value normalisation, advantage normalisation
+    C9    detach statement
+    C10   parameter-sharing justification
+    C13   sign-consistency sentence
+
+  Group 3 -- the reward must become reproducible
+    C17   define all six reward terms by formula; quantify the lambdas
+    C16c  in particular D_t and W_t^mov, which have no expression at all
+
+  Group 4 -- physics table (L457 already provides the hedge)
+    C14a  B_max
+    C14b  P_move
+    C14c  charge rate
+    C14e  d_safe (after C1)
+    C14f  R_comm intent
+
+  Group 5 -- framing and citations
+    D1    Trotta 2018 into Table I
+    D4    Hartuv, Shi, Scherer & Rinner, Datsko into Table I
+    D2    inclusion criterion and rewritten gap sentence
+    D3    reframe contribution 2
+    D5    two citation-form corrections
+
+  Group 6 -- presentation consistency
+    C6    V_t^act defined
+    C18   Table VIII requirement/metric split
+    C19   baseline list reconciled
+    C20   consistent system name
+
+  Group 7 -- optional, high value
+    C11   define the sink link
+    C12   add pad state to the observation
+    Add a complexity table (actor inference is O(1) per agent given a
+    fixed-size observation, critic O(N+M), Hungarian O(r^3))
+    Run the three heuristic baselines in Table VI on five seeds and report
+    mean and standard deviation. No learning required; this converts a
+    proposal into a study and answers the "no numbers" exposure created by
+    deferring all results.
+
+================================================================================
+COVERAGE CHECK -- EVERY PART OF THE REPORT WAS EXAMINED
+================================================================================
+  PDF p1  Abstract, keywords, Section I
+         Findings: A7 (L116, L457 hedges), C13, C20, D3, D5
+  PDF p2  Section I cont., II start, III-A, Fig. 1
+         Findings: C11 (sink, L122), C20, D1, D2
+  PDF p3  Table I, III-B, III-C, III-D, Tables II and III
+         Findings: C6, C12, D1, D2, D4
+  PDF p4  III-E, III-F, Fig. 2, III-G
+         Findings: C4, C5, C16a, A2, A3
+  PDF p5  III-H, Fig. 3, III-I, III-J, III-K, III-L
+         Findings: A4, A6, A7, C13, C16, C17, C18
+  PDF p6  Tables IV and V, III-M, IV-A, IV-B, IV-C, Algorithm 1
+         Findings: C1, C2, C3, C7, C8, C9, C10, C14, C15
+  PDF p7  Fig. 4, IV-D, IV-E, IV-F, IV-G, Fig. 5
+         Findings: C10 (parameter sharing, L528), C12 (recurrence, L604),
+                   C15 (Swift, L567)
+  PDF p8  Section V, Table VI, Section VI, Tables VII and VIII, Fig. 6
+         Findings: C16, C17, C18, C19
+  PDF p9  VI-A, Section VII, Table IX, Section VIII, bibliography
+         Findings: A6, A7, A9, C15 (L722), D5 (L762, L780), reference [12]
+
+  No section, figure or table in the 9-page document is unexamined.
+
+  Findings added in the second pass, after the first version of this file
+  was written: C15, C16, C17, C18, C19, C20. These cover Sections V, VI,
+  VII and the reward definition, which the first pass did not cover. The
+  second pass also produced the two corrections recorded in Section B.
+
+================================================================================
+SECTION F -- SOURCES CONSULTED
+================================================================================
+  Every claim in Sections C and D traces to one of these.
+
+  Reinforcement learning
+    C. Yu, A. Velu, E. Vinitsky, J. Gao, Y. Wang, A. Bayen, Y. Wu,
+      "The surprising effectiveness of PPO in cooperative multi-agent games,"
+      NeurIPS 2022. MAPPO; Sections 5.1, 5.3, 5.4, Appendix A, Appendix C.2.
+    J. Schulman, P. Moritz, S. Levine, M. Jordan, P. Abbeel,
+      arXiv:1506.02438, ICLR 2016. GAE; Eq. 16.
+    J. Schulman, F. Wolski, P. Dhariwal, A. Radford, O. Klimov,
+      arXiv:1707.06347, 2017. PPO; Eqs. 7, 9, 12.
+    R. Sutton, A. Barto, Reinforcement Learning: An Introduction, 2nd ed.,
+      MIT Press 2018. Ch. 6 (TD), Ch. 12 (lambda-returns).
+    M. Hessel et al., ICLR 2019, arXiv:1905.12865. PopArt.
+    J. Foerster et al., NeurIPS 2016, arXiv:1605.06676. Permutation
+      invariance and the agent-index condition.
+    T. Fu et al., ICML 2022, arXiv:2206.07505. Theorem 4.2, parameter-sharing
+      limitation.
+    S. Christianos et al., ICML 2021, PMLR v139. Selective parameter
+      sharing.
+    R. Kiryo, T. van der Hoek, J. de Witt, AAMAS 2020, arXiv:1808.00062.
+      Parameter sharing in value-function factorisation.
+    M. Zareh Eshghdoust, L. Sabattini, C. Secchi, IEEE CDC 2016,
+      doi: 10.1109/CDC.2016.7798253. Decentralised biconnectivity.
+      Note: a companion paper, "Enforcing Biconnectivity in Multi-robot
+      Systems," arXiv:1608.02286, exists; the citation at L774 should
+      indicate which is meant.
+
+  UAV physics and platform data
+    D. Datsko, F. Nekovar, R. Penicka, M. Saska, IEEE RA-L 9(3):2893-2900,
+      2024, doi: 10.1109/LRA.2024.3358581. Tarot T650 power and speed model.
+    I. Bauersfeld, D. Scaramuzza, IEEE RA-L 7(2):2953-2960, 2022,
+      doi: 10.1109/LRA.2022.3145063. Multirotor optimal speed.
+    J. Luna et al., Sensors 22(6):2297, 2022, doi: 10.3390/s17040808.
+      Real multi-UAV coverage mission parameters.
+    A. Qureshi, A. Imran, arXiv:2006.05555. Coverage radius versus altitude
+      and beamwidth tradeoffs.
+    DJI Intelligent Flight Battery technical specifications; Bitcraze
+      Crazyflie 2.1 charge-rate specification (2C maximum).
+
+  Collision avoidance and separation
+    I. Marek et al., PLOS ONE 20:e0352858, 2025,
+      doi: 10.1371/journal.pone.0352858.
+    J. Hönig et al., Behavioural Robotics 2021, doi: 10.1080/18659827.
+      Crazyswarm; sub-metre separations.
+    M. Fathian, M. Safaoui, C. Summers, N. Gans, ICRA 2019.
+
+  Related work, newly identified
+    A. Trotta, M. Di Felice, F. Montori, K. Chowdhury, L. Bononi,
+      IEEE T-RO 34(4):883-900, 2018, doi: 10.1109/TRO.2018.2839087.
+    E. Hartuv, N. Agmon, S. Kraus, AAMAS 2018, pp. 532-540.
+    R. Shi et al., IEEE TMC 24(9):8039-8056, 2025,
+      doi: 10.1109/TMC.2025.3553285.
+    J. Scherer, B. Rinner, IEEE CASE 2016, doi: 10.1109/COASE.2016.7743546.
+      and IEEE/RSJ IROS 2017, pp. 230-235 (distinct paper).
+
+  Reference verification
+    Crossref REST API, arXiv listing API, dblp, IEEE Xplore, ORCID,
+    institutional repository records, and publisher pages. All bibliography
+    entries [1]-[11] and [13]-[14] checked 29 September 2026.
+    One correction: reference [12] at L794-L795.
+
+================================================================================
+END OF FINDINGS.txt
+================================================================================

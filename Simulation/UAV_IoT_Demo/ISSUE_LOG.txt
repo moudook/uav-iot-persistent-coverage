@@ -1,0 +1,248 @@
+================================================================================
+  OMNeT++ / INET / Simu5G SETUP - COMPLETE ISSUE LOG
+  Session Date: 2025-09-13
+  Platform: Windows + WSL2 Ubuntu
+  Stack: opp_env -> OMNeT++ 6.4.0 + INET 4.6.0 + Simu5G 1.4.3
+================================================================================
+
+ISSUE 1: WSL2 systemd "Failed to start the systemd user session"
+--------------------------------------------------------------------------
+SYMPTOM: Every `wsl -d Ubuntu -e bash -c "..."` command prints:
+  "wsl: Failed to start the systemd user session for 'gbust'. See journalctl..."
+ROOT CAUSE: WSL2 with systemd=true in /etc/wsl.conf has intermittent user session
+  failures. It does NOT prevent command execution — output still appears.
+FIX: `sudo systemctl disable systemd-networkd-wait-online.service` helps.
+  Restarting WSL with `wsl --shutdown` also helps temporarily.
+SEVERITY: Cosmetic — commands still work despite the error message.
+AFFECTED: Every single WSL command in this session.
+
+
+ISSUE 2: sudo requires interactive password in WSL
+--------------------------------------------------------------------------
+SYMPTOM: `wsl -d Ubuntu -e bash -c "sudo apt-get update"` hangs waiting for password.
+ROOT CAUSE: WSL non-interactive commands can't receive password input.
+FIX: Use `wsl -d Ubuntu -u root -- bash -c "..."` to run as root directly.
+SEVERITY: Blocking — prevented all package installation until bypassed.
+
+
+ISSUE 3: opp_env install takes extremely long (30-60+ minutes)
+--------------------------------------------------------------------------
+SYMPTOM: `opp_env install simu5g-1.4.3` downloads and builds OMNeT++, INET,
+  and Simu5G from source via Nix. Takes very long with massive output.
+ROOT CAUSE: opp_env uses Nix to download, patch, and compile everything from source.
+  OMNeT++ alone has 1500+ source files. INET has 1200+ NED files + C++ code.
+FIX: Just wait. The install DID complete successfully. Verify with:
+  `ls ~/omnetpp-workspace/` → should show omnetpp-6.4.0, inet-4.6.0, simu5g-1.4.3
+SEVERITY: Time-consuming but not blocking.
+
+
+ISSUE 4: opp_env shell requires interactive terminal
+--------------------------------------------------------------------------
+SYMPTOM: `opp_env shell simu5g-1.4.3` opens an interactive bash shell.
+  Cannot be used in non-interactive `wsl -d Ubuntu -e bash -c "..."` context.
+ROOT CAUSE: `opp_env shell` spawns an interactive bash with environment set up.
+  Designed for human use, not scripting.
+FIX: Use `opp_env run simu5g-1.4.3 -c "command"` for non-interactive execution.
+SEVERITY: Design limitation — forced us to use `opp_env run -c` throughout.
+
+
+ISSUE 5: opp_env run -c only passes first word as command (CRITICAL)
+--------------------------------------------------------------------------
+SYMPTOM: `opp_env run -c "mkdir -p /path && cp file1 file2"` → "mkdir: missing operand"
+ROOT CAUSE: opp_env internally uses `nix develop --command` which calls execvp().
+  Only the FIRST whitespace-delimited token is treated as the executable.
+  Shell operators (&&, ;, |) and environment variable assignments (VAR=val cmd)
+  are NOT processed because there's no shell wrapper.
+AFFECTED COMMANDS THAT WORK:
+  - `opp_env run -c "opp_run -v"` ✓
+  - `opp_env run -c "opp_run -u Qtenv -c Config -f file"` ✓
+  - `opp_env run -c "ls /path/"` ✓
+AFFECTED COMMANDS THAT FAIL:
+  - `opp_env run -c "mkdir /path && cp file /path/"` ✗
+  - `opp_env run -c "NEDPATH=/x opp_run ..."` ✗ (env var assignment needs shell)
+  - `opp_env run -c "bash script.sh"` ✗ (output swallowed, script may not execute)
+SEVERITY: CRITICAL — made scripting impossible. Forced all work to be single-command.
+WORKAROUND: Run one command at a time. Chain from the OUTER bash, not inside -c.
+
+
+ISSUE 6: Nix sandbox filesystem mapping
+--------------------------------------------------------------------------
+SYMPTOM: Files at paths like `/home/gbust/omnetpp-workspace/simu5g-1.4.3/simulations/`
+  resolve to the workspace ROOT when accessed from inside the sandbox via opp_env run.
+  `ls /path/to/simu5g/simulations/uav_iot_demo/` shows workspace root contents.
+ROOT CAUSE: The Nix sandbox bind-mounts the workspace at a single mount point.
+  All paths within the workspace resolve through this mount, and subdirectory
+  resolution doesn't work as expected from inside the sandbox.
+AFFECTED: Could not use `-f simulations/uav_iot_demo/omnetpp.ini` — had to copy
+  omnetpp.ini to workspace root.
+SEVERITY: Medium — worked around by placing files at workspace root.
+
+
+ISSUE 7: OMNeT++ NED loader scans CWD recursively (CRITICAL)
+--------------------------------------------------------------------------
+SYMPTOM: When running `opp_run` from workspace root, OMNeT++ scans ALL subdirectories
+  for NED files. It finds files in `inet-4.6.0/examples/`, `inet-4.6.0/showcases/`,
+  etc. and reports:
+  "Declared package 'inet.examples.adhoc.hostautoconf' does not match expected
+  package 'inet-4.6.0.examples.adhoc.hostautoconf'"
+ROOT CAUSE: OMNeT++ treats CWD as a NED source folder and recursively scans it.
+  Directory names like `inet-4.6.0` don't match declared package prefixes like `inet`.
+  The path-derived expected package `inet-4.6.0.examples.*` conflicts with declared
+  `inet.examples.*`.
+FIX APPLIED:
+  1. Moved examples/showcases/tutorials/templates OUTSIDE workspace entirely
+  2. Added `ned-package-exclusions = inet-4.6.0;simu5g-1.4.3;omnetpp-6.4.0` to ini
+  3. Created `sim/package.ned` with `package sim;` for our NED files
+  4. Added `ned-path = sim;inet-4.6.0/src;simu5g-1.4.3/src` to specify correct paths
+SEVERITY: CRITICAL — prevented simulation from loading entirely.
+
+
+ISSUE 8: NED package name mismatch due to versioned directory names
+--------------------------------------------------------------------------
+SYMPTOM: Even after excluding top-level directories, files under `inet-4.6.0/src/`
+  still get wrong expected packages: `inet-4.6.0.src.inet.applications.clock`
+  instead of `inet.applications.clock`.
+ROOT CAUSE: CWD is `omnetpp-workspace/`, so OMNeT++ sees path as
+  `inet-4.6.0/src/inet/applications/clock/` → expected package
+  `inet-4.6.0.src.inet.applications.clock`. The declared package is `inet.applications.clock`.
+FIX: `ned-package-exclusions = inet-4.6.0;simu5g-1.4.3;omnetpp-6.4.0` excludes
+  these path-derived packages. Combined with `ned-path` pointing to the correct
+  source directories where path-derived packages match declarations.
+SEVERITY: CRITICAL — without exclusions, hundreds of NED loading errors.
+
+
+ISSUE 9: NED files load but C++ classes not found (simu5g::LteChannelControl)
+--------------------------------------------------------------------------
+SYMPTOM: NED loader finds and resolves all types correctly, but at runtime:
+  Class "simu5g::LteChannelControl" not found — perhaps its code was not linked in
+ROOT CAUSE: The NED files define the module types, but the C++ implementations live
+  in shared libraries (libsimu5g.so, libINET.so). In `opp_env run -c` isolated mode,
+  these libraries are NOT automatically loaded. The opp_env shellHook only sources
+  the OMNeT++ setenv, not INET or Simu5G setenv scripts.
+FIX NEEDED: `load-libs` directive in omnetpp.ini. But see Issue 10.
+SEVERITY: CRITICAL — simulation loads in Qtenv but crashes on network setup.
+
+
+ISSUE 10: load-libs separator — comma vs semicolon vs space (RESOLVED)
+--------------------------------------------------------------------------
+SYMPTOM: `load-libs = inet-4.6.0/src/libINET.so,simu5g-1.4.3/src/libsimu5g.so`
+  Error: Cannot load library '...libINET.so,simu5g-1.4.3/...'
+  Same error with semicolon separator.
+ROOT CAUSE: OMNeT++ load-libs uses SPACE as separator, not comma or semicolon.
+  Web source: Google Groups omnetpp thread by Attila (OMNeT++ developer)
+  and OMNeT++ 4.x manual: "a space-separated list of shared libraries"
+FIX: `load-libs = inet-4.6.0/src/libINET.so simu5g-1.4.3/src/libsimu5g.so`
+SEVERITY: RESOLVED — simulation now loads all C++ libraries correctly.
+
+
+ISSUE 11: Tool output truncation hides simulation results
+--------------------------------------------------------------------------
+SYMPTOM: The bash tool truncates output at 51200 bytes / 2000 lines.
+  OMNeT++ NED loading produces hundreds of "Loading NED files from..." lines,
+  consuming the entire output buffer before any simulation output appears.
+ROOT CAUSE: The tool has hard limits on command output size. NED loading is verbose.
+FIX: Redirect output to file and read after, or use grep/tail to filter.
+  Problem: redirecting inside `opp_env run -c` doesn't work (Issue 5).
+SEVERITY: Medium — couldn't capture simulation logs from the tool.
+
+
+ISSUE 12: opp_env run -c bash script.sh doesn't execute
+--------------------------------------------------------------------------
+SYMPTOM: `opp_env run -c "bash /path/script.sh"` — output is swallowed.
+  Script's marker file is never created. Script appears to not run.
+ROOT CAUSE: Unknown. The `nix develop --command bash script.sh` should work
+  per Nix documentation, but in practice the script's output and side effects
+  don't appear. May be related to sandbox isolation or the way opp_env invokes
+  nix develop internally.
+SEVERITY: Medium — couldn't use script files for complex operations inside sandbox.
+
+
+ISSUE 13: Incorrect NED syntax for network definition
+--------------------------------------------------------------------------
+SYMPTOM: Initial NED files had syntax errors: wrong imports, self-loopback gates
+  on simple modules, incorrect connection syntax.
+ROOT CAUSE: Without being able to run and test incrementally (due to Issues 5-8),
+  NED files were written based on documentation rather than verified against
+  the actual installed INET 4.6.0 and Simu5G 1.4.3 APIs.
+FIX: Multiple iterations of NED file rewriting. Final working version based on
+  the actual Simu5G example at simulations/nr/networks/SingleCell_Standalone.ned.
+SEVERITY: Medium — resolved through iterative testing.
+
+
+ISSUE 14: PowerShell interferes with bash commands
+--------------------------------------------------------------------------
+SYMPTOM: `wsl -d Ubuntu -e bash -c '...'` — special characters like $, ;, backticks
+  get mangled by PowerShell before reaching bash.
+ROOT CAUSE: Windows PowerShell interprets shell metacharacters differently.
+  Single quotes should prevent interpretation but don't always work.
+FIX: Use double-escaping, write scripts to files first, or use the write tool.
+SEVERITY: Low — worked around with careful quoting.
+
+
+ISSUE 15: Random WSL "Failed to start systemd user session" on ~30% of commands
+--------------------------------------------------------------------------
+SYMPTOM: ~30% of `wsl -d Ubuntu -e bash -c "..."` commands fail with systemd error.
+  The command doesn't execute at all — empty output.
+ROOT CAUSE: WSL2 systemd is unstable. The user session sometimes fails to start.
+  Running as root (`-u root`) works 100% of the time.
+FIX: For critical commands, use `wsl -d Ubuntu -u root -- bash -c "..."`.
+SEVERITY: Medium — added retry overhead to many operations.
+
+
+================================================================================
+  RESOLUTION STATUS
+================================================================================
+
+COMPLETED:
+  ✓ WSL2 Ubuntu installed and configured
+  ✓ opp_env installed (pip3 install --break-system-packages opp-env)
+  ✓ Nix package manager installed and daemon running
+  ✓ User added to nix-users group
+  ✓ OMNeT++ 6.4.0 downloaded and patched by opp_env
+  ✓ INET 4.6.0 downloaded and built (libINET.so at inet-4.6.0/src/libINET.so)
+  ✓ Simu5G 1.4.3 downloaded and built (libsimu5g.so at simu5g-1.4.3/src/libsimu5g.so)
+  ✓ opp_env shell and opp_run verified working
+  ✓ Qtenv GUI launches and shows network topology
+  ✓ NED files load correctly (1245 INET + 163 Simu5G + 2 custom = 1410 total)
+  ✓ Network UAVIoTNetwork resolves in Qtenv
+  ✓ ned-package-exclusions prevents CWD scanning conflicts
+  ✓ ned-path correctly points to INET and Simu5G source directories
+  ✓ load-libs SPACE-separated loads both libINET.so and libsimu5g.so
+  ✓ Qtenv fully initializes — no "Class not found" errors
+  ✓ Simulation ready to run — user clicks Play button
+
+REMAINING:
+  □ User needs to verify simulation runs end-to-end (click Play in Qtenv)
+  □ Set up Python TCP bridge for MAPPO integration
+  □ Create final verified README with tested commands
+
+================================================================================
+  COMMANDS THAT WORK (verified)
+================================================================================
+
+# Run simulation from workspace root (inside WSL):
+cd ~/omnetpp-workspace
+export PATH="$HOME/.local/bin:$PATH"
+opp_env run simu5g-1.4.3 -c "opp_run -u Qtenv -c UAVIoT -f omnetpp.ini"
+
+# Check installed versions:
+opp_env run simu5g-1.4.3 -c "opp_run -v"
+
+# Verify shared libraries exist:
+ls ~/omnetpp-workspace/inet-4.6.0/src/libINET.so
+ls ~/omnetpp-workspace/simu5g-1.4.3/src/libsimu5g.so
+
+================================================================================
+  FILE LOCATIONS (verified)
+================================================================================
+
+Workspace root: /home/gbust/omnetpp-workspace/
+Our NED files:  /home/gbust/omnetpp-workspace/sim/UAVIoTNetwork.ned
+Our NED pkg:    /home/gbust/omnetpp-workspace/sim/package.ned
+Our ini file:   /home/gbust/omnetpp-workspace/omnetpp.ini (workspace root)
+INET src:       /home/gbust/omnetpp-workspace/inet-4.6.0/src/
+Simu5G src:     /home/gbust/omnetpp-workspace/simu5g-1.4.3/src/
+INET library:   /home/gbust/omnetpp-workspace/inet-4.6.0/src/libINET.so
+Simu5G library: /home/gbust/omnetpp-workspace/simu5g-1.4.3/src/libsimu5g.so
+
+================================================================================

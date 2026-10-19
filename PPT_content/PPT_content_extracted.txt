@@ -1,0 +1,246 @@
+============================================================
+PPT.pptx Extracted Text (word-for-word)
+============================================================
+
+--- Slide 1 ---
+A Survey on Unmanned Aerial Vehicles (UAVs) Communications
+State-of-the-Art, Existing Standards, and Future Directions
+A whole-paper reading & content map for the course project
+ML in Wireless Networks  •  Project 1  •  Week 1
+
+--- Slide 2 ---
+=
+Agenda — Whole-Paper Walkthrough
+Roadmap
+•  1. Introduction & Contributions
+•  2. Background: UAS, FANET, Cooperation schemes
+•  3. UAV-Based Network Architecture — roles, AI/ML, RIS, ISAC, MIMO, DT, self-org, spectrum, protocols, security, optimization
+•  4. Standardization (3GPP Releases 15–18) & Real Testbeds
+•  5. Open Issues, Recommendations & Conclusion
+•  6. Course Problem Statement & mapping to the paper
+
+--- Slide 3 ---
+I
+I–II. Motivation & a 3GPP-Anchored, Cross-Layer Taxonomy
+I. Motivation & Scope
+•  UAVs (drones): surging demand in civilian & military domains — low cost, easy deployment, minimal risk.
+“A reliable wireless communication link between swarms of drones and ground base stations (BS) is essential to automate the aerial network, e.g., Flying Ad-hoc Networks (FANETs).”
+•  Early MANET policies failed for aerial networking: rapidly changing topology, fast mobility, and three-dimensional free space movements.
+“UAVs are characterized by greater degrees of mobility and freedom in the 3D space… in comparison to ground networks.”
+“This survey provides a holistic view about the current state-of-the-art on UAV communications, identifying challenges and outlining research topics.”
+•  Future → 6G + SAGSIN (Space-Air-Ground-Sea Integrated Network); enablers: AI/ML, edge, blockchain, RIS, Digital Twins, ISAC.
+II. Contributions (what's new)
+“It is the first to systematically integrate both academic research and industry perspectives, with a strong emphasis on 3GPP standardization (Releases 15 to 18).”
+“The paper introduces a unified taxonomy that incorporates emerging paradigms such as Digital Twins (DT), Reconfigurable Intelligent Surfaces (RIS), and Integrated Sensing and Communications (ISAC).”
+•  Holistic cross-layer analysis: physical → data link → network → transport layers (prior surveys focused on isolated layers).
+•  Contextualizes UAV networking within future 6G and SAGSIN roadmaps.
+•  Organization: I Intro → II Contributions → III Background → IV Architecture → V Design Aspects → VI Standardization → VII Testbeds → VIII Open Issues → IX Conclusion.
+
+--- Slide 4 ---
+III
+III. Background of Aerial Networking
+UAS & FANET
+•  UAS = 5 components: (1) UAV (air vehicle), (2) Ground Control Station, (3) Payload/data processing, (4) Control & data links, (5) Support system.
+•  FANET = infrastructure-less network of flying UAV nodes.
+•  One node acts as backbone UAV (connected to GCS/satellite).
+•  Building blocks: topology, mobility model, node density, radio propagation, power, localization.
+•  Key challenge: high-speed 3D mobility vs MANETs/VANETs.
+•  Hierarchical / cluster-based FANETs for scalability & survivability.
+Cooperation Schemes for Multi-UAV
+•  Physical coupling: UAVs physically connected; motion of one depends on others.
+•  Formations: UAVs fly a pattern (star/rectangle), maintain distance/speed/acceleration.
+•  Swarms: homogeneous teams, decentralized communication → robust global behaviour.
+•  Intentional cooperation: tasks allocated, predefined trajectories (centralized/decentralized).
+•  Modern missions = hybrid / regime-switching systems (switch modes per mission phase).
+•  UAV classification: by type (fixed-wing, rotary-wing, hybrid/VTOL); by size (small/mini, medium, large).
+
+--- Slide 5 ---
+IV
+IV. UAV-Based Network Architecture — 13-Area Taxonomy
+A — Communication Architectures
+B — Roles of UAVs in Networks
+C — AI/ML in UAV Communications
+D — Generative AI for A2G Channel
+E — Internet of Drones (IoD)
+F — Multi-UAV Architectures
+G — RIS & ISAC UAV Comms
+H — MIMO & Digital Twin
+I — Self-Organization
+J — Spectrum Management
+K — Channel & Protocols
+L — Security & C2
+M — Resource Optimization
+A unified taxonomy bridging academic research, 3GPP standardization, and practical deployment.
+
+--- Slide 6 ---
+IV
+IV. Communication, Roles, AI/ML, GenAI (A–D)
+A. Communication Architectures
+•  1. Direct links (ISM 2.4/5.8 GHz): simplest, but limited by LoS & range; safety/interference sensitive.
+•  2. Satellite-based: wide coverage, good for NLoS/remote; but high latency (~0.12 s), heavy antennas, cost.
+“Cellular-connected UAVs offer several appealing advantages… a win-win case not only for UAVs, but also for cellular networks.”
+•  (a) aerial BS / flying relay = UAV-Assisted Cellular; (b) aerial user = Cellular-Connected UAV.
+B. Roles of UAVs in Networks
+“UAVs as base stations enables continuity of communications by expanding the communication coverage and acting as protocol converters.”
+•  Challenges: energy optimization, coverage, bandwidth, trajectory/path planning, WPT, security.
+•  UAV as Relay Station: extends range of existing infrastructure (disaster response, on-demand coverage).
+•  UAV as Sensor/Actuator: surveillance, agriculture, forestry; low bandwidth; often onboard processing; can act as data mule.
+C. AI/ML in UAV Communications
+•  Optimize trajectories + radio resources jointly (power, spectrum, user association) under non-convex constraints.
+•  Enhance PHY/MAC: channel estimation, beam/antenna mgmt, interference handling in 3D channels.
+•  Automate network functions: mobility mgmt, routing, load balancing (single & swarm).
+•  Improve security: intrusion/anomaly detection, jamming identification in multi-hop aerial networks.
+D. Generative AI for A2G Channel Modeling
+“The development and examination of UAV communications critically depend on precise models of electromagnetic propagation.”
+•  Standardized models (3GPP TR 38.901) are terrestrial-calibrated → inadequate for aerial uptilt paths.
+•  Data-driven (site-specific) & generative (non-site-specific): TTS-CGAN, MTS-CGAN for spatially consistent modeling.
+•  Open challenge: spatio-temporal consistency + capturing small-scale fading in generated samples.
+
+--- Slide 7 ---
+IV
+IV. IoD, Multi-UAV, RIS/ISAC, MIMO/DT (E–H)
+E. Internet of Drones (IoD) & Middleware
+•  IoD treats low-altitude airspace as a limited resource; ZSP (Zone Service Provider) coordinates local UAVs.
+•  Airspace divided into zones with airways (flight paths) & intersections; nodes for takeoff/land/recharge.
+•  Middleware gives vendor-independent unified control; simulation env. for resilient protocols.
+F. Multi-UAV Architectures
+•  Single-layered vs multi-layered (3D). Gateway view: C1 (star), C2 (leader gateway), C3 (mesh).
+•  Leader UAV selected for stability (static leader-follower or distributed leadership).
+•  Scalability: star → mesh → multi-star / hierarchical mesh.
+•  Tech maturity: energy optimization = mature; trajectory/path planning = intermediate; security & trust = early stage.
+G. RIS-assisted & ISAC UAV Communications
+•  RIS: electronically controllable EM surfaces reflect/enhance signals; mounted on UAVs boosts A2G links.
+•  6 RIS integration scenarios: data collection, ubiquitous coverage, relaying, PHY security, SWIPT, cellular-connected.
+•  ISAC: joint sensing + communication — sensing aids beam tracking; comms aids mapping/positioning.
+H. MIMO & Digital Twin for UAVs
+•  MIMO: spectral efficiency via spatial diversity/multiplexing; challenges: pilot contamination, 3D beam tracking.
+•  Solutions: interference-cancellation pilot decontamination, Kalman-filter channel tracking, dual-functional MIMO.
+•  Digital Twin: virtual replica (data acquisition → processing → application); aligns with 3GPP Rel-15/16/17.
+•  DT benefit: real-time monitoring, predictive maintenance, path/task adaptation, operator training.
+
+--- Slide 8 ---
+IV
+IV. Self-Org, Spectrum, Channels/Protocols, Security, Optimization (I–M)
+I. Self-Organization
+•  Ad-hoc network formation in the sky; akin to natural flocking (Reynolds' boids).
+•  Recipe: addressing → neighbor discovery → formation → routing.
+J. Spectrum Management
+“A major issue is the lack of a dedicated spectrum for commercial drones… especially for C2.”
+•  ISM (900 MHz, 2.4, 5.8 GHz); FCC considering 5030–5091 & 60–64 GHz.
+•  Sharing: Opportunistic / Competitive / Cooperative.
+K. Channel & Protocols
+•  Channel = large-scale (LoS/NLoS) + small-scale (multipath, Doppler).
+•  GPU ray-tracing (Sionna RT) for site-specific calibration.
+•  OSI: PHY (directional), MAC (full-duplex, MPR), Network (AODV/DSR), Transport (PRRT/LRT).
+L. Security & C2 Requirements
+•  C2 modes (TS 22.125): waypoints, stick, UTM-auto, autonomous.
+•  7 requirements: Confidentiality, Integrity, Non-repudiation, Authentication, Access Control, Availability, Privacy.
+M. Resource Optimization
+•  3D placement: altitude ↑ LoS but ↑ path loss; solved via PSO, Genetic Algorithm, CVX, convex hull.
+•  NOMA, Decode-and-Forward, water-filling, SCA, alternating minimization; graph-based Pareto/dual-ascent.
+
+--- Slide 9 ---
+VI
+VI. Standardization — 3GPP Releases 15–18
+R15
+4G LTE for UAVs; aerial-user ID; location/altitude/trajectory reporting; events H1/H2
+R16
+Remote ID (TR 23.754); UTM interaction; unauthorized-device detection
+R17
+5G KPIs; UxNB (UAV as gNB); app-layer tracking (TR 23.755)
+R18
+NR; conditional handover; beam mgmt; multi-antenna; dedicated BS uptilt
+Slicing, UUAA & C2
+•  UAV Authentication & Authorization (UUAA) via USS.
+•  C2 comms: direct / network-assisted / UTM-navigated.
+•  Network Slicing for UAV: NetSliA/B/C per eMBB/URLLC/mMTC; AirSlice framework; SLA-driven slices.
+
+--- Slide 10 ---
+VII
+VII. Real Testbeds, Deployments & Experiments
+AERPAW (NSF PAWR)
+•  Large-scale SDR platform; RF/I-Q/packet-level emulation; E-VMs as UE/gNB/core; digital twins.
+SkyRAN / SkyCore / SkyHAUL (NEC)
+•  Flying LTE RAN, EPC core, self-organizing gigabit multi-UAV network.
+EuroDRONE
+•  V2I/V2V UTM testbed with autonomous small UAVs (2.4/5 GHz LTE + Sub-GHz).
+HITL & SITL Emulators
+•  Hardware/Software-in-the-loop; OMNeT++/ns-3/X-Plane (AVENS, CUSCUS, FlyNetSim).
+Aerial BS Testbeds
+•  60 GHz mmWave UAV-BS channel model; LoRa/NB-IoT LPWAN relay; USRP beamforming.
+Why testbeds matter
+•  Turn theory → deployable aerial networks; validate AI/ML, RIS, ISAC at scale.
+
+--- Slide 11 ---
+VIII
+VIII. Open Research Issues (14)
+1 Energy constraint
+2 UAV platform & mobility model
+3 Routing (dynamic topology)
+4 Path planning
+5 QoS provisioning
+6 Fault handling
+7 Data processing (edge/fog)
+8 Data sharing & security
+9 FANET standardization
+10 Distributed optimization
+11 Spectrum management
+12 Network formation/topology
+13 Testing & simulation fidelity
+14 Airspace integration
+
+--- Slide 12 ---
+VIII
+VIII. Recommendations & Further Work
+Recommendations
+•  Multi-UAV systems: steady comms, remote C2, unlimited coverage, adaptive beamforming/directional antennas.
+•  Routing via Deep RL / hybrid-learning predicting topology dynamics.
+•  Blockchain-based device lifecycle registration (manufacture→repair→scrap).
+Further Work
+•  Realistic UAV simulators (energy + flight dynamics); full security frameworks (jamming/spoofing); cognitive-radio spectrum sharing.
+•  ISAC-enhanced situational awareness; network-slicing-assisted cross-domain architectures.
+•  Toward 6G / SAGSIN-ready UAV networks.
+
+--- Slide 13 ---
+IX
+IX. Conclusion
+What the survey establishes
+•  UAVs enable cooperative, self-organizing missions in unreachable areas.
+•  Coverage: communication architecture, protocols, requirements, security; network formation & state-of-the-art solutions.
+•  3GPP standardization (Rel-15–18) bridges research & commercial deployment; network slicing for UAV.
+•  FANET addresses scalability of direct-link networking; communication remains the key constraint.
+Where it is heading
+•  Open issues + future directions push researchers toward 6G / SAGSIN-ready UAV networks.
+•  Convergence of AI/ML, RIS, ISAC, Digital Twins reshapes UAV networking.
+•  Standardization + real testbeds (AERPAW, SkyRAN) turn theory into deployable aerial networks.
+“UAV communications has evolved from a niche topic to a key enabler of future wireless connectivity.”
+
+--- Slide 14 ---
+P
+Course Problem Statement (Week 1)
+Given problem (verbatim)
+•  Develop an AI-based system for deploying multiple UAVs as temporary aerial base stations.
+•  The system should determine where UAVs should be positioned and how they should move as users move,
+•  while maintaining UAV-to-UAV connectivity, maximizing coverage, and minimizing energy consumption.
+•  Input: User locations/density, UAV positions, battery levels, communication range, channel quality.
+•  Output: UAV positions/movement decisions and resulting coverage/connectivity.
+•  AI/ML: PSO / Genetic Algorithm for placement + Multi-Agent Q-Learning for dynamic formation.
+
+--- Slide 15 ---
+M
+How the Survey Maps to the Problem
+Paper content → Problem
+•  UAV as Base Station (Sec IV-B) → aerial base stations.
+•  3D placement optimization (Sec IV-M/K) → where UAVs are positioned.
+•  PSO & Genetic Algorithm (Sec IV-M) → placement AI/ML.
+•  Multi-UAV architectures & leader (Sec IV-F) → how they move as a formation.
+•  Energy optimization (Sec IV-M, Open Issues) → minimizing energy.
+•  UAV-to-UAV connectivity = mesh / C1–C3 (Sec IV-F) → maintain connectivity.
+•  Coverage maximization (Sec IV-B/M) → maximize coverage.
+Our course approach
+•  Placement: PSO/GA over 3D coordinates (CVX baseline).
+•  Movement: Multi-Agent Q-Learning for dynamic formation.
+•  Constraint 1: maintain UAV-UAV links (mesh/graph).
+•  Constraint 2: maximize coverage (user density map).
+•  Constraint 3: minimize energy (battery-aware).
+•  Input/Output matches the paper's resource-optimization loop.
