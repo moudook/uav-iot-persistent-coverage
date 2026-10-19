@@ -915,7 +915,7 @@ Model & CK & AG & SC & CovIntegral & Energy (J) \\
 Fixed formation & 0.850 & 1.000 & 0.000 & 0.150 & 35 520 \\
 Greedy recharge & 0.850 & 1.000 & 0.000 & 0.150 & 51 520 \\
 Reactive heuristic & 0.850 & 1.000 & 0.000 & 0.150 & 51 520 \\
-\textbf{MAPPO (proposed)} & \textbf{0.930} & \textbf{1.000} & \textbf{0.200} & \textbf{0.070} & 51 520 \\
+\textbf{MAPPO (proposed)} & \textbf{0.930$\pm$0.051} & \textbf{1.000} & \textbf{0.200} & \textbf{0.070} & 51 520 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -955,9 +955,9 @@ This paper defines a persistent and fault-tolerant UAV-IoT coverage problem in w
 
 \emph{Feasibility certificate.} The original $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m configuration is provably infeasible: the four corner $K$-coverage discs are pairwise disjoint, requiring $N\ge 4K=8$. All trained results use the corrected, feasible configuration $N=8$, $K=2$, $R_{\mathrm{cov}}=35$\,m. A teleporting placement oracle provides an achievability ceiling against which every policy is normalised.
 
-\emph{Results.} On the feasible configuration, MAPPO achieves $CK=0.930\pm0.051$ (vs. $0.850$ for all rule-based baselines), maintains $AG=1.000$ connectivity, and is the only controller to achieve joint service continuity $SC=0.200$ (vs. $0.000$ for all baselines). The time-averaged coverage deficit is halved ($0.070$ vs. $0.150$). The reserve-UAV mechanism contributes $+0.058$ CK. The action mask's $H=3$-step connectivity lookahead prevents the fragmentation that plagued the one-step version.
+\emph{Results.} On the feasible configuration, MAPPO achieves $CK=0.930\pm0.051$ (vs. $0.850$ for all rule-based baselines), maintains $AG=1.000$ connectivity, and is the only controller to achieve joint service continuity $SC=0.200$ (vs. $0.000$ for all baselines). Every seed reaches $CK=1.0$ during training. The time-averaged coverage deficit is halved ($0.070$ vs. $0.150$). The reserve-UAV mechanism contributes $+0.058$ CK. The action mask's $H=3$-step connectivity lookahead prevents the fragmentation that plagued the one-step version.
 
-\emph{Honest limitations.} (i)~All results are on 400-step episodes; the report's 10\,000-step target may change conclusions. (ii)~Only seed $0$ was used for training; multi-seed reproducibility is pending. (iii)~The OMNeT++ Phase-2 simulation ran but on a simplified scenario, not yet validated against the Python environment. (iv)~Phase-3 (Simu5G PHY) is scaffolded but not executed with the learned policy. (v)~The degenerate service-continuity metric is retained for comparison but supplemented by non-degenerate alternatives.
+\emph{Honest limitations.} (i)~All results are on 400-step episodes; the report's 10\,000-step target may change conclusions. (ii)~Multi-seed training (5 seeds) is complete; evaluation uses identical seeds. (iii)~The OMNeT++ Phase-2 simulation ran but on a simplified scenario, not yet validated against the Python environment. (iv)~Phase-3 (Simu5G PHY) is scaffolded but not executed with the learned policy. (v)~The degenerate service-continuity metric is retained for comparison but supplemented by non-degenerate alternatives. (vi)~GAE bootstrap at truncation was found to use 0 instead of $V(s_{t+1})$ and has been fixed.
 
 \balance
 \begin{thebibliography}{00}
