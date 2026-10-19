@@ -194,6 +194,28 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
           f"CI={dagg['CovIntegral']:.3f}")
     rows.append(dict(model="MAPPO-argmax", **dagg))
 
+    # ---- the achievability ceiling ---------------------------------
+    # The teleporting placement oracle is the reference against which every
+    # coverage number in this table is meant to be read.  It is a property
+    # of the configuration, not of any controller, so it is reported once.
+    try:
+        import sys as _sys
+        _sys.path.insert(0, os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__))))
+        from analysis.feasibility import analyse_scene
+        ck = []
+        for s in range(min(eval_seeds, 3)):
+            r = analyse_scene(s, base, iters=60, restarts=8)
+            ck.append(float(r["oracle_CK_connected"]))
+        orc = float(np.mean(ck))
+        print(f"{'Oracle':10s} CK={orc:.3f}  (teleporting placement, "
+              f"ignores energy and motion)")
+        rows.append(dict(model="Oracle (ceiling)", CK=orc, AG=1.0, SC=orc,
+                         CovIntegral=0.0, Energy=0.0, Denied=0.0,
+                         Reserve=0.0, Stranded=0.0, Returning=0.0))
+    except Exception as exc:                      # pragma: no cover
+        print(f"{'Oracle':10s} (not computed: {exc})")
+
     with open(out_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()

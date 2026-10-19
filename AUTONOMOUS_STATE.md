@@ -31,7 +31,7 @@ the paper's Results, Conclusion and Abstract around the new numbers.
 - `use_agent_id = True`, `map_grid = 4`, `use_pad_bearing = True`
 - Reference (Reactive heuristic, 3 seeds): CK=0.918 AG=1.000 SC=0.612
 
-## Defects found and fixed (all have tests; 88 tests pass)
+## Defects found and fixed (all have tests; 92 tests pass)
 | # | Defect | Fix / commit |
 |---|---|---|
 | 1 | **Simulator was static -- no UAV ever moved** | chosen-action feasibility; `13cb839` |
@@ -58,6 +58,8 @@ the paper's Results, Conclusion and Abstract around the new numbers.
 | 22 | **The battery never bound** -- at 400 steps the pack spent 13% and the return state never fired | episode 2000 steps; `de3e1e6` |
 | 23 | **The returns were formed from an untruncated advantage array** -> shape mismatch whenever an episode ended early | truncate before forming returns |
 | 24 | Two graph computations per candidate action (13.7 ms/step) | shared prospective graph, 6.8 ms/step |
+| 25 | **MAPPO's value normalisation was missing** although the report asserted it | `MAPPO.value()` accessor + EMA statistics; `c4a71f6` |
+| 26 | The report's comparison table named MARL baselines that were never evaluated | two implemented (`baselines_rl.py`); "Evaluated" column added; `c381bcf` |
 
 `tests/mutation_check.py` proves the suite catches all 10 historical bugs.
 
@@ -65,15 +67,49 @@ the paper's Results, Conclusion and Abstract around the new numbers.
 | Quantity | Value |
 |---|---|
 | Feasibility bound | N >= 4K; N=5/K=2 provably infeasible; N=8 feasible; oracle CK=1.000 |
-| Reactive heuristic, clustered, 2000 steps | CK 0.918, AG 1.000, SC 0.612 |
-| Reactive heuristic, ring start, 400 steps | CK 0.964, AG 1.000, SC 0.799 |
-| Baselines, clustered start, 400 steps | Fixed 0.370, Greedy 0.709, Reactive 0.891 |
-| Energy regime (Reactive, 2000 steps) | 283 return transitions, 0.7 stranded UAVs, 8.3% of the swarm returning |
+| Reactive heuristic, clustered, 2000 steps | CK 0.947, AG 1.000, SC 0.751, CI 0.053 |
+| Greedy, clustered | CK 0.770, AG 1.000, SC 0.062, CI 0.230 |
+| Fixed, clustered | CK 0.372, AG 1.000, SC 0.000, CI 0.628 |
+| Observation A local only | CK 0.658+-0.018, AG 0.979, SC 0.033, distinct(argmax) 1.47/8, spread 7.8 m |
+| Observation B + identity | CK 0.507+-0.115, AG 0.977, SC 0.020, distinct(argmax) 2.43/8, spread 12.1 m |
+| Observation C + identity + map | CK ~0.64 (2 seeds so far), distinct(argmax) 2.98/8 |
 | Connectivity in the deployed regime (audit C6) | mean node degree 4.01 of 7; graph complete in only 12% of steps |
-| Claim audit | 18 verified, 0 failed, 4 informational |
+| Energy regime (Reactive, 2000 steps) | 283 return transitions, 0.7 stranded UAVs, 8.3% of the swarm returning |
+| Claim audit | 22 items: 18 verified, 0 failed, 4 informational |
 | Model equivalence | max 0.012 dB vs INET BreakpointPathLoss |
+| INET runtime probe | minSnir tracks TX exactly (27.0 dB per 27.0 dB) but NOT distance (0.0000 dB spread over 10-80 m) |
 | Dormancy probe | 0.000 dormant, 0.000 dead, 15-31% gradient-silent |
-| Tests | 88 passing |
+| Tests | 92 passing |
+
+## THE CENTRAL FINDING (as of 20 Oct, still being confirmed)
+**The shared-team-reward credit assignment, not the observation content, is
+the binding limitation of the learned controller.** Evidence so far:
+1. The policy stays near-uniform (entropy 1.2-1.5 of a maximum of 1.79) --
+   it diffuses rather than commits.
+2. Without the agent identity the argmax policy picks the same action for
+   every UAV (1.47 distinct of 8) and the swarm's spread is frozen at 7.8 m.
+3. ADDING the identity fixes that symptom (2.43 distinct, spread 12.1 m) but
+   REDUCES coverage (0.658 -> 0.507): dispersing without coordination covers
+   less, not more.
+4. The coverage-map summary does not rescue it either (arm C ~0.64).
+5. Per-agent advantage normalisation is ineffective, because with a
+   broadcast team reward the per-agent advantage sequences are nearly
+   identical, so normalising them per agent is a rescaling, not a
+   reallocation of credit.
+
+Competing explanation being tested: the policy may simply be under-trained
+(analysis/convergence.py, 120 episodes). The Reactive heuristic reaches CK
+0.947 while the learned policy's best training episode reaches ~0.82, so the
+budget question is real and must be answered before the conclusion is drawn.
+
+**Implication for the paper's framing:** the contribution is the
+FEASIBILITY-CERTIFIED EVALUATION FRAMEWORK, and the framework's value is
+precisely that it exposes this: a paper reporting only "CK = 0.93 vs 0.85"
+was reporting a number produced by a simulator in which no UAV moved. The
+honest result is that at the reported parameters the task is easy enough
+that a well-designed reactive heuristic is competitive with parameter-shared
+CTDE MAPPO, and the paper diagnoses why.
+
 
 ## IMPORTANT NEGATIVE RESULTS (do not forget)
 - The first OMNeT++ validation counted MAC frames and reported links closing
