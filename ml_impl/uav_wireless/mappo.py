@@ -51,8 +51,8 @@ class Critic(nn.Module):
 class MAPPO:
     def __init__(
         self,
-        obs_dim=UAVIoTEnv.OBS_DIM,
-        state_dim=UAVIoTEnv.STATE_DIM,
+        obs_dim: int | None = None,
+        state_dim: int | None = None,
         n_agents=5,
         hidden=128,
         lr=3e-4,
@@ -64,6 +64,12 @@ class MAPPO:
         max_grad_norm=0.5,
         device="cpu",
     ):
+        # Dimensions are configuration-dependent (they scale with N, M and
+        # n_pads). Falling back to the reference-config constants keeps old
+        # call sites working, but callers should pass env.obs_dim and
+        # env.state_dim so the networks always match the environment.
+        obs_dim = UAVIoTEnv.OBS_DIM if obs_dim is None else obs_dim
+        state_dim = UAVIoTEnv.STATE_DIM if state_dim is None else state_dim
         self.device = torch.device(device)
         self.actor = Actor(obs_dim, hidden).to(self.device)
         self.critic = Critic(state_dim, hidden).to(self.device)

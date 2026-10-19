@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import dataclasses
 import json
 import os
 import time
@@ -86,7 +87,8 @@ def train(
     best_path = os.path.join(d, "best.pt")
 
     env = UAVIoTEnv(cfg)
-    agent = MAPPO(n_agents=cfg.N, device=device)
+    agent = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim,
+                  state_dim=env.state_dim, device=device)
 
     start_it = 0
     best_ck = -1.0
@@ -209,9 +211,16 @@ def main():
     elif a.mode == "eval":
         ck = a.ckpt or os.path.join(run_dir(a.tag), "best.pt")
         device = a.device or ("cuda" if torch.cuda.is_available() else "cpu")
-        agent = MAPPO(n_agents=cfg.N, device=device)
+        # Build from the checkpoint's own config: dimensions scale with N, M and
+        # n_pads, so a checkpoint trained under one configuration cannot be
+        # loaded into networks sized for another.
+        blob = torch.load(ck, map_location="cpu")
+        saved = SimConfig(**blob["cfg"]) if "cfg" in blob else cfg
+        env_probe = UAVIoTEnv(dataclasses.replace(saved, episode_len=1))
+        agent = MAPPO(n_agents=saved.N, obs_dim=env_probe.obs_dim,
+                      state_dim=env_probe.state_dim, device=device)
         agent.load(ck)
-        runs = evaluate(agent, cfg, a.steps, range(a.seeds))
+        runs = evaluate(agent, saved, a.steps, range(a.seeds))
         s = summarise(runs)
         print(json.dumps({k: round(v["mean"], 4) for k, v in s.items()}, indent=2))
         journal(a.tag, dict(mode="eval", ckpt=ck, summary=s))

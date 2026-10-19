@@ -80,18 +80,44 @@ class SimConfig:
         return asdict(self)
 
 
+def obs_dim(cfg: SimConfig) -> int:
+    """Length of the per-agent observation for this configuration (Eq. 4)."""
+    return 7 + 4 * 4 + 7          # own(7) + 4 neighbour slots x 4 + tail(7)
+
+
+def state_dim(cfg: SimConfig) -> int:
+    """Length of the centralised critic input for this configuration (Eq. 3)."""
+    return 2 * cfg.N + 3 * cfg.N + 2 * cfg.M + cfg.n_pads + 3
+
+
 class UAVIoTEnv:
     """Cooperative persistent-coverage Dec-POMDP."""
 
-    OBS_DIM = 32
-    # N*2 (pos) + N (batt) + N (mode) + N (failed) + M*2 (sensors)
-    # + n_pads (pad occupancy) + 3 (reserve, time, connectivity)
-    STATE_DIM = 80
+    #: Number of neighbour slots in the local observation (Eq. 4).
+    NB_SLOTS = 4
+
+    # Local observation layout (Eq. 4), built by concatenation:
+    #   7  own state  [x, y, vx, vy, battery, mode, pad_assigned]
+    #   16 4 neighbour slots x [dx, dy, battery_j, distance]
+    #   7  [n_neighbours, local_coverage, bridge_risk,
+    #       return_urgency, pad_energy, charging_wait, active]
+    OBS_DIM = 7 + 4 * NB_SLOTS + 7          # = 30
+
+    # Global state layout (Eq. 3), built by concatenation:
+    #   2N positions, N battery, N mode, N failed, 2M sensors, n_pads, 3 scalars
+    # For the reference configuration (N=5, M=20, n_pads=2) this is
+    # 10 + 15 + 40 + 2 + 3 = 70. Kept as a constant so code that only knows the
+    # default config keeps working; always prefer `env.state_dim` or
+    # `state_dim(cfg)`, which are correct for every configuration. The previous
+    # value, 80, was correct only for N=5 and raised for N >= 8.
+    STATE_DIM = 2 * 5 + 3 * 5 + 2 * 20 + 2 + 3      # = 70 for N=5, M=20
 
     def __init__(self, cfg: SimConfig):
         self.cfg = cfg
         self.rng = np.random.default_rng(cfg.seed)
         self.radio = WirelessModel(z0=cfg.z0, p_tx=cfg.P_tx)
+        self.obs_dim = obs_dim(cfg)
+        self.state_dim = state_dim(cfg)
         self.reset()
 
     # ------------------------------------------------------------------
@@ -117,6 +143,12 @@ class UAVIoTEnv:
         self.sensors = self.rng.uniform(0, c.side, size=(c.M, 2))
         self.pads = self.rng.uniform(0.15 * c.side, 0.85 * c.side, size=(c.n_pads, 2))
 
+        # Draw the episode's propagation environment once. Seeded from the
+        # episode seed but fed through a separate stream, so shadowing draws
+        # never perturb the env's own RNG (and vice versa) -- otherwise the
+        # physics would leak into action sampling and runs would not replay.
+        self.radio.reset_links(c.N, c.M, seed=(int(c.seed) * 1_000_003 + 17))
+
         self.reserve_used = 0
         self.failure_t = c.failure_time if c.failure_time >= 0 else -1
         if c.failure_enabled and c.failure_time < 0:
@@ -125,6 +157,7 @@ class UAVIoTEnv:
         self._history_len = 6
         self.prev_cov_score = 0.0
         self.prev_w_dist = 0.0
+        self.last_cost = dict(U_t=1.0, E_t=0.0, D_t=1.0, W_t=0.0, R_t=0.0, Crit_t=1.0)
         self.recovery_start = -1
         self.recovered = True
         self.charging_wait = np.zeros(c.N)
@@ -170,40 +203,34 @@ class UAVIoTEnv:
         # PHY gate: a UAV only "counts" if ITS OWN serving link clears the rate
         # threshold. Each sensor has a serving UAV (the strongest receiver), so
         # evaluate the SINR per (sensor, uav) pair rather than once per sensor.
-        sinr = self._access_sinr_matrix(self.p[act], self.sensors)   # (M, N)
-        rate = self.radio.rate_mbps(self.radio.snr_db(sinr))         # (M, N)
-        phy_ok = rate >= self.radio.rate_min_mbps                    # (M, N)
+        sinr = self._access_sinr_matrix(self.p[act], self.sensors, act)   # (M, K)
+        rate = self.radio.rate_mbps(self.radio.snr_db(sinr))              # (M, K)
+        phy_ok = rate >= self.radio.rate_min_mbps                         # (M, K)
         usable = within & phy_ok
         return usable.sum(axis=1)
 
-    def _access_sinr_matrix(self, uav_xy, sensor_xy):
-        """(M, N) SINR of every sensor->UAV pair, with inter-UAV interference.
+    def _access_sinr_matrix(self, uav_xy, sensor_xy, uav_idx):
+        """(M, K) SINR of every sensor->UAV pair, with inter-UAV interference.
 
         The report's K-coverage counts how many UAVs can *simultaneously serve*
         a sensor, so we need a per-pair value rather than a single best-SINR
         number. Each UAV is treated as an interfering transmitter for the
         others, so serving with more UAVs costs SINR -- which is exactly the
         interference effect the experiment is meant to expose.
+
+        `uav_idx` are the GLOBAL ids of the UAVs in `uav_xy`, used to look up
+        each link's shadowing by identity rather than by position.
         """
-        m = len(sensor_xy)
-        n = len(uav_xy)
-        if n == 0 or m == 0:
-            return np.zeros((m, n))
-        d = np.linalg.norm(sensor_xy[:, None, :] - uav_xy[None, :, :], axis=-1)
-        d3 = np.sqrt(d ** 2 + self.cfg.z0 ** 2)
-        los = los_probability(d3, self.cfg.z0)
-        rx = self.radio.received_w(d3, los)          # (M, N) watts
-        inter = rx.sum(axis=1, keepdims=True) - rx    # all but the serving UAV
-        return rx / (inter + self.radio.noise_w)
+        return self.radio.access_sinr(sensor_xy, uav_xy, uav_idx)
 
     def comm_graph(self):
-        """Adjacency + SINR matrix over active UAVs."""
+        """Adjacency + SNR matrix over active UAVs."""
         act = self._active_idx()
         n = len(act)
         if n == 0:
             return act, np.zeros((0, 0), dtype=bool), np.zeros((0, 0))
-        sinr = self.radio.backhaul_sinr(self.p[act])
-        snr = self.radio.snr_db(sinr)
+        snr_lin = self.radio.backhaul_snr(self.p[act], act)
+        snr = self.radio.snr_db(snr_lin)
         rate = self.radio.link_rate_mbps(snr, backhaul=True)
         d = np.linalg.norm(self.p[act][:, None, :] - self.p[act][None, :, :], axis=-1)
         adj = (d <= self.cfg.R_comm) & (rate >= self.radio.rate_min_mbps)
@@ -430,45 +457,58 @@ class UAVIoTEnv:
     # Observations
     # ------------------------------------------------------------------
     def local_obs(self):
-        """o_i(t) = [p_i, v_i, b_i, N_i, C_i^local, rho_i, tau_i^return, E_i^pad]. Eq. (4)."""
+        """o_i(t) = [p_i, v_i, b_i, N_i, C_i^local, rho_i, tau_i^return, E_i^pad]. Eq. (4).
+
+        The vector is built by concatenation and then checked against
+        `self.obs_dim`. The previous revision wrote into a preallocated array
+        with a stride of 2 while storing 4 values per neighbour, so neighbour
+        slots overlapped each other and neighbour 3 overwrote the neighbour
+        count and the local coverage count. The actor was trained on a
+        corrupted observation. Building by concatenation makes that class of
+        bug impossible, and the assertion makes any future mismatch loud
+        instead of silent.
+        """
         c = self.cfg
-        obs = np.zeros((c.N, self.OBS_DIM), dtype=np.float32)
         act, adj, _ = self.comm_graph()
         ncov = self.coverage_counts()
+        ap = self.articulation_points(adj) if len(adj) else np.zeros(0, bool)
 
+        rows = []
         for i in range(c.N):
             if self.failed[i]:
+                rows.append(np.zeros(self.obs_dim, dtype=np.float32))
                 continue
-            o = obs[i]
-            o[0:2] = self.p[i] / c.side
-            o[2:4] = self.v[i] / c.v_max
-            o[4] = self.E[i] / c.B_max
-            o[5:8] = self.mode[i] / 2.0
-            o[8] = 1.0 if self.pad_assigned[i] >= 0 else 0.0
 
-            # neighbours within R_comm (relative, first 4 slots)
-            others = [j for j in act if j != i]
+            own = np.array([
+                self.p[i][0] / c.side,
+                self.p[i][1] / c.side,
+                self.v[i][0] / c.v_max,
+                self.v[i][1] / c.v_max,
+                self.E[i] / c.B_max,
+                self.mode[i] / 2.0,
+                1.0 if self.pad_assigned[i] >= 0 else 0.0,
+            ], dtype=np.float32)
+
+            # four nearest neighbours within R_comm, each 4 fields
             near = []
-            for j in others:
-                d = np.linalg.norm(self.p[j] - self.p[i])
+            for j in act:
+                if j == i:
+                    continue
+                d = float(np.linalg.norm(self.p[j] - self.p[i]))
                 if d <= c.R_comm:
-                    near.append(((self.p[j] - self.p[i]) / c.R_comm, self.E[j] / c.B_max, d))
-            near.sort(key=lambda z: z[2])
-            for k, (rel, ej, d) in enumerate(near[:4]):
-                o[9 + 2 * k] = rel[0]
-                o[10 + 2 * k] = rel[1]
-                o[11 + 2 * k] = ej
-                o[12 + 2 * k] = d / c.R_comm
-            o[17] = min(len(near), 4) / 4.0
+                    near.append((j, d))
+            near.sort(key=lambda z: z[1])
+            nb = np.zeros(4 * self.NB_SLOTS, dtype=np.float32)
+            for k, (j, d) in enumerate(near[: self.NB_SLOTS]):
+                rel = (self.p[j] - self.p[i]) / c.R_comm
+                nb[4 * k + 0] = rel[0]
+                nb[4 * k + 1] = rel[1]
+                nb[4 * k + 2] = self.E[j] / c.B_max
+                nb[4 * k + 3] = d / c.R_comm
 
-            # local coverage count
-            d_s = np.linalg.norm(self.sensors - self.p[i], axis=1)
-            o[18] = np.sum(d_s <= c.R_cov) / max(c.M, 1)
-
-            # local bridge risk rho_i: is any neighbour a cut-vertex locally?
+            # local bridge risk rho_i: is any neighbour a cut vertex locally?
             # adj rows/cols are indexed by POSITION within `act`, not by the
             # global UAV id, so translate before indexing.
-            ap = self.articulation_points(adj) if len(adj) else np.zeros(0, bool)
             pos_i = list(act).index(i)
             deg = int(adj[pos_i].sum()) if len(adj) else 0
             bridge = 1.0 if (0 < deg <= 2) else 0.0
@@ -476,30 +516,60 @@ class UAVIoTEnv:
                 idx = list(act).index(j)
                 if idx < len(ap) and ap[idx]:
                     bridge = max(bridge, 1.0 - 0.25 * k)
-            o[19] = bridge
 
-            # return urgency and pad energy
+            d_s = np.linalg.norm(self.sensors - self.p[i], axis=1)
             thresh = self.return_threshold(i)
-            o[20] = np.clip((thresh - self.E[i]) / max(thresh, 1.0), -1, 1)
-            o[21] = self.pad_energy(i) / c.B_max
-            o[22] = np.clip(self.charging_wait[i] / 200.0, 0, 1)
-            o[23] = 1.0 if i in list(act) else 0.0
+            tail = np.array([
+                min(len(near), self.NB_SLOTS) / self.NB_SLOTS,
+                float(np.sum(d_s <= c.R_cov)) / max(c.M, 1),
+                bridge,
+                np.clip((thresh - self.E[i]) / max(thresh, 1.0), -1, 1),
+                self.pad_energy(i) / c.B_max,
+                np.clip(self.charging_wait[i] / 200.0, 0, 1),
+                1.0,
+            ], dtype=np.float32)
+
+            rows.append(np.concatenate([own, nb, tail]))
+
+        obs = np.stack(rows).astype(np.float32)
+        if obs.shape[1] != self.obs_dim:
+            raise AssertionError(
+                f"local_obs produced {obs.shape[1]} features but obs_dim is "
+                f"{self.obs_dim}; the observation layout and the declared "
+                f"dimension have diverged"
+            )
         return obs
 
     def global_state(self):
-        """s_t for the centralized critic. Eq. (3)."""
+        """s_t for the centralized critic. Eq. (3).
+
+        Built by concatenation and checked, for the same reason as
+        `local_obs`: the previous revision wrote into a fixed-size buffer of
+        `STATE_DIM = 80`, which is only large enough for N = 5. At N = 8 the
+        pad-occupancy slice ran past the end of the array and raised, and
+        between those sizes it would have been silently misaligned.
+        """
         c = self.cfg
-        s = np.zeros(self.STATE_DIM, dtype=np.float32)
-        i = 0
-        s[i:i + c.N * 2] = (self.p / c.side).flatten(); i += c.N * 2
-        s[i:i + c.N] = self.E / c.B_max; i += c.N
-        s[i:i + c.N] = self.mode / 2.0; i += c.N
-        s[i:i + c.N] = self.failed.astype(float); i += c.N
-        s[i:i + self.cfg.M * 2] = (self.sensors / c.side).flatten(); i += self.cfg.M * 2
-        s[i:i + c.n_pads] = self.pad_occupied_by >= 0; i += c.n_pads
-        s[i] = self.reserve_used / max(c.N_reserve, 1)
-        s[i + 1] = self.t / c.episode_len
-        s[i + 2] = 1.0 if self.is_connected(self.comm_graph()[1]) else 0.0
+        parts = [
+            (self.p / c.side).flatten(),          # 2N
+            self.E / c.B_max,                     # N
+            self.mode / 2.0,                      # N
+            self.failed.astype(float),            # N
+            (self.sensors / c.side).flatten(),    # 2M
+            (self.pad_occupied_by >= 0).astype(float),   # n_pads
+            np.array([
+                self.reserve_used / max(c.N_reserve, 1),
+                self.t / c.episode_len,
+                1.0 if self.is_connected(self.comm_graph()[1]) else 0.0,
+            ]),
+        ]
+        s = np.concatenate([np.asarray(p, dtype=np.float32).ravel() for p in parts])
+        if s.shape[0] != self.state_dim:
+            raise AssertionError(
+                f"global_state produced {s.shape[0]} features but state_dim is "
+                f"{self.state_dim}; the state layout and the declared dimension "
+                f"have diverged"
+            )
         return s
 
     # ------------------------------------------------------------------
@@ -618,14 +688,14 @@ class UAVIoTEnv:
         crit = float(self.articulation_points(adj).mean()) if len(adj) else 1.0
         R_rec = rec_delay
 
-        r = -(
-            c.lam_O * U_t
-            + c.lam_E * E_cons
-            + c.lam_D * D_t
-            + c.lam_W * W_t
-            + c.lam_R * R_rec
-            + (c.lam_C * crit if c.use_connectivity_term else 0.0)
+        # Terms are exposed so eq. (23) can be checked as an equation rather
+        # than by inspecting its side effects. See tests/test_physics_and_env.py
+        # ::TestRewardEquation and tests/mutation_check.py.
+        self.last_cost = dict(
+            U_t=U_t, E_t=E_cons, D_t=D_t, W_t=W_t, R_t=R_rec, Crit_t=crit,
         )
+        r = self.reward_from_terms(self.last_cost)
+
         self.prev_cov_score = cov_now
         self.prev_w_dist = w_dist
 
@@ -636,6 +706,30 @@ class UAVIoTEnv:
         else:
             done = False
         return self.local_obs(), self.global_state(), r, done, {}
+
+    # ------------------------------------------------------------------
+    # Reward, eq. (23)
+    # ------------------------------------------------------------------
+    def reward_from_terms(self, terms: dict) -> float:
+        """Eq. (23):  r_t = -( sum_k lambda_k * cost_k(t) ).
+
+        Implemented as a pure function of the cost terms so that the equation in
+        the report can be asserted against directly. Every term is subtracted.
+        A previous revision negated only U_t, which rewarded energy burn,
+        partitions, motion, recovery delay and criticality; that defect is now
+        impossible to reintroduce without failing the test suite.
+        """
+        c = self.cfg
+        cost = (
+            c.lam_O * terms["U_t"]
+            + c.lam_E * terms["E_t"]
+            + c.lam_D * terms["D_t"]
+            + c.lam_W * terms["W_t"]
+            + c.lam_R * terms["R_t"]
+        )
+        if c.use_connectivity_term:
+            cost += c.lam_C * terms["Crit_t"]
+        return -float(cost)
 
     # ------------------------------------------------------------------
     # Metrics (Table IX)

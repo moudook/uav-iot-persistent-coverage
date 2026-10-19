@@ -32,13 +32,13 @@ def collect_rollout(env, agent, n_steps, deterministic=False):
     n = env.cfg.N
 
     B = dict(
-        obs=np.zeros((n_steps, n, agent_obs_dim(agent)), np.float32),
+        obs=np.zeros((n_steps, n, env.obs_dim), np.float32),
         mask=np.zeros((n_steps, n, N_ACTIONS), bool),
         acts=np.zeros((n_steps, n), np.int64),
         logp=np.zeros((n_steps, n), np.float32),
         adv=np.zeros((n_steps, n), np.float32),
         ret=np.zeros((n_steps, n), np.float32),
-        states=np.zeros((n_steps, UAVIoTEnv.STATE_DIM), np.float32),
+        states=np.zeros((n_steps, env.state_dim), np.float32),
         values=np.zeros((n_steps, n), np.float32),
     )
 
@@ -105,7 +105,15 @@ def agent_lam(agent):
 
 
 def agent_obs_dim(agent):
-    return 32
+    """Input width of the agent's actor network.
+
+    Replaced a stub that returned the literal 32. That hardcoded value matched
+    neither the observation layout (which used to write only 24 of 32 slots and
+    now writes exactly 30) nor any configuration other than the reference one,
+    so a buffer sized from it silently disagreed with the environment.
+    """
+    first = next(agent.actor.parameters())
+    return int(first.shape[-1])
 
 
 # ----------------------------------------------------------------------
@@ -114,7 +122,7 @@ def agent_obs_dim(agent):
 def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10, verbose=True):
     torch.manual_seed(seed)
     env = UAVIoTEnv(cfg)
-    agent = MAPPO(n_agents=cfg.N)
+    agent = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim, state_dim=env.state_dim)
     hist = []
     for ep in range(episodes):
         B, summ = collect_rollout(env, agent, n_steps)
