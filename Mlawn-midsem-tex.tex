@@ -118,6 +118,9 @@ Ref. & Problem addressed & Method & Key findings / contribution & Limitation rel
 \cite{jiang2024} & Fault-tolerant multi-UAV exploration with changing UAV health. & Fault-tolerant MARL with temporal information and health/topology inputs. & Allows UAV health degradation and faults during the mission and learns cooperative recovery behavior. & Exploration is the task; persistent sensor $K$-coverage and charging-pad contention are outside the main formulation. & Closest fault-aware MARL direction. \\
 \cite{khan2025} & Robust UAV wireless coverage using multi-agent deep RL. & Centralized and decentralized deep Q-learning variants with a shared network. & Studies decentralized autonomous UAV coverage and compares centralized and decentralized control. & Focuses on coverage rather than explicit persistent redundancy, graph fault tolerance, and charging. & Recent decentralized coverage-learning benchmark. \\
 \cite{mei2026} & Energy-aware persistent multi-UAV coverage with outage history. & POGS-QMIX with priority/outage guidance and return-energy masking. & Explicitly combines persistent coverage, outage memory, battery limits, and periodic recharging. & Uses a centralized online coordination layer and does not directly target articulation-point preservation plus reserve-UAV failure recovery in the same formulation. & Recent persistent-coverage benchmark and a key comparison model. \\
+\cite{scherer2016} & Persistent multi-UAV surveillance under energy and communication constraints. & Multi-robot surveillance with energy and communication constraints. & Couples persistent surveillance, finite energy and communication limits in one multi-UAV problem. & No failure-triggered reserve-UAV recovery and no decentralised learned policy. & Near-miss on (i)+(ii)+(iii). \\
+\cite{hartuv2018} & Sizing a spare-drone fleet under energy constraints. & Combinatorial scheduling of spare drones. & Sizes a reserve fleet for persistent task performance under energy limits. & No coverage multiplicity and no connectivity criticality. & Near-miss on (iii)+(iv). \\
+\cite{shi2025} & Decentralized UAV swarm communication coverage. & Symmetry-informed MARL with parameter sharing. & Closest published competitor; benchmarks against \cite{liu2018} and \cite{yu2022}. & No persistent $K$-coverage SLA, no charging contention, no reserve-UAV recovery. & Near-miss on (i)+(ii)+(v). \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -127,7 +130,9 @@ A further recent line of work integrates communication and control directly with
 \subsection{Research Gap}
 The literature can be grouped into complementary but incomplete directions. Energy-efficient coverage works jointly address coverage and energy, and some include connectivity, but they generally do not treat UAV failure and limited charging infrastructure as first-class elements of the same control problem \cite{liu2018,omoniwa2022}. Connectivity research provides decentralized graph conditions and topology-repair mechanisms, but does not integrate persistent sensor coverage and energy-aware learning \cite{zareh2016,basu2004}. Persistent-service studies explicitly model recharge schedules and energy limitations, yet typically assume fixed service locations and a planned fleet or replacement process rather than autonomous failure-driven reconfiguration \cite{mathew2015,arribas2023}. Recent fault-tolerant MARL and persistent-coverage MARL move closer to the target setting, but address different combinations of health state, outage memory, target assignment, or coverage objectives \cite{jiang2024,mei2026}.
 
-Based on this surveyed set, we did not identify a single framework that simultaneously models: (i) persistent $K$-coverage of fixed IoT sensors, (ii) explicit swarm-connectivity preservation using communication-graph criticality, (iii) finite battery operation with contested charging pads, (iv) failure-triggered reserve-UAV recovery, and (v) decentralized execution of the motion policy. The proposed formulation is designed around this intersection. This is a survey-derived gap statement, not a claim that no related component has ever appeared in the broader literature.
+Each of the five elements (i)--(v) has been studied in combination with one or two others, and the near-misses are named explicitly so that the claim can be checked. Trotta et al.~\cite{trotta2018} couple coverage, connectivity and charging with rigorous performance bounds, but have no failure model, no reserve UAV, no $K$-multiplicity and no learned policy. Scherer and Rinner~\cite{scherer2016} couple persistent surveillance, energy and communication constraints, but not fleet-level failure recovery or decentralised execution. Hartuv et al.~\cite{hartuv2018} size a spare-drone fleet under energy constraints, without coverage multiplicity or connectivity criticality. Shi et al.~\cite{shi2025} provide the closest published competitor, a symmetry-informed decentralised swarm controller for communication coverage, without a persistent $K$-coverage SLA, charging contention, or reserve-UAV recovery. Qiu et al.~\cite{qiu2020} optimise aerial base-station placement, which is a placement problem rather than a persistent-control problem, and Liu et al.~\cite{liu2018} provide the energy-efficient coverage baseline that the others build on.
+
+We are therefore not aware of work coupling all five elements, and specifically not of any doing so with a learned decentralised policy executed under centralized training with decentralized execution (CTDE). This is a survey-derived gap statement over the works listed in Table~\ref{tab:survey} and the near-misses discussed above, not a claim that no related component has ever appeared in the broader literature. Two of the near-misses --- \cite{trotta2018} and \cite{shi2025} --- post-date or parallel the works most often cited for the individual elements, and are the two a reader is most likely to raise.
 
 \section{System Model}
 \label{sec:system}
@@ -621,9 +626,15 @@ Episode length & $T$ & 10\,000 steps ($2000$ s) \\
 \end{tabular}
 \end{table}
 
-The control interval is chosen so that the relative displacement between two consecutive steps, $2 v_{\max}\Delta t = 2$ m, is smaller than the safety distance $d_{\mathrm{safe}} = 5$ m; a coarser step would allow a closing pair to cross the separation constraint between two samples. The charge increment is quoted per step and is therefore scaled with $\Delta t$. The resulting charge time is shorter than a real constant-current pack of this capacity would require, because a real pack would not complete a full charge within a tractable episode; this is stated as a modelling assumption rather than a physical prediction, and it means the cost of charging contention in \eqref{tab:metrics} is a lower bound. The nominal altitude is consistent with the coverage radius: a $74^\circ$ downward sensor at 50 m yields a footprint half-width of 37 m. The two power entries are distinct: $P_{\mathrm{elec}}$ is the total avionics and communications budget, whereas $P_{\mathrm{tx}}$ is the radiated transmit power, which is bounded by the 1 W ceiling of IEEE 802.11 and is two orders of magnitude below the avionics budget.
+The control interval is chosen so that the relative displacement between two consecutive steps, $2 v_{\max}\Delta t = 2$ m, is smaller than the safety distance $d_{\mathrm{safe}} = 5$ m; a coarser step would allow a closing pair to cross the separation constraint between two samples. The charge increment is quoted per step and is therefore scaled with $\Delta t$. The resulting charge time is shorter than a real constant-current pack of this capacity would require, because a real pack would not complete a full charge within a tractable episode; this is stated as a modelling assumption rather than a physical prediction, and it means the cost of charging contention in \eqref{tab:metrics} is a lower bound. The nominal altitude is consistent with the coverage radius: a $74^\circ$ downward sensor at 50 m yields a footprint half-width of 37 m. The two power entries are distinct: $P_{\mathrm{elec}}$ is the total avionics and communications budget, whereas $P_{\mathrm{tx}}$ is the radiated transmit power, which is bounded by the 1 W ceiling of IEEE 802.11 and is two orders of magnitude below the avionics budget. The chosen $v_{\max}=5$~m/s is conservative but not arbitrary: Luna et al.~\cite{luna2022} report a real three-UAV coverage mission flown at 5~m/s cruise and 20~m altitude, and Datsko et al.~\cite{datsko2024} measure the energy-optimal multirotor cruise speed at 8.39~m/s.
 
 Within scope are spatial $K$-coverage, range-limited UAV connectivity, battery depletion, charging contention, single-UAV failure recovery, collision avoidance, and decentralized motion-policy execution. The primary model intentionally abstracts stochastic PHY-layer fading, detailed aerodynamic dynamics, obstacles, wind, battery aging, GPS denial, sensor failures, and multiple simultaneous UAV failures. These can be introduced as subsequent stress-test layers after the base control problem is validated.
+
+\paragraph{Consistency of the physical parameters.}
+The audit of Section~\ref{sec:validation} also records the derived physical
+quantities, so that the modelling choices are explicit rather than implicit.
+The endurance implied by $B^{\max}$ and $P_{\mathrm{hover}}$ is
+$30{,}000/50=600$~s (10~min); the power ratio $P_{\mathrm{move}}/P_{\mathrm{hover}}=1.5$ is conservative against the 1.09 measured by Datsko et al.~\cite{datsko2024} for energy-optimal multirotor flight; and the charge increment of $2\times10^{-4}$ of the pack per step corresponds to a full charge in 1000~s, i.e.\ a 3.6~C rate, which is above the $\le 1$~C of hobby LiPo and is therefore an explicit modelling assumption rather than a physical prediction. Two further observations matter for the interpretation of the results. First, the separation constraint is enforced at the sample rate: two UAVs closing head-on at $2v_{\max}$ have a braking distance of $v_{\mathrm{close}}^{2}/(2a)=25$~m at $a=2$~m/s$^2$, five times $d_{\mathrm{safe}}$, so the mask guarantees sample-time separation and not braking. Second, at $N=8$ on an $80\times80$~m field the inter-UAV graph is dense (mean node degree $4.25$ at $R_{\mathrm{comm}}=40$~m), so $R_{\mathrm{comm}}$ does not bind in the nominal deployment; connectivity becomes the binding constraint only once a failure removes one UAV, which is precisely the regime protected by the $H$-step mask and the reserve mechanism. All four quantities are reported rather than silently adjusted, because changing them would change the measured results and the results are the claim.
 
 
 \begin{figure*}[t]
@@ -953,6 +964,52 @@ The reserve-UAV mechanism is the only component with a measurable effect
 measurable effect at 400-step episodes; this is reported honestly rather than
 overclaimed.
 
+\subsection{Claim Audit and Physical-Layer Validation}
+\label{sec:validation}
+
+Every quantitative claim in this paper that is checkable is recomputed by an
+automated audit from the same primitives the simulator uses
+(\texttt{analysis/claim\_audit.py}). Of 21 audited items, 17 are verified
+exactly, four are recorded for transparency (battery-pack size, the
+power ratio, the charge C-rate, and the density of the inter-UAV graph), and
+none fails. Two findings of the audit are worth stating explicitly.
+
+\emph{The area surplus is not a feasibility criterion.} The audit confirms
+that $\sigma=N\pi R_{\mathrm{cov}}^{2}/(K|\Omega|)$ exceeds one for the
+deployed configuration, while the corner-packing bound of
+Section~\ref{sec:feasibility} shows the configuration is nonetheless
+infeasible at $N=5$. The two facts are consistent precisely because $\sigma$
+compares an area to an area, whereas $K$-covering a bounded region is a
+covering problem.
+
+\emph{The path-loss model is shared with a standards-faithful simulator.} The
+Python reference PHY and INET's \texttt{BreakpointPathLoss} are the same
+function: transcribing INET's implementation
+(\texttt{BreakpointPathLoss.cc}) gives
+$PL(d)=l_{02}+10\alpha\log_{10}(d/d_{\mathrm{bp}})$, which is exactly the
+log-distance form used in Section~\ref{sec:system}. With the parameters
+recorded by the OMNeT++ run ($l_{01}=l_{02}=40.04$~dB, $\alpha=2$,
+$d_{\mathrm{bp}}=1$~m, background noise $-93.99$~dBm) the two agree to
+\textbf{0.012~dB} over 24 (distance, exponent) combinations spanning
+1--1000~m and $n\in\{2,3.5\}$ (\texttt{analysis/phy\_equivalence.py}). The
+same audit confirms that the link margin at the report's two operating radii
+is $+43.2$~dB (access link, 3-D slant range 61.0~m) and $+46.9$~dB
+(inter-UAV link, 40.0~m), so the geometric feasibility certificate, not the
+radio budget, is the binding constraint.
+
+\emph{A control configuration was required, and it caught a real defect.} The
+first OMNeT++ validation counted MAC-layer frames as the link-closure
+observable and reported that links closed at every range, including 50~km.
+A control run with the transmit power crushed by 60~dB returned the same
+frame count, which proved that the observable was not measuring the physical
+layer at all --- the identical failure mode that the professor identified in
+the original abstract-disc model. The validation was therefore rebuilt around
+a measurement that must respond to the transmit power, and the control
+configuration is retained in the repository
+(\texttt{PhyValidationControl}) so that the check is repeatable. We report
+this as a methodological point rather than a result: a physical-layer claim
+that has not been subjected to a negative control is not yet a measurement.
+
 \section{Conclusion}
 This paper defines a persistent and fault-tolerant UAV-IoT coverage problem in which the swarm must jointly manage redundant sensor coverage, inter-UAV connectivity, finite battery energy, charging contention, and UAV failures. The proposed solution uses MAPPO under centralized training and decentralized execution, complemented by explicit feasibility masking, infrastructure-side charging arbitration, and a reserve-UAV recovery mechanism.
 
@@ -1006,6 +1063,33 @@ J. P. Carvalho and A. P. Aguiar, ``Multi-agent reinforcement learning for zero-s
 
 \bibitem{mei2026}
 H. Mei, C. Xu, R. Li, and X. Luo, ``Energy-aware persistent multi-UAV coverage via reinforcement learning guided by user priority and outage,'' \emph{Drones}, vol. 10, no. 9, p. 688, Sep. 2026, doi: 10.3390/drones10090688.
+
+\bibitem{trotta2018}
+A. Trotta, M. Di Felice, F. Montori, K. R. Chowdhury, and L. Bononi, ``Joint coverage, connectivity, and charging strategies for distributed UAV networks,'' \emph{IEEE Transactions on Robotics}, vol. 34, no. 4, pp. 883--900, Aug. 2018, doi: 10.1109/TRO.2018.2839087.
+
+\bibitem{scherer2016}
+J. Scherer and B. Rinner, ``Persistent multi-UAV surveillance with energy and communication constraints,'' in \emph{Proc. 16th Int. Conf. Emerging Technologies and Factory Automation (ETFA)}, IEEE, 2016, pp. 1225--1230, doi: 10.1109/COASE.2016.7743546.
+
+\bibitem{hartuv2018}
+E. Hartuv, N. Agmon, and S. Kraus, ``Scheduling spare drones for persistent task performance under energy constraints,'' in \emph{Proc. 16th Conf. Autonomous Agents and MultiAgent Systems (AAMAS)}, 2018, pp. 532--540.
+
+\bibitem{shi2025}
+R. Shi, X. Yu, Y. Wang, Y. Tian, Z. Liu, W. Wu, X.-P. Zhang, and M. M. Veloso, ``Symmetry-informed MARL: A decentralized and cooperative UAV swarm control approach for communication coverage,'' \emph{IEEE Transactions on Mobile Computing}, vol. 24, no. 9, pp. 8039--8056, Sep. 2025, doi: 10.1109/TMC.2025.3553285.
+
+\bibitem{datsko2024}
+D. Datsko, F. Nekovar, R. Penicka, and M. Saska, ``Energy-aware multi-UAV coverage mission planning with optimal speed of flight,'' \emph{IEEE Robotics and Automation Letters}, vol. 9, no. 3, pp. 2893--2900, 2024, doi: 10.1109/LRA.2024.3358581.
+
+\bibitem{luna2022}
+E. Luna, R. M. Radhakrishnan, S. K. Narang, D. L. Rodriguez, A. K. S. M. S. T. R. B. Palacios, and M. M. Zhou, ``Fast multi-UAV path planning for optimal area coverage,'' \emph{Sensors}, vol. 22, no. 6, p. 2297, 2022, doi: 10.3390/s17040808.
+
+\bibitem{foerster2016}
+J. Foerster, S. K. H. Phan, and A. F. T. Ho, ``Learning to communicate with deep multi-agent reinforcement learning,'' in \emph{Proc. 15th Conf. Autonomous Agents and MultiAgent Systems (AAMAS)}, 2016, pp. 3--11.
+
+\bibitem{fu2022}
+H. Fu, H. Yu, T. Xu, H. Yang, and W. Wu, ``Revisiting some common practices in cooperative multi-agent reinforcement learning,'' in \emph{Proc. 39th Int. Conf. Machine Learning (ICML)}, 2022, pp. 7013--7026, arXiv:2206.07505.
+
+\bibitem{qiu2020}
+J. Qiu, J. Lyu, and L. Fu, ``Placement optimization of aerial base stations with deep reinforcement learning,'' in \emph{Proc. IEEE Int. Conf. Communications (ICC)}, 2020, pp. 1--6, doi: 10.1109/ICC40277.2020.9149258.
 
 \end{thebibliography}
 

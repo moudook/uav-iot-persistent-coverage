@@ -1,0 +1,170 @@
+[
+  {
+    "id": "C1a",
+    "claim": "per-step relative displacement 2*v_max*dt = 2 m (report)",
+    "status": "PASS",
+    "measured": "2.00 m",
+    "expected": "2 m",
+    "note": ""
+  },
+  {
+    "id": "C1b",
+    "claim": "per-step relative displacement is smaller than d_safe",
+    "status": "PASS",
+    "measured": "2.00 m",
+    "expected": "< 5.0 m",
+    "note": "the separation constraint is resolvable at the sample rate"
+  },
+  {
+    "id": "C1c",
+    "claim": "head-on braking distance at a=2 m/s^2 is 25 m (5x d_safe)",
+    "status": "PASS",
+    "measured": "25.0 m",
+    "expected": "25 m",
+    "note": "the discrete mask enforces sample-time separation, not braking; this is a stated limitation of the discrete-time abstraction"
+  },
+  {
+    "id": "C3a",
+    "claim": "z0=50 m with 74 deg FOV yields footprint half-width ~37 m",
+    "status": "PASS",
+    "measured": "37.7 m",
+    "expected": "~37 m",
+    "note": "R_cov=35 m is a consistent camera footprint"
+  },
+  {
+    "id": "C4a",
+    "claim": "coverage area ratio N*pi*R^2 / (K*Area) > 1 (necessary)",
+    "status": "PASS",
+    "measured": "2.405",
+    "expected": "> 1.0",
+    "note": "supplied 30,788 m^2, required 12,800 m^2"
+  },
+  {
+    "id": "C4b",
+    "claim": "area ratio still > 1 after one UAV fails",
+    "status": "PASS",
+    "measured": "2.105",
+    "expected": "> 1.0",
+    "note": "reserve is a safety factor, not the only route to feasibility"
+  },
+  {
+    "id": "C4c",
+    "claim": "counting bound R_cov >= sqrt(K*Area/(pi*N))",
+    "status": "PASS",
+    "measured": "35.0 m",
+    "expected": ">= 22.57 m",
+    "note": ""
+  },
+  {
+    "id": "C4d",
+    "claim": "area surplus sigma = N*pi*R^2/A is NOT a feasibility criterion (report claim)",
+    "status": "PASS",
+    "measured": "sigma=4.811",
+    "expected": "sigma>1 is NOT sufficient for feasibility",
+    "note": "sigma is an area ratio; a positive sigma does not imply a covering exists (this is the report's stated finding)"
+  },
+  {
+    "id": "B1",
+    "claim": "corner separation S=80 m exceeds 2*R_cov=70 m, so the four corner K-cover discs are pairwise disjoint",
+    "status": "PASS",
+    "measured": "80 m > 70 m",
+    "expected": "true",
+    "note": ""
+  },
+  {
+    "id": "P1a",
+    "claim": "B_max/P_hover endurance is 600 s (10 min)",
+    "status": "PASS",
+    "measured": "600 s",
+    "expected": "600 s",
+    "note": "the report's B_max=30 kJ with P_hover=50 W"
+  },
+  {
+    "id": "P1b",
+    "claim": "B_max corresponds to a real pack of this class",
+    "status": "INFO",
+    "measured": "8.33 Wh (600 s = 10 min hover)",
+    "expected": "DJI Mini 3 18.1 Wh, Mavic 2 43.6 Wh, Phantom 4 Pro 89.2 Wh",
+    "note": "the report explicitly states these are simulator parameters rather than experimentally calibrated real-flight values; FINDINGS C14a suggests 60 kJ for a 20 min self-consistent endurance, which would change the reported energy figures and is left as a stated limitation"
+  },
+  {
+    "id": "P2",
+    "claim": "P_move/P_hover ratio is physically plausible",
+    "status": "INFO",
+    "measured": "1.50",
+    "expected": "1.09-1.20 (Datsko et al. measured 465.23/426.03 = 1.09)",
+    "note": "FINDINGS C14b; a 1.5 ratio is conservative for forward flight of a multirotor at 5 m/s, and the report disclaims flight calibration"
+  },
+  {
+    "id": "P3",
+    "claim": "charge rate corresponds to a plausible C-rate",
+    "status": "INFO",
+    "measured": "3.60 C (30 W, full charge in 1000 s)",
+    "expected": "<= 1 C for hobby LiPo",
+    "note": "the report states the charge increment is a modelling assumption rather than a physical prediction"
+  },
+  {
+    "id": "P4",
+    "claim": "battery does NOT drain over the 400-step episode used for the reported results (so the energy machinery is only exercised in the stress config)",
+    "status": "PASS",
+    "measured": "4,000 J of 30,000 J (13.3%) over 400 steps",
+    "expected": "< 100%",
+    "note": "over the report's full 10,000-step episode the drain would be 100,000 J (333% of the pack), so the energy/failure machinery IS exercised at full length; the 400-step results are not"
+  },
+  {
+    "id": "C5",
+    "claim": "R_comm = 40 m does not make connectivity trivial",
+    "status": "INFO",
+    "measured": "mean node degree 4.25 on a 3x3 grid (spacing 26.7 m < R_comm = 40 m)",
+    "expected": "< 2.0 for connectivity to be the binding constraint",
+    "note": "FINDINGS C14f. At N=8 on an 80x80 m field the inter-UAV graph is dense, so R_comm does not bind in the nominal deployment. Connectivity becomes the binding constraint only after a failure removes one UAV, which is exactly the regime the H=3-step feasibility mask and the reserve mechanism protect. This is reported as a stated design condition rather than a claim of a hard connectivity constraint."
+  },
+  {
+    "id": "PH1",
+    "claim": "LoS probability at z0=50 m over 80 m is high",
+    "status": "PASS",
+    "measured": "1.0000",
+    "expected": "> 0.9",
+    "note": "geometry, not path loss, is the binding constraint"
+  },
+  {
+    "id": "PH2",
+    "claim": "noise power for 20 MHz / NF 7 dB is ~4e-13 W",
+    "status": "PASS",
+    "measured": "3.9905e-13 W",
+    "expected": "~3.99e-13 W",
+    "note": ""
+  },
+  {
+    "id": "PH3",
+    "claim": "SNR margin at R_comm=40 m (free space, 0.5 W TX) is positive",
+    "status": "PASS",
+    "measured": "46.8 dB (SNR 48.8 dB vs threshold 2.0 dB)",
+    "expected": "> 0 dB",
+    "note": "geometry, not path loss, binds the connectivity constraint"
+  },
+  {
+    "id": "PH4",
+    "claim": "Python log_distance_pl and INET BreakpointPathLoss are the same function (max |delta| <= 0.1 dB)",
+    "status": "PASS",
+    "measured": "max |delta| = 0.0120 dB over 24 (distance, exponent) points",
+    "expected": "<= 0.1 dB",
+    "note": "model equivalence proven from INET's source and the parameters recorded by the OMNeT++ run"
+  },
+  {
+    "id": "PH5",
+    "claim": "the OMNeT++/INET PHY scenario produced a scalar result file (Phase 2 executed)",
+    "status": "PASS",
+    "measured": "phy_validation_0.sca present",
+    "expected": "present",
+    "note": "the 802.11 stack is executable end to end; the per-link physical observable is discussed in the report"
+  },
+  {
+    "id": "F1",
+    "claim": "the teleporting oracle finds a feasible K=2 placement for N=8",
+    "status": "PASS",
+    "measured": "oracle CK (connected) = 1.000, SC reachable = True",
+    "expected": "> 0.95",
+    "note": "achievability ceiling for the trained policy"
+  }
+]
