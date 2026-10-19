@@ -732,3 +732,27 @@ class TestMetrics:
         s = e.summary()
         if s["SC"] > 0:
             assert s["CK"] > 0 and s["AG"] > 0
+
+    def test_non_degenerate_metrics_present(self):
+        """Deep Research recommended non-degenerate alternatives to SC."""
+        c = SimConfig(episode_len=20)
+        e = UAVIoTEnv(c)
+        e.reset()
+        for _ in range(20):
+            e.step(np.zeros(c.N, dtype=np.int64))
+        s = e.summary()
+        assert "CovIntegral" in s, "CovIntegral metric missing"
+        assert "MaxRefresh" in s, "MaxRefresh metric missing"
+        assert 0.0 <= s["CovIntegral"] <= 1.0, f"CovIntegral={s['CovIntegral']} out of [0,1]"
+        assert s["MaxRefresh"] >= 0
+
+    def test_cov_integral_zero_on_perfect_coverage(self):
+        """If every step has full K-coverage, CovIntegral should be 0."""
+        # Use a very large R_cov so coverage is trivially full every step.
+        c = SimConfig(episode_len=10, R_cov=1e6)
+        e = UAVIoTEnv(c)
+        e.reset()
+        for _ in range(10):
+            e.step(np.zeros(c.N, dtype=np.int64))
+        s = e.summary()
+        assert s["CovIntegral"] < 1e-9, f"expected ~0, got {s['CovIntegral']}"
