@@ -77,31 +77,46 @@ def eval_agent(agent, cfg, steps=1000, seed=0):
     return env.summary()
 
 
-def run_base_comparison(base: SimConfig, out_csv="results_main.csv"):
-    """Train MAPPO once on the base config, compare against rule baselines."""
+def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
+                        eval_seeds=5, train=True, agent=None):
+    """Train MAPPO on the base config, compare against the rule baselines.
+
+    The baselines are evaluated on the SAME seeds as the learned policy.
+    (They previously accepted a seed and ignored it, so a "five-seed"
+    comparison ran one scene five times for the baselines while the learned
+    policy was evaluated on five different scenes -- which flatters the
+    learned policy whenever the extra seeds happen to be easier.)
+    """
     import csv
     rows = []
 
-    print("\n=== Training proposed MAPPO on base config ===")
-    agent, hist = train_mappo(base, episodes=120, n_steps=400, seed=0, log_every=20)
-    agent.save("mappo_base.pt")
+    if agent is None and train:
+        print("\n=== Training proposed MAPPO on base config ===")
+        agent, hist = train_mappo(base, episodes=120, n_steps=400, seed=0,
+                                  log_every=20)
+        agent.save("mappo_base.pt")
 
-    print("\n=== Rule-based baselines (5 seeds) ===")
+    print(f"\n=== Rule-based baselines ({eval_seeds} seeds) ===")
     for name, fn in [("Fixed", baseline_fixed),
                      ("Greedy", baseline_greedy),
                      ("Reactive", baseline_reactive)]:
-        sums = [fn(base, steps=base.episode_len, seed=s) for s in range(5)]
+        sums = [fn(base, steps=base.episode_len, seed=s)
+                for s in range(eval_seeds)]
         agg = {k: float(np.mean([s[k] for s in sums])) for k in sums[0]}
-        print(f"{name:10s} CK={agg['CK']:.3f} AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
-              f"Crit={agg['Crit']:.3f} E={agg['Energy']:.0f}")
+        std = {k: float(np.std([s[k] for s in sums])) for k in sums[0]}
+        print(f"{name:10s} CK={agg['CK']:.3f}±{std['CK']:.3f} "
+              f"AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
+              f"CI={agg['CovIntegral']:.3f} E={agg['Energy']:.0f}")
         rows.append(dict(model=name, **agg))
 
-    print("\n=== MAPPO (proposed) evaluation (5 seeds) ===")
-    evs = [eval_agent(agent, base, steps=base.episode_len, seed=s) for s in range(5)]
+    print(f"\n=== MAPPO (proposed) evaluation ({eval_seeds} seeds) ===")
+    evs = [eval_agent(agent, base, steps=base.episode_len, seed=s)
+           for s in range(eval_seeds)]
     agg = {k: float(np.mean([s[k] for s in evs])) for k in evs[0]}
     std = {k: float(np.std([s[k] for s in evs])) for k in evs[0]}
     print(f"{'MAPPO':10s} CK={agg['CK']:.3f}±{std['CK']:.3f} AG={agg['AG']:.3f} "
-          f"SC={agg['SC']:.3f} Crit={agg['Crit']:.3f} E={agg['Energy']:.0f}")
+          f"SC={agg['SC']:.3f} CI={agg['CovIntegral']:.3f} "
+          f"E={agg['Energy']:.0f}")
     rows.append(dict(model="MAPPO", **agg))
 
     with open(out_csv, "w", newline="") as f:
@@ -188,8 +203,8 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv"):
         for vi, c0 in enumerate(cfgs):
             c = copy.deepcopy(c0)
             c.episode_len = min(c.episode_len, 400)
-            m = eval_agent(agent, c, steps=c.episode_len, seed=0)
-            r = baseline_reactive(c, steps=c.episode_len, seed=0)
+            m = eval_agent(agent, c, steps=c.episode_len, seed=c.seed)
+            r = baseline_reactive(c, steps=c.episode_len, seed=c.seed)
             # a short description of the variant for the CSV
             variant = (f"N={c.N} M={c.M} Rcov={c.R_cov:.0f} "
                        f"Rcomm={c.R_comm:.0f} pads={c.n_pads} "

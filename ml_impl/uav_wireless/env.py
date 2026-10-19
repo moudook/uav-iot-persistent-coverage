@@ -165,6 +165,8 @@ class UAVIoTEnv:
 
         self.ep = self.metrics()
         self._under_streak = 0
+        self.truncated = False
+        self.terminated = False
         self.prev_metrics = dict(self.ep)
         return self.local_obs(), self.global_state()
 
@@ -702,10 +704,18 @@ class UAVIoTEnv:
 
         # --- 7. metrics -------------------------------------------------
         self._update_metrics(ncov, adj, draw, w_dist)
-        if self.t >= c.episode_len:
-            done = True
-        else:
-            done = False
+        # An episode ends either because the mission time limit is reached or
+        # because the swarm can no longer serve the sensors.  These are NOT
+        # the same event: a time limit is a TRUNCATION, and the value of the
+        # final state is still meaningful, so the GAE recursion must bootstrap
+        # from V(s_T) rather than treat it as absorbing.  Conflating the two
+        # biases every value target downward (Pardo et al., ICML 2018).
+        self.truncated = self.t >= c.episode_len
+        # A genuine terminal state: every UAV has failed, so nothing can
+        # serve the sensors and no future return is possible.  In every other
+        # case the episode simply hit the time limit, which is a truncation.
+        self.terminated = (len(self._active_idx()) == 0) and not self.truncated
+        done = self.truncated or self.terminated
         return self.local_obs(), self.global_state(), r, done, {}
 
     # ------------------------------------------------------------------

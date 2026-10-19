@@ -819,3 +819,97 @@ class TestDormancyProbe:
                 f"healthy network reported {r['dormant_frac_0.01']:.3f} dormant")
             assert r["dead_frac_0.01"] < 0.25, (
                 f"healthy network reported {r['dead_frac_0.01']:.3f} dead")
+
+
+# ======================================================================
+# Baseline seed handling
+# ======================================================================
+class TestBaselineSeeding:
+    """The baselines must actually use the seed they are given.
+
+    They previously accepted a `seed` argument and ignored it, so a
+    "five-seed" comparison ran the same episode five times for the baselines
+    while the learned policy was evaluated on five different scenes.  That is
+    the unfair comparison the review flagged, and it flattered the learned
+    policy whenever the extra seeds happened to be easier.
+    """
+
+    @staticmethod
+    def _cfg():
+        return SimConfig(N=4, K=1, M=8, episode_len=60, seed=0)
+
+    def test_baselines_accept_and_apply_a_seed(self):
+        from uav_wireless.train import (baseline_fixed, baseline_greedy,
+                                        baseline_reactive)
+        c = self._cfg()
+        for fn in (baseline_fixed, baseline_greedy, baseline_reactive):
+            a = fn(c, steps=60, seed=1)
+            b = fn(c, steps=60, seed=2)
+            assert set(a) == set(b)
+            # the scenes differ, so at least one metric must differ
+            differs = any(abs(a[k] - b[k]) > 1e-9 for k in a
+                          if isinstance(a[k], (int, float)))
+            assert differs, (
+                f"{fn.__name__} produced identical results for seeds 1 and 2 "
+                f"-- the seed is being ignored")
+
+    def test_baseline_is_deterministic_for_a_fixed_seed(self):
+        from uav_wireless.train import baseline_reactive
+        c = self._cfg()
+        a = baseline_reactive(c, steps=60, seed=3)
+        b = baseline_reactive(c, steps=60, seed=3)
+        for k in a:
+            assert abs(a[k] - b[k]) < 1e-9, f"{k} not reproducible for one seed"
+
+    def test_baseline_does_not_mutate_the_caller_config(self):
+        from uav_wireless.train import baseline_reactive
+        c = self._cfg()
+        before = c.seed
+        baseline_reactive(c, steps=30, seed=7)
+        assert c.seed == before, "baseline mutated the caller's config"
+
+
+# ======================================================================
+# Termination vs truncation
+# ======================================================================
+class TestTerminationVsTruncation:
+    """A time limit is a truncation; only a real dead end is a termination.
+
+    If the environment reports the time limit as `done` without saying which
+    it was, the GAE recursion bootstraps from zero at every episode
+    boundary and every value target is biased downward.  The environment
+    therefore reports `terminated` separately, and these tests pin that
+    distinction.
+    """
+
+    def test_time_limit_is_a_truncation_not_a_termination(self):
+        c = SimConfig(N=4, K=1, M=6, episode_len=5, seed=0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        for _ in range(5):
+            _, _, _, done, _ = e.step(np.zeros(c.N, dtype=np.int64))
+        assert done, "episode should report done at the time limit"
+        assert e.truncated is True, "time limit must be flagged as truncation"
+        assert e.terminated is False, "time limit must NOT be a termination"
+
+    def test_bootstrap_is_used_at_a_time_limit(self):
+        """A truncated rollout must bootstrap, not zero."""
+        import numpy as np
+        from uav_wireless.env import UAVIoTEnv
+        c = SimConfig(N=4, K=1, M=6, episode_len=5, seed=0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        for _ in range(5):
+            e.step(np.zeros(c.N, dtype=np.int64))
+        assert e.truncated and not e.terminated
+
+    def test_rollout_honours_the_terminated_flag(self):
+        """collect_rollout must read env.terminated, not infer it from done."""
+        import inspect
+        from uav_wireless import train
+        src = inspect.getsource(train.collect_rollout)
+        assert "env.terminated" in src or "getattr(env, \"terminated\"" in src, (
+            "collect_rollout does not consult the environment's terminated flag")
+        assert "truncated = (t == n_steps) and (not done)" not in src, (
+            "collect_rollout still infers truncation from `done`, which cannot "
+            "distinguish a time limit from a terminal state")

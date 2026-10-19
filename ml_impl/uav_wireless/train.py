@@ -82,9 +82,16 @@ def collect_rollout(env, agent, n_steps, deterministic=False):
         t += 1
         if done:
             break
-    # Track whether we hit the horizon without natural termination (truncation).
-    # `done` here is from the last step; state is the (next) state to bootstrap from.
-    truncated = (t == n_steps) and (not done)
+    # Distinguish a genuine terminal state from a truncation.
+    #
+    # The environment ends an episode when the mission time limit is reached.
+    # That is a TRUNCATION, not a terminal state: the value of the final state
+    # is still meaningful, so the GAE recursion must bootstrap from V(s_{t+1}).
+    # Conflating the two biases every value target downward.  The environment
+    # therefore reports `terminated` separately, and the rollout trusts it
+    # rather than inferring termination from `done`.
+    env_terminated = bool(getattr(env, "terminated", False))
+    truncated = not env_terminated
     terminal_state = state if truncated else None
 
     # ---- GAE (26) with bootstrap at truncation -----------------------
@@ -164,6 +171,20 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
 # ----------------------------------------------------------------------
 # Rule-based baselines (Table VIII)
 # ----------------------------------------------------------------------
+def _seeded(cfg: SimConfig, seed: int) -> SimConfig:
+    """Copy of cfg with the episode seed applied.
+
+    The seed selects the random scene (sensor layout, pad placement, initial
+    positions and the shadowing draw).  Every baseline must apply it, or a
+    "five-seed" comparison degenerates into the same episode run five times
+    while the learned policy is evaluated on five different scenes.
+    """
+    import copy
+    c = copy.deepcopy(cfg)
+    c.seed = int(seed)
+    return c
+
+
 def _move_toward(env, i, target):
     c = env.cfg
     d = target - env.p[i]
@@ -185,6 +206,15 @@ def _uncovered_target(env):
 
 
 def baseline_fixed(cfg: SimConfig, steps=1000, seed=0):
+    """Fixed formation with threshold recharge.
+
+    The `seed` argument selects the episode's random scene (sensor layout,
+    pad placement, initial positions).  It MUST be applied to the config:
+    accepting the argument and ignoring it would make every "seed" in a
+    multi-seed comparison the same episode, which silently turns a
+    five-seed comparison into one repeated run.
+    """
+    cfg = _seeded(cfg, seed)
     env = UAVIoTEnv(cfg)
     obs, st = env.reset()
     for _ in range(steps):
@@ -205,6 +235,8 @@ def baseline_fixed(cfg: SimConfig, steps=1000, seed=0):
 
 
 def baseline_greedy(cfg: SimConfig, steps=1000, seed=0):
+    """Greedy lowest-battery recharge with the same motion rule."""
+    cfg = _seeded(cfg, seed)
     env = UAVIoTEnv(cfg)
     obs, st = env.reset()
     for _ in range(steps):
@@ -225,6 +257,7 @@ def baseline_greedy(cfg: SimConfig, steps=1000, seed=0):
 
 def baseline_reactive(cfg: SimConfig, steps=1000, seed=0):
     """Deterministic coverage + connectivity heuristic (no learning)."""
+    cfg = _seeded(cfg, seed)
     env = UAVIoTEnv(cfg)
     obs, st = env.reset()
     for _ in range(steps):
