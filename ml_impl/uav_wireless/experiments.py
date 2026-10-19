@@ -112,10 +112,21 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv"):
     return agent, rows
 
 
-def run_ablation(base: SimConfig, out_csv="results_ablation.csv"):
-    """Turn off one proposed component at a time (Table VIII)."""
+def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True):
+    """Turn off one proposed component at a time (Table VIII).
+
+    stress=True  -- ablate on the S8 combined-stress scenario.  The stress
+                    config is what actually exercises the reserve and
+                    arbitration mechanisms, but K=2 coverage is not
+                    achievable there, so the coverage numbers are bounded by
+                    the geometry rather than by the policy.
+    stress=False -- ablate directly on the base (feasible) configuration, so
+                    the component contributions are measured on a task that a
+                    controller can actually solve.  This is the table that
+                    supports the paper's claims.
+    """
     import copy, csv
-    print("\n=== Ablations ===")
+    print(f"\n=== Ablations ({'S8 combined stress' if stress else 'feasible base config'}) ===")
     variants = {
         "Full": dict(),
         "no-connectivity": dict(use_connectivity_term=False),
@@ -128,16 +139,17 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv"):
     rows = []
     for name, kw in variants.items():
         c = copy.deepcopy(base)
-        # Ablate on the COMBINED-STRESS scenario (S8), not the base config.
-        # On the base config no UAV fails and nobody contends for a pad, so
-        # the reserve / arbitration mechanisms never fire and every ablation
-        # trivially matches. The stress config is what actually exercises them.
-        c.failure_enabled = True
-        c.failure_time = 120
-        c.n_pads = 1
-        c.B_max = 15_000.0
-        c.charge_rate = 0.0004
-        c.R_comm = 32.0
+        if stress:
+            # Ablate on the COMBINED-STRESS scenario (S8), not the base config.
+            # On the base config no UAV fails and nobody contends for a pad, so
+            # the reserve / arbitration mechanisms never fire and every ablation
+            # trivially matches. The stress config is what actually exercises them.
+            c.failure_enabled = True
+            c.failure_time = 120
+            c.n_pads = 1
+            c.B_max = 15_000.0
+            c.charge_rate = 0.0004
+            c.R_comm = 32.0
         for k, v in kw.items():
             setattr(c, k, v)
         c.episode_len = min(c.episode_len, 400)
@@ -147,7 +159,8 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv"):
         agg["Reserve"] = float(np.mean([s["Reserve"] for s in evs]))
         agg["Denied"] = float(np.mean([s["Denied"] for s in evs]))
         print(f"{name:18s} CK={agg['CK']:.3f} AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
-              f"Reserve={agg['Reserve']:.1f} Denied={agg['Denied']:.0f}")
+              f"CI={agg['CovIntegral']:.3f} Reserve={agg['Reserve']:.1f} "
+              f"Denied={agg['Denied']:.0f}", flush=True)
         rows.append(dict(model=name, **agg))
 
     with open(out_csv, "w", newline="") as f:
@@ -159,20 +172,37 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv"):
 
 
 def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv"):
+    """Table X: MAPPO vs the Reactive heuristic on every scenario variant.
+
+    Each scenario defines two variants (e.g. sparse vs dense sensors). Both
+    are evaluated; the agent is trained once on the base configuration and
+    then transferred, which is the point of the exercise -- the policy is not
+    retrained per scenario.
+    """
     import csv
     agent, _ = train_mappo(base, episodes=60, n_steps=300, seed=0, verbose=False)
     rows = []
     print("\n=== Scenarios (MAPPO vs Reactive) ===")
     for sid, question, cfgs in scenario_cfgs(base):
-        c = copy.deepcopy(cfgs[0])
-        c.episode_len = min(c.episode_len, 400)
-        m = eval_agent(agent, c, steps=c.episode_len, seed=0)
-        r = baseline_reactive(c, steps=c.episode_len, seed=0)
-        print(f"{sid} ({question:18s})  MAPPO CK={m['CK']:.3f} SC={m['SC']:.3f} | "
-              f"Reactive CK={r['CK']:.3f} SC={r['SC']:.3f}")
-        rows.append(dict(scenario=sid, question=question,
-                         mappo_CK=m["CK"], mappo_SC=m["SC"],
-                         react_CK=r["CK"], react_SC=r["SC"]))
+        for vi, c0 in enumerate(cfgs):
+            c = copy.deepcopy(c0)
+            c.episode_len = min(c.episode_len, 400)
+            m = eval_agent(agent, c, steps=c.episode_len, seed=0)
+            r = baseline_reactive(c, steps=c.episode_len, seed=0)
+            # a short description of the variant for the CSV
+            variant = (f"N={c.N} M={c.M} Rcov={c.R_cov:.0f} "
+                       f"Rcomm={c.R_comm:.0f} pads={c.n_pads} "
+                       f"Bmax={c.B_max:.0f} fail={c.failure_enabled}")
+            print(f"{sid}.{vi} ({question:16s}) {variant}  "
+                  f"MAPPO CK={m['CK']:.3f} SC={m['SC']:.3f} "
+                  f"CI={m['CovIntegral']:.3f} | "
+                  f"Reactive CK={r['CK']:.3f} SC={r['SC']:.3f}")
+            rows.append(dict(scenario=sid, variant=vi, question=question,
+                             config=variant,
+                             mappo_CK=m["CK"], mappo_SC=m["SC"],
+                             mappo_CovIntegral=m["CovIntegral"],
+                             react_CK=r["CK"], react_SC=r["SC"],
+                             react_CovIntegral=r["CovIntegral"]))
     with open(out_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()

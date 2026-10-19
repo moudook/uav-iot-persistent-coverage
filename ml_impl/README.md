@@ -127,14 +127,14 @@ be the "unfair comparison" the professor flagged.
 
 ### Honest reading
 
-**Feasibility caveat (important).** The reference config (N=5, K=2, R_cov=35 m
-on an 80×80 m field) is **provably infeasible**: the four corner K-coverage
-discs are pairwise disjoint (corner separation 80 m > 2·R_cov = 70 m), so
-K-covering the region needs N ≥ 4K = 8. `feasibility.py` proves this and the
-sensor-packing bound gives N ≥ K·|S| (mean 4.4, max 6 over random scenes).
-Every number below is therefore on an infeasible task — SC = 0 is the *expected*
-outcome, not a controller failure. Corrected, feasible params are N=8/K=2/R=35
-or N=5/K=2/R=45. No training run with those exists yet.
+**Feasibility certificate (why N=8, not N=5).** The original config (N=5, K=2,
+R_cov=35 m on an 80×80 m field) is **provably infeasible**: the four corner
+K-coverage discs are pairwise disjoint (corner separation 80 m > 2·R_cov =
+70 m), so K-covering the region needs N ≥ 4K = 8. `feasibility.py` proves
+this; the sensor-packing bound gives N ≥ K·|S| (mean 4.4, max 6 over random
+scenes). The area surplus σ = 1.50 is *not* a feasibility criterion — it
+compares an area to an area, whereas covering a bounded region is a covering
+problem. All results above use the corrected, feasible configuration N=8.
 
 **MAPPO improves persistent coverage by ~9 % relative** (0.930 vs 0.850) on a
 feasible config (N=8, K=2), while **maintaining full connectivity** (AG 1.0 vs
