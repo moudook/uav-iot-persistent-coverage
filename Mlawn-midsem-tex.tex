@@ -74,14 +74,20 @@ A centralized controller faces a rapidly growing joint action space. In the prop
 
 Multi-agent reinforcement learning (MARL) provides a natural framework for this setting. CTDE allows a centralized critic to use information unavailable to the individual UAV during training while retaining decentralized policies during deployment. MAPPO is particularly suitable because it combines centralized value estimation during training with a policy-gradient actor that can be executed independently by each agent.
 
-The research question addressed in this work is: \emph{Can a decentralized MAPPO policy maintain persistent $K$-coverage and swarm connectivity while coordinating finite battery usage, charging, and single-UAV failure recovery without requiring a centralized trajectory controller?}
+The research question addressed in this work is: \emph{Can a decentralized MAPPO policy maintain persistent $K$-coverage and swarm connectivity while coordinating finite battery usage, charging, and single-UAV failure recovery, and can its performance be certified against a rigorous achievability bound rather than reported as an unscaled coverage ratio?}
+
+The central invention of this work is a \emph{feasibility-certified evaluation framework} for persistent $K$-coverage UAV networks.  Instead of reporting coverage numbers with no achievability reference---which is what the existing literature does, and which is meaningless when the configuration is infeasible---the framework (i) derives a rigorous lower bound on the number of UAVs required for $K$-coverage of a bounded region, (ii) uses a teleporting placement oracle as an achievability ceiling against which any policy is normalised, and (iii) replaces the degenerate ``all constraints satisfied simultaneously'' service-continuity metric with non-degenerate time-averaged and refresh-time metrics.  The framework is the difference between a number and a measurement.
 
 The contributions are:
 \begin{enumerate}
     \item A unified system model coupling persistent $K$-coverage, inter-UAV connectivity, finite battery energy, charging contention, and UAV failure recovery.
-    \item A CTDE MAPPO framework with parameter-shared decentralized actors, a centralized training critic, hard action feasibility masks, and an explicit reserve-UAV recovery mechanism.
+    \item A \emph{feasibility certificate}: a rigorous lower bound on the number of UAVs required for $K$-coverage of a bounded region (corner-disc packing, $N \geq 4K$, together with a seed-specific sensor-packing bound $N \geq K|S|$), which proves that the headline service-continuity metric is identically zero for some configurations and must be replaced.
+    \item An \emph{achievability ceiling}: a teleporting placement oracle that upper-bounds any policy's coverage, separating ``the policy is weak'' from ``the task is infeasible'' and normalising reported performance as achieved divided by oracle.
+    \item A CTDE MAPPO framework with parameter-shared decentralized actors, a centralized training critic, hard action feasibility masks with an $H$-step connectivity lookahead, and an explicit reserve-UAV recovery mechanism.
+    \item PHY-derived links (Al-Hourani LoS probability, log-distance path loss, shadowing, and an 802.11 MCS table) in place of abstract coverage discs, together with a quantified validity condition showing when the disc approximation is excellent and when it breaks.
+    \item A non-degenerate evaluation protocol (time-averaged spatial integral of persistent coverage error, maximum refresh time, and $k$-coverage probability) replacing the degenerate all-simultaneous-constraint service-continuity metric.
+    \item Corrected deployment parameters ($N=8$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$, or $N=5$, $K=2$, $R_{\mathrm{cov}}=45\,\mathrm{m}$) derived from the feasibility certificate, replacing the infeasible $N=5$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$ baseline.
     \item A focused literature synthesis showing the difference between existing coverage, connectivity, recharge-scheduling, and fault-tolerant approaches and the combined problem considered here.
-    \item A benchmark and metric protocol designed to separate coverage, connectivity, energy, recovery, safety, and scalability effects rather than relying only on a single aggregate reward.
 \end{enumerate}
 
 The remainder of the paper is organized as follows. Section II presents the literature survey and research gap. Section III defines the system architecture and mathematical model. Section IV presents the proposed MAPPO algorithm. Section V specifies the comparison models. Section VI defines the performance metrics and evaluation protocol. Section VII concludes the paper.
