@@ -178,7 +178,15 @@ class WirelessModel:
         return sinr
 
     def backhaul_sinr(self, uav_xy):
-        """SINR matrix between UAVs (link (i,j) = i hears j)."""
+        """SNR matrix between UAVs for the relay (backhaul) link.
+
+        Backhaul is NOT co-channel with the access links: in a real aerial
+        network the inter-UAV relay runs on a separate channel (or is
+        time-slotted), so the other UAVs are not interferers here. Treating
+        them as interferers produced a spurious ~-14 dB SINR and made the
+        connectivity invariant unachievable, which is why AG collapsed to 0
+        in the first experiment run. The link budget is therefore SNR.
+        """
         n = len(uav_xy)
         if n == 0:
             return np.zeros((0, 0))
@@ -186,10 +194,9 @@ class WirelessModel:
         d3 = np.sqrt(d ** 2 + self.z0 ** 2)
         los = los_probability(d3, self.z0)
         rx = self.received_w(d3, los)
-        rx = rx * np.eye(n) * 0.0 + rx  # keep full matrix
-        total = rx.sum(axis=1, keepdims=True)
-        sinr = rx / np.maximum(total - rx, 1e-12)          # self excluded
-        return sinr
+        snr = rx / self.noise_w
+        np.fill_diagonal(snr, 0.0)
+        return snr
 
     def link_rate_mbps(self, snr_db, backhaul: bool = False):
         shift = self.mcs_shift_backhaul if backhaul else self.mcs_shift_access

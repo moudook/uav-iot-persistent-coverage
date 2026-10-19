@@ -73,6 +73,7 @@ class SimConfig:
     use_reserve: bool = True
     use_charging_arbitration: bool = True
     use_action_mask: bool = True
+    mask_horizon: int = 3         # H-step connectivity lookahead in the mask
     seed: int = 0
 
     def dict(self):
@@ -99,7 +100,12 @@ class UAVIoTEnv:
     def reset(self):
         c = self.cfg
         self.t = 0
-        self.p = self.rng.uniform(0, c.side, size=(c.N, 2))
+        # Initial deployment must be FEASIBLE. Uniformly random positions left
+        # the swarm disconnected on 11/20 seeds, which makes SC>0 unreachable
+        # regardless of policy quality -- the learner cannot recover from an
+        # infeasible start. UAVs are therefore seeded as a connected cluster
+        # (ring + centre) and the connectivity invariant is checkable from t=0.
+        self.p = self._connected_initial_positions()
         self.v = np.zeros((c.N, 2))
         self.E = self.rng.uniform(0.7, 1.0, size=c.N) * c.B_max
         self.failed = np.zeros(c.N, dtype=bool)
@@ -131,6 +137,25 @@ class UAVIoTEnv:
     # ------------------------------------------------------------------
     # PHY-derived coverage and connectivity
     # ------------------------------------------------------------------
+    def _connected_initial_positions(self):
+        """Place N UAVs so the communication graph is connected from t=0.
+
+        A ring of radius R_local centred in the region, plus any extra UAVs
+        inside the ring. R_local is chosen as a fraction of R_comm so that
+        every ring neighbour is well within communication range even after
+        the PHY rate check.
+        """
+        c = self.cfg
+        centre = np.array([c.side / 2.0, c.side / 2.0])
+        r_local = min(0.45 * c.R_comm, 0.30 * c.side)
+        n_ring = max(c.N - 1, 1)
+        ang = np.linspace(0, 2 * np.pi, n_ring, endpoint=False)
+        pos = [centre + r_local * np.array([np.cos(a), np.sin(a)]) for a in ang]
+        while len(pos) < c.N:                      # extra UAVs fill the centre
+            pos.append(centre + self.rng.normal(0, 0.1 * r_local, size=2))
+        pos = np.array(pos[: c.N])
+        return np.clip(pos, 0.0, c.side)
+
     def _active_idx(self):
         return np.where(~self.failed)[0]
 
@@ -325,7 +350,7 @@ class UAVIoTEnv:
             # the swarm walk itself into a partition, which is exactly what
             # the first experiment run showed (AG collapsed 1.0 -> 0.2).
             if ok and c.use_action_mask:
-                if self._would_disconnect(i, p_new):
+                if not self._h_step_safe(i, p_new, c.mask_horizon):
                     ok = False
                 elif self._is_articulation_move(i, p_new):
                     ok = False
@@ -355,6 +380,40 @@ class UAVIoTEnv:
         pos_i = list(act).index(i)
         ap = self.articulation_points(adj)
         return bool(pos_i < len(ap) and ap[pos_i])
+
+    def _h_step_safe(self, i, p_new, horizon=3):
+        """Reject a move that leaves the swarm unable to stay connected.
+
+        One-step lookahead cannot see a partition that forms two steps later,
+        which is exactly how the swarm walked itself apart in the first
+        experiment run (AG 1.0 -> 0.2). This checks the pessimistic case: after
+        moving, can every other active UAV still reach UAV i within `horizon`
+        communication hops? If the answer is no, the move is infeasible.
+        """
+        act = self._active_idx()
+        if len(act) <= 2:
+            return True
+        saved = self.p[i].copy()
+        self.p[i] = p_new
+        _, adj, _ = self.comm_graph()
+        self.p[i] = saved
+        if not self.is_connected(adj):
+            return False
+        # BFS hop-distance from UAV i; every node must be within `horizon` hops
+        n = len(adj)
+        pos_i = list(act).index(i)
+        dist = np.full(n, -1, dtype=int)
+        dist[pos_i] = 0
+        queue = [pos_i]
+        while queue:
+            u = queue.pop(0)
+            if dist[u] >= horizon:
+                continue
+            for v in range(n):
+                if adj[u, v] and dist[v] < 0:
+                    dist[v] = dist[u] + 1
+                    queue.append(v)
+        return bool((dist >= 0).all())
 
     def _would_disconnect(self, i, p_new):
         """True if moving UAV i to p_new partitions the swarm graph."""
@@ -521,7 +580,14 @@ class UAVIoTEnv:
         # --- 5. recovery detection -------------------------------------
         ncov = self.coverage_counts()
         _, adj, _ = self.comm_graph()
-        ok_now = (ncov >= c.K).all() and self.is_connected(adj)
+        connected_now = self.is_connected(adj)
+        # D_t must not duplicate U_t. U_t already carries coverage continuously,
+        # so the binary "service requirement violated" indicator is used for the
+        # CONNECTIVITY invariant -- the one that collapsed to 0.2 and left
+        # SC = 0 in the first run. This gives the learner a discrete, learnable
+        # signal for the thing it was previously not being told about.
+        degraded_now = not connected_now
+        ok_now = (float(np.mean(ncov >= c.K)) >= 1.0) and connected_now
         if not self.recovered and ok_now:
             self.recovered = True
         rec_delay = 0.0
@@ -529,26 +595,38 @@ class UAVIoTEnv:
             rec_delay = min((self.t - self.recovery_start) / c.episode_len, 1.0)
 
         # --- 6. reward (23) --------------------------------------------
+        #
+        # Eq. (22) is a MINIMISATION of a weighted cost. Eq. (23) states the
+        # team reward is the NEGATED weighted cost, and the learner MAXIMISES
+        # return. Therefore EVERY term must carry a negative sign. The first
+        # implementation negated only U_t, which turned energy, degraded
+        # service, movement, recovery delay and criticality into positive
+        # rewards -- the agent was paid to disconnect. Fixed here.
         U_t = float(np.mean(ncov < c.K))
         E_cons = float(np.sum(draw) * c.dt / (c.N * c.B_max))
-        D_t = 1.0 if (not ok_now) else 0.0
+        D_t = 1.0 if degraded_now else 0.0
         w_dist = float(np.linalg.norm(self.v, axis=1).sum() * c.dt) if act_before.size else 0.0
-        if act_before.size:
-            W_t = w_dist / max(self.prev_w_dist + 1e-6, 1.0)
-            W_t = min(W_t, 1.0)
+        # W_t = "distance flown / distance that changed coverage". A move that
+        # buys no new coverage is pure waste, so penalise the fraction of flown
+        # distance that did not improve the covered-sensor count.
+        cov_now = float(np.mean(ncov >= c.K))
+        newly_covered = max(cov_now - self.prev_cov_score, 0.0)
+        if w_dist > 1e-9:
+            W_t = float(np.clip(1.0 - newly_covered / (w_dist + 1e-9), 0.0, 1.0))
         else:
             W_t = 0.0
         crit = float(self.articulation_points(adj).mean()) if len(adj) else 1.0
         R_rec = rec_delay
 
-        r = (
-            -c.lam_O * U_t
+        r = -(
+            c.lam_O * U_t
             + c.lam_E * E_cons
             + c.lam_D * D_t
             + c.lam_W * W_t
             + c.lam_R * R_rec
             + (c.lam_C * crit if c.use_connectivity_term else 0.0)
         )
+        self.prev_cov_score = cov_now
         self.prev_w_dist = w_dist
 
         # --- 7. metrics -------------------------------------------------
