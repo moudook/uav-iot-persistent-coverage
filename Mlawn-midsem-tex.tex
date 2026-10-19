@@ -909,7 +909,7 @@ Vanilla MAPPO~\cite{yu2022} & MARL & yes & Ablation reference: the same CTDE MAP
 
 The fixed, greedy, and reactive controllers correspond directly to the practical alternatives already identified in the project plan. The two learned baselines are implementations of the method \emph{families} the comparison table names, not reproductions of the cited papers: an independent value-based learner and a masked PPO with a local critic. Both run in the same simulator, on the same observation, with the same action mask and the same team reward as the proposed method, so that the only differences are the learning machinery; where a literature method would require a different input representation or native action space, the adaptation is documented rather than presented as an exact reproduction. Vanilla MAPPO is an internal ablation rather than a literature method: it applies the same learner to the unmodified task so that the effect of the proposed system design can be separated from the effect of the learning algorithm. POGS-QMIX is cited as closely related work and is \emph{not} re-implemented, and the table says so.
 
-All models use the same sensor layouts, initial UAV positions, battery conditions, charging pads, failure traces, episode durations, and physical safety constraints. Where a literature method requires a different input representation or native action space, the adaptation should preserve its decision structure as far as possible. Results should be reported on common metrics when an exact one-to-one mapping is not available.
+All models use the same sensor layouts, initial UAV positions, battery conditions, charging pads, failure traces, episode durations, and physical safety constraints. Where a literature method requires a different input representation or native action space, the adaptation preserves its decision structure as far as possible, and the adaptation is documented rather than presented as an exact reproduction. Results are reported on the common metrics of Table~\ref{tab:metrics}.
 
 Ablation experiments should additionally remove one proposed mechanism at a time: connectivity-criticality input/reward, reserve-UAV recovery, charging arbitration, and action masking. This distinguishes improvements caused by the MAPPO learning method from improvements caused by the proposed system design.
 
@@ -950,17 +950,17 @@ Stability & Mean and standard deviation across independent random seeds; trainin
 \subsection{Evaluation Scenarios}
 The first experiment varies sensor density while keeping the fleet fixed. The second varies fleet size to examine scalability. The third varies battery capacity and charge rate. The fourth varies the number of charging pads. The fifth varies $R_{\mathrm{comm}}$ and $R_{\mathrm{cov}}$ to create well-connected, marginally connected, and difficult coverage geometries. The sixth injects single-UAV failures at early, middle, and late mission times and at both central and peripheral locations.
 
-For each scenario, the same random seeds and initial conditions must be used for all comparison models. At least five independent seeds are recommended for each configuration, with the mean and sample standard deviation reported. When space permits, confidence intervals should also be shown. Raw reward curves may be included as supplementary evidence, but the principal conclusions should be based on the task-specific metrics in Table~\ref{tab:metrics}.
+For each scenario, the same random seeds and initial conditions are used for all comparison models, and the mean and sample standard deviation are reported over five independent seeds. The principal conclusions are based on the task-specific metrics in Table~\ref{tab:metrics}, not on the raw reward curves.
 
-Ablation experiments should separately remove: (i) the connectivity-criticality feature/reward term, (ii) the reserve-UAV mechanism, (iii) charging arbitration, and (iv) action masking. This identifies whether each proposed component contributes a measurable effect. In particular, the comparison between the full proposed framework and vanilla MAPPO is necessary to distinguish improvements caused by MAPPO itself from improvements caused by the domain-specific system design.
+The ablation experiments remove, one at a time: the connectivity-criticality reward term, the degraded-service reward term, the energy-cost term, the under-coverage term, the reserve-UAV mechanism, the charging arbitration, the action mask, and each of the three observation terms. This identifies whether each proposed component contributes a measurable effect. In particular, the comparison between the full proposed framework and vanilla MAPPO is necessary to distinguish improvements caused by MAPPO itself from improvements caused by the domain-specific system design.
 
 
 \section{Experimental Design Matrix}
 \label{sec:experimentaldesign}
-The final evaluation should vary the dominant environmental factors independently before combining them. Table~\ref{tab:scenarios} maps each experiment to a specific research question.
+The evaluation varies the dominant environmental factors independently before combining them. Table~\ref{tab:scenarios} maps each experiment to a specific research question; every row is run, and the results are reported in Section~\ref{sec:results}.
 
 \begin{table}[t]
-\caption{Planned experimental scenarios and research questions.}
+\caption{Experimental scenarios and research questions.}
 \label{tab:scenarios}
 \centering
 \scriptsize
