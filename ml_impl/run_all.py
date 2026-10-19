@@ -40,7 +40,8 @@ import torch
 
 from uav_wireless.env import UAVIoTEnv
 from uav_wireless.experiments import (base_config, run_base_comparison,
-                                       run_ablation, run_scenarios)
+                                       run_ablation, run_scenarios,
+                                       run_learned_baselines)
 from uav_wireless.mappo import MAPPO
 from uav_wireless.train import train_mappo, collect_rollout
 
@@ -124,7 +125,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--stage", default="all",
-                    choices=["obs", "base", "abl", "scen", "all"])
+                    choices=["obs", "base", "abl", "learned", "scen", "all"])
     args = ap.parse_args()
 
     quick = args.quick
@@ -163,7 +164,7 @@ def main():
         print()
 
     if args.stage in ("abl", "all"):
-        print("[3/4] ablations ...", flush=True)
+        print("[3/5] ablations ...", flush=True)
         cfg = base_config()
         run_ablation(cfg, "results_ablation.csv", stress=False,
                      episodes=abl_episodes)
@@ -172,8 +173,15 @@ def main():
                      episodes=abl_episodes)
         print()
 
+    if args.stage in ("learned", "all"):
+        print("[4/5] learned baselines (Table VI) ...", flush=True)
+        run_learned_baselines(base_config(), "results_learned_baselines.csv",
+                              episodes=abl_episodes, eval_seeds=eval_seeds,
+                              seeds=2 if quick else 3)
+        print()
+
     if args.stage in ("scen", "all"):
-        print("[4/4] scenario matrix ...", flush=True)
+        print("[5/5] scenario matrix ...", flush=True)
         run_scenarios(base_config(), "results_scenarios.csv",
                       episodes=abl_episodes)
         print()

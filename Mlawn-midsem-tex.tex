@@ -881,27 +881,29 @@ Phases 1 and 2 have been executed; Phase 3 is scaffolded but not yet run with th
 The comparison design preserves the practical baselines from the project presentation and adds recent learning-based methods required for a meaningful research comparison. The practical baselines test whether any adaptive coordination is useful; the MARL baselines test whether the proposed CTDE MAPPO design provides advantages over other learning formulations.
 
 \begin{table}[t]
-\caption{Comparison models and rationale.}
+\caption{Comparison models and rationale. The ``Evaluated'' column states
+plainly which rows were run in the common simulator; a cited method that was
+not run is not presented as though it were.}
 \label{tab:comparison}
 \centering
 \scriptsize
 \renewcommand{\arraystretch}{1.06}
-\begin{tabularx}{\columnwidth}{@{}L{1.55cm}L{1.20cm}Y@{}}
+\begin{tabularx}{\columnwidth}{@{}L{1.42cm}L{1.05cm}L{0.72cm}Y@{}}
 \toprule
-Model & Type & Rationale \\
+Model & Type & Evaluated & Rationale \\
 \midrule
-Fixed formation + threshold recharge & Rule-based & UAVs retain their initial formation and return to charge using a fixed battery threshold. Establishes a simple reference. \\
-Greedy lowest-battery recharge & Rule-based & The most energy-critical UAV receives priority for charging. Tests energy-first scheduling without learned coordination. \\
-Reactive reconfiguration & Heuristic & After a failure, remaining UAVs move toward uncovered sensor regions using deterministic coverage/connectivity rules. Tests fault recovery without MARL. \\
-MAD-DDQN~\cite{omoniwa2022} & MARL & Representative value-based multi-UAV deep reinforcement learning benchmark for trajectory and energy control. \\
-POGS-QMIX~\cite{mei2026} & MARL & Recent persistent-coverage approach incorporating outage history, finite energy, and return-to-charge decisions. \\
-MAHPPO-AM~\cite{sun2025} & MARL & Recent PPO-family approach using action masking for joint UAV communication/control. Tests the added value of the proposed state, reward, charging, and recovery design. \\
-Vanilla MAPPO~\cite{yu2022} & MARL & Ablation reference: the same CTDE MAPPO learner with the proposed observation terms, reward shaping, charging arbitration, reserve-UAV mechanism and action mask removed. Isolates the contribution of the system design from that of the learning method. \\
+Fixed formation + threshold recharge & Rule-based & yes & UAVs retain their initial formation and return to charge using a fixed battery threshold. Establishes a simple reference. \\
+Greedy lowest-battery recharge & Rule-based & yes & The most energy-critical UAV receives priority for charging. Tests energy-first scheduling without learned coordination. \\
+Reactive reconfiguration & Heuristic & yes & Remaining UAVs move toward uncovered sensor regions using deterministic coverage/connectivity rules. Tests fault recovery without MARL. \\
+Independent DQN (value-based family, cf.\ MAD-DDQN~\cite{omoniwa2022}) & MARL & yes & One Q-network per agent, each trained on the team reward through its own experience, $\epsilon$-greedy exploration, no centralised critic and no parameter sharing. The value-based reference point. \\
+Masked PPO with a local critic (PPO family, cf.\ MAHPPO-AM~\cite{sun2025}) & MARL & yes & Keeps the action mask but drops parameter sharing and the centralised critic: per-agent actor and per-agent local critic. Isolates the contribution of the CTDE design. \\
+POGS-QMIX~\cite{mei2026} & MARL & no & A recent persistent-coverage approach incorporating outage history, finite energy, and return-to-charge decisions. Cited as related work; not re-implemented here. \\
+Vanilla MAPPO~\cite{yu2022} & MARL & yes & Ablation reference: the same CTDE MAPPO learner with the proposed observation terms, reward shaping, charging arbitration, reserve-UAV mechanism and action mask removed. Isolates the contribution of the system design from that of the learning method. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-The fixed, greedy, and reactive controllers correspond directly to the practical alternatives already identified in the project plan. MAD-DDQN provides a value-based MARL comparison, while POGS-QMIX is particularly relevant to persistent coverage and energy-aware return behaviour. MAHPPO-AM provides a PPO-family comparison that also uses explicit action masking. Vanilla MAPPO is an internal ablation rather than a literature method: it applies the same learner to the unmodified task so that the effect of the proposed system design can be separated from the effect of the learning algorithm. Because these literature methods solve related but not identical tasks, any adaptation to the common simulator must be documented rather than presented as an exact reproduction.
+The fixed, greedy, and reactive controllers correspond directly to the practical alternatives already identified in the project plan. The two learned baselines are implementations of the method \emph{families} the comparison table names, not reproductions of the cited papers: an independent value-based learner and a masked PPO with a local critic. Both run in the same simulator, on the same observation, with the same action mask and the same team reward as the proposed method, so that the only differences are the learning machinery; where a literature method would require a different input representation or native action space, the adaptation is documented rather than presented as an exact reproduction. Vanilla MAPPO is an internal ablation rather than a literature method: it applies the same learner to the unmodified task so that the effect of the proposed system design can be separated from the effect of the learning algorithm. POGS-QMIX is cited as closely related work and is \emph{not} re-implemented, and the table says so.
 
 All models use the same sensor layouts, initial UAV positions, battery conditions, charging pads, failure traces, episode durations, and physical safety constraints. Where a literature method requires a different input representation or native action space, the adaptation should preserve its decision structure as far as possible. Results should be reported on common metrics when an exact one-to-one mapping is not available.
 

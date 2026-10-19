@@ -278,6 +278,57 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
     return rows
 
 
+def run_learned_baselines(base: SimConfig, out_csv="results_learned_baselines.csv",
+                          episodes=12, eval_seeds=3, seeds=2):
+    """The learned baselines of Table VI, evaluated on the same scenes.
+
+    These are implementations of the METHOD FAMILIES the comparison table
+    names -- a value-based multi-agent method and a PPO-family method that
+    uses action masking -- not reproductions of the cited papers.  They use
+    the same simulator, observation, action mask and team reward as the
+    proposed method, so the only differences are the learning machinery.
+    """
+    import csv
+    import copy
+    from .baselines_rl import (train_id_dqn, train_ppo_local,
+                                eval_id_dqn, eval_ppo_local)
+    rows = []
+    print("\n=== Learned baselines (Table VI) ===")
+
+    for name, trainer, evaluator in [
+            ("Independent DQN (value-based)", train_id_dqn, eval_id_dqn),
+            ("Masked PPO, local critic", train_ppo_local, eval_ppo_local)]:
+        cks, ags, scs, cis = [], [], [], []
+        for s in range(seeds):
+            c = copy.deepcopy(base)
+            c.seed = s
+            agent, _ = trainer(c, episodes=episodes, steps=c.episode_len,
+                               seed=s, verbose=False)
+            evs = [evaluator(agent, c, steps=c.episode_len, seed=e)
+                   for e in range(eval_seeds)]
+            agg = {k: float(np.mean([x[k] for x in evs])) for k in evs[0]}
+            std = {k: float(np.std([x[k] for x in evs])) for k in evs[0]}
+            cks.append(agg["CK"]); ags.append(agg["AG"]); scs.append(agg["SC"])
+            cis.append(agg["CovIntegral"])
+            print(f"  {name:32s} seed {s}: CK={agg['CK']:.3f}±{std['CK']:.3f} "
+                  f"AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
+                  f"CI={agg['CovIntegral']:.3f}", flush=True)
+        print(f"  {name:32s} MEAN     CK={np.mean(cks):.3f} "
+              f"AG={np.mean(ags):.3f} SC={np.mean(scs):.3f} "
+              f"CI={np.mean(cis):.3f}", flush=True)
+        rows.append(dict(model=name, CK=float(np.mean(cks)),
+                         CK_std=float(np.std(cks)), AG=float(np.mean(ags)),
+                         SC=float(np.mean(scs)),
+                         CovIntegral=float(np.mean(cis))))
+
+    with open(out_csv, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+    print(f"Saved -> {out_csv}")
+    return rows
+
+
 def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
                   episodes=12):
     """Table X: MAPPO vs the Reactive heuristic on every scenario variant.
