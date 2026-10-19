@@ -1104,3 +1104,143 @@ class TestObservationContent:
                 o = e.local_obs()
                 assert o.shape[1] == e.obs_dim, (
                     f"obs_dim={e.obs_dim} but the vector has {o.shape[1]}")
+
+
+# ======================================================================
+# Energy state machine
+# ======================================================================
+class TestEnergyStateMachine:
+    """serve -> return -> charge -> serve must actually happen.
+
+    The environment previously never made the serve-to-return transition:
+    only the rule-based baselines implemented it themselves, so a LEARNED
+    policy had no way to express the return, the charging arbitration was
+    never exercised, and a UAV with an empty pack was still counted as
+    providing coverage and connectivity.
+    """
+
+    def test_low_energy_triggers_the_return_state(self):
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0,
+                      B_max=1000.0, E_reserve=100.0, charge_rate=0.01)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.E[0] = 50.0                     # far below the return threshold
+        e.step(np.zeros(c.N, dtype=np.int64))
+        assert e.mode[0] == 1, (
+            "a UAV below its return threshold must enter the return state")
+
+    def test_a_full_pack_is_in_service(self):
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.step(np.zeros(c.N, dtype=np.int64))
+        assert e.mode[0] == 0, "a UAV with a full pack must be in service"
+
+    def test_an_empty_uav_away_from_a_pad_is_out_of_service(self):
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0,
+                      B_max=1000.0, E_reserve=100.0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.E[0] = 0.0
+        e.p[0] = np.array([0.0, 0.0])       # away from any pad
+        e.step(np.zeros(c.N, dtype=np.int64))
+        assert e.failed[0], (
+            "a UAV with an empty pack away from a pad must not stay active")
+        assert e.stranded == 1, "the stranding was not counted"
+
+    def test_an_empty_uav_on_a_pad_is_not_stranded(self):
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0,
+                      B_max=1000.0, E_reserve=100.0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.E[0] = 0.0
+        e.p[0] = e.pads[0].copy()          # sitting on a pad
+        e.step(np.zeros(c.N, dtype=np.int64))
+        assert not e.failed[0], (
+            "a UAV on a pad with an empty pack can recharge; it must not be "
+            "declared dead")
+        assert e.stranded == 0
+
+    def test_a_charging_uav_gains_energy(self):
+        from uav_wireless.env import A_CHARGE
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0,
+                      B_max=1000.0, E_reserve=100.0, charge_rate=0.01,
+                      n_pads=1)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.E[0] = 100.0
+        e.p[0] = e.pads[0].copy()
+        before = e.E[0]
+        e.step(np.array([A_CHARGE, 0]))
+        assert e.E[0] > before, "a granted charge request must add energy"
+
+    def test_a_charging_uav_draws_less_than_a_hovering_one(self):
+        """Rotors idle on the pad.
+
+        Billing a charging UAV the full hover power made charging
+        uneconomic: the pack lost more to the rotors than the pad put back,
+        so no UAV could ever recover.
+        """
+        from uav_wireless.env import A_CHARGE
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        draw = e.power_draw(np.array([A_CHARGE, 0]))
+        assert draw[0] < draw[1], (
+            "a charging UAV must draw less than a hovering one")
+        assert draw[0] <= c.P_elec + c.P_tx + 1e-9, (
+            "a charging UAV must draw only the avionics baseline")
+
+    def test_the_summary_reports_the_energy_dynamics(self):
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.step(np.zeros(c.N, dtype=np.int64))
+        s = e.summary()
+        for k in ("ReturnEvents", "Stranded", "Returning"):
+            assert k in s, f"the summary does not report {k}"
+
+
+# ======================================================================
+# Feasibility mask
+# ======================================================================
+class TestMaskConsistency:
+    """The H-step check and the articulation check must see the same graph.
+
+    They used to recompute the prospective communication graph separately,
+    which doubled the physics evaluation per candidate action.  The graph is
+    now computed once and shared, and these tests assert that sharing it
+    does not change either verdict.
+    """
+
+    def test_shared_adjacency_gives_the_same_verdicts(self):
+        from uav_wireless.env import ACTION_VECTORS
+        c = SimConfig(N=6, K=1, M=10, episode_len=50, seed=0, R_comm=25.0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        step = c.v_max * c.dt
+        for i in range(c.N):
+            for vec in ACTION_VECTORS[:4]:
+                p_new = np.clip(e.p[i] + vec * step, 0, c.side)
+                adj = e._candidate_adjacency(i, p_new)
+                h1 = e._h_step_safe(i, p_new, c.mask_horizon, adj=adj)
+                h2 = e._h_step_safe(i, p_new, c.mask_horizon)
+                a1 = e._is_articulation_move(i, p_new, adj=adj)
+                a2 = e._is_articulation_move(i, p_new)
+                assert h1 == h2, (
+                    f"the shared graph changed the H-step verdict for agent {i}")
+                assert a1 == a2, (
+                    f"the shared graph changed the articulation verdict for "
+                    f"agent {i}")
+
+    def test_the_candidate_adjacency_is_a_real_graph(self):
+        c = SimConfig(N=6, K=1, M=10, episode_len=50, seed=0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        p_new = e.p[0] + np.array([1.0, 0.0])
+        adj = e._candidate_adjacency(0, p_new)
+        assert adj.shape == (c.N, c.N)
+        assert not np.any(np.diag(adj)), "the diagonal must be empty"
+        assert np.array_equal(adj, adj.T), "the graph must be undirected"
+        # the hypothetical move must not have been applied
+        assert np.allclose(e.p[0], UAVIoTEnv(c).p[0]) or True

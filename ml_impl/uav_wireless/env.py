@@ -97,6 +97,11 @@ class SimConfig:
     # sensors it covers but not WHICH are uncovered, so there is no gradient
     # signal that points it towards the deficit.
     map_grid: int = 0
+    # Unit bearing and range to the nearest charging pad, so that a UAV in
+    # the return-to-charge state can fly home.  Without it the observation
+    # carried only the ENERGY cost of the flight home, not its direction,
+    # and a learned policy could not express the return at all.
+    use_pad_bearing: bool = False
     seed: int = 0
 
     def dict(self):
@@ -113,6 +118,7 @@ def obs_dim(cfg: SimConfig) -> int:
     base = 7 + 4 * 4 + 7            # own(7) + 4 neighbour slots x 4 + tail(7)
     base += cfg.N if cfg.use_agent_id else 0
     base += cfg.map_grid ** 2 if cfg.map_grid else 0
+    base += 3 if cfg.use_pad_bearing else 0
     return base
 
 
@@ -193,6 +199,9 @@ class UAVIoTEnv:
         self.recovered = True
         self.charging_wait = np.zeros(c.N)
         self.denied_charge = 0
+        self.return_events = 0      # serve -> return transitions
+        self.stranded = 0           # UAVs that ran out of energy away from a pad
+        self.reserve_activations = 0
 
         self.ep = self.metrics()
         self._under_streak = 0
@@ -359,11 +368,21 @@ class UAVIoTEnv:
     # Battery
     # ------------------------------------------------------------------
     def power_draw(self, actions):
+        """Energy drawn per step by each UAV.
+
+        A UAV that is charging on a pad has its rotors idle: it draws only
+        the avionics and communications baseline, and the pad's power goes
+        into the battery rather than being spent.  The previous revision
+        billed a charging UAV the full HOVER power, which made charging
+        uneconomic -- the pack lost more energy per step to the rotors than
+        the pad put back, so no UAV could ever recover, and the whole
+        charging-coordination mechanism of the paper was unusable.
+        """
         c = self.cfg
         p = np.where(
             np.isin(actions, [A_PX, A_NX, A_PY, A_NY]),
             c.P_move,
-            c.P_hover,
+            np.where(actions == A_CHARGE, 0.0, c.P_hover),
         )
         return p + c.P_elec + c.P_tx     # P_comm / P_elec, constant baseline
 
@@ -375,6 +394,26 @@ class UAVIoTEnv:
         d_min = float(np.min(d))
         t = d_min / self.cfg.v_max
         return t * (self.cfg.P_move + self.cfg.P_elec) * 1.15
+
+    def pad_bearing(self, i):
+        """Unit vector towards the nearest charging pad, and the range to it.
+
+        A UAV that has entered the return-to-charge state has to FLY to a pad,
+        and the observation of Eq. (4) carried only the energy cost of that
+        flight, not its direction, so a learned policy could not express
+        the return at all.  The pad positions are fixed infrastructure and
+        are broadcast together with the coverage-map summary, so this is the
+        same communication assumption, not an oracle.
+        """
+        if len(self.pads) == 0:
+            return np.zeros(3, dtype=np.float32)
+        d = self.pads - self.p[i]
+        dist = np.linalg.norm(d, axis=1)
+        k = int(np.argmin(dist))
+        if dist[k] < 1e-9:
+            return np.array([0.0, 0.0, 0.0], dtype=np.float32)
+        u = d[k] / dist[k]
+        return np.array([u[0], u[1], dist[k] / self.cfg.side], dtype=np.float32)
 
     def return_threshold(self, i):
         return self.pad_energy(i) + self.cfg.E_reserve
@@ -442,9 +481,10 @@ class UAVIoTEnv:
             # the swarm walk itself into a partition, which is exactly what
             # the first experiment run showed (AG collapsed 1.0 -> 0.2).
             if ok and c.use_action_mask:
-                if not self._h_step_safe(i, p_new, c.mask_horizon):
+                adj_c = self._candidate_adjacency(i, p_new)
+                if not self._h_step_safe(i, p_new, c.mask_horizon, adj=adj_c):
                     ok = False
-                elif self._is_articulation_move(i, p_new):
+                elif self._is_articulation_move(i, p_new, adj=adj_c):
                     ok = False
             m[a] = ok
 
@@ -454,7 +494,7 @@ class UAVIoTEnv:
         m[A_CHARGE] = bool(near and needs)
         return m
 
-    def _is_articulation_move(self, i, p_new):
+    def _is_articulation_move(self, i, p_new, adj=None):
         """True if moving to p_new makes UAV i a cut vertex of the graph.
 
         Staying connected at t+1 is not enough: if the swarm only survives
@@ -465,15 +505,27 @@ class UAVIoTEnv:
         act = self._active_idx()
         if len(act) <= 3:
             return False
-        saved = self.p[i].copy()
-        self.p[i] = p_new
-        _, adj, _ = self.comm_graph()
-        self.p[i] = saved
+        if adj is None:
+            adj = self._candidate_adjacency(i, p_new)
         pos_i = list(act).index(i)
         ap = self.articulation_points(adj)
         return bool(pos_i < len(ap) and ap[pos_i])
 
-    def _h_step_safe(self, i, p_new, horizon=3):
+    def _candidate_adjacency(self, i, p_new):
+        """Adjacency of the swarm with UAV i hypothetically moved to p_new.
+
+        The H-step connectivity check and the articulation check both need
+        the prospective graph, and both were recomputing it from scratch, so
+        the physics was evaluated twice per candidate action.  The graph is
+        returned once and shared; the result is identical.
+        """
+        saved = self.p[i].copy()
+        self.p[i] = p_new
+        _, adj, _ = self.comm_graph()
+        self.p[i] = saved
+        return adj
+
+    def _h_step_safe(self, i, p_new, horizon=3, adj=None):
         """Reject a move that leaves the swarm unable to stay connected.
 
         One-step lookahead cannot see a partition that forms two steps later,
@@ -485,10 +537,8 @@ class UAVIoTEnv:
         act = self._active_idx()
         if len(act) <= 2:
             return True
-        saved = self.p[i].copy()
-        self.p[i] = p_new
-        _, adj, _ = self.comm_graph()
-        self.p[i] = saved
+        if adj is None:
+            adj = self._candidate_adjacency(i, p_new)
         if not self.is_connected(adj):
             return False
         # BFS hop-distance from UAV i; every node must be within `horizon` hops
@@ -630,6 +680,10 @@ class UAVIoTEnv:
             ], dtype=np.float32)
 
             row = np.concatenate([own, nb, tail])
+            if c.use_pad_bearing:
+                # unit bearing + range to the nearest charging pad, so that a
+                # UAV in the return-to-charge state can actually fly home
+                row = np.concatenate([row, self.pad_bearing(i)])
             if c.map_grid:
                 # broadcast coverage-map summary (see coverage_map_summary)
                 row = np.concatenate([row, self._map_sum])
@@ -773,6 +827,48 @@ class UAVIoTEnv:
             if self.failed[i]:
                 self.E[i] = 0.0
 
+        # --- 4b. energy state machine -----------------------------------
+        # serve --(E <= threshold)--> return --(charge at a pad)--> charge
+        #       --(E >= threshold)--> serve
+        #
+        # The transition out of the serving state is PHYSICAL, not a policy
+        # decision: a UAV whose energy has fallen to its return threshold
+        # must go home, and the simulator has to know that so that the
+        # reward, the metrics and the charging arbitration can see it.
+        # Previously the environment never made this transition at all -- the
+        # rule-based baselines implemented it themselves, but a LEARNED
+        # policy had no way to express it, so the charging coordination and
+        # the pad arbitration were never exercised in a learned run.
+        for i in self._active_idx():
+            thresh = self.return_threshold(i)
+            if self.mode[i] == 0 and self.E[i] <= thresh:
+                self.mode[i] = 1                       # returning
+                self.return_events += 1
+            elif self.mode[i] == 1 and self.E[i] >= thresh:
+                self.mode[i] = 0                       # back in service
+
+        # A UAV whose pack is empty and that is not sitting on a pad cannot
+        # fly and cannot serve: it is out of service.  Counting it as
+        # active would let a dead UAV provide coverage and connectivity.
+        at_pad = np.any(
+            np.linalg.norm(self.pads[:, None, :] - self.p[None, :, :], axis=-1)
+            <= c.pad_service_radius, axis=0)
+        for i in self._active_idx():
+            if self.E[i] <= 1e-9 and not at_pad[i]:
+                self.failed[i] = True
+                self.mode[i] = -1
+                self.stranded += 1
+                if c.use_reserve and self.reserve_used < c.N_reserve \
+                        and not self.recovered:
+                    self.reserve_used += 1
+                    j = int(np.where(self.failed)[0][0])
+                    self.p[j] = self.pads[self.rng.integers(len(self.pads))]
+                    self.E[j] = c.B_max
+                    self.failed[j] = False
+                    self.mode[j] = 0
+                    self.recovered = False
+                    self.reserve_activations += 1
+
         self.t += 1
 
         # --- 5. recovery detection -------------------------------------
@@ -890,6 +986,11 @@ class UAVIoTEnv:
         m["steps"] += 1
         m["denied"] += self.denied_charge
         m["reserve_activations"] = self.reserve_used
+        m["return_events"] = self.return_events
+        m["stranded"] = self.stranded
+        # fraction of the swarm currently in the return-to-charge state
+        m["returning"] += float(np.mean(self.mode[self._active_idx()] == 1)) \
+            if len(self._active_idx()) else 0.0
         # Non-degenerate metrics: time-averaged coverage deficit + worst refresh.
         m["cov_integral"] += (1.0 - kcov_frac_this)
         if kcov_frac_this < 1.0:
@@ -903,6 +1004,7 @@ class UAVIoTEnv:
             Kcov_ok=0.0, Kcov_frac=0.0, under_cov=0.0, connected=0.0,
             service_cont=0.0, crit=0.0, energy=0.0, distance=0.0,
             min_batt=float("inf"), steps=0, denied=0, reserve_activations=0,
+            return_events=0, stranded=0, returning=0.0,
             # Non-degenerate metrics (Deep Research recommendation):
             # time-averaged coverage deficit and worst-case refresh streak.
             cov_integral=0.0, max_under_streak=0,
@@ -924,6 +1026,9 @@ class UAVIoTEnv:
             Distance=self.ep["distance"],
             Denied=self.ep["denied"],
             Reserve=self.ep["reserve_activations"],
+            ReturnEvents=self.ep["return_events"],
+            Stranded=self.ep["stranded"],
+            Returning=self.ep["returning"] / s,
             # Non-degenerate metrics (Deep Research recommendation):
             # CovIntegral = time-averaged coverage deficit (0 = perfect coverage)
             # MaxRefresh  = longest run of steps with any under-covered sensor

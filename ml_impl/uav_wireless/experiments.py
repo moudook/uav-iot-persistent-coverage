@@ -18,6 +18,54 @@ from .train import (
 )
 
 
+def base_config(**overrides) -> SimConfig:
+    """The one canonical experimental configuration.
+
+    Every script must build its configuration from here, so that the
+    numbers in the paper, the numbers in the CSVs and the numbers in the
+    audit all describe the same experiment.
+
+    Choices, and why:
+
+    N = 8, K = 2, R_cov = 35 m
+        The corner-packing bound requires N >= 4K, so N = 8 is the smallest
+        feasible fleet for K = 2 on this field.
+
+    start_clustered = True
+        A centred ring deployment already covers 17 of 20 sensors at t = 0,
+        so every controller -- including one that never moves -- scores
+        CK = 0.850 and the comparison cannot separate them.  The clustered
+        deployment is connected at t = 0 and covers 3 of 20, so the
+        controller has real work to do.
+
+    episode_len = 2000 steps (400 s of flight)
+        At 400 steps the pack never depletes, so the return-to-charge
+        transition never fires, the charging arbitration is never
+        exercised and the reserve UAV has nothing to recover.  At 2000
+        steps the constraint binds (283 return transitions and 0.7 stranded
+        UAVs per episode under the Reactive heuristic) while the mission
+        remains achievable.
+
+    B_max = 30 000 J, charge_rate = 0.0002/step
+        The pack size and charge rate of the report's parameter table; the
+        episode length is what changed.
+
+    use_agent_id, map_grid = 4, use_pad_bearing
+        The observation must identify the agent for a shared policy to
+        specialise, must say where the coverage deficit is, and must give
+        the direction of the charging pad.
+    """
+    cfg = SimConfig(
+        N=8, K=2, R_cov=35.0, M=20, episode_len=2000, seed=0,
+        B_max=30_000.0, charge_rate=0.0002,
+        start_clustered=True,
+        use_agent_id=True, map_grid=4, use_pad_bearing=True,
+    )
+    for k, v in overrides.items():
+        setattr(cfg, k, v)
+    return cfg
+
+
 def scenario_cfgs(base: SimConfig):
     """S1..S8 -> list of (id, research question, [configs])."""
     import copy
@@ -54,6 +102,9 @@ def scenario_cfgs(base: SimConfig):
                  [cp(failure_enabled=True, failure_time=500, n_pads=1,
                      B_max=15_000.0, charge_rate=0.0004, R_comm=30.0, R_cov=30.0, seed=s)
                   for s in range(5)]))
+    scen.append(("S9", "initial deployment",
+                 [cp(start_clustered=True, seed=s) for s in range(5)] +
+                 [cp(start_clustered=False, seed=s) for s in range(5)]))
     return scen
 
 
@@ -148,8 +199,13 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True):
         "no-reserve": dict(use_reserve=False),
         "no-arbitration": dict(use_charging_arbitration=False),
         "no-mask": dict(use_action_mask=False),
+        "no-agent-id": dict(use_agent_id=False),
+        "no-map": dict(map_grid=0),
+        "no-pad-bearing": dict(use_pad_bearing=False),
         "VanillaMAPPO": dict(use_connectivity_term=False, use_reserve=False,
-                             use_charging_arbitration=False, use_action_mask=False),
+                             use_charging_arbitration=False, use_action_mask=False,
+                             use_agent_id=False, map_grid=0,
+                             use_pad_bearing=False),
     }
     rows = []
     for name, kw in variants.items():
@@ -160,22 +216,25 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True):
             # the reserve / arbitration mechanisms never fire and every ablation
             # trivially matches. The stress config is what actually exercises them.
             c.failure_enabled = True
-            c.failure_time = 120
+            c.failure_time = 500
             c.n_pads = 1
             c.B_max = 15_000.0
             c.charge_rate = 0.0004
-            c.R_comm = 32.0
+            c.R_comm = 30.0
+            c.R_cov = 30.0
         for k, v in kw.items():
             setattr(c, k, v)
-        c.episode_len = min(c.episode_len, 400)
-        agent, _ = train_mappo(c, episodes=60, n_steps=250, seed=0, verbose=False)
+        agent, _ = train_mappo(c, episodes=60, n_steps=c.episode_len, seed=0,
+                               verbose=False)
         evs = [eval_agent(agent, c, steps=c.episode_len, seed=s) for s in range(3)]
         agg = {k: float(np.mean([s[k] for s in evs])) for k in evs[0]}
         agg["Reserve"] = float(np.mean([s["Reserve"] for s in evs]))
         agg["Denied"] = float(np.mean([s["Denied"] for s in evs]))
+        agg["Stranded"] = float(np.mean([s["Stranded"] for s in evs]))
         print(f"{name:18s} CK={agg['CK']:.3f} AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
               f"CI={agg['CovIntegral']:.3f} Reserve={agg['Reserve']:.1f} "
-              f"Denied={agg['Denied']:.0f}", flush=True)
+              f"Denied={agg['Denied']:.0f} Stranded={agg['Stranded']:.1f}",
+              flush=True)
         rows.append(dict(model=name, **agg))
 
     with open(out_csv, "w", newline="") as f:
@@ -196,28 +255,31 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv"):
     """
     import csv
     import copy
-    agent, _ = train_mappo(base, episodes=60, n_steps=300, seed=0, verbose=False)
+    agent, _ = train_mappo(base, episodes=60, n_steps=base.episode_len, seed=0,
+                           verbose=False)
     rows = []
     print("\n=== Scenarios (MAPPO vs Reactive) ===")
     for sid, question, cfgs in scenario_cfgs(base):
         for vi, c0 in enumerate(cfgs):
             c = copy.deepcopy(c0)
-            c.episode_len = min(c.episode_len, 400)
             m = eval_agent(agent, c, steps=c.episode_len, seed=c.seed)
             r = baseline_reactive(c, steps=c.episode_len, seed=c.seed)
             # a short description of the variant for the CSV
             variant = (f"N={c.N} M={c.M} Rcov={c.R_cov:.0f} "
                        f"Rcomm={c.R_comm:.0f} pads={c.n_pads} "
-                       f"Bmax={c.B_max:.0f} fail={c.failure_enabled}")
+                       f"Bmax={c.B_max:.0f} fail={c.failure_enabled} "
+                       f"clustered={c.start_clustered}")
             print(f"{sid}.{vi} ({question:16s}) {variant}  "
                   f"MAPPO CK={m['CK']:.3f} SC={m['SC']:.3f} "
                   f"CI={m['CovIntegral']:.3f} | "
-                  f"Reactive CK={r['CK']:.3f} SC={r['SC']:.3f}")
+                  f"Reactive CK={r['CK']:.3f} SC={r['SC']:.3f}", flush=True)
             rows.append(dict(scenario=sid, variant=vi, question=question,
                              config=variant,
                              mappo_CK=m["CK"], mappo_SC=m["SC"],
+                             mappo_AG=m["AG"],
                              mappo_CovIntegral=m["CovIntegral"],
                              react_CK=r["CK"], react_SC=r["SC"],
+                             react_AG=r["AG"],
                              react_CovIntegral=r["CovIntegral"]))
     with open(out_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
