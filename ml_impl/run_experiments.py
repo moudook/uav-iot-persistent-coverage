@@ -14,8 +14,10 @@ from uav_wireless.experiments import run_base_comparison, run_ablation, run_scen
 
 
 def base_cfg():
-    # Table VI, shortened episodes so the full matrix runs in minutes
-    return SimConfig(episode_len=400, seed=0)
+    # Feasible config: N=8 meets the corner-packing bound N>=4K=8 for K=2.
+    # (N=5 was provably infeasible; see feasibility.py and the report's
+    # corrected deployment parameters.)
+    return SimConfig(N=8, K=2, R_cov=35.0, episode_len=400, seed=0)
 
 
 def main():
