@@ -79,6 +79,16 @@ class SimConfig:
     # that covers little, so the policy must deploy while keeping the graph
     # connected -- the regime in which the constraint actually binds.
     start_clustered: bool = False
+    # Include a one-hot agent identity in the observation.  Parameter sharing
+    # is only sound if each agent's own observation identifies it, so that a
+    # shared network can still specialise (Foerster et al., AAMAS 2016).  The
+    # observation of Eq. (4) carries position, velocity, battery, mode and
+    # the neighbour slots, but no identity, so agents in a symmetric cluster
+    # receive identical inputs and the deterministic policy picks the SAME
+    # action for all of them: the swarm translates as a rigid blob and never
+    # disperses.  Measured: 1.00 distinct actions out of 8 with the identity
+    # absent.
+    use_agent_id: bool = False
     seed: int = 0
 
     def dict(self):
@@ -86,8 +96,13 @@ class SimConfig:
 
 
 def obs_dim(cfg: SimConfig) -> int:
-    """Length of the per-agent observation for this configuration (Eq. 4)."""
-    return 7 + 4 * 4 + 7          # own(7) + 4 neighbour slots x 4 + tail(7)
+    """Length of the per-agent observation for this configuration (Eq. 4).
+
+    own(7) + 4 neighbour slots x 4 + tail(7), plus a one-hot agent identity
+    of length N when `use_agent_id` is set.
+    """
+    base = 7 + 4 * 4 + 7            # own(7) + 4 neighbour slots x 4 + tail(7)
+    return base + (cfg.N if cfg.use_agent_id else 0)
 
 
 def state_dim(cfg: SimConfig) -> int:
@@ -567,7 +582,17 @@ class UAVIoTEnv:
                 1.0,
             ], dtype=np.float32)
 
-            rows.append(np.concatenate([own, nb, tail]))
+            row = np.concatenate([own, nb, tail])
+            if c.use_agent_id:
+                # one-hot identity so that a SHARED network can specialise.
+                # Without it, agents in a symmetric cluster have identical
+                # inputs and the deterministic policy picks the same action
+                # for every one of them, so the swarm translates as a rigid
+                # blob instead of deploying.
+                ident = np.zeros(c.N, dtype=np.float32)
+                ident[i] = 1.0
+                row = np.concatenate([row, ident])
+            rows.append(row)
 
         obs = np.stack(rows).astype(np.float32)
         if obs.shape[1] != self.obs_dim:
@@ -619,6 +644,10 @@ class UAVIoTEnv:
 
         # --- 1. motion with safety projection --------------------------
         step = c.v_max * c.dt
+        # The feasibility mask of every agent is evaluated once, against the
+        # pre-move state, so that the swarm moves simultaneously and the
+        # mask is not recomputed per action.
+        masks = [self.action_mask(i) for i in range(c.N)]
         for i in self._active_idx():
             a = int(actions[i])
             if a in (A_PX, A_NX, A_PY, A_NY):
@@ -628,7 +657,18 @@ class UAVIoTEnv:
             else:
                 self.v[i] = np.zeros(2)
             p_new = np.clip(self.p[i] + self.v[i] * c.dt, 0, c.side)
-            if np.all(self.action_mask(i)):
+            # Apply the motion if the CHOSEN action is feasible.
+            #
+            # The previous revision tested `np.all(self.action_mask(i))`,
+            # i.e. it moved the UAV only when EVERY action in the mask was
+            # feasible.  A_CHARGE is feasible only when the UAV is at a pad
+            # with low energy, so that test was false for essentially every
+            # UAV at every step, and NO UAV EVER MOVED.  The whole simulator
+            # was static: coverage could not change, every controller scored
+            # the same, and the only motion that occurred was by agents that
+            # happened to have a full action set available.  The feasibility
+            # mask is a property of the chosen action, not of the whole set.
+            if masks[i][a]:
                 self.p[i] = p_new
             elif a in (A_PX, A_NX, A_PY, A_NY):
                 pass    # masked movement -> hold position (mask made this infeasible)

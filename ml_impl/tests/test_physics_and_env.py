@@ -957,3 +957,64 @@ class TestInitialDeployment:
                 act, adj, _ = e.comm_graph()
                 assert e.is_connected(adj), (
                     f"disconnected start (clustered={cl}, seed={s})")
+
+
+# ======================================================================
+# Motion
+# ======================================================================
+class TestMotion:
+    """A UAV that is told to move must move.
+
+    The simulator previously applied a move only when EVERY action in the
+    feasibility mask was available.  A_CHARGE is available only at a pad
+    with low energy, so that condition was false for practically every UAV
+    at every step, and no UAV ever moved: the entire simulation was static
+    and every controller scored identically.  These tests pin the correct
+    behaviour -- the mask is a property of the CHOSEN action, not of the
+    whole set.
+    """
+
+    def test_uav_moves_when_asked(self):
+        from uav_wireless.env import A_PX, A_NX, A_PY, A_NY, A_HOVER
+        c = SimConfig(N=4, K=1, M=8, episode_len=50, seed=0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        p0 = e.p.copy()
+        acts = np.array([A_PX, A_NX, A_PY, A_NY] + [A_HOVER] * (c.N - 4))
+        for _ in range(10):
+            e.step(acts)
+        disp = np.linalg.norm(e.p - p0, axis=1)
+        expect = 10 * c.v_max * c.dt
+        assert disp.max() > 0.8 * expect, (
+            f"UAVs did not move (max displacement {disp.max():.3f} m, "
+            f"expected ~{expect:.1f} m) -- the simulator is static")
+
+    def test_directions_are_respected(self):
+        from uav_wireless.env import A_PX, A_NX, A_PY, A_NY, A_HOVER
+        c = SimConfig(N=4, K=1, M=8, episode_len=50, seed=0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        p0 = e.p.copy()
+        e.step(np.array([A_PX, A_NX, A_PY, A_NY] + [A_HOVER] * (c.N - 4)))
+        assert e.p[0][0] > p0[0][0], "+X must increase x"
+        assert e.p[1][0] < p0[1][0], "-X must decrease x"
+        assert e.p[2][1] > p0[2][1], "+Y must increase y"
+        assert e.p[3][1] < p0[3][1], "-Y must decrease y"
+
+    def test_masked_movement_holds_position(self):
+        """A movement that the mask rejects must not be applied."""
+        from uav_wireless.env import A_PX, A_HOVER
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0, d_safe=5.0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        # place the two UAVs exactly d_safe apart so that a +X step by UAV 0
+        # would violate the separation constraint and must therefore be masked
+        e.p[0] = np.array([0.0, 0.0])
+        e.p[1] = np.array([c.d_safe, 0.0])
+        assert not e.action_mask(0)[A_PX], (
+            "test setup wrong: +X should be masked here")
+        p0 = e.p[0].copy()
+        e.step(np.array([A_PX, A_HOVER]))
+        assert np.allclose(e.p[0], p0), (
+            "a masked movement was applied; the feasibility mask is not "
+            "being enforced")

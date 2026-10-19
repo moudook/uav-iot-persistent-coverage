@@ -57,7 +57,7 @@ def scenario_cfgs(base: SimConfig):
     return scen
 
 
-def eval_agent(agent, cfg, steps=1000, seed=0):
+def eval_agent(agent, cfg, steps=1000, seed=0, deterministic=True):
     import copy
     c = copy.deepcopy(cfg)
     c.seed = seed
@@ -70,7 +70,7 @@ def eval_agent(agent, cfg, steps=1000, seed=0):
             if mask[i].sum() == 0:
                 mask[i, 0] = True
                 mask[i] = mask[i] | (mask[i] == 0)
-        acts = agent.act(obs, mask, deterministic=True)
+        acts = agent.act(obs, mask, deterministic=deterministic)
         obs, st, r, done, _ = env.step(acts)
         if done:
             break
