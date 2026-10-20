@@ -140,7 +140,31 @@ terms, and the honest statement of the result is which is which.
 
 %% CREDIT
 
+The per-agent arm reaches $0.613$ against $0.638$ for
+the shared one, a difference of $-0.025$ in persistent coverage,
+so the cheapest modification in the direction the diagnosis points is not
+sufficient.  The scope of that statement is the one set out above: arm~B
+supplies each agent with its own baseline and unshares the actor, and
+neither of those changes the fact that the reward the gradient sees is the
+same team reward for every agent.
 
+That is a useful negative result rather than a frustrating one, for two
+reasons.  It is consistent with the literature's own position: the
+per-agent estimators that do change the signal are not trivial
+modifications, and the closest coverage-specific evidence
+\cite{sun2023} uses a per-agent difference utility rather than a per-agent
+advantage estimator, so the question on a persistent-coverage task is
+genuinely open.  And it narrows the search: a reader who wants to close
+the gap now knows that the answer is not ``use a local critic''.
+
+We therefore report the result as it stands: the credit assignment remains
+the best-supported explanation for the gap between the learned controller
+and the reactive heuristic, the two alternatives that the framework's other
+controlled arms rule out are ruled out, and the cheapest available remedy
+for the credit assignment does not close it.  The remedies that change the
+signal --- a difference reward, a counterfactual baseline, a per-agent
+value iteration --- are implementations of different algorithms, and we do
+not claim to have implemented or evaluated them here.
 
 %% SCEN
 
