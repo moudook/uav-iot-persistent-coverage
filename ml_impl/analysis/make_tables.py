@@ -31,7 +31,6 @@ NAMES = {
     "no-agent-id": "no agent identity",
     "with-map": "with coverage map",
     "no-map": "no coverage map",
-    "no-map": "with coverage map",
     "no-pad-bearing": "no pad bearing",
     "VanillaMAPPO": r"\textbf{Vanilla MAPPO}",
 }
