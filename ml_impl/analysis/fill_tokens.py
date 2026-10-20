@@ -901,6 +901,19 @@ def build_tokens():
             "measured yet, so no bound is claimed for them")
 
     # ------------------------------------------------------------------
+    # the causes the arms do NOT test
+    # ------------------------------------------------------------------
+    # The list is a token so that the abstract and the conclusion quote the
+    # same one, and so that a cause which has since been MEASURED cannot
+    # stay on the list: the rule's privileged access to the coverage state
+    # was on it until the local-assignment arm measured it.
+    tok["UNTESTED_CAUSES"] = (
+        "the possibility that the hand-written rule was tuned against the "
+        "evaluation scenes, the limit of a decentralised policy class, and "
+        "the state-dependent corrections that the safety filter and the "
+        "joint projection impose on the executed trajectory")
+
+    # ------------------------------------------------------------------
     # what the metrics do on an INFEASIBLE configuration
     # ------------------------------------------------------------------
     inf = load_json("infeasible_instance.json")
