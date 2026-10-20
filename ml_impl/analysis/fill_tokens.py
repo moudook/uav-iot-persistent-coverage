@@ -709,6 +709,40 @@ def build_tokens():
         tok["SCEN_TIES"] = str(ties)
         tok["SCEN_WORST"] = f"{worst[0]} ({worst[1]:+.3f})"
         tok["SCEN_BEST"] = f"{best[0]} ({best[1]:+.3f})"
+        # the closing sentence of the section, derived from the matrix
+        by_scen = {}
+        for r in scen:
+            try:
+                rule = float(r["react_CK"])
+                if r.get("reactlocal_CK") not in (None, ""):
+                    rule = max(rule, float(r["reactlocal_CK"]))
+                d = float(r["mappo_CK"]) - rule
+            except (TypeError, ValueError, KeyError):
+                continue
+            by_scen.setdefault(r["scenario"], []).append(d)
+        ahead = sorted(s for s, v in by_scen.items()
+                       if sum(v) / len(v) > 0.02)
+        behind = sorted(s for s, v in by_scen.items()
+                        if sum(v) / len(v) < -0.02)
+        if ahead:
+            tok["SCEN_TEXT"] = (
+                "At the level of scenario means the learned controller is "
+                "ahead of the stronger rule in " + ", ".join(ahead)
+                + (", and behind it in " + ", ".join(behind) if behind
+                   else ", and behind it in no scenario")
+                + ".  The matrix therefore says something the single "
+                "configuration cannot: the ordering of the two is a "
+                "property of the regime, not of the method, and a reader who "
+                "is told only that a learned controller loses to a rule has "
+                "been told half of it.")
+        else:
+            tok["SCEN_TEXT"] = (
+                "At the level of scenario means the learned controller is "
+                "behind the stronger rule in every scenario, although it is "
+                f"ahead on {wins} of the {wins + losses + ties} variants, so "
+                "the ordering is a property of the regime rather than of "
+                "the method, and a reader told only that a learned "
+                "controller loses to a rule has been told half of it.")
     tok.setdefault("ABL_TEXT", "")
     tok.setdefault("CREDIT_TEXT", "")
     tok.setdefault("SCEN_TEXT", "")
