@@ -78,7 +78,7 @@ def main():
     frag_without_removal = 0
     removals = 0
     for t in range(cfg.episode_len):
-        mask = np.stack([env.action_mask(i) for i in range(cfg.N)])
+        mask = np.stack(env.action_masks())
         for i in range(cfg.N):
             if mask[i].sum() == 0:
                 mask[i, 0] = True

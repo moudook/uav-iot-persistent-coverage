@@ -45,7 +45,7 @@ def collect_rollout(env, agent, n_steps, deterministic=False):
     t = 0
     truncated = False
     while t < n_steps:
-        mask = np.stack([env.action_mask(i) for i in range(n)])
+        mask = np.stack(env.action_masks())
         if mask.sum(axis=1).min() == 0:            # never leave an agent stuck
             for i in range(n):
                 if mask[i].sum() == 0:

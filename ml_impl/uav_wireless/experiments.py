@@ -128,7 +128,7 @@ def eval_agent(agent, cfg, steps=1000, seed=0, deterministic=False):
     obs, st = env.reset()
     for _ in range(steps):
         import numpy as np
-        mask = np.stack([env.action_mask(i) for i in range(c.N)])
+        mask = np.stack(env.action_masks())
         for i in range(c.N):
             if mask[i].sum() == 0:
                 mask[i, 0] = True

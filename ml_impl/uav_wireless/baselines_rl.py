@@ -180,7 +180,7 @@ def train_id_dqn(cfg: SimConfig, episodes=20, steps=None, seed=0,
         obs, _ = env.reset()
         ep_r = 0.0
         for t in range(steps):
-            mask = np.stack([env.action_mask(i) for i in range(cfg.N)])
+            mask = np.stack(env.action_masks())
             for i in range(cfg.N):
                 if mask[i].sum() == 0:
                     mask[i, 0] = True
@@ -310,7 +310,7 @@ def train_ppo_local(cfg: SimConfig, episodes=20, steps=None, seed=0,
                  values=np.zeros((steps, cfg.N), dtype=np.float32))
         t = 0
         for _ in range(steps):
-            mask = np.stack([env.action_mask(i) for i in range(cfg.N)])
+            mask = np.stack(env.action_masks())
             for i in range(cfg.N):
                 if mask[i].sum() == 0:
                     mask[i, 0] = True
@@ -361,7 +361,7 @@ def eval_id_dqn(agent, cfg, steps=None, seed=0):
     env = UAVIoTEnv(c)
     obs, _ = env.reset()
     for _ in range(steps):
-        mask = np.stack([env.action_mask(i) for i in range(c.N)])
+        mask = np.stack(env.action_masks())
         for i in range(c.N):
             if mask[i].sum() == 0:
                 mask[i, 0] = True
@@ -379,7 +379,7 @@ def eval_ppo_local(agent, cfg, steps=None, seed=0, deterministic=False):
     env = UAVIoTEnv(c)
     obs, _ = env.reset()
     for _ in range(steps):
-        mask = np.stack([env.action_mask(i) for i in range(c.N)])
+        mask = np.stack(env.action_masks())
         for i in range(c.N):
             if mask[i].sum() == 0:
                 mask[i, 0] = True

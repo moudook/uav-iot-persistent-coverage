@@ -1243,6 +1243,34 @@ class TestMaskConsistency:
         assert not np.any(np.diag(adj)), "the diagonal must be empty"
         assert np.array_equal(adj, adj.T), "the graph must be undirected"
 
+    def test_the_spliced_candidate_graph_equals_the_full_recomputation(self):
+        """The candidate graph is computed by splicing one recomputed row
+        into the base SNR matrix, because the shadowing table is symmetric.
+
+        That is an optimisation of a physics-critical path, so it must be
+        EXACTLY equal to recomputing the whole matrix with the UAV moved.
+        """
+        import numpy as np
+        for seed in range(4):
+            c = SimConfig(N=6, K=1, M=10, episode_len=50, seed=seed,
+                          R_comm=30.0)
+            e = UAVIoTEnv(c)
+            e.reset()
+            for i in range(c.N):
+                for vec in ((1.0, 0.0), (-1.0, 0.0), (0.0, 1.0),
+                            (0.0, -1.0)):
+                    p_new = np.clip(e.p[i] + np.array(vec) * c.v_max * c.dt,
+                                    0, c.side)
+                    fast = e._candidate_adjacency(i, p_new)
+                    # the reference: move the UAV and recompute in full
+                    saved = e.p[i].copy()
+                    e.p[i] = p_new
+                    _, slow, _ = e.comm_graph()
+                    e.p[i] = saved
+                    assert np.array_equal(fast, slow), (
+                        f"the spliced candidate graph differs from the full "
+                        f"recomputation (seed {seed}, agent {i}, move {vec})")
+
 
 # ======================================================================
 # Joint connectivity projection
@@ -1292,20 +1320,32 @@ class TestJointProjection:
             "the projection fired although it is switched off")
 
     def test_revisions_are_counted(self):
-        from uav_wireless.env import A_NX, A_PX
+        """The projection must actually repair a disconnected configuration.
+
+        The per-agent mask is usually sufficient on its own -- on the
+        configurations tested it prevented every disconnection -- so the
+        repair path is exercised directly.
+        """
         import numpy as np
+        from uav_wireless.env import A_NX, A_PX
         c = SimConfig(N=6, K=1, M=10, episode_len=50, seed=0, R_comm=25.0,
                       use_joint_projection=True)
         e = UAVIoTEnv(c)
         e.reset()
-        e.p[:] = np.array([[10.0, 0.0], [12.0, 0.0], [14.0, 0.0],
-                            [16.0, 0.0], [18.0, 0.0], [20.0, 0.0]])
-        acts = np.array([A_NX] * 3 + [A_PX] * 3)
-        for _ in range(30):
-            e.step(acts)
-        assert e.projection_revisions > 0, (
-            "the projection never fired on a configuration designed to "
-            "disconnect the swarm")
+        # a connected configuration ...
+        old = np.array([[10.0, 0.0], [12.0, 0.0], [14.0, 0.0],
+                        [16.0, 0.0], [18.0, 0.0], [20.0, 0.0]])
+        e.p[:] = old
+        # ... and a disconnected one, reached by moving every UAV away
+        e.p[:] = np.array([[0.0, 0.0], [12.0, 0.0], [14.0, 0.0],
+                           [16.0, 0.0], [18.0, 0.0], [60.0, 0.0]])
+        _, adj, _ = e.comm_graph()
+        assert not e.is_connected(adj), "test setup wrong: already connected"
+        n = e._project_connected(old, [0, 5])
+        assert n > 0, "the projection did not revert any move"
+        _, adj, _ = e.comm_graph()
+        assert e.is_connected(adj), (
+            "the projection did not restore connectivity")
 
     def test_the_summary_reports_the_projection(self):
         c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0)

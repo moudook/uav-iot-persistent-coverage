@@ -36,7 +36,7 @@ def eval_agent(agent, cfg, steps=400, seed=0, deterministic=True):
     env = UAVIoTEnv(c)
     obs, st = env.reset()
     for _ in range(steps):
-        mask = np.stack([env.action_mask(i) for i in range(c.N)])
+        mask = np.stack(env.action_masks())
         for i in range(c.N):
             if mask[i].sum() == 0:
                 mask[i, 0] = True

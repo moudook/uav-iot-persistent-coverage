@@ -469,7 +469,7 @@ class UAVIoTEnv:
     # ------------------------------------------------------------------
     # Action feasibility mask. Section IV-B / Table V
     # ------------------------------------------------------------------
-    def action_mask(self, i):
+    def action_mask(self, i, base=None):
         c = self.cfg
         m = np.zeros(N_ACTIONS, dtype=bool)
         m[A_HOVER] = True
@@ -495,7 +495,7 @@ class UAVIoTEnv:
             # the swarm walk itself into a partition, which is exactly what
             # the first experiment run showed (AG collapsed 1.0 -> 0.2).
             if ok and c.use_action_mask:
-                adj_c = self._candidate_adjacency(i, p_new)
+                adj_c = self._candidate_adjacency(i, p_new, base=base)
                 if not self._h_step_safe(i, p_new, c.mask_horizon, adj=adj_c):
                     ok = False
                 elif self._is_articulation_move(i, p_new, adj=adj_c):
@@ -525,18 +525,59 @@ class UAVIoTEnv:
         ap = self.articulation_points(adj)
         return bool(pos_i < len(ap) and ap[pos_i])
 
-    def _candidate_adjacency(self, i, p_new):
+    def _base_graph(self, act):
+        """The distance and SNR matrices of the swarm in its current state.
+
+        Every agent's feasibility mask is evaluated against the SAME
+        pre-move state, so the base graph is computed once per step and
+        shared, rather than once per agent.
+        """
+        p_act = self.p[act]
+        d = np.linalg.norm(p_act[:, None, :] - p_act[None, :, :], axis=-1)
+        snr = self.radio.backhaul_snr(p_act, act)
+        return d, snr
+
+    def action_masks(self):
+        """The feasibility mask of every agent, sharing one base graph."""
+        act = self._active_idx()
+        base = self._base_graph(act)
+        return [self.action_mask(i, base=base) for i in range(self.cfg.N)]
+
+    def _candidate_adjacency(self, i, p_new, base=None):
         """Adjacency of the swarm with UAV i hypothetically moved to p_new.
 
         The H-step connectivity check and the articulation check both need
         the prospective graph, and both were recomputing it from scratch, so
         the physics was evaluated twice per candidate action.  The graph is
         returned once and shared; the result is identical.
+
+        Only the edges incident to UAV i change, so the base SNR matrix is
+        spliced with a single recomputed row rather than recomputed in
+        full.  The shadowing table is symmetric by construction, so the
+        spliced row is symmetric and the splice reproduces the full
+        recomputation exactly; a test asserts that equivalence.
         """
-        saved = self.p[i].copy()
-        self.p[i] = p_new
-        _, adj, _ = self.comm_graph()
-        self.p[i] = saved
+        act = self._active_idx()
+        if len(act) == 0:
+            return np.zeros((0, 0), dtype=bool)
+        pos_i = list(act).index(i)
+        p_act = self.p[act]
+        if base is None:
+            base = self._base_graph(act)
+        d, snr = base
+        row = self.radio.backhaul_snr_row(p_act, act, pos_i, p_new)
+        d_new = np.linalg.norm(p_act - p_new, axis=1)
+
+        d2 = d.copy()
+        d2[pos_i, :] = d_new
+        d2[:, pos_i] = d_new
+        snr2 = snr.copy()
+        snr2[pos_i, :] = row
+        snr2[:, pos_i] = row
+        rate = self.radio.link_rate_mbps(self.radio.snr_db(snr2),
+                                         backhaul=True)
+        adj = (d2 <= self.cfg.R_comm) & (rate >= self.radio.rate_min_mbps)
+        np.fill_diagonal(adj, False)
         return adj
 
     def _project_connected(self, old_p, moved):
@@ -799,7 +840,7 @@ class UAVIoTEnv:
         # The feasibility mask of every agent is evaluated once, against the
         # pre-move state, so that the swarm moves simultaneously and the
         # mask is not recomputed per action.
-        masks = [self.action_mask(i) for i in range(c.N)]
+        masks = self.action_masks()
         old_p = self.p.copy()
         for i in self._active_idx():
             a = int(actions[i])

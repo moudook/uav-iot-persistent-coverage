@@ -53,7 +53,7 @@ def distinct_actions(agent, cfg, seed=0, steps=200, deterministic=True):
     obs, st = env.reset()
     distinct, spreads = [], []
     for _ in range(steps):
-        mask = np.stack([env.action_mask(i) for i in range(c.N)])
+        mask = np.stack(env.action_masks())
         for i in range(c.N):
             if mask[i].sum() == 0:
                 mask[i, 0] = True

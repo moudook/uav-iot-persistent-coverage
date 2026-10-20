@@ -285,6 +285,31 @@ class WirelessModel:
         inter = ordered[:, 1:cch + 1].sum(axis=1, keepdims=True)
         return rx / (inter + self.noise_w)
 
+    def backhaul_snr_row(self, uav_xy, uav_idx, k, p_k):
+        """SNR of the links incident to index k when k is at position p_k.
+
+        The shadowing table is symmetric by construction -- one physical
+        link, one channel, `shadow_uu_db = z + z.T` -- so the incident row
+        is symmetric as well.  That makes it possible to evaluate a
+        PROSPECTIVE graph (one UAV moved) by recomputing a single row and
+        splicing it into the base matrix, instead of recomputing the whole
+        NxN matrix for every candidate move.
+
+        The result is identical to `backhaul_snr` with the UAV at p_k; a
+        test asserts the equivalence.
+        """
+        uav_xy = np.asarray(uav_xy)
+        idx = np.asarray(uav_idx, dtype=int)
+        d3 = np.sqrt(np.sum((uav_xy - p_k) ** 2, axis=1) + self.z0 ** 2)
+        los = los_probability(d3, self.z0)
+        shadow = None
+        if self.shadow_uu_db is not None:
+            shadow = self.shadow_uu_db[np.ix_(idx, idx)][k]
+        rx = self.received_w(d3, los, shadow, False)
+        snr = rx / self.noise_w
+        snr[k] = 0.0
+        return snr
+
     def backhaul_snr(self, uav_xy, uav_idx=None, add_fading: bool = False):
         """SNR matrix for the inter-UAV relay link. Index (i,j) = i hears j.
 

@@ -160,7 +160,7 @@ def evaluate(agent, cfg: SimConfig, steps: int, seeds=range(5)):
         env = UAVIoTEnv(c)
         obs, st = env.reset()
         for _ in range(steps):
-            mask = np.stack([env.action_mask(i) for i in range(c.N)])
+            mask = np.stack(env.action_masks())
             for i in range(c.N):
                 if not mask[i].any():
                     mask[i, 0] = True
