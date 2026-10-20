@@ -639,6 +639,35 @@ def build_tokens():
         tok["ABL_YARDSTICK"] = f"{yardstick:.3f}"
         tok["ABL_SEEDS"] = str(full.get("train_seeds", "?")) if full else "?"
         tok["ABL_EPISODES"] = str(full.get("episodes", "?")) if full else "?"
+        # WHICH observation term matters most is a comparison, so it is
+        # derived rather than asserted
+        obs_terms = {"no-agent-id": "the agent identity",
+                     "no-map": "the coverage map",
+                     "no-pad-bearing": "the pad bearing"}
+        best = None
+        for n, pmean, pstd in paired:
+            if n in obs_terms:
+                if best is None or abs(pmean) > abs(best[1]):
+                    best = (n, pmean, pstd)
+        if best is not None:
+            n, pmean, pstd = best
+            tok["ABL_BEST_OBS"] = obs_terms[n]
+            tok["ABL_BEST_OBS_DELTA"] = f"{-pmean:+.3f}"
+            resolved = (pmean + pstd) < 0 or (pmean - pstd) > 0
+            tok["ABL_BEST_OBS_SENTENCE"] = (
+                f"the ablation of the next section prices it: it is worth "
+                f"{-pmean:.3f} of persistent coverage, paired over the "
+                f"shared training seeds"
+                + (", and it is the largest single observation effect in "
+                   "this work." if resolved else
+                   ", and it is the largest of the three, though the "
+                   "interval is wide at this seed count."))
+        else:
+            tok["ABL_BEST_OBS"] = "the observation terms"
+            tok["ABL_BEST_OBS_DELTA"] = "n/a"
+            tok["ABL_BEST_OBS_SENTENCE"] = (
+                "the ablation of the next section prices the observation "
+                "terms individually")
         # the fall-back for the components that matter: if the per-seed
         # values are not in the artefact, the unpaired difference is used and
         # is reported as such
