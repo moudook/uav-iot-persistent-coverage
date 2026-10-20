@@ -1398,6 +1398,71 @@ class TestJointProjection:
         assert "ProjectionRevisions" in e.summary()
 
 
+    def test_a_failed_uav_has_only_the_hover_action(self):
+        """A failed UAV is not in the active set, and the mask must still be
+        computable for every index."""
+        c = SimConfig(N=4, K=1, M=6, episode_len=50, seed=0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.failed[0] = True
+        masks = e.action_masks()
+        assert len(masks) == c.N
+        assert masks[0].sum() == 1, "a failed UAV may only hover"
+
+    def test_a_uav_may_not_depart_if_it_cannot_still_reach_a_pad(self):
+        """The energy rule of the mask.
+
+        A UAV must retain the energy to reach a charging pad plus the
+        reserve margin, computed from where it WOULD BE after the move.
+        The previous test admitted a departure with a flat battery, so a UAV
+        could fly until its pack was empty away from a pad -- and an
+        exhausted UAV is removed from the active set, taking its share of
+        the coverage and of the communication graph with it.
+        """
+        from uav_wireless.env import A_NX, A_PX, A_HOVER
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0,
+                      E_reserve=2000.0, B_max=30_000.0, n_pads=1)
+        e = UAVIoTEnv(c)
+        e.reset()
+        # the UAV sits 8 m to the LEFT of the single pad, so +x moves it
+        # towards the pad and -x moves it away
+        e.p[0] = e.pads[0] + np.array([-8.0, 0.0])
+        e.E[0] = e._pad_energy_from(0, e.p[0]) + c.E_reserve - 50.0
+        mask = e.action_mask(0)
+        assert not mask[A_NX], (
+            "a UAV that cannot still reach a pad was allowed to move away "
+            "from it")
+        assert mask[A_PX], (
+            "a UAV that can still reach a pad was not allowed to move "
+            "towards it")
+        assert mask[A_HOVER], "hovering must always be admissible"
+
+    def test_a_uav_may_still_move_towards_a_pad_when_already_low(self):
+        """A UAV that is already below the threshold must be allowed to move
+        towards a pad; blocking it there would strand it certainly."""
+        from uav_wireless.env import A_NX
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0,
+                      E_reserve=2000.0, B_max=30_000.0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.E[0] = 10.0            # far below the threshold
+        e.p[0] = e.pads[0] + np.array([8.0, 0.0])   # next to the pad
+        mask = e.action_mask(0)
+        # the move that reduces the distance to the pad is admissible
+        assert mask[A_NX], (
+            "a UAV that is already low was not allowed to move towards a pad")
+
+    def test_a_uav_with_a_full_pack_may_depart(self):
+        from uav_wireless.env import A_NX
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0,
+                      E_reserve=2000.0, B_max=30_000.0)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.E[0] = c.B_max
+        assert e.action_mask(0)[A_NX], (
+            "a UAV with a full pack was not allowed to depart")
+
+
 # ======================================================================
 # Value normalisation
 # ======================================================================

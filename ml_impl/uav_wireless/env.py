@@ -401,6 +401,32 @@ class UAVIoTEnv:
         )
         return p + c.P_elec + c.P_tx     # P_comm / P_elec, constant baseline
 
+    def _pad_energy_from(self, i, pos):
+        """Energy to fly from `pos` to the nearest charging pad.
+
+        The same expression as `pad_energy`, but from an arbitrary position,
+        so that the feasibility mask can ask what the cost would be AFTER a
+        candidate move.
+        """
+        if len(self.pads) == 0:
+            return 0.0
+        d = np.linalg.norm(self.pads - np.asarray(pos), axis=1)
+        t = float(np.min(d)) / self.cfg.v_max
+        return t * (self.cfg.P_move + self.cfg.P_elec) * 1.15
+
+    def _pad_energy_from(self, i, pos):
+        """Energy to fly from `pos` to the nearest charging pad.
+
+        The same expression as `pad_energy`, but from an arbitrary position,
+        so that the feasibility mask can ask what the cost would be AFTER a
+        candidate move.
+        """
+        if len(self.pads) == 0:
+            return 0.0
+        d = np.linalg.norm(self.pads - np.asarray(pos), axis=1)
+        t = float(np.min(d)) / self.cfg.v_max
+        return t * (self.cfg.P_move + self.cfg.P_elec) * 1.15
+
     def pad_energy(self, i):
         """E^pad_i: energy to reach the nearest feasible pad. Eq. (16)."""
         if len(self.pads) == 0:
@@ -476,6 +502,9 @@ class UAVIoTEnv:
         m[A_HOVER] = True
 
         act = self._active_idx()
+        if i not in act:
+            # a failed UAV has no admissible action but hovering
+            return m
         others = act[act != i]
         step = c.v_max * c.dt
         for a_dir, a in enumerate([A_PX, A_NX, A_PY, A_NY], start=1):
@@ -489,8 +518,28 @@ class UAVIoTEnv:
                 if np.min(np.linalg.norm(p_new - self.p[others], axis=1)) < c.d_safe:
                     ok = False
             # energy reachability
-            if ok and self.E[i] - c.P_move * c.dt <= 0:
-                ok = False
+            #
+            # A UAV must not depart unless it can still get home: after the
+            # move it must retain the energy to reach a charging pad plus
+            # the reserve margin, computed from where it WOULD BE.  The
+            # previous test, E_i - P_move*dt > 0, admitted a departure with
+            # a flat battery, so a UAV could fly until its pack was empty
+            # away from a pad -- and an exhausted UAV is removed from the
+            # active set, which takes its share of the coverage and of the
+            # communication graph with it.  That single weak test is the
+            # mechanism by which the learned controller stranded six of its
+            # eight UAVs per episode.
+            #
+            # A UAV that is ALREADY below the threshold is allowed to move
+            # towards a pad, since blocking it there would strand it
+            # certainly; the test is therefore one-sided in its favour.
+            if ok:
+                e_after = self.E[i] - c.P_move * c.dt
+                pad_now = self._pad_energy_from(i, self.p[i])
+                pad_new = self._pad_energy_from(i, p_new)
+                reserve = c.E_reserve
+                if e_after < pad_new + reserve and pad_new >= pad_now:
+                    ok = False
             # connectivity preservation: block moves that would break the
             # graph NOW *or* leave it fragile. A one-step check alone lets
             # the swarm walk itself into a partition, which is exactly what
@@ -885,12 +934,10 @@ class UAVIoTEnv:
         # 39% of the time, because the per-agent mask could not see the
         # joint move.  The joint configuration is therefore projected back
         # onto the connected set.
-        if c.use_joint_projection:
-            moved = [i for i in self._active_idx()
-                     if not np.allclose(self.p[i], old_p[i])]
-            if moved:
-                self.projection_revisions += self._project_connected(old_p,
-                                                                     moved)
+        moved = [i for i in self._active_idx()
+                 if not np.allclose(self.p[i], old_p[i])]
+        if c.use_joint_projection and moved:
+            self.projection_revisions += self._project_connected(old_p, moved)
         # the number of sampled actions that were NOT executed: either the
         # filter rejected them, or the joint projection reverted them.  The
         # agent is not told, so the policy gradient is computed for actions
