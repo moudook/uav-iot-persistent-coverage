@@ -149,6 +149,19 @@ the point: the components that make the framework a
 the charging machinery---are not interchangeable with the reward-shaping
 terms, and the honest statement of the result is which is which.
 
+Two of the null results are explained rather than merely reported.  The
+articulation-point term makes no measurable difference because the safety
+filter already forbids any move that would create an articulation point, so
+on an executed trajectory the quantity it measures is nearly constant and
+the term has almost no variance to act on: the constraint is enforced by the
+filter, and the reward term is a readout of it.  The degraded-service term
+is close to inert for the same reason, since the filter keeps the graph
+connected whenever the active set is unchanged.  In other words, the terms
+that look as though they should matter most are the ones the hard
+constraints have already discharged, and the terms that do matter are the
+ones the filter cannot enforce: who covers what, and how the energy is
+spent.
+
 %% CREDIT
 
 The per-agent arm reaches $@@CREDIT_B_CK@@$ against $@@CREDIT_A_CK@@$ for
