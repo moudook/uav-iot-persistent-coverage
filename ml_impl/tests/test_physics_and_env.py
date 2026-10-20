@@ -1202,6 +1202,49 @@ class TestEnergyStateMachine:
 
 
 # ======================================================================
+# Learned baselines
+# ======================================================================
+class TestLearnedBaselines:
+    """The learned baselines must survive an episode that ends early.
+
+    An episode ends early whenever a UAV failure terminates the mission, so
+    the number of collected steps is smaller than the horizon.  Both
+    trainers therefore have to form their targets from the TRUNCATED
+    arrays: the advantage array is allocated for the full horizon and only
+    its first t rows are filled, so adding it to a truncated value array is a
+    shape mismatch.
+    """
+
+    def test_the_mappo_rollout_survives_an_early_end(self):
+        """The MAPPO rollout must handle a rollout shorter than the horizon."""
+        import inspect
+        from uav_wireless import train
+        src = inspect.getsource(train.collect_rollout)
+        assert 'B["ret"] = B["adv"] + B["values"]' in src, (
+            "the returns must be formed from the truncated batch")
+        assert 'B["ret"] = adv + B["values"][:t]' not in src, (
+            "the returns are formed from the untruncated advantage array")
+
+    def test_the_ppo_local_trainer_survives_an_early_end(self):
+        import inspect
+        from uav_wireless import baselines_rl
+        src = inspect.getsource(baselines_rl.train_ppo_local)
+        assert "ret = adv[:t] + B[\"values\"][:t]" in src, (
+            "the PPO-local returns must be formed from the truncated advantage")
+        assert "ret = adv + B[\"values\"][:t]" not in src, (
+            "the PPO-local returns are formed from the untruncated advantage")
+
+    def test_both_trainers_run(self):
+        from uav_wireless.env import UAVIoTEnv
+        from uav_wireless.train import train_mappo
+        from uav_wireless.baselines_rl import train_ppo_local
+        c = SimConfig(N=4, K=1, M=8, episode_len=40, seed=0)
+        e = UAVIoTEnv(c)
+        train_mappo(c, episodes=1, n_steps=40, seed=0, verbose=False)
+        train_ppo_local(c, episodes=1, steps=40, seed=0, verbose=False)
+
+
+# ======================================================================
 # Feasibility mask
 # ======================================================================
 class TestMaskConsistency:

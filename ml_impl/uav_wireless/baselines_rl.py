@@ -339,7 +339,12 @@ def train_ppo_local(cfg: SimConfig, episodes=20, steps=None, seed=0,
             delta = B["rew"][step] + agent.gamma * next_v - B["values"][step]
             last = delta + agent.gamma * agent.lam * last
             adv[step] = last
-        ret = adv + B["values"][:t]
+        # The advantage array is allocated for the full horizon and only the
+        # first t rows are filled, so it must be truncated BEFORE the returns
+        # are formed.  An episode that ends early -- which happens whenever a
+        # UAV failure terminates the mission -- makes t < n_steps, and the
+        # untruncated addition is a shape mismatch.
+        ret = adv[:t] + B["values"][:t]
         B = {k: v[:t] for k, v in B.items()}
         info = agent.update(B, adv[:t], ret, B["logp"])
         s = env.summary()
