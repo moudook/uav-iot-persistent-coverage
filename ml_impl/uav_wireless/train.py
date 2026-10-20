@@ -280,6 +280,63 @@ def baseline_greedy(cfg: SimConfig, steps=1000, seed=0):
     return env.summary()
 
 
+def baseline_reactive_local(cfg: SimConfig, steps=1000, seed=0):
+    """The same reactive heuristic, WITHOUT the privileged global state.
+
+    `baseline_reactive` assigns the swarm to the under-covered sensors in a
+    global round-robin: it reads the coverage counts of EVERY sensor, so
+    it knows which sensors are under-covered and which UAV is assigned to
+    which.  That is an unbounded broadcast of the coverage state, and the
+    learned policy receives a fixed-size summary of the same information.
+    Part of the gap between them is therefore a difference of information
+    and not of control.
+
+    This variant removes most of that privilege while keeping the rule
+    hand-designed and the motion logic identical.  Each UAV uses ONLY:
+
+      * its own position, battery and mode;
+      * the STATIC sensor layout and the static pad layout, which are
+        infrastructure rather than coverage state and which a deployed
+        UAV can be told once;
+      * the coverage counts of the sensors IT is close enough to judge for
+        itself -- a radius of twice R_cov, which is what a UAV can
+        observe locally.
+
+    It does not use the global under-covered list, and it does not use an
+    assignment: each UAV moves toward the nearest sensor that IT judges
+    to be under-covered.  The resulting contention between UAVs that want
+    the same sensor is exactly the difficulty the learned policy faces,
+    and it is the point of the variant.
+    """
+    cfg = _seeded(cfg, seed)
+    env = UAVIoTEnv(cfg)
+    obs, st = env.reset()
+    local_radius = 2.0 * cfg.R_cov
+    for _ in range(steps):
+        acts = np.zeros(cfg.N, dtype=np.int64)
+        ncov = env.coverage_counts()
+        for i in env._active_idx():
+            if env.E[i] <= env.return_threshold(i):
+                if np.min(np.linalg.norm(env.pads - env.p[i], axis=1)) <= cfg.pad_service_radius:
+                    acts[i] = A_CHARGE
+                else:
+                    acts[i] = _move_toward(env, i, env.pads[int(np.argmin(np.linalg.norm(env.pads - env.p[i], axis=1)))])
+                continue
+            # the sensors this UAV can judge for itself
+            d = np.linalg.norm(env.sensors - env.p[i], axis=1)
+            local = np.nonzero(d <= local_radius)[0]
+            under_local = local[ncov[local] < cfg.K]
+            if len(under_local) == 0:
+                acts[i] = A_HOVER
+                continue
+            tgt = env.sensors[under_local[int(np.argmin(d[under_local]))]]
+            acts[i] = _move_toward(env, i, tgt)
+        obs, st, r, done, _ = env.step(acts)
+        if done:
+            break
+    return env.summary()
+
+
 def baseline_reactive(cfg: SimConfig, steps=1000, seed=0):
     """Deterministic coverage + connectivity heuristic (no learning)."""
     cfg = _seeded(cfg, seed)

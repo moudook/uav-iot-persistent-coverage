@@ -20,7 +20,16 @@ should be read with that in mind.  The reactive heuristic is given the
 \emph{exact} set of under-covered sensors, which corresponds to an unbounded
 broadcast of the coverage state; the learned policy receives a fixed-size
 summary of it.  Part of the gap between them is therefore a difference of
-information rather than of control.  The gap is $@@GAP@@$ of persistent
+information rather than of control.  That is a caveat that is easy to
+assert and easy to get wrong, so we measured it rather than leaving it as
+one: a second version of the same rule, with the motion and recharge logic
+unchanged but the global coverage state removed --- each UAV judges only
+the sensors within twice the coverage radius of its own position, and there
+is no assignment, so UAVs that want the same sensor contend for it --- is
+reported as \emph{Reactive (local assignment)} in the table above.  It
+reaches $@@REACTL_CK@@$ with connectivity availability $@@REACTL_AG@@$ and
+a service continuity of $@@REACTL_SC@@$, against the privileged version's
+$@@REACT_CK@@$, $@@REACT_AG@@$ and $@@REACT_SC@@$.  @@REACTL_VERDICT@@.  The gap is $@@GAP@@$ of persistent
 coverage; the 95\% interval on it, from the learned controller's
 training-seed spread over @@GAP_N@@ training runs, is $@@GAP_CI@@$.  The
 scene-to-scene variation does not enter this interval, because every

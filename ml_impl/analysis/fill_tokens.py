@@ -128,7 +128,8 @@ def build_tokens():
     main_rows = {r["model"]: r for r in load_csv("results_main.csv")}
     for key, model in (("FIXED", "Fixed"), ("GREEDY", "Greedy"),
                        ("REACT", "Reactive"), ("VAN", "VanillaMAPPO"),
-                       ("MAPPO", "MAPPO"), ("ARG", "MAPPO-argmax")):
+                       ("MAPPO", "MAPPO"), ("ARG", "MAPPO-argmax"),
+                       ("REACTL", "Reactive-local")):
         r = main_rows.get(model)
         if r is None:
             continue
@@ -661,6 +662,34 @@ def build_tokens():
         tok["INF_AG"] = f(m.get("AG", float("nan")))
         tok["INF_ORACLE"] = f(m.get("oracle_CK", float("nan")))
         tok["INF_N"] = str(len(inf.get("rows", [])))
+
+    # ------------------------------------------------------------------
+    # THE INFORMATION-ASYMMETRY ARM.  The reactive heuristic is given the
+    # exact set of under-covered sensors; the learned policy is given a
+    # fixed-size summary.  The arm below is the same rule with the global
+    # coverage state removed, and it is what turns the caveat into a
+    # measurement.
+    # ------------------------------------------------------------------
+    rl = main_rows.get("Reactive-local")
+    rp = main_rows.get("Reactive")
+    if rl and rp and "GAP" in tok:
+        priv = float(rp["CK"])
+        loc = float(rl["CK"])
+        gap = float(tok["GAP"])
+        share = (priv - loc) / gap if abs(gap) > 1e-9 else 0.0
+        tok["REACTL_SHARE"] = f"{100 * share:.0f}"
+        if abs(priv - loc) < 0.5 * abs(gap):
+            tok["REACTL_VERDICT"] = (
+                f"the privilege is therefore worth {priv - loc:.3f} of "
+                f"persistent coverage, which is a small part of the "
+                f"{gap:.3f} gap to the learned controller, and the gap is "
+                f"not an information artefact")
+        else:
+            tok["REACTL_VERDICT"] = (
+                f"the privilege is therefore worth {priv - loc:.3f} of "
+                f"persistent coverage, which is {100 * share:.0f}\\% of the "
+                f"{gap:.3f} gap to the learned controller, and a large part "
+                f"of the gap is therefore an information artefact")
 
     # ------------------------------------------------------------------
     # the numbers the paper quotes about ITSELF

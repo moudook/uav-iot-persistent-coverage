@@ -104,14 +104,15 @@ def table_main(rows, learned=None):
     lines.append(r"\toprule")
     lines.append(r"Model & CK & AG & SC & CovDef & Unexec. & Energy \\")
     lines.append(r"\midrule")
-    order = ["Fixed", "Greedy", "Reactive"]
+    order = ["Fixed", "Greedy", "Reactive", "Reactive-local"]
     by_model = {r["model"]: r for r in rows}
     for name in order:
         r = by_model.get(name)
         if r is None:
             continue
+        disp = {"Reactive-local": r"Reactive (local assignment)"}.get(name, name)
         lines.append(
-            f"{name} & {ck_cell(r)} & {fmt(r.get('AG'))} & "
+            f"{disp} & {ck_cell(r)} & {fmt(r.get('AG'))} & "
             f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & "
             f"{fmt(r.get('UnexecutedActions'), 0)} & "
             f"{fmt(r.get('Energy'), 0)} \\\\")

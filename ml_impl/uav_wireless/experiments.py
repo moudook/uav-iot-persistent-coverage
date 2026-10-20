@@ -15,6 +15,7 @@ from .env import SimConfig, UAVIoTEnv
 from .train import (
     train_mappo, collect_rollout,
     baseline_fixed, baseline_greedy, baseline_reactive,
+    baseline_reactive_local,
 )
 
 
@@ -183,7 +184,10 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
     print(f"\n=== Rule-based baselines ({eval_seeds} seeds) ===")
     for name, fn in [("Fixed", baseline_fixed),
                      ("Greedy", baseline_greedy),
-                     ("Reactive", baseline_reactive)]:
+                     ("Reactive", baseline_reactive),
+                     # the same rule WITHOUT the privileged global coverage
+                     # state: the information-asymmetry arm
+                     ("Reactive-local", baseline_reactive_local)]:
         sums = [fn(base, steps=base.episode_len, seed=s)
                 for s in range(eval_seeds)]
         agg = {k: float(np.mean([s[k] for s in sums])) for k in sums[0]}

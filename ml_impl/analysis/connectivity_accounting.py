@@ -43,7 +43,7 @@ from uav_wireless.experiments import base_config
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
-def account(seed, steps, policy="random", agent=None):
+def account(seed, steps, policy="random", agent=None, eval_seed=None):
     """One episode, with the connectivity accounting at every step."""
     cfg = base_config()
     cfg.seed = seed
@@ -70,10 +70,21 @@ def account(seed, steps, policy="random", agent=None):
         act, adj, _ = env.comm_graph()
         if not env.is_connected(adj):
             rows.append(dict(t=t, n_active_before=before,
-                             n_active_after=after, left=(after < before)))
+                             n_active_after=after, left=(after < before),
+                             policy_seed=seed, eval_seed=eval_seed))
         if done:
             break
     return rows
+
+
+def load_agent(policy_seed):
+    from uav_wireless.env import UAVIoTEnv as _E
+    from uav_wireless.mappo import MAPPO
+    cfg = base_config()
+    agent = MAPPO(n_agents=cfg.N, obs_dim=_E(cfg).obs_dim,
+                  state_dim=_E(cfg).state_dim)
+    agent.load(f"mappo_base_s{policy_seed}.pt")
+    return agent
 
 
 def main():
@@ -82,28 +93,36 @@ def main():
     ap.add_argument("--steps", type=int, default=2000)
     ap.add_argument("--policy", default="random",
                     choices=["random", "mappo"])
+    ap.add_argument("--full", action="store_true",
+                    help="every stored policy on every evaluation scene, "
+                         "which is what the reported availability averages")
     args = ap.parse_args()
-    agent = None
-    if args.policy == "mappo":
-        from uav_wireless.env import UAVIoTEnv as _E
-        from uav_wireless.mappo import MAPPO
-        cfg = base_config()
-        agent = MAPPO(n_agents=cfg.N, obs_dim=_E(cfg).obs_dim,
-                      state_dim=_E(cfg).state_dim)
-        agent.load("mappo_base_s0.pt")
     rows = []
-    for s in range(args.episodes):
-        rows.extend(account(s, args.steps, policy=args.policy, agent=agent))
+    if args.full:
+        # the reported AG is the mean over the TRAINING runs and the
+        # evaluation scenes, so the accounting has to cover the same set
+        for ps in range(5):
+            agent = load_agent(ps)
+            for es in range(5):
+                rows.extend(account(ps, args.steps, policy="mappo",
+                                    agent=agent, eval_seed=es))
+    else:
+        agent = None
+        if args.policy == "mappo":
+            agent = load_agent(0)
+        for s in range(args.episodes):
+            rows.extend(account(s, args.steps, policy=args.policy,
+                                agent=agent))
     n = len(rows)
     by_left = sum(1 for r in rows if r["left"])
-    print(f"policy: {args.policy}")
+    print(f"policy: {args.policy}{' (full matrix)' if args.full else ''}")
     print(f"disconnected steps: {n}")
     print(f"  after an UAV left the active set : {by_left}")
     print(f"  with NO active-set change        : {n - by_left}")
     out = os.path.join(HERE, "connectivity_accounting.json")
     with open(out, "w", encoding="utf-8") as f:
-        json.dump(dict(policy=args.policy, disconnected_steps=n,
-                       after_active_set_change=by_left,
+        json.dump(dict(policy=args.policy, full=bool(args.full),
+                       disconnected_steps=n, after_active_set_change=by_left,
                        without_active_set_change=n - by_left, rows=rows),
                   f, indent=2)
     print(f"Saved -> {out}")
