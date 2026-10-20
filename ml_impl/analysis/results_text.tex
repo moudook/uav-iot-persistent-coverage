@@ -123,39 +123,43 @@ packs is not a swarm that can be asked to cover anything.
 The first version of this section told a different story, and the
 difference is worth recording, because it is the clearest example in this
 work of a diagnostic leading to a repair rather than to a conclusion.  The
-step-level diagnostic of the learned policy produced an alarming number: it
-stranded \emph{all eight} UAVs in nearly every episode, while the reactive
-heuristic stranded $0.7$.  A stranded UAV has an empty pack away from a
-charging pad; it can no longer fly, it leaves the swarm, and it stops
-covering.  The obvious reading was that the controller had failed at
-energy management, and the obvious fix was a reward term that prices the
-consequence of an empty pack.
+step-level diagnostic of the learned policy produced an alarming number:
+with the safety filter as it was, the policy stranded \emph{all eight} UAVs
+in nearly every episode, while the reactive heuristic stranded $0.7$.  A
+stranded UAV has an empty pack away from a charging pad; it can no longer
+fly, it leaves the swarm, and it stops covering.  The obvious reading was
+that the controller had failed at energy management, and the obvious fix
+was a reward term that prices the consequence of an empty pack.
 
-The reading was wrong, and the controlled arms say so.  Arm~B removes the
-energy constraint entirely --- a pack ten times the nominal size, so that no
-UAV can strand and none ever needs to return --- and the coverage moves by
-$@@ENERGY_DELTA@@$, which is inside the seed-to-seed spread of the learned
-controller itself.  Arm~C removes the threshold-violation term of
-Table~\ref{tab:reward}, and the coverage moves by $@@EC_DELTA@@$, also inside
-that spread.
+The reading was wrong, and Table~\ref{tab:results_energy} says so.  All
+four arms of that table differ in one respect each, and they all land
+inside the seed-to-seed spread of the learner itself, which is
+$@@ABL_YARDSTICK@@$: a pack that cannot run out at all is worth
+$@@ENERGY_DELTA@@$, removing the threshold-violation term is worth
+$@@EC_DELTA@@$, and using the previous energy rule is worth
+$@@ED_DELTA@@$.  The energy model is not what limits the controller, and
+the paper does not claim that it is.
 
 What the diagnostic actually found was a defect in the safety filter rather
-than a property of the policy.  The mask's energy test admitted a departure
-with a flat battery, so a UAV could fly until its pack was empty away from a
-pad; the correction is to require a UAV to retain, after the move, the
-energy to reach a charging pad plus the reserve margin.  With that rule the
-stranding falls from about six UAVs per episode to $@@EA_STR@@$, the
-connectivity availability of the learned controller rises to $@@EA_AG@@$, and
-the learned controller's coverage rises from $0.638$ to $@@EA_CK@@$ --- and
-the explanation the diagnostic suggested is no longer needed.
+than a property of the policy.  The mask's energy test admitted a
+departure with a flat battery, so a UAV could fly until its pack was empty
+away from a pad; the correction is to require a UAV to retain, after the
+move, the energy to reach a charging pad plus the reserve margin.  The
+stranding falls from $@@ED_STR@@$ UAVs per episode to $@@EA_STR@@$, and
+the return-to-charge transitions rise from about $141$ to about $655$ per
+episode, because the UAVs now come home instead of dying in the field.  The
+coverage is unchanged to within the spread, and that is the honest
+conclusion: the defect was real, the repair was correct, and neither the
+defect nor the repair explains the gap to the reactive heuristic.
 
-That is the sequence the framework is for.  A coverage comparison on its own
-would have reported that the learned controller mismanages energy, and a
-reward re-weighting would have been the wrong repair.  The controlled arm
-that removes the constraint altogether is what showed that the constraint
-was not the problem, and the defect it exposed in the filter was the actual
-problem.  The energy model is not what limits the controller, and the paper
-does not claim that it is.
+That is the sequence the framework is for.  A coverage comparison on its
+own would have reported that the learned controller mismanages energy, and
+a reward re-weighting would have been the wrong repair.  The controlled
+arms are what showed that the energy model was not the problem, and the
+defect they exposed in the filter was the actual problem.  By the end of
+that sequence the energy explanation had been removed from the list, and
+what remained --- the credit assignment of a shared team reward --- was
+neither supported nor refuted by it.
 
 %% ABL
 

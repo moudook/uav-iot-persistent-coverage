@@ -41,5 +41,20 @@
     "per_seed_CK": [
       0.7394449999999995
     ]
+  },
+  {
+    "arm": "D: with the previous energy rule",
+    "lam_B": 2.0,
+    "strict_energy_mask": false,
+    "CK": 0.7163299999999981,
+    "CK_std": 0.0,
+    "AG": 1.0,
+    "SC": 0.0395,
+    "CovIntegral": 0.2836699999999981,
+    "stranded_per_episode": 7.4,
+    "return_events_per_episode": 141.4,
+    "per_seed_CK": [
+      0.7163299999999981
+    ]
   }
 ]

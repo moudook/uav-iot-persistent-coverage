@@ -153,6 +153,11 @@ def main():
         tok["ENERGY_DELTA"] = f(eb["CK"] - ea["CK"])
     if ea and ec:
         tok["EC_DELTA"] = f(ec["CK"] - ea["CK"])
+    arms_en = {r["arm"].split(":")[0].strip(): r for r in en}
+    ed = arms_en.get("D")
+    if ea and ed:
+        tok["ED_DELTA"] = f(ed["CK"] - ea["CK"])
+        tok["ED_STR"] = f(ed["stranded_per_episode"], 1)
 
     # the ablation and the scenario summary are written by hand from the
     # tables, but their anchors are computed here so that the sentences
