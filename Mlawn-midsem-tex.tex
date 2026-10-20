@@ -811,6 +811,24 @@ where $\mu$ and $\sigma$ are updated from the current rollout's returns. The con
 
 The advantage is normalised as well, by the mean and standard deviation of the batch. We also implemented a per-agent variant, in which each agent's advantages are normalised over its own history rather than over the pooled batch, and we report the measurement in Section~\ref{sec:results}: with a shared team reward every agent's advantage sequence is nearly identical, so the per-agent normalisation is close to a rescaling and does not change the credit assignment, which is the limitation of shared team rewards rather than a normalisation choice.
 
+\paragraph{The credit assignment is a property of the reward, not of the
+normalisation.} Because the team reward is broadcast, every agent receives
+the \emph{same} advantage, and the policy gradient therefore cannot
+distinguish an agent whose action helped from one whose action was
+irrelevant. This is the credit-assignment objection that the per-agent
+estimators make explicitly: COMA~\cite{foerster2018} observes that a
+global temporal-difference error ``does not explicitly reason about how
+that particular agent's actions contribute to that global reward'', and
+GPAE~\cite{kim2026} states the objection in MAPPO's own terms, that the
+shared team advantage ``ignores the agent-specific impact on the joint
+outcome''. We state the limitation rather than the conclusion, because the
+limitation is not a failure: a shared team advantage is a strong baseline on
+the standard cooperative benchmarks~\cite{yu2022,dewitt2021}. What the
+literature does not contain is an evaluation of the question on a
+persistent-coverage task, and Section~\ref{sec:results_credit} reports one:
+the same learner with the advantage made per-agent, and nothing else
+changed.
+
 \subsection{Action Feasibility Mask}
 Before the sampled action is executed, the simulator evaluates the predicted next position and applies the following checks: workspace bounds, maximum speed, minimum UAV separation, charge validity, and connectivity-preservation constraints. If a candidate movement would disconnect the communication graph, it is masked in normal operation. During an active recovery event, the connectivity rule remains a hard constraint unless the simulator enters a predefined recovery mode in which temporary reconnection is required by the recovery objective.
 
