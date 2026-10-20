@@ -90,7 +90,7 @@ The contributions are:
     \item A CTDE MAPPO framework with parameter-shared decentralized actors, a centralized training critic, hard action feasibility masks with an $H$-step connectivity lookahead, and an explicit reserve-UAV recovery mechanism.
     \item PHY-derived links (Al-Hourani LoS probability, log-distance path loss, shadowing, and an 802.11 MCS table) in place of abstract coverage discs, together with a quantified validity condition showing when the disc approximation is excellent and when it breaks.
     \item A non-degenerate evaluation protocol (time-averaged spatial integral of persistent coverage error, maximum refresh time, and $k$-coverage probability) replacing the degenerate all-simultaneous-constraint service-continuity metric.
-    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity, a coarse summary of where the coverage deficit is, and a bearing to the charging pad. Each term is established by a controlled comparison rather than asserted, and the consequences of omitting them are quantified (with the identity absent, the deterministic policy selects the same action for every UAV and the swarm translates as a rigid body without dispersing).
+    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. The identity is worth $+0.109$ persistent coverage, and without it the deterministic policy selects the same action for every UAV and the swarm translates as a rigid body without dispersing. A broadcast summary of where the coverage deficit is was added a priori and measured to be \emph{harmful} at every resolution tested, which is reported rather than quietly dropped.
     \item Corrected deployment parameters ($N=8$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$, or $N=5$, $K=2$, $R_{\mathrm{cov}}=45\,\mathrm{m}$) derived from the feasibility certificate, replacing the infeasible $N=5$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$ baseline.
     \item An evaluation protocol that treats a physical-layer claim as requiring a negative control, and reports a measured instance in which the available instrument could not support the claim it was being used for.
     \item A focused literature synthesis showing the difference between existing coverage, connectivity, recharge-scheduling, and fault-tolerant approaches and the combined problem considered here.
@@ -240,12 +240,21 @@ where $\mathcal{V}_t^{\mathrm{act}}=\{\,i\in\{1,\dots,N\}:F_i(t)=0\,\}$ is the s
 At deployment, UAV $i$ uses only locally available information, plus two
 broadcast quantities:
 \begin{equation}
-\mathbf o_i(t)=\left[\mathbf p_i,\mathbf v_i,b_i,\mathcal N_i,C_i^{\mathrm{local}},\rho_i,\tau_i^{\mathrm{return}},E_i^{\mathrm{pad}},\mathbf 1_i,\mathbf m_t\right].
+\mathbf o_i(t)=\left[\mathbf p_i,\mathbf v_i,b_i,\mathcal N_i,C_i^{\mathrm{local}},\rho_i,\tau_i^{\mathrm{return}},E_i^{\mathrm{pad}},\mathbf 1_i,\hat{\mathbf d}_i^{\mathrm{pad}}\right].
 \label{eq:obs}
 \end{equation}
-Here $\mathcal N_i$ is the set of nearby UAVs, $C_i^{\mathrm{local}}$ is the number of nearby sensors currently covered, $\rho_i$ is a locally computed bridge-risk estimate, $\tau_i^{\mathrm{return}}$ is the estimated time until the return threshold is reached, and $E_i^{\mathrm{pad}}$ is the estimated energy needed to reach a feasible charging pad. The last two terms are the agent's own identity $\mathbf 1_i\in\{0,1\}^{N}$ and a coarse coverage-map summary $\mathbf m_t\in[0,1]^{G\times G}$ of the share of under-covered sensors in each cell of the region, with $G=4$.
+Here $\mathcal N_i$ is the set of nearby UAVs, $C_i^{\mathrm{local}}$ is the number of nearby sensors currently covered, $\rho_i$ is a locally computed bridge-risk estimate, $\tau_i^{\mathrm{return}}$ is the estimated time until the return threshold is reached, $E_i^{\mathrm{pad}}$ is the estimated energy needed to reach a feasible charging pad, $\mathbf 1_i\in\{0,1\}^{N}$ is the agent's own identity, and $\hat{\mathbf d}_i^{\mathrm{pad}}$ is the unit bearing to the nearest charging pad (whose range is carried by $E_i^{\mathrm{pad}}$).
 
-Two properties of this observation are not cosmetic, and both are load-bearing for the shared-parameter design of Section~\ref{sec:mappo}. The first is the identity. Parameter sharing is sound only when each agent's own observation identifies it, so that a shared network can still specialise~\cite{foerster2016}; the first version of $\mathbf o_i$ did not satisfy this condition, and the consequence was measurable rather than theoretical: in a symmetric deployment every agent received an almost identical input, the deterministic policy selected the same action for all of them, and the swarm translated as a rigid body without ever dispersing. The second is the map summary. Without it an agent knows how many sensors it covers but not which sensors are deficient, so nothing in $\mathbf o_i$ points towards the deficit and no gradient signal for deployment exists. We assume that the infrastructure which owns the charging pads also aggregates the IoT service reports and broadcasts the summary, which is a communication assumption rather than an oracle; the summary is fixed size, so the observation does not grow with the number of sensors. Section~\ref{sec:results} reports the measured effect of each term.
+Two properties of this observation are not cosmetic, and both are load-bearing for the shared-parameter design of Section~\ref{sec:mappo}. The first is the identity. Parameter sharing is sound only when each agent's own observation identifies it, so that a shared network can still specialise~\cite{foerster2016}; the first version of $\mathbf o_i$ did not satisfy this condition, and the consequence was measurable rather than theoretical: in a symmetric deployment every agent received an almost identical input, the deterministic policy selected the same action for all of them, and the swarm translated as a rigid body without ever dispersing. The second is the bearing to the charger. Without it the observation carries the \emph{cost} of the flight to a pad but not its \emph{direction}, and a learned policy cannot express the return at all. We assume that the infrastructure which owns the charging pads also broadcasts their positions, which is a communication assumption rather than an oracle.
+
+A third term --- a broadcast summary of where the coverage deficit is ---
+was added a priori, on the argument that an agent which knows how many
+sensors it covers but not which are deficient has no gradient signal for
+deployment. The measurement of Section~\ref{sec:results_obs} refutes that
+argument: the summary is harmful at every resolution tested, and the paper
+therefore states Eq.~\eqref{eq:obs} without it. We keep the argument in
+the record because it was reasonable, and because the measurement that
+refutes it is more useful to a reader than the argument would have been.
 
 Unlike the idealized global articulation-point indicator sometimes used in analysis, $\rho_i$ is intended to be computable during execution from neighborhood exchange. The simulator may additionally compute the exact articulation-point indicator for evaluation and for the centralized critic. This distinction avoids assuming that an individual UAV can magically obtain the complete global topology.
 
@@ -268,7 +277,7 @@ Bridge risk & $\rho_i$ & Local estimate of topology criticality. \\
 Return urgency & $\tau_i^{\mathrm{return}}$ & Estimated time until the return-energy threshold. \\
 Pad energy & $E_i^{\mathrm{pad}}$ & Estimated energy to the nearest feasible charging pad. \\
 Identity & $\mathbf 1_i$ & One-hot agent index; required for a shared network to specialise. \\
-Map summary & $\mathbf m_t$ & $G\times G$ share of under-covered sensors per cell (broadcast). \\
+Pad bearing & $\hat{\mathbf d}_i^{\mathrm{pad}}$ & Unit vector to the nearest charging pad; required to fly home. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -688,7 +697,6 @@ RF transmit power & $P_{\mathrm{tx}}$ & 0.5 W \\
 Charge increment & -- & 0.0002 battery fraction/step \\
 Episode length & $T$ & 2000 steps (400\,s) \\
 Initial deployment & -- & connected cluster in one corner \\
-Map summary grid & $G$ & $4\times4$ cells \\
 \bottomrule
 \end{tabular}
 \end{table}
