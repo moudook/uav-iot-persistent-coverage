@@ -1,0 +1,69 @@
+\begin{table}[t]
+\caption{Base comparison on the corrected configuration.  The two learned baselines are implementations of the method families of Table~\ref{tab:comparison}, not reproductions of the cited papers.}
+\label{tab:results_main}
+\centering
+\scriptsize
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Model & CK & AG & SC & CovIntegral & Energy (J) \\
+\midrule
+Fixed & 0.900 & 1.000 & 0.000 & 0.100 & 35520 \\
+Greedy & 0.900 & 1.000 & 0.000 & 0.100 & 51520 \\
+Reactive & 0.900 & 1.000 & 0.000 & 0.100 & 51520 \\
+\textbf{MAPPO (proposed)} & 0.900 & 1.000 & 0.000 & 0.100 & 51520 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Component ablation on the feasible base configuration.  Every variant is trained from the same seed on the same configuration except for the one component that is removed.}
+\label{tab:results_abl}
+\centering
+\scriptsize
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Variant & CK & AG & SC & CovIntegral & Stranded \\
+\midrule
+\textbf{Full (proposed)} & 0.550 & 0.000 & 0.000 & -- & -- \\
+no-reserve UAV & 0.492 & 0.000 & 0.000 & -- & -- \\
+no-charging arbitration & 0.550 & 0.000 & 0.000 & -- & -- \\
+no-action mask & 0.550 & 0.000 & 0.000 & -- & -- \\
+\textbf{Vanilla MAPPO} & 0.492 & 0.000 & 0.000 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{What the local observation must contain.  ``Distinct'' is the number of distinct actions the deterministic (argmax) policy selects across the eight UAVs, and ``Spread'' is the mean distance of a UAV from the swarm centroid.}
+\label{tab:results_obs}
+\centering
+\scriptsize
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Observation & CK & AG & SC & Distinct & Spread (m) \\
+\midrule
+Fixed & 0.372 & 1.000 & 0.000 & -- / 8 & -- \\
+Greedy & 0.770 & 1.000 & 0.062 & -- / 8 & -- \\
+Reactive & 0.947 & 1.000 & 0.751 & -- / 8 & -- \\
+A local only & 0.658 & 0.979 & 0.033 & 1.47 / 8 & 7.8 \\
+B + identity & 0.507 & 0.977 & 0.020 & 2.43 / 8 & 12.1 \\
+C + identity + map & 0.615 & 0.948 & 0.008 & 1.94 / 8 & 9.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{The energy-management diagnosis.  ``Stranded'' is the mean number of UAVs that run out of energy away from a pad per episode, and ``Returns'' the mean number of return-to-charge transitions.}
+\label{tab:results_energy}
+\centering
+\scriptsize
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Variant & CK & AG & SC & Stranded & Returns \\
+\midrule
+A as-is (consumption only) & 0.565 & 0.982 & 0.001 & 7.1 & 88.5 \\
+B no energy constraint & 0.652 & 1.000 & 0.059 & 0.0 & 0.0 \\
+C + threshold violation & 0.579 & 0.993 & 0.000 & 6.9 & 82.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
