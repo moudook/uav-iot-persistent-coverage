@@ -388,6 +388,12 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
             c.seed = s
             agent, _ = train_mappo(c, episodes=episodes, n_steps=c.episode_len,
                                    seed=s, verbose=False)
+            # the device is recorded with the row, so that an artefact says
+            # which device produced it: the floating-point kernels differ
+            # between the CPU and the GPU, so two runs of the same
+            # configuration on different devices are not the same
+            # experiment
+            device_used = str(agent.device)
             evs = [eval_agent(agent, c, steps=c.episode_len, seed=e)
                    for e in range(eval_seeds)]
             per_seed.append({k: float(np.mean([x[k] for x in evs]))
@@ -408,6 +414,7 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
         # training runs and its spread is much smaller than the spread of
         # either row
         agg["per_seed_CK"] = ";".join(f"{p['CK']:.6f}" for p in per_seed)
+        agg["device"] = device_used
         print(f"{name:18s} CK={agg['CK']:.3f}+-{agg['CK_std']:.3f} "
               f"AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
               f"CI={agg['CovIntegral']:.3f} Reserve={agg['Reserve']:.1f} "

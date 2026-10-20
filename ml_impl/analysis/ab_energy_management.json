@@ -2,59 +2,67 @@
   {
     "arm": "A: the proposed configuration",
     "lam_B": 2.0,
-    "CK": 0.7007249999999943,
-    "CK_std": 0.0,
-    "AG": 0.9835,
-    "SC": 0.008400000000000001,
-    "CovIntegral": 0.29927499999999807,
-    "stranded_per_episode": 1.0,
-    "return_events_per_episode": 654.8,
+    "CK": 0.7157433333333337,
+    "CK_std": 0.03351458844875018,
+    "AG": 0.9860333333333333,
+    "SC": 0.026066666666666665,
+    "CovIntegral": 0.28425666666666843,
+    "stranded_per_episode": 0.8666666666666667,
+    "return_events_per_episode": 636.4666666666667,
     "per_seed_CK": [
-      0.7007249999999943
+      0.749185000000004,
+      0.6699349999999963,
+      0.7281100000000009
     ]
   },
   {
     "arm": "B: + a pack that cannot run out",
     "lam_B": 2.0,
     "B_max": 300000.0,
-    "CK": 0.7219,
-    "CK_std": 0.0,
+    "CK": 0.6715700000000036,
+    "CK_std": 0.061310235822960454,
     "AG": 1.0,
-    "SC": 0.063,
-    "CovIntegral": 0.2781000000000006,
+    "SC": 0.02186666666666667,
+    "CovIntegral": 0.3284300000000007,
     "stranded_per_episode": 0.0,
     "return_events_per_episode": 0.0,
     "per_seed_CK": [
-      0.7219
+      0.5903499999999992,
+      0.7384650000000057,
+      0.6858950000000059
     ]
   },
   {
     "arm": "C: without the threshold term",
     "lam_B": 0.0,
-    "CK": 0.7394449999999995,
-    "CK_std": 0.0,
-    "AG": 0.9872,
-    "SC": 0.06200000000000001,
-    "CovIntegral": 0.2605549999999991,
-    "stranded_per_episode": 1.6,
-    "return_events_per_episode": 649.0,
+    "CK": 0.6942666666666627,
+    "CK_std": 0.04628827539332808,
+    "AG": 0.9769666666666666,
+    "SC": 0.02996666666666667,
+    "CovIntegral": 0.305733333333333,
+    "stranded_per_episode": 0.9333333333333332,
+    "return_events_per_episode": 609.6,
     "per_seed_CK": [
-      0.7394449999999995
+      0.7459949999999955,
+      0.6336600000000023,
+      0.7031449999999901
     ]
   },
   {
     "arm": "D: with the previous energy rule",
     "lam_B": 2.0,
     "strict_energy_mask": false,
-    "CK": 0.7163299999999981,
-    "CK_std": 0.0,
-    "AG": 1.0,
-    "SC": 0.0395,
-    "CovIntegral": 0.2836699999999981,
-    "stranded_per_episode": 7.4,
-    "return_events_per_episode": 141.4,
+    "CK": 0.6616148475344171,
+    "CK_std": 0.041957369680774674,
+    "AG": 0.9367318173897892,
+    "SC": 0.025533333333333328,
+    "CovIntegral": 0.3383851524655855,
+    "stranded_per_episode": 6.066666666666667,
+    "return_events_per_episode": 135.0666666666667,
     "per_seed_CK": [
-      0.7163299999999981
+      0.606999542603244,
+      0.6688350000000035,
+      0.709010000000004
     ]
   }
 ]

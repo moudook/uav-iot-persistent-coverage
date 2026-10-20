@@ -10,6 +10,8 @@ Baselines:
 
 from __future__ import annotations
 
+import os
+
 import numpy as np
 import torch
 
@@ -156,16 +158,47 @@ def agent_obs_dim(agent):
 def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
                verbose=True, per_agent_adv_norm=False, ent_coef=0.01,
                value_norm=True, device=None):
+    """Train the proposed controller.
+
+    THE DEVICE IS A PROTOCOL CHOICE, NOT A RESOURCE ACCIDENT.  The
+    floating-point kernels differ between the CPU and the GPU, so the same
+    seed trained on the two devices gives different weights (the difference
+    is small, about 6e-4 after one episode, and it compounds through the
+    updates).  A device chosen by "is there room on the GPU right now"
+    therefore makes the result depend on the machine's momentary load, and
+    two runs of the same configuration that happen to land on different
+    devices are not the same experiment.  The device is consequently taken
+    from the environment variable UAV_DEVICE and DEFAULTS TO THE CPU; the
+    value "auto" restores the old load-dependent behaviour, and "cuda"
+    asks for the GPU explicitly.
+
+    The choice costs about one percent of the wall clock at this scale:
+    the simulator is a sequential Python loop and dominates the step
+    (11.1 ms/step on the CPU against 11.2 ms/step on the GPU), so the
+    network is never the bottleneck.
+    """
     torch.manual_seed(seed)
+    # The thread count changes the order of the floating-point reductions,
+    # and so changes the weights a training run produces.  The networks here
+    # are small, so the arithmetic is a rounding detail, but a rounding
+    # detail is exactly what a reproducibility claim cannot tolerate: the
+    # thread count is pinned here, so the result does not depend on how
+    # many cores the machine happened to be using.
+    try:
+        torch.set_num_threads(1)
+    except Exception:                                       # pragma: no cover
+        pass
     env = UAVIoTEnv(cfg)
     if device is None:
-        # The policy network and the critic are small, and the simulator is a
-        # sequential Python loop, so the GPU is used for the network and the
-        # PPO update while the control loop stays on the host.  The device is
-        # only chosen if the GPU actually has room for it: a CUDA allocation
-        # that fails because the HOST is out of memory aborts the run, and
-        # the network is small enough that the CPU is within noise of the
-        # GPU at this scale anyway.
+        device = os.environ.get("UAV_DEVICE", "cpu")
+    if device == "auto":
+        # The policy network and the critic are small, and the simulator is
+        # a sequential Python loop, so the GPU is used for the network and
+        # the PPO update while the control loop stays on the host.  The
+        # device is only chosen if the GPU actually has room for it: a CUDA
+        # allocation that fails because the HOST is out of memory aborts the
+        # run.  This mode is NOT reproducible, because the answer depends
+        # on what else the machine is doing, so it is not the default.
         device = "cpu"
         if torch.cuda.is_available():
             try:
@@ -183,6 +216,9 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
         losses = agent.update(B)
         rec = dict(episode=ep, mean_reward=float(B["adv"][:, 0].mean()), **losses)
         rec.update({k: float(v) for k, v in summ.items()})
+        # the device is recorded with the training curve, so that every
+        # artefact says which device produced it
+        rec["device"] = str(agent.device)
         hist.append(rec)
         if verbose and (ep % log_every == 0 or ep == episodes - 1):
             print(

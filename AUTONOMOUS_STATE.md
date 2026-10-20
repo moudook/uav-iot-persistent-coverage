@@ -40,19 +40,22 @@ around the new numbers and run the third mathematical audit.
 ## THE MEASUREMENT PROTOCOL (canonical, 21 Oct)
 This is the protocol every number in the paper is produced under.
 
-0. **The device is pinned to the CPU** (`run_all.py` sets
-   `CUDA_VISIBLE_DEVICES=""`). The reason is REPRODUCIBILITY, not speed: the
-   same seed trained on the GPU and on the CPU gives different weights (max
-   |difference| about 6e-4 after one episode, and it compounds through the
-   updates), so a run is reproducible only on the device it was trained on.
-   The base table had been trained on the GPU while every arm was trained
-   on the CPU, so the ablation's full row and the main table's controller
-   were the same configuration but NOT the same policies (0.682 against
-   0.689), and the base stage was re-run on the CPU so that every table
-   describes the same policies. The speed cost is about one percent: the
-   simulator is a sequential Python loop and dominates the step (11.1
-   ms/step on the CPU against 11.2 ms/step on the GPU), so the network is
-   never the bottleneck.
+0. **The device is a PROTOCOL CHOICE, not a resource accident**, and the
+   thread count is pinned to one. The reason is REPRODUCIBILITY: the
+   floating-point kernels differ between the CPU and the GPU, so the same
+   seed trained on the two gives different weights (about 6e-4 after one
+   episode, compounding through the updates), and the thread count changes
+   the order of the reductions and so changes them too. The device used to
+   be chosen by "is there room on the GPU right now", which made a run
+   depend on the machine's momentary load: the base table's controller came
+   out at 0.761 and the observation arms' and the ablation's at 0.727, and
+   they are the SAME configuration, budget and seeds. `CUDA_VISIBLE_DEVICES`
+   does not disable CUDA on this setup, so the pin has to be in the code:
+   `train_mappo` now takes the device from `UAV_DEVICE` (default CPU) and
+   sets `torch.set_num_threads(1)`, and every artefact records the device
+   it was produced on. **The whole matrix is being re-measured on one
+   device**, because a variant trained on the GPU and its partner trained on
+   the CPU are not a paired comparison.
 1. **Training**: 25 episodes x 2000 steps per training run. The base
    comparison trains **5** runs (seeds 0-4); the component ablation and the
    observation A/B/C train **3** runs (seeds 0-2); the learned baselines

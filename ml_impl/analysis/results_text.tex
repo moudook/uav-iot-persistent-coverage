@@ -129,7 +129,23 @@ policy is evaluated by sampling, because Eq.~\eqref{eq:policy} specifies a
 sampled policy.  The sampling is seeded: the stream is derived from the
 evaluation seed alone, so an evaluation is a function of (policy, scene),
 every controller sees the same stream on the same scene, and the numbers in
-this section can be recomputed from the stored policies.  We report the
+this section can be recomputed from the stored policies.
+
+Two further properties of the measurement are pinned rather than left to
+the machine, because both of them change the result.  The floating-point
+kernels differ between the CPU and the GPU, so the same seed trained on
+the two gives different weights --- the difference is small, and it
+compounds through the updates --- and the order of the reductions depends
+on the thread count, so it changes them too.  A device chosen by how much
+GPU memory happened to be free would therefore make a training run a
+function of the machine's momentary load rather than of its seed, and a
+variant and the arm it is compared against could end up on different
+devices, which is not a paired comparison at all.  The device and the
+thread count are consequently part of the protocol, every artefact records
+the device it was produced on, and the audit checks that a training run is
+a function of its seed.
+
+We report the
 deterministic version of the same actor as
 well, and the difference is large: the argmax policy reaches $@@ARG_CK@@$
 against $@@MAPPO_CK@@$ for the sampled one, although it travels a comparable
