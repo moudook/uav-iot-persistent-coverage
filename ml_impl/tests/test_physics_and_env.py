@@ -1766,3 +1766,23 @@ class TestEvaluationReproducibility:
             assert env.is_connected(adj) or after < before, (
                 "the swarm was left disconnected by a move, with no UAV "
                 "leaving the active set: the joint projection did not hold")
+
+    def test_the_ablation_log_payload_cannot_collide(self):
+        """The row's own columns and the protocol's fields have
+        overlapping names ("model", "episodes", "seeds").  Unpacking both
+        into one dict() call raises "dict() got multiple values for
+        keyword argument", and that crash killed the ablation stage once,
+        after two training runs.  The payload is built by update and is
+        tested here."""
+        from uav_wireless.experiments import _ablation_payload
+        row = dict(model="no-agent-id", CK=0.5, episodes=25, seeds=3,
+                   train_seeds=3, per_seed_CK="0.1;0.2;0.3")
+        p = _ablation_payload(row, "results_ablation.csv", False, 25, 5, 3,
+                              [0.1, 0.2, 0.3])
+        assert p["model"] == "no-agent-id"
+        assert p["episodes"] == 25
+        assert p["seeds"] == 3
+        assert p["eval_seeds"] == 5
+        assert p["out_csv"] == "results_ablation.csv"
+        assert p["per_seed_ck"] == [0.1, 0.2, 0.3]
+        assert p["per_seed_CK"] == "0.1;0.2;0.3"

@@ -419,15 +419,9 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
         stem = os.path.splitext(os.path.basename(out_csv))[0]
         with open(os.path.join(analysis, f"{stem}_rows.jsonl"), "a",
                   encoding="utf-8") as f:
-            # the payload is built by UPDATE, not by unpacking, so that a
-            # column of the row and a field of the protocol can never
-            # collide
-            payload = dict(rows[-1])
-            payload.update(out_csv=os.path.basename(out_csv),
-                           stress=stress, eval_seeds=int(eval_seeds),
-                           seeds=int(seeds),
-                           per_seed_ck=[float(p["CK"]) for p in per_seed])
-            f.write(json.dumps(payload) + "\n")
+            f.write(json.dumps(_ablation_payload(
+                rows[-1], out_csv, stress, episodes, eval_seeds, seeds,
+                [p["CK"] for p in per_seed])) + "\n")
         # and the CSV is rewritten after every row, so that the artefact the
         # paper is built from is never behind the training
         _write_ablation_csv(out_csv, existing + rows)
@@ -443,6 +437,24 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
                        seeds=int(seeds)), f, indent=2)
     print(f"Saved -> {out_csv}")
     return rows
+
+
+def _ablation_payload(row, out_csv, stress, episodes, eval_seeds, seeds,
+                      per_seed_ck):
+    """The incremental-log record of one finished ablation row.
+
+    The payload is built by UPDATE and not by unpacking, because the row's
+    own columns and the protocol's fields have overlapping names ("model",
+    "episodes", "seeds"), and unpacking both into one dict() call raises
+    "dict() got multiple values for keyword argument".  That crash killed
+    the ablation stage once, so the construction is a function of its own
+    and is tested.
+    """
+    payload = dict(row)
+    payload.update(out_csv=os.path.basename(out_csv), stress=stress,
+                   episodes=int(episodes), eval_seeds=int(eval_seeds),
+                   seeds=int(seeds), per_seed_ck=list(per_seed_ck))
+    return payload
 
 
 def _write_ablation_csv(out_csv, rows):

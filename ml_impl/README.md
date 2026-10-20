@@ -192,6 +192,9 @@ ml_impl/
 │   ├── ab_entropy.py             # A/B on the entropy coefficient
 │   ├── ab_per_agent_adv.py       # A/B on advantage normalisation
 │   ├── symmetry_check.py         # the shared-actor symmetry diagnostic
+│   ├── connectivity_accounting.py # where the connectivity availability goes
+│   ├── infeasible_instance.py    # what the metrics do on an infeasible instance
+│   ├── reproducibility_probe.py  # the evaluation is a function of (policy, scene)
 │   ├── make_tables.py            # the CSVs -> the LaTeX tables
 │   ├── fill_tokens.py            # the artefacts -> the prose tokens
 │   ├── assemble_results.py       # tables + tokens + the Results section + the compile
@@ -201,6 +204,47 @@ ml_impl/
 │   └── mutation_check.py         # proves the suite catches the historical bugs
 └── results_*.csv, analysis/*.json  # the artefacts the paper quotes
 ```
+
+---
+
+## The re-measured base comparison
+
+Under the seeded protocol (see *The measurement protocol* above), on the
+canonical configuration:
+
+| Controller | CK | AG | SC | CovDef |
+|---|---|---|---|---|
+| Fixed formation | 0.372 | 1.000 | 0.000 | 0.628 |
+| Greedy recharge | 0.786 | 0.964 | 0.066 | 0.214 |
+| **Reactive heuristic** | **0.953** | 1.000 | **0.751** | 0.047 |
+| Independent DQN | 0.396 | 0.990 | 0.000 | 0.604 |
+| Masked PPO, local critic | 0.632 | 0.991 | 0.004 | 0.368 |
+| **MAPPO (proposed)** | **0.689 ± 0.042** | 0.967 | 0.018 | 0.311 |
+| MAPPO (argmax) | 0.411 ± 0.090 | 0.978 | 0.001 | 0.589 |
+| Oracle (ceiling) | 1.000 | | | |
+
+The gap to the reactive heuristic is **0.264, 95% interval [0.212, 0.316]**
+over the five training seeds. The old single-policy figure of 0.734 is
+gone: the table reports the controller, not one lucky policy.
+
+### Three measurements that the framework exists to make
+
+1. **On an infeasible instance the metrics mislead.**
+   `analysis/infeasible_instance.py` runs the reactive heuristic on the
+   report's own N=5 configuration, which the certificate proves infeasible
+   for the region: it reaches **CK 0.648** with full connectivity while
+   the joint service-continuity metric is **0.000** and the oracle reaches
+   0.990 on the twenty sensors. A reader without the certificate would
+   read 0.648 as a reasonable controller and 0.000 as a catastrophic one,
+   and neither reading would distinguish the instance from a feasible one.
+2. **The joint projection holds.**
+   `analysis/connectivity_accounting.py` measures the connectivity
+   availability step by step: the graph is not left disconnected by a
+   move, and the availability below 1.000 is accounted for by UAVs leaving
+   the active set. Pinned by a test.
+3. **How much of the gap is the rule's privileged access?**
+   The `Reactive (local assignment)` arm is the same rule with the global
+   coverage state removed, and it turns that caveat into a measurement.
 
 ---
 
