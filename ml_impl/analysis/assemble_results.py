@@ -136,16 +136,16 @@ original configuration, $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m, which
 Section~\ref{sec:feasibility} proves infeasible for the region
 requirement, the same reactive heuristic reaches $CK=@@INF_CK@@$ with
 connectivity availability $@@INF_AG@@$ --- over the @@INF_N@@ scenes of
-that configuration --- while the service-continuity metric is
-$@@INF_SC@@$.  A reader with no achievability reference would read that
-coverage ratio as a reasonably good controller, and the joint metric as a
-catastrophic one, and neither reading would distinguish the instance from
-a feasible one.  The teleporting oracle on the same scenes reaches
-$@@INF_ORACLE@@$, so the twenty sensors themselves are coverable and the
-shortfall is a controller shortfall; it is the \emph{certificate} that
-says the region is not coverable at all, and it is the certificate that
-makes the difference between the two readings decidable.  That is what
-the framework contributes here, and it is why the results below are on a
+that configuration --- while the service-continuity metric is $@@INF_SC@@$.
+A reader with no achievability reference would read that coverage ratio as
+a reasonably good controller and the joint metric as a controller that
+never achieves the requirement, and neither reading would say whether the
+zero is the controller's fault or the instance's.  The teleporting oracle
+on the same scenes reaches $@@INF_ORACLE@@$, so the twenty sensors
+themselves are coverable and this shortfall is a controller shortfall; it
+is the \emph{certificate} that says the region is not coverable at all, and
+it is the certificate that makes the reading decidable.  That is what the
+framework contributes here, and it is why the results below are on a
 configuration the certificate admits.
 
 __TAB_MAIN__
