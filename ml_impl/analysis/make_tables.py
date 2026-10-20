@@ -229,6 +229,23 @@ def main():
                 f"{fmt(r.get('return_events_per_episode'), 1)} \\\\")
         lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
         parts.append("\n".join(lines))
+    mres = os.path.join(HERE, "ab_map_resolution.json")
+    if os.path.exists(mres):
+        rows = json.load(open(mres, encoding="utf-8"))
+        lines = [r"\begin{table}[t]",
+                 r"\caption{The resolution of the broadcast coverage-map "
+                 r"summary.  A finer summary does not help: the swarm's "
+                 r"spread contracts, because the policy follows the "
+                 r"deficit instead of dividing the work.}",
+                 r"\label{tab:results_mapres}", r"\centering", r"\scriptsize",
+                 r"\begin{tabular}{@{}lcccc@{}}", r"\toprule",
+                 r"Grid & CK & AG & SC & Spread (m) \\", r"\midrule"]
+        for r in rows:
+            lines.append(
+                f"$G={r['grid']}$ & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "
+                f"{fmt(r.get('SC'))} & {fmt(r.get('mean_spread_m'), 1)} \\\\")
+        lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+        parts.append("\n".join(lines))
     text = "\n\n".join(parts)
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(text + "\n")
