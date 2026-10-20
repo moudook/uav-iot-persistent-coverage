@@ -97,9 +97,10 @@ def stage_base(episodes, train_seeds, eval_seeds, resume=False):
                           state_dim=UAVIoTEnv(cfg).state_dim)
             agent.load(f"mappo_base_s{s}.pt")
             # the training curve, if it was saved: the per-seed file, or
-            # for the first seed the file the training path writes
-            for hp in (os.path.join(ANALYSIS, f"hist_base_s{s}.json"),
-                       os.path.join(ANALYSIS, "hist_base.json")):
+            # for the first seed the file the training path writes.  The
+            # training path writes them in the working directory, which is
+            # where the token filler looks for them too.
+            for hp in (f"hist_base_s{s}.json", "hist_base.json"):
                 if os.path.exists(hp):
                     with open(hp, encoding="utf-8") as f:
                         hist = json.load(f)
@@ -116,9 +117,10 @@ def stage_base(episodes, train_seeds, eval_seeds, resume=False):
                 with open("hist_base.json", "w", encoding="utf-8") as f:
                     json.dump(hist, f, indent=2)
             # every run's training curve is kept, so that the learning
-            # curve is not a single run's story
-            with open(os.path.join(ANALYSIS, f"hist_base_s{s}.json"), "w",
-                      encoding="utf-8") as f:
+            # curve is not a single run's story.  They are written beside
+            # hist_base.json, which is where the resume path and the token
+            # filler look for them.
+            with open(f"hist_base_s{s}.json", "w", encoding="utf-8") as f:
                 json.dump(hist, f, indent=2)
 
         # the SAMPLED policy, which is the policy Eq. (13) specifies
