@@ -234,34 +234,32 @@ python analysis/assemble_results.py   # assemble + compile the Results section
 python tests/run_tests.py         # 100 tests
 ```
 
-## RUNNING JOBS (20 Oct, 19:28) -- machine restarting
-Two experiment stages are running and each writes its artefact as soon as
-it completes, so a restart loses at most the unfinished runs:
+## RUNNING JOBS (20 Oct, 19:40) -- machine restarting
+One experiment stage is running and writes its artefact when it completes:
 
-- `run_all.py --stage learned` (pid 19740) -> `results_learned_baselines.csv`
-  Two methods x 3 seeds x 20 episodes.  The Independent DQN arm finished
-  (CK 0.271); the masked-PPO arm and two more seeds remain.
-- `run_all.py --stage scen` (pid 16664) -> `results_scenarios.csv`
-  12 training episodes plus 36 scenario variants x 2 controllers.
+- `run_all.py --stage learned` (pid 16664) -> `results_learned_baselines.csv`
+  The Independent DQN arm is DONE (mean CK 0.396 over three seeds); the
+  masked-PPO arm (3 seeds x 20 episodes) remains, about 22 minutes.
 
-Estimated remaining: **about 50 minutes**, i.e. both should be finished by
-about 20:20.
+The scenario matrix CRASHED and has been fixed; it must be re-run.
 
-### AFTER THE RESTART
+### AFTER THE RESTART (about 1.5 h of compute, then about 1 h of writing)
 1. `cd Project1/ml_impl`
-2. `python run_all.py --stage learned` and `python run_all.py --stage scen`
-   (both are idempotent: they overwrite their own CSV, so re-running is
-   safe; if the CSV already exists from before the restart, check its
-   timestamp and keep it.)
+2. `python run_all.py --stage scen`   (~45 min: six policies at 8 episodes,
+   one per distinct (N, M, pads) combination, then 36 variants x 2
+   controllers)
 3. `python analysis/ab_energy_management.py --episodes 25 --seeds 1
-   --eval-seeds 5` -- the energy experiment now has a fourth arm (the
-   previous energy rule) and must be re-run on the current code.
-4. `python analysis/ablation_extra.py` -- the one extra ablation variant
-   (no coverage map), which the ablation table needs.
+   --eval-seeds 5`   (~37 min; four arms, the fourth being the previous
+   energy rule)
+4. `python analysis/ablation_extra.py`  (~4 min; the one extra ablation
+   variant, the coverage map on its own)
 5. `python analysis/ab_credit.py --episodes 30 --seeds 2 --eval-seeds 5`
-   -- the credit-assignment A/B, stale (it predates the energy-rule fix).
+   (~44 min; the credit-assignment A/B, stale since it predates the
+   energy-rule fix)
 6. `python analysis/ab_map_resolution.py --episodes 20 --seeds 2
-   --eval-seeds 5 --grids 0,4,8` -- the map-resolution sweep, stale.
+   --eval-seeds 5 --grids 0,4,8`   (~33 min; the map-resolution sweep,
+   stale)
+   Steps 2-6 can be run two at a time.
 7. `python analysis/assemble_results.py` -- assembles and compiles the
    Results section.  It aborts if any prose token is unfilled, so a missing
    artefact is a hard error rather than a broken paper.
