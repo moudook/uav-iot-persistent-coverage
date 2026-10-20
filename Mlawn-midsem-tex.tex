@@ -1094,8 +1094,8 @@ Under-coverage & $\bar U=\frac{1}{T}\sum_tU_t$. Measures the fraction of sensors
 Connectivity availability & $A_G=\frac{1}{T}\sum_t\mathbb 1[G_t\text{ connected}]$. Measures time for which the swarm is connected. Higher is better. \\
 Connectivity fragility & Average $\mathrm{Crit}_t$ and number of partition events. Measures exposure to articulation-point failures and topology breaks. Lower is better. \\
 Service continuity & Fraction of mission time for which both the $K$-coverage and connectivity requirements are satisfied. Measures end-to-end persistent service. \emph{Note: identically zero on infeasible configurations; supplemented by the non-degenerate metrics below.} \\
-Time-averaged coverage deficit & $\frac{1}{T}\sum_t(1-\overline{\mathrm{CK}}_t)$. Non-degenerate measure of how much coverage is missing, averaged over time. Lower is better. \\
-Maximum refresh time & Longest run of consecutive steps in which any sensor has fewer than $K$ covering UAVs. Measures worst-case service gap. Lower is better. \\
+Time-averaged coverage deficit & $\frac{1}{T}\sum_t(1-\overline{\mathrm{CK}}_t)$. Graded: it gives partial credit for a near miss, where the binary flag gives none. \emph{Exactly $1-\mathrm{CK}$}, so it is a change of convention rather than an independent measurement, and it is blind to connectivity. \\
+Maximum refresh time & Longest run of consecutive steps in which any sensor has fewer than $K$ covering UAVs. Measures worst-case service gap, and is \emph{not} a function of $\mathrm{CK}$: a controller can hold a high average while leaving one sensor dark for a long time. Lower is better. \\
 Outage severity & Time-integrated under-coverage during degraded and recovery intervals. Measures how much service is lost, not only whether a recovery eventually occurs. \\
 Reserve utilization & Number of reserve activations, activation delay, and reserve mission time. Measures whether replacement capacity is used effectively. \\
 Recovery & Mean/95th-percentile $\tau_f$, recovery success rate, and unrecovered-failure count. Measures fault tolerance directly. \\
