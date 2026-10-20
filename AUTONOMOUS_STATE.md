@@ -131,6 +131,8 @@ This is the protocol every number in the paper is produced under.
 | 32 | **The ablation's "is this component measurable" rule was not a test.** It compared a component's difference with the learner's own seed-to-seed spread, a rule with a per-arm null error rate of about a third at three training seeds, and it bought no power | paired t intervals on the per-seed differences, plus a resolution statement; the interpretive sentences are DERIVED in the token filler, not asserted in the prose |
 | 33 | The ablation runner wrote its incremental log with `dict(**row, **protocol)`, which raised on a duplicated key and killed the stage after two training runs | the payload is built by UPDATE; the runner RESUMES (a row measured under the same protocol is reused) and the CSV is rewritten after every row |
 | 34 | The base comparison's CSV took its fieldnames from the first row, so the learned rows' extra columns raised on write | the fieldnames are the union over the rows; the base stage gained a `--resume` path that evaluates the stored policies instead of retraining them |
+| 35 | The ablation's "is this component measurable" rule was not a test (audit 4) | paired t intervals on the per-seed differences, and a resolution statement; the interpretive sentences are derived in the token filler |
+| 36 | The paper's central exclusion argument was overstated (audit 3) | the abstract, the introduction and the conclusion now state the descriptive gap, the interval, the resolution, and the causes the arms do NOT exclude |
 
 `tests/mutation_check.py` proves the suite catches the historical bugs.
 
@@ -154,6 +156,32 @@ The **rule baselines and the oracle are unaffected by defect 28** (they are
 deterministic), so their rows above stand. The learned rows are being
 re-measured and will move by the size of the uncontrolled term, which is
 why they are not quotable until the re-measurement lands.
+
+### THE RE-MEASURED BASE TABLE (20 Oct 23:20, the seeded protocol)
+| Controller | CK | AG | SC | CovDef |
+|---|---|---|---|---|
+| Fixed formation | 0.372 | 1.000 | 0.000 | 0.628 |
+| Greedy recharge | 0.786 | 0.964 | 0.066 | 0.214 |
+| **Reactive heuristic** | **0.953** | 1.000 | **0.751** | 0.047 |
+| Independent DQN | 0.396 | 0.990 | 0.000 | 0.604 |
+| Masked PPO, local critic | 0.632 | 0.991 | 0.004 | 0.368 |
+| **MAPPO (proposed)** | **0.689 +- 0.042** | 0.967 | 0.018 | 0.311 |
+| MAPPO (argmax) | 0.411 +- 0.090 | 0.978 | 0.001 | 0.589 |
+| Oracle (ceiling) | 1.000 | | | |
+
+**The gap is 0.264, 95% interval [0.212, 0.316]** over five training
+seeds. The old single-policy figure of 0.734 is gone: the table now
+reports the controller, not one lucky policy.
+
+**On the infeasible N=5 configuration** (`analysis/infeasible_instance.py`):
+the reactive heuristic reaches CK **0.648** with AG 1.000 and SC **0.000**,
+and the oracle reaches 0.990 on the twenty sensors. The certificate, and
+not either metric, is what says the region is not coverable at N=5.
+
+**The connectivity accounting** (`analysis/connectivity_accounting.py`):
+the joint projection holds -- the graph is not left disconnected by a move
+-- and the measured availability below 1.000 is accounted for by UAVs
+leaving the active set. Pinned by a test.
 
 **The energy arms** (four controlled arms, one difference each) said the
 energy model is **not** what limits the controller: A 0.701, B (a pack that
@@ -192,14 +220,42 @@ arms say the difference is 0.015. The prose now quotes the controlled arms.
   the H-step lookahead, the energy budget, the value normalisation, the
   metrics, the oracle normalisation, the evaluation protocol. 25 items,
   21 verified, 0 failed, 4 informational.
-- **Audit 3** (NEXT, after the re-measurement lands): the assembled
-  Results section and the Conclusion. The brief is drafted at
-  `C:\Users\gbust\AppData\Local\Temp\opencode\audit3_brief.txt` -- 8 items:
-  protocol fairness, the metric-is-the-objective circularity, the mask's
-  soundness for simultaneous moves, the H-hop rule's semantics, a
-  constrained upper bound, the internal consistency of CK and SC, the
-  seed-variance weighting, and which claimed contributions the measurements
-  actually support.
+- **Audit 3** (DONE, 20 Oct 23:15): the model and the results' claims.
+  Brief: `C:\Users\gbust\AppData\Local\Temp\opencode\audit3_brief.txt`
+  (9 items). It found, and these are now fixed:
+  * **The central exclusion argument was OVERSTATED.** "What remains is
+    credit assignment" is not supported by three non-detections at three
+    training seeds: a non-detection is a statement about the arm's
+    resolution, and a sufficiency test cannot eliminate a cause that is
+    necessary but not sufficient. The abstract, the introduction and the
+    conclusion now say the residual is CONSISTENT WITH the credit
+    assignment and with several other causes the arms do not test, and
+    that the paper does not claim to have excluded them.
+  * The "loses on its own objective therefore the learning pipeline is at
+    fault" inference was a false dichotomy -> fixed.
+  * **The constrained ceiling IS 1.000**, because the oracle's
+    construction is itself admissible under the safety filter, so the
+    paper's claim that an informative constrained ceiling was missed was
+    false -> fixed.
+  * The hop rule constrains the MOVER's eccentricity, not the graph's
+    diameter, and can freeze an agent in a dispersed graph -> stated.
+  * The service-continuity gap separates the two controllers far more
+    sharply than the coverage gap -> now reported beside it.
+  * The spread quoted for a learned controller contains the
+    rollout-to-rollout variation, and the cancellation of the scene
+    component in a difference is an ASSUMPTION -> both stated.
+  * **The framework's contribution needed a measurement.** On the report's
+    own infeasible N=5 configuration the reactive heuristic still reaches
+    CK 0.648 with full connectivity while the joint metric is 0.000 and
+    the oracle reaches 0.990: neither metric alone distinguishes the
+    instance from a feasible one, and it is the certificate that makes
+    the reading decidable. Measured by
+    `analysis/infeasible_instance.py`, audit item I1.
+  * **The rule's privileged access was an untested alternative
+    explanation.** Now measured: `analysis/infeasible_instance.py` aside,
+    the arm `Reactive (local assignment)` in `train.py` runs the same rule
+    without the global coverage state, and the verdict is derived from
+    the measurement in the token filler.
 - **Audit 4** (DONE, 20 Oct 22:10): **the statistics of the re-measurement
   protocol itself.** Brief:
   `C:\Users\gbust\AppData\Local\Temp\opencode\audit4_brief.txt`. It found

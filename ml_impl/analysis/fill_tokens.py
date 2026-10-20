@@ -154,6 +154,12 @@ def build_tokens():
         tok[f"{key}_CI"] = f(r["CovIntegral"])
         if r.get("CK_std") not in (None, ""):
             tok[f"{key}_CK_STD"] = f(r["CK_std"])
+    # the difference between the proposed method and the local-critic arm,
+    # which the credit section tests on paired seeds
+    mp0 = main_rows.get("MAPPO")
+    for r in load_csv("results_learned_baselines.csv"):
+        if "PPO" in r["model"] and mp0 is not None:
+            tok["PPOL_DELTA"] = f"{float(r['CK']) - float(mp0['CK']):+.3f}"
 
     arg = main_rows.get("MAPPO-argmax")
     if arg is not None:

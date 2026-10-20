@@ -20,9 +20,18 @@ should be read with that in mind.  The reactive heuristic is given the
 \emph{exact} set of under-covered sensors, which corresponds to an unbounded
 broadcast of the coverage state; the learned policy receives a fixed-size
 summary of it.  Part of the gap between them is therefore a difference of
-information rather than of control.  The gap is $@@GAP@@$ of persistent
+information rather than of control.  That is a caveat that is easy to
+assert and easy to get wrong, so we measured it rather than leaving it as
+one: a second version of the same rule, with the motion and recharge logic
+unchanged but the global coverage state removed --- each UAV judges only
+the sensors within twice the coverage radius of its own position, and there
+is no assignment, so UAVs that want the same sensor contend for it --- is
+reported as \emph{Reactive (local assignment)} in the table above.  It
+reaches $@@REACTL_CK@@$ with connectivity availability $@@REACTL_AG@@$ and
+a service continuity of $@@REACTL_SC@@$, against the privileged version's
+$0.953$, $1.000$ and $0.751$.  @@REACTL_VERDICT@@.  The gap is $0.264$ of persistent
 coverage; the 95\% interval on it, from the learned controller's
-training-seed spread over @@GAP_N@@ training runs, is $@@GAP_CI@@$.  The
+training-seed spread over 5 training runs, is $[0.212, 0.316]$.  The
 scene-to-scene variation does not enter this interval, because every
 controller is evaluated on the same scenes and it therefore cancels in the
 difference.
@@ -30,7 +39,7 @@ difference.
 The mission-relevant quantity is the joint invariant, and it separates
 the two controllers far more sharply than the coverage does.  The
 reactive heuristic satisfies the coverage requirement and the connectivity requirement simultaneously in $0.751$ of the
-mission, against $@@MAPPO_SC@@$ for the learned controller.  The
+mission, against $0.018$ for the learned controller.  The
 coverage ratio is a weak proxy for that: a controller can hold a high
 per-sensor coverage while never covering every sensor at the same
 instant, which is what the learned controller does, and the service
@@ -39,11 +48,11 @@ controllers most sharply, even though we criticise it for a different
 reason elsewhere.
 
 It is worth separating the two sources of variation in the headline
-number, because they behave differently.  Across the 5
-training runs of the learned controller the coverage varies by $0.047$
-(the standard error of the mean is $0.021$); across the
-5 evaluation scenes it varies by $0.076$ (the
-standard error of the mean over the scenes is $0.034$).  The
+number, because they behave differently.  Across the @@VAR_N_SEEDS@@
+training runs of the learned controller the coverage varies by $@@VAR_SEED@@$
+(the standard error of the mean is $@@VAR_SEED_SE@@$); across the
+@@VAR_N_SCENES@@ evaluation scenes it varies by $@@VAR_SCENE@@$ (the
+standard error of the mean over the scenes is $@@VAR_SCENE_SE@@$).  The
 scene component is common to every controller in the comparison, because
 they are all evaluated on the same scenes, and it therefore cancels in
 every difference this paper reports; the seed component does not, and it
@@ -71,7 +80,7 @@ $0.797$ over its 25 episodes, and its mean over
 the first five episodes ($0.663$) is the same as its mean over
 the last five ($0.665$): the curve has flattened.  The best
 single episode, $0.797$, is on a training scene, and the same
-policy scores $0.713$ on unseen scenes, so the training-scene
+policy scores $@@CURVE_EVAL@@$ on unseen scenes, so the training-scene
 figure is not an estimate of the deployed performance.  The budget is
 therefore bounded rather than eliminated: at this configuration the curve
 is flat over the budget we can afford, and we do not claim that a larger
@@ -81,8 +90,14 @@ The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
 from the proposed method in exactly one respect: each agent has its own
 actor and its own critic on its own observation, instead of a
-parameter-shared actor with a centralised critic.  The Independent DQN arm is
-the value-based point of comparison.  Vanilla MAPPO, which removes the
+parameter-shared actor with a centralised critic.  It reaches
+$0.632$ against the proposed method's $0.689$, a difference
+of $-0.056$ that is small beside the seed-to-seed spread of the
+learner, and Section~\ref{sec:results_credit} tests that comparison
+properly, on paired training seeds.  The Independent DQN arm, at
+$0.396$, is the value-based point of comparison and shows what the
+task costs a controller that does not use the framework's mechanisms at
+all.  Vanilla MAPPO, which removes the
 framework's observation terms, reward shaping, charging arbitration,
 reserve-UAV mechanism and action mask, shows how much of the learned
 method's behaviour survives without them.
@@ -95,9 +110,9 @@ evaluation seed alone, so an evaluation is a function of (policy, scene),
 every controller sees the same stream on the same scene, and the numbers in
 this section can be recomputed from the stored policies.  We report the
 deterministic version of the same actor as
-well, and the difference is large: the argmax policy reaches $@@ARG_CK@@$
-against $@@MAPPO_CK@@$ for the sampled one, although it travels a comparable
-distance ($@@ARG_DISTANCE@@$~m against $@@MAPPO_DISTANCE@@$~m), so it is
+well, and the difference is large: the argmax policy reaches $0.411$
+against $0.689$ for the sampled one, although it travels a comparable
+distance ($7685$~m against $9641$~m), so it is
 not a static controller --- it is a different and worse one, and the
 difference between them is the contribution of the exploration that the
 reward does not price.  The comparison with the deterministic baselines is
@@ -108,14 +123,14 @@ Reporting both rows is the point.
 
 One further number in the table is worth stating, because it disposes of a
 concern that the framework raises.  The safety filter and the joint
-projection together did not execute $@@MAPPO_UNEXEC@@$ of the learned
+projection together did not execute $0$ of the learned
 controller's sampled actions, so the policy gradient is very nearly
 consistent with the trajectory that was actually taken; the
 "the executed action is not the chosen action" problem, which is real in
 masked reinforcement learning, is not what limits this controller.
 
 The learned controller also burns more energy than the heuristic
-($@@MAPPO_E@@$~J against $183675$~J over the same episode) while
+($210392$~J against $183675$~J over the same episode) while
 stranding fewer UAVs, which is the signature of a policy that moves
 deliberately rather than one that wanders.  Its connectivity availability is
 below $1.000$ because UAVs leave the active set when a pack empties away
@@ -171,7 +186,7 @@ credit, which a shared team reward does not supply.  The map makes the
 deficiency visible, and therefore actionable-looking, and a policy without
 the credit to act on it chases.
 
-@@OBS_SUMMARY@@
+The three arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.066, 95\% interval [-1.728, +1.596], whose upper limit is NOT below the gap of 0.264 and which therefore cannot be excluded); $the full observation of the proposed configuration$ (-0.035, 95\% interval [-0.264, +0.194], an upper limit below the gap of 0.264).  The intervals are wide relative to the gap of 0.264, so the observation content is not excluded by these arms; what they do show is that the observation terms change what the policy does far more clearly than they change the coverage it achieves.
 
 The resolution of the summary does not rescue it: $G=8$: 0.589, and the swarm's spread contracts in every case, because the policy follows the deficit instead of dividing the work.
 
@@ -197,7 +212,7 @@ that the controller had failed at energy management, and the obvious fix
 was a reward term that prices the consequence of an empty pack.
 
 The reading was wrong, and Table~\ref{tab:results_energy} says so.
-@@ENERGY_SUMMARY@@
+The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point: $removing the energy constraint$ (+nan, 95\% interval [+nan, +nan], whose upper limit is NOT below the gap of 0.264 and which therefore cannot be excluded); $removing the threshold term$ (+nan, 95\% interval [+nan, +nan], whose upper limit is NOT below the gap of 0.264 and which therefore cannot be excluded); $the previous energy rule$ (+nan, 95\% interval [+nan, +nan], whose upper limit is NOT below the gap of 0.264 and which therefore cannot be excluded).  Not every interval excludes the gap of 0.264, so the energy model is not excluded by these arms; what the arms do establish is that the energy model is not the whole of the explanation, and the point estimates are all far smaller than the gap.
 
 What the diagnostic actually found was a defect in the safety filter rather
 than a property of the policy.  The mask's energy test admitted a

@@ -90,8 +90,14 @@ The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
 from the proposed method in exactly one respect: each agent has its own
 actor and its own critic on its own observation, instead of a
-parameter-shared actor with a centralised critic.  The Independent DQN arm is
-the value-based point of comparison.  Vanilla MAPPO, which removes the
+parameter-shared actor with a centralised critic.  It reaches
+$@@PPOL_CK@@$ against the proposed method's $@@MAPPO_CK@@$, a difference
+of $@@PPOL_DELTA@@$ that is small beside the seed-to-seed spread of the
+learner, and Section~\ref{sec:results_credit} tests that comparison
+properly, on paired training seeds.  The Independent DQN arm, at
+$@@IDDQN_CK@@$, is the value-based point of comparison and shows what the
+task costs a controller that does not use the framework's mechanisms at
+all.  Vanilla MAPPO, which removes the
 framework's observation terms, reward shaping, charging arbitration,
 reserve-UAV mechanism and action mask, shows how much of the learned
 method's behaviour survives without them.
