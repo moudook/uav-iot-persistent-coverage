@@ -103,7 +103,7 @@ The contributions are:
     \item PHY-derived links (Al-Hourani LoS probability, log-distance path loss, shadowing, and an 802.11 MCS table) in place of abstract coverage discs, together with a quantified validity condition showing when the disc approximation is excellent and when it breaks.
     \item A non-degenerate evaluation protocol (time-averaged spatial integral of persistent coverage error, maximum refresh time, and $k$-coverage probability) replacing the degenerate all-simultaneous-constraint service-continuity metric.
 %% BEGIN CONTRIB
-    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, \textbf{[pending: ABL\_ID\_CLAUSE]}, and without it the deterministic policy selects the same action for every UAV and the swarm translates as a rigid body without dispersing. A broadcast summary of where the coverage deficit is was added a priori and measured to be \emph{harmful} at every resolution tested, which is reported rather than quietly dropped.
+    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, \textbf{[pending: ABL\_ID\_CLAUSE]}, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses. A broadcast summary of where the coverage deficit is was added a priori and measured to be \emph{harmful} at every resolution tested, which is reported rather than quietly dropped.
 %% END CONTRIB
     \item Corrected deployment parameters ($N=8$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$, or $N=5$, $K=2$, $R_{\mathrm{cov}}=45\,\mathrm{m}$) derived from the feasibility certificate, replacing the infeasible $N=5$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$ baseline.
     \item An evaluation protocol that treats a physical-layer claim as requiring a negative control, and reports a measured instance in which the available instrument could not support the claim it was being used for.
@@ -260,7 +260,7 @@ broadcast quantities:
 \end{equation}
 Here $\mathcal N_i$ is the set of nearby UAVs, $C_i^{\mathrm{local}}$ is the number of nearby sensors currently covered, $\rho_i$ is a locally computed bridge-risk estimate, $\tau_i^{\mathrm{return}}$ is the estimated time until the return threshold is reached, $E_i^{\mathrm{pad}}$ is the estimated energy needed to reach a feasible charging pad, $\mathbf 1_i\in\{0,1\}^{N}$ is the agent's own identity, and $\hat{\mathbf d}_i^{\mathrm{pad}}$ is the unit bearing to the nearest charging pad (whose range is carried by $E_i^{\mathrm{pad}}$).
 
-Two properties of this observation are not cosmetic, and both are load-bearing for the shared-parameter design of Section~\ref{sec:mappo}. The first is the identity. Parameter sharing is sound only when each agent's own observation identifies it, so that a shared network can still specialise~\cite{foerster2016}; the first version of $\mathbf o_i$ did not satisfy this condition, and the consequence was measurable rather than theoretical: in a symmetric deployment every agent received an almost identical input, the deterministic policy selected the same action for all of them, and the swarm translated as a rigid body without ever dispersing. The implication is specific to an action space of displacements, which is the one used here: identical displacements translate the configuration rigidly and so freeze its shape. In an action space whose symbols index agent-local targets, the same symbol would send different agents to different places, and dispersion would be possible after all. The second is the bearing to the charger. Without it the observation carries the \emph{cost} of the flight to a pad but not its \emph{direction}, and a learned policy cannot express the return at all. We assume that the infrastructure which owns the charging pads also broadcasts their positions, which is a communication assumption rather than an oracle.
+Two properties of this observation are not cosmetic, and both are load-bearing for the shared-parameter design of Section~\ref{sec:mappo}. The first is the identity. Parameter sharing is sound only when each agent's own observation identifies it, so that a shared network can still specialise~\cite{foerster2016}; the first version of $\mathbf o_i$ did not satisfy this condition, and the consequence was measurable rather than theoretical: in a symmetric deployment every agent received an almost identical input, the deterministic policy collapsed to nearly the same action for all of them, and the swarm translated as a rigid body without ever dispersing. The implication is specific to an action space of displacements, which is the one used here: identical displacements translate the configuration rigidly and so freeze its shape. In an action space whose symbols index agent-local targets, the same symbol would send different agents to different places, and dispersion would be possible after all. The second is the bearing to the charger. Without it the observation carries the \emph{cost} of the flight to a pad but not its \emph{direction}, and a learned policy cannot express the return at all. We assume that the infrastructure which owns the charging pads also broadcasts their positions, which is a communication assumption rather than an oracle.
 
 A third term --- a broadcast summary of where the coverage deficit is ---
 was added a priori, on the argument that an agent which knows how many
@@ -885,7 +885,7 @@ The proposed algorithm uses parameter-shared MAPPO. During training, the central
 a_i(t)\sim\pi_{\theta}\left(a_i\mid\mathbf o_i(t)\right).
 \label{eq:policy}
 \end{equation}
-Parameter sharing is appropriate when (i) the environment is equivariant to agent permutations---identical observation and action spaces and identical transition/reward structure---and (ii) each agent's own observation \emph{breaks the permutation symmetry}, so that a shared network can still specialise (Foerster et al. \cite{foerster2016}). Condition~(ii) does not require a literal index: relative coordinates to the other agents break the symmetry just as well, because they distinguish the agents. What it does require is that no two agents in the same physical situation receive the same observation, and the consequence is a statement about the hypothesis class rather than about optimisation: if $\mathbf o_i=\mathbf o_j$ then a shared policy is a function and $\pi_\theta(\cdot|\mathbf o_i)=\pi_\theta(\cdot|\mathbf o_j)$, so no amount of training can make the two agents differ. The first version of $\mathbf o_i$ did not satisfy condition~(ii) --- it distinguished the agents only through their individual position, battery and mode, which in a symmetric deployment are nearly identical across the swarm --- and the measured consequence was that the deterministic policy chose the same action for every UAV and the swarm moved as a rigid body, so the shared-parameter claim could not be sustained on the evidence. We therefore treat $\mathbf 1_i$ as part of the model rather than as an implementation detail, and Section~\ref{sec:results} reports the controlled comparison. The known limitation (Fu et al. \cite{fu2022}, Theorem 4.2) is that a shared policy provably cannot learn an optimal policy for non-symmetric tasks such as the XOR game; this does not apply here because the swarm is homogeneous. If grounded or docked UAVs with heterogeneous roles are introduced, parameters must not be shared.
+Parameter sharing is appropriate when (i) the environment is equivariant to agent permutations---identical observation and action spaces and identical transition/reward structure---and (ii) each agent's own observation \emph{breaks the permutation symmetry}, so that a shared network can still specialise (Foerster et al. \cite{foerster2016}). Condition~(ii) does not require a literal index: relative coordinates to the other agents break the symmetry just as well, because they distinguish the agents. What it does require is that no two agents in the same physical situation receive the same observation, and the consequence is a statement about the hypothesis class rather than about optimisation: if $\mathbf o_i=\mathbf o_j$ then a shared policy is a function and $\pi_\theta(\cdot|\mathbf o_i)=\pi_\theta(\cdot|\mathbf o_j)$, so no amount of training can make the two agents differ. The first version of $\mathbf o_i$ did not satisfy condition~(ii) --- it distinguished the agents only through their individual position, battery and mode, which in a symmetric deployment are nearly identical across the swarm --- and the measured consequence was that the deterministic policy chose nearly the same action for every UAV and the swarm moved as a rigid body, so the shared-parameter claim could not be sustained on the evidence. We therefore treat $\mathbf 1_i$ as part of the model rather than as an implementation detail, and Section~\ref{sec:results} reports the controlled comparison. The known limitation (Fu et al. \cite{fu2022}, Theorem 4.2) is that a shared policy provably cannot learn an optimal policy for non-symmetric tasks such as the XOR game; this does not apply here because the swarm is homogeneous. If grounded or docked UAVs with heterogeneous roles are introduced, parameters must not be shared.
 
 For a collected rollout, the temporal-difference residual is
 \begin{equation}
@@ -1300,7 +1300,7 @@ service continuity of $0.751$, and it is the strongest of the three
 rules.
 
 The learned controller does not reach the heuristic.  The strongest
-controller in the table is $the unprivileged reactive rule$, at $0.972$, and
+controller in the table is the unprivileged reactive rule, at $0.972$, and
 the gap to it is $0.283$ of persistent coverage; the 95\% interval on
 that gap, from the learned controller's spread over its 5 training
 runs, is $[0.231, 0.335]$.  The scene-to-scene variation does not enter this
@@ -1324,7 +1324,7 @@ is no assignment, so UAVs that want the same sensor contend for it --- is
 reported as \emph{Reactive (local assignment)} in the table above.  It
 reaches $0.972$ with connectivity availability $1.000$ and
 a service continuity of $0.777$, against the privileged version's
-$0.953$, $1.000$ and $0.751$.  the privileged version is in fact slightly WORSE than the unprivileged one (-0.019), so the global coverage state is not what gives the rule its edge --- the global round-robin assignment makes the UAVs contend for sensors, and the local rule does better --- and the gap to the learned controller is therefore not an information artefact at all.
+$0.953$, $1.000$ and $0.751$.  The privileged version is in fact slightly WORSE than the unprivileged one (-0.019), so the global coverage state is not what gives the rule its edge --- the global round-robin assignment makes the UAVs contend for sensors, and the local rule does better --- and the gap to the learned controller is therefore not an information artefact at all.
 
 The connectivity invariant deserves a sentence, because the reported
 availability is below $1.000$ and the filter is claimed to guarantee
@@ -1333,14 +1333,13 @@ the prospective graph for every candidate action, and the joint projection
 restores the previous configuration when a set of individually admissible
 actions would jointly disconnect the swarm.  The step-by-step accounting
 in the artefact tests that claim over the whole evaluation matrix, and it
-holds: of the $6$ steps at which the graph is disconnected,
+holds: of the $6$ transitions into a disconnected graph,
 $0$ are attributable to a policy action --- every one of them is attributable to the recovery mechanism and none to a policy action, so the filter's guarantee holds over the actions and the availability below 1.000 is the price of the recovery.
-The recovery mechanism is the other source: when a UAV's pack empties away
-from a pad it is removed from the active set, and the reserve UAV re-seats
-it at a charging pad; if that pad is out of communication range of the
-swarm, the graph is disconnected until the recovered UAV flies back.  The
-availability below $1.000$ is that mechanism's signature, and it is the
-price of the recovery rather than a failure of the filter.
+The other source is the recovery mechanism: when a UAV's pack empties away
+from a pad it is removed from the active set, and the swarm can be left
+disconnected until the reserve UAV re-seats it at a charging pad and it
+flies back.  The availability below $1.000$ is that mechanism's signature,
+and it is the price of the recovery rather than a failure of the filter.
 
 The mission-relevant quantity is the joint invariant, and it separates
 the two controllers far more sharply than the coverage does.  The
@@ -1478,7 +1477,7 @@ individually.  Arm~A is the observation of Eq.~\eqref{eq:obs} as originally
 written.
 
 Arm~A has the property that the shared-actor symmetry collapse predicts.
-The deterministic policy selects the same action for every UAV --- the
+The deterministic policy nearly collapses to a single action --- the
 ``Distinct'' column counts $1.46$ distinct actions out of eight --- and
 the swarm's spread is $7.9$~m, which is the radius of the initial
 cluster rather than the extent of a deployment.  This is the failure that
@@ -1573,7 +1572,6 @@ fly, it leaves the swarm, and it stops covering.  The obvious reading was
 that the controller had failed at energy management, and the obvious fix
 was a reward term that prices the consequence of an empty pack.
 
-The reading was wrong, and Table~\ref{tab:results_energy} says so.
 The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, but the arms have not yet been measured with enough shared training seeds for an interval to be computable, and no bound is claimed for them here.
 
 What the diagnostic actually found was a defect in the safety filter rather
@@ -1623,6 +1621,7 @@ Variant & CK & AG & SC & CovIntegral & Stranded & $\Delta$CK \\
 \midrule
 \textbf{Full (proposed)} & 0.682\,$\pm$\,0.063 & 0.982 & 0.058 & 0.318 & 0.6 & +0.000 \\
 no-criticality term & 0.660\,$\pm$\,0.047 & 0.977 & 0.008 & 0.340 & 0.5 & +0.022 \\
+no-degraded-service term & 0.658\,$\pm$\,0.048 & 0.978 & 0.014 & 0.342 & 0.5 & +0.024 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1747,20 +1746,22 @@ joint-action critic, or a counterfactual baseline.
 \toprule
 Learner & CK & AG & SC & CovIntegral & Energy (J) \\
 \midrule
-A & 0.638\,$\pm$\,0.026 & 0.977 & 0.036 & 0.362 & -- \\
-B & 0.613\,$\pm$\,0.015 & 0.962 & 0.008 & 0.387 & -- \\
+A & 0.683\,$\pm$\,0.031 & 0.988 & 0.030 & 0.317 & -- \\
+B & 0.646\,$\pm$\,0.039 & 0.966 & 0.009 & 0.354 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The per-agent arm reaches $0.613$ against $0.638$ for
-the shared one, a difference of $-0.025$ in persistent coverage.
+The per-agent arm reaches $0.646$ against $0.683$ for
+the shared one, a difference of $-0.037$ in persistent coverage.
+Arm~A is the proposed method on the first 3 of the base
+comparison's training runs --- the same policies, not a cheaper experiment
+--- so the two rows of the first table and this table describe the same
+learner.
 The two arms share their training seeds, so the comparison is paired, and
-the 95\% interval on the paired difference is $[-0.164, +0.114]$ over
-2 training runs: the cheapest modification in the direction the
-diagnosis points does not close the gap, and the interval is consistent
-with a difference of any size up to about $0.139$ in either
-direction.  The scope of that statement is the one set out above: arm~B
+the 95\% interval on the paired difference is $[-0.069, -0.006]$ over
+3 training runs: the per-agent arm is measurably WORSE than the shared one, by 0.037 of persistent coverage, and the interval excludes zero, so the cheapest modification in the direction the diagnosis points does not close the gap --- it opens it slightly.  The scope of that
+statement is the one set out above: arm~B
 supplies each agent with its own baseline and unshares the actor, and
 neither of those changes the fact that the reward the gradient sees is the
 same team reward for every agent.
