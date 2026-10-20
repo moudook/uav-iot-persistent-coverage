@@ -80,6 +80,18 @@ def stage_base(episodes, train_seeds, eval_seeds):
                for e in range(eval_seeds)]
         agg = {k: float(np.mean([x[k] for x in evs])) for k in evs[0]}
         std = {k: float(np.std([x[k] for x in evs])) for k in evs[0]}
+        # the per-seed rows are written as they are produced, so that an
+        # interrupted run does not throw away the training it has already done
+        with open(os.path.join(ANALYSIS, "base_seed_rows.jsonl"), "a",
+                  encoding="utf-8") as f:
+            f.write(json.dumps(dict(train_seed=s,
+                                    **{k: agg[k] for k in
+                                       ("CK", "AG", "SC", "CovIntegral")},
+                                    **{f"{k}_std": std[k]
+                                       for k in ("CK", "AG", "SC")},
+                                    per_seed=[{k: x[k] for k in
+                                               ("CK", "AG", "SC")}
+                                              for x in evs])) + "\n")
         print(f"  seed {s}: CK={agg['CK']:.3f}±{std['CK']:.3f} "
               f"AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
               f"CI={agg['CovIntegral']:.3f} "
