@@ -41,14 +41,25 @@ Table~\ref{tab:results_main} makes the same point about the deterministic
 policy of the same learned actor: it travels $@@ARG_DIST@@$~m in the whole
 episode, that is, it does not move at all.
 
-The last row is the deterministic version of the \emph{same} learned actor.
-The gap between it and the sampled policy is the symmetry collapse
-discussed in the next subsection: with a shared actor the argmax action is
-the same for every UAV, so the deterministic policy translates the swarm as
-a rigid body.  Eq.~\eqref{eq:policy} specifies a sampled policy, and the
-sampled policy is the one reported as the proposed method; the argmax row is
-reported because the difference is informative, not because it is the
-better controller.
+The last row is the deterministic version of the \emph{same} learned actor,
+and it is the most diagnostic number in the table.  Over a 2000-step episode
+the argmax policy travels \textbf{0.0\,m} --- it does not move at all ---
+while the sampled policy of the same actor travels more than nine
+kilometres and covers three quarters of the sensors.  The reason is the
+shared-actor symmetry collapse: with one actor and no agent identity in the
+observation, the argmax action is the same for every UAV, and the mask then
+rejects the resulting joint move, so the swarm stands still.  Eq.~\eqref{eq:policy}
+specifies a sampled policy, and the sampled policy is the one reported as
+the proposed method; the argmax row is reported because it is the cheapest
+possible demonstration that what the shared actor has learned is not a
+deployment but a tendency, and because a reader who evaluates a
+parameter-shared controller deterministically will see this number and
+should know what it means.
+
+The learned controller also burns more energy than the heuristic
+($@@MAPPO_E@@$~J against $@@REACT_E@@$~J over the same episode) and strands
+more UAVs, which is the wandering signature of a policy that has not
+learned what to do: it keeps moving, and a moving swarm empties its packs.
 
 %% OBS
 
