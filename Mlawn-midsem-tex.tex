@@ -265,11 +265,12 @@ Two properties of this observation are not cosmetic, and both are load-bearing f
 A third term --- a broadcast summary of where the coverage deficit is ---
 was added a priori, on the argument that an agent which knows how many
 sensors it covers but not which are deficient has no gradient signal for
-deployment. The measurement of Section~\ref{sec:results_obs} refutes that
-argument: the summary is harmful at every resolution tested, and the paper
-therefore states Eq.~\eqref{eq:obs} without it. We keep the argument in
-the record because it was reasonable, and because the measurement that
-refutes it is more useful to a reader than the argument would have been.
+deployment. The measurement of Section~\ref{sec:results_obs} does not
+settle that argument for the better: @@MAP_MODEL_SENTENCE@@. The summary
+is therefore kept in Eq.~\eqref{eq:obs} and reported as a null result
+rather than quietly dropped, and we keep the argument in the record
+because it was reasonable, and because the measurement is more useful to a
+reader than the argument would have been.
 
 Unlike the idealized global articulation-point indicator sometimes used in analysis, $\rho_i$ is intended to be computable during execution from neighborhood exchange. The simulator may additionally compute the exact articulation-point indicator for evaluation and for the centralized critic. This distinction avoids assuming that an individual UAV can magically obtain the complete global topology.
 

@@ -326,11 +326,66 @@ def build_tokens():
         parts = []
         for r in mr:
             parts.append(f"$G={r['grid']}$: {f(r['CK'])}")
-        tok["MAP_RESOLUTION"] = (
-            "The resolution of the summary does not rescue it: " +
-            ", ".join(parts) +
-            ", and the swarm's spread contracts in every case, because the "
-            "policy follows the deficit instead of dividing the work.")
+        # the yardstick for "makes a difference": the learner's own
+        # seed-to-seed spread
+        spreads = [float(r.get("CK_std", 0.0)) for r in mr]
+        yard = max(spreads) if spreads else 0.0
+        cks = {int(r["grid"]): float(r["CK"]) for r in mr}
+        sp = {int(r["grid"]): float(r.get("mean_spread_m", 0.0)) for r in mr}
+        base = cks.get(0)
+        resolvable = base is not None and any(
+            abs(cks[g] - base) >= yard for g in cks if g != 0)
+        if resolvable:
+            tok["MAP_RESOLUTION"] = (
+                "The resolution of the summary does not rescue it: " +
+                ", ".join(parts) +
+                ", and the swarm's spread contracts in every case, because "
+                "the policy follows the deficit instead of dividing the "
+                "work.")
+        else:
+            worst = (max(abs(cks[g] - base) for g in cks if g != 0)
+                     if base is not None else 0.0)
+            sp_txt = ""
+            if 0 in sp and len(sp) > 1:
+                sp_txt = (
+                    f"  What the summary does change is the swarm's "
+                    f"behaviour: the spread falls from {sp[0]:.1f} m without "
+                    f"it to "
+                    + " and ".join(f"{sp[g]:.1f} m" for g in sorted(sp)
+                                   if g != 0)
+                    + " with it, because a policy that follows the deficit "
+                      "keeps the swarm together instead of dispersing it.")
+            tok["MAP_RESOLUTION"] = (
+                "The resolution of the summary makes no difference to the "
+                "coverage: " + ", ".join(parts)
+                + f", and the largest of the differences is {worst:.3f}, "
+                f"inside the seed-to-seed spread of the learner "
+                f"({yard:.3f})." + sp_txt
+                + "  The map is therefore neither what makes the controller "
+                "work nor what stops it working: it is a channel the policy "
+                "uses to move differently, and the difference it makes is "
+                "visible in the trajectory rather than in the score.")
+        # the verdict for the contribution bullet
+        if base is not None and not resolvable:
+            tok["MAP_VERDICT"] = (
+                "a broadcast summary of where the coverage deficit is was "
+                "added a priori and measured to make no difference to the "
+                "coverage at any resolution tested, while it does change "
+                "what the policy does; it is reported rather than quietly "
+                "dropped")
+            tok["MAP_MODEL_SENTENCE"] = (
+                "the summary makes no measurable difference to the coverage "
+                "at any resolution tested, so the argument for adding it is "
+                "neither supported nor refuted by the score, and what it "
+                "does change is the shape of the swarm's motion")
+        else:
+            tok["MAP_VERDICT"] = (
+                "a broadcast summary of where the coverage deficit is was "
+                "added a priori and measured, and the measurement is "
+                "reported rather than the summary being quietly dropped")
+            tok["MAP_MODEL_SENTENCE"] = (
+                "the summary measurably changes the coverage, and the "
+                "measurement is reported in Section~\\ref{sec:results_obs}")
 
     # ------------------------------------------------------------------
     # the energy arms

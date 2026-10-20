@@ -1,6 +1,6 @@
 %% CONTRIB
 
-    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, @@ABL_ID_CLAUSE@@, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses. A broadcast summary of where the coverage deficit is was added a priori and measured to be \emph{harmful} at every resolution tested, which is reported rather than quietly dropped.
+    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, @@ABL_ID_CLAUSE@@, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses. And a broadcast summary of where the coverage deficit is was added a priori and measured to make no difference to the coverage at any resolution tested, while it does change what the policy does; it is reported rather than quietly dropped.
 
 %% MAIN
 
@@ -69,11 +69,11 @@ controllers most sharply, even though we criticise it for a different
 reason elsewhere.
 
 It is worth separating the two sources of variation in the headline
-number, because they behave differently.  Across the 5
-training runs of the learned controller the coverage varies by $0.047$
-(the standard error of the mean is $0.021$); across the
-5 evaluation scenes it varies by $0.076$ (the
-standard error of the mean over the scenes is $0.034$).  The
+number, because they behave differently.  Across the 2
+training runs of the learned controller the coverage varies by $0.113$
+(the standard error of the mean is $0.080$); across the
+5 evaluation scenes it varies by $0.100$ (the
+standard error of the mean over the scenes is $0.045$).  The
 scene component is common to every controller in the comparison, because
 they are all evaluated on the same scenes, and it therefore cancels in
 every difference this paper reports; the seed component does not, and it
@@ -96,12 +96,12 @@ The question that this comparison invites --- whether more training would
 have closed the gap --- deserves an answer rather than an assumption,
 because a hand-designed rule embeds a human's solution while the learner
 receives a fixed budget.  The first training run's per-episode coverage,
-measured on the training scene, runs from $0.547$ to
-$0.797$ over its 25 episodes, and its mean over
-the first five episodes ($0.663$) is the same as its mean over
-the last five ($0.665$): the curve has flattened.  The best
-single episode, $0.797$, is on a training scene, and the same
-policy scores $0.713$ on unseen scenes, so the training-scene
+measured on the training scene, runs from $0.453$ to
+$0.849$ over its 25 episodes, and its mean over
+the first five episodes ($0.643$) is the same as its mean over
+the last five ($0.687$): the curve has flattened.  The best
+single episode, $0.849$, is on a training scene, and the same
+policy scores $0.761$ on unseen scenes, so the training-scene
 figure is not an estimate of the deployed performance.  The budget is
 therefore bounded rather than eliminated: at this configuration the curve
 is flat over the budget we can afford, and we do not claim that a larger
@@ -209,7 +209,7 @@ the credit to act on it chases.
 
 The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.123, 95\% interval [-0.477, +0.231], an upper limit below the gap of 0.283); $the full observation of the proposed configuration$ (-0.001, 95\% interval [-0.251, +0.249], an upper limit below the gap of 0.283).  Each upper limit is below the gap of 0.283 to the reactive heuristic, so the content of the observation is not what accounts for the gap; what the observation terms buy is the ability to specialise at all, and the arms here do not separate the coverage they produce.
 
-The resolution of the summary does not rescue it: $G=8$: 0.589, and the swarm's spread contracts in every case, because the policy follows the deficit instead of dividing the work.
+The resolution of the summary makes no difference to the coverage: $G=0$: 0.641, $G=4$: 0.646, $G=8$: 0.662, and the largest of the differences is 0.021, inside the seed-to-seed spread of the learner (0.088).  What the summary does change is the swarm's behaviour: the spread falls from 14.3 m without it to 7.8 m and 9.4 m with it, because a policy that follows the deficit keeps the swarm together instead of dispersing it.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
 The observation term that has the largest effect on the coverage is not
 one of these two but the third, the bearing to the charging pad, and
