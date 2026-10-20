@@ -94,6 +94,11 @@ def stage_base(episodes, train_seeds, eval_seeds):
             agent.save("mappo_base.pt")
             with open("hist_base.json", "w", encoding="utf-8") as f:
                 json.dump(hist, f, indent=2)
+        # every run's training curve is kept, so that the learning curve is
+        # not a single run's story
+        with open(os.path.join(ANALYSIS, f"hist_base_s{s}.json"), "w",
+                  encoding="utf-8") as f:
+            json.dump(hist, f, indent=2)
 
         # the SAMPLED policy, which is the policy Eq. (13) specifies
         evs = [eval_agent(agent, c, steps=c.episode_len, seed=e)

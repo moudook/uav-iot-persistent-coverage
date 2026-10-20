@@ -735,6 +735,34 @@ def build_tokens():
             tok["VAR_N_SCENES"] = str(n_scenes)
             # the yardstick of the whole paper: the seed-to-seed spread
             tok["ABL_YARDSTICK"] = f"{s_seed:.3f}"
+
+    # ------------------------------------------------------------------
+    # the learning curve of the first training run
+    # ------------------------------------------------------------------
+    # The curve is what speaks to the compute-asymmetry objection: a
+    # hand-designed rule embeds a human's solution, and the learner gets a
+    # fixed budget, so the question "would more training have helped?" has
+    # to be answered rather than assumed.  The per-episode coverage of the
+    # first training run, on the training scene, answers it.
+    hist_path = os.path.join(ML, "hist_base.json")
+    if os.path.exists(hist_path):
+        try:
+            hist = json.load(open(hist_path, encoding="utf-8"))
+        except Exception:                                  # pragma: no cover
+            hist = []
+        cks = [float(h["CK"]) for h in hist if "CK" in h]
+        if len(cks) >= 10:
+            k = min(5, len(cks) // 2)
+            tok["CURVE_EPISODES"] = str(len(cks))
+            tok["CURVE_FIRST"] = f"{float(np.mean(cks[:k])):.3f}"
+            tok["CURVE_LAST"] = f"{float(np.mean(cks[-k:])):.3f}"
+            tok["CURVE_BEST"] = f"{max(cks):.3f}"
+            tok["CURVE_FINAL"] = f"{cks[-1]:.3f}"
+            tok["CURVE_MIN"] = f"{min(cks):.3f}"
+            tok["CURVE_MAX"] = f"{max(cks):.3f}"
+            # the evaluated coverage of the SAME policy, on unseen scenes
+            if per_seed_scenes:
+                tok["CURVE_EVAL"] = f"{float(np.mean(per_seed_scenes[0])):.3f}"
     return tok
 
 

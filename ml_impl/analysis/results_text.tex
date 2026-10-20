@@ -41,6 +41,21 @@ comparing two controllers should read the seed component as the
 uncertainty of the comparison and the scene component as a property of the
 configuration.
 
+The question that this comparison invites --- whether more training would
+have closed the gap --- deserves an answer rather than an assumption,
+because a hand-designed rule embeds a human's solution while the learner
+receives a fixed budget.  The first training run's per-episode coverage,
+measured on the training scene, runs from $@@CURVE_MIN@@$ to
+$@@CURVE_MAX@@$ over its @@CURVE_EPISODES@@ episodes, and its mean over
+the first five episodes ($@@CURVE_FIRST@@$) is the same as its mean over
+the last five ($@@CURVE_LAST@@$): the curve has flattened.  The best
+single episode, $@@CURVE_BEST@@$, is on a training scene, and the same
+policy scores $@@CURVE_EVAL@@$ on unseen scenes, so the training-scene
+figure is not an estimate of the deployed performance.  The budget is
+therefore bounded rather than eliminated: at this configuration the curve
+is flat over the budget we can afford, and we do not claim that a larger
+budget would not change the picture.
+
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
 from the proposed method in exactly one respect: each agent has its own
