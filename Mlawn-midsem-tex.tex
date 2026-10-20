@@ -671,6 +671,7 @@ Table~\ref{tab:parameters} gives the initial simulation configuration derived fr
 \label{tab:parameters}
 \centering
 \scriptsize
+\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{@{}lll@{}}
 \toprule
 Parameter & Symbol & Value \\
@@ -691,9 +692,9 @@ Hover power & $P_{\mathrm{hover}}$ & 50 W \\
 Move power & $P_{\mathrm{move}}$ & 75 W \\
 Avionics and comms power & $P_{\mathrm{elec}}$ & 5 W \\
 RF transmit power & $P_{\mathrm{tx}}$ & 0.5 W \\
-Charge increment & -- & 0.0002 battery fraction/step \\
+Charge increment & -- & 0.0002 of the pack per step \\
 Episode length & $T$ & 2000 steps (400\,s) \\
-Initial deployment & -- & connected cluster in one corner \\
+Initial deployment & -- & connected cluster in a corner \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -785,9 +786,14 @@ L^{\mathrm{actor}}(\theta)=-\mathbb E_t\big[\min(&r_t\widehat A_t,\\
 \end{equation}
 The critic is trained with the clipped MAPPO form (Yu et al. 2022, Appendix A):
 \begin{equation}
-L^{\mathrm{critic}}(\phi)=\mathbb E_t\!\left[\max\!\left((V_\phi(\mathbf s_t)-\widehat R_t)^2,\;
-(\mathrm{clip}(V_\phi(\mathbf s_t),V_{\phi_{\mathrm{old}}}(\mathbf s_t)-\epsilon,
-V_{\phi_{\mathrm{old}}}(\mathbf s_t)+\epsilon)-\widehat R_t)^2\right)\right],
+\begin{aligned}
+L^{\mathrm{critic}}(\phi)=\mathbb E_t\Big[\max\big(&
+(V_\phi(\mathbf s_t)-\widehat R_t)^2,\;\\[-1mm]
+&(\mathrm{clip}(V_\phi(\mathbf s_t),
+V_{\phi_{\mathrm{old}}}(\mathbf s_t)-\epsilon,\\[-1mm]
+&\qquad V_{\phi_{\mathrm{old}}}(\mathbf s_t)+\epsilon)
+-\widehat R_t)^2\big)\Big].
+\end{aligned}
 \label{eq:criticloss}
 \end{equation}
 where $\widehat R_t=\widehat A_t+V_{\phi_{\mathrm{old}}}(\mathbf s_t)$ is the TD($\lambda$) lambda-return, computed once per rollout and treated as a constant (gradients are not propagated through it). The report matches the reference implementation (\texttt{r\_mappo.py}), which computes $\mathrm{gae}+\mathrm{value\_preds}$ rather than the Monte-Carlo return-to-go described in MAPPO's Appendix A prose.
