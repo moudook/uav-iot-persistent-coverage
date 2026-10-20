@@ -141,6 +141,7 @@ def stage_base(episodes, train_seeds, eval_seeds, resume=False):
                for e in range(eval_seeds)]
         samp = {k: float(np.mean([x[k] for x in evs])) for k in evs[0]}
         samp_std = {k: float(np.std([x[k] for x in evs])) for k in evs[0]}
+        samp["device"] = str(agent.device)
         sampled_runs.append(samp)
 
         # the DETERMINISTIC (argmax) policy of the SAME actor
@@ -184,6 +185,7 @@ def stage_base(episodes, train_seeds, eval_seeds, resume=False):
         a = {k: float(np.mean([r[k] for r in runs])) for k in keys}
         a["CK_std"] = float(np.std([r["CK"] for r in runs]))
         a["train_seeds"] = int(len(runs))
+        a["device"] = str(runs[0].get("device", "?"))
         return a
 
     learned = {"MAPPO": agg_over_seeds(sampled_runs),

@@ -22,6 +22,7 @@ The checks are:
 
 from __future__ import annotations
 
+import csv
 import json
 import os
 import re
@@ -106,7 +107,45 @@ def main():
         failures.append("the test suite did not report")
 
     print("=" * 72)
-    print(" 5. the paper's numbers about itself")
+    print(" 5. the device the measurements were produced on")
+    # The device is part of the protocol: the floating-point kernels differ
+    # between the CPU and the GPU, so two runs of the same configuration on
+    # different devices are not the same experiment, and a variant and the
+    # arm it is compared against must be on the same one.
+    devices = set()
+    for name in ("results_main.csv", "results_ablation.csv",
+                 "results_ablation_stress.csv", "results_scenarios.csv"):
+        p = os.path.join(ML, name)
+        if not os.path.exists(p):
+            continue
+        with open(p, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                d = (r.get("device") or "").strip()
+                if d:
+                    devices.add(d)
+    for name in ("ab_observation.json", "ab_credit.json",
+                 "ab_energy_management.json", "ab_map_resolution.json"):
+        p = os.path.join(HERE, name)
+        if not os.path.exists(p):
+            continue
+        try:
+            rows = json.load(open(p, encoding="utf-8"))
+        except Exception:
+            continue
+        for r in rows if isinstance(rows, list) else []:
+            d = (r.get("device") or "").strip()
+            if d:
+                devices.add(d)
+    print(f"   the devices the artefacts record: {sorted(devices) or 'none'}")
+    if len(devices) > 1:
+        failures.append(f"the artefacts were produced on more than one "
+                        f"device: {sorted(devices)}")
+    elif not devices:
+        print("   (no artefact records a device -- the re-measurement may not "
+              "have run yet)")
+
+    print("=" * 72)
+    print(" 6. the paper's numbers about itself")
     tex = open(os.path.join(PROJ, "Mlawn-midsem-tex.tex"),
                encoding="utf-8").read()
     audit = json.load(open(os.path.join(HERE, "claim_audit.json"),
