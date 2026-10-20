@@ -52,6 +52,13 @@ def load_csv(name):
         return list(csv.DictReader(f))
 
 
+def load_json(name):
+    p = os.path.join(HERE, name)
+    if not os.path.exists(p):
+        return []
+    return json.load(open(p, encoding="utf-8"))
+
+
 def table_main(rows, learned=None):
     lines = []
     lines.append(r"\begin{table}[t]")

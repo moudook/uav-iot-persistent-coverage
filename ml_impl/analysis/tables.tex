@@ -7,10 +7,13 @@
 \toprule
 Model & CK & AG & SC & CovIntegral & Energy (J) \\
 \midrule
-Fixed & 0.900 & 1.000 & 0.000 & 0.100 & 35520 \\
-Greedy & 0.900 & 1.000 & 0.000 & 0.100 & 51520 \\
-Reactive & 0.900 & 1.000 & 0.000 & 0.100 & 51520 \\
-\textbf{MAPPO (proposed)} & 0.900 & 1.000 & 0.000 & 0.100 & 51520 \\
+Fixed & 0.372 & 1.000 & 0.000 & 0.628 & 178097 \\
+Greedy & 0.770 & 1.000 & 0.062 & 0.230 & 212519 \\
+Reactive & 0.947 & 1.000 & 0.751 & 0.053 & 183928 \\
+\textbf{MAPPO (proposed)} & 0.638 & 0.907 & 0.000 & 0.362 & 221331 \\
+MAPPO (argmax) & 0.370 & 1.000 & 0.000 & 0.630 & 177600 \\
+\midrule
+Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 & 0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -75,6 +78,21 @@ C + threshold violation & 0.579 & 0.993 & 0.000 & 6.9 & 82.5 \\
 Grid & CK & AG & SC & Spread (m) \\
 \midrule
 $G=8$ & 0.589 & 0.971 & 0.042 & 7.8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{The cheapest test of the credit-assignment hypothesis.  The two arms differ in the learner that produces the advantage: a parameter-shared actor with a centralised critic, or a per-agent actor with a per-agent local critic.  A per-agent \\emph{baseline} changes the variance of the advantage, not its signal, which remains the shared team reward.}
+\label{tab:results_credit}
+\centering
+\scriptsize
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Learner & CK & AG & SC & CovIntegral & Energy (J) \\
+\midrule
+A & 0.638 & 0.977 & 0.036 & 0.362 & -- \\
+B & 0.613 & 0.962 & 0.008 & 0.387 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
