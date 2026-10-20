@@ -218,26 +218,33 @@ def table_scen(rows):
     lines.append(r"\begin{table}[t]")
     lines.append(r"\caption{Scenario matrix.  Each row is the mean over the "
                  r"variants of that scenario; \emph{M} is the proposed "
-                 r"controller and \emph{R} the reactive heuristic.}")
+                 r"controller, \emph{R} the reactive heuristic and "
+                 r"\emph{RL} the same rule without its global access to the "
+                 r"coverage state, which is the stronger of the two rules on "
+                 r"the base configuration.}")
     lines.append(r"\label{tab:results_scen}")
     lines.append(r"\centering")
     lines.append(r"\scriptsize")
     lines.append(NARROW)
-    lines.append(r"\begin{tabular}{@{}llcccc@{}}")
+    lines.append(r"\begin{tabular}{@{}llcccccc@{}}")
     lines.append(r"\toprule")
-    lines.append(r"& & \multicolumn{2}{c}{CK} & \multicolumn{2}{c}{SC} \\")
-    lines.append(r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}")
-    lines.append(r"ID & Variable & M & R & M & R \\")
+    lines.append(r"& & \multicolumn{3}{c}{CK} & \multicolumn{3}{c}{SC} \\")
+    lines.append(r"\cmidrule(lr){3-5}\cmidrule(lr){6-8}")
+    lines.append(r"ID & Variable & M & R & RL & M & R & RL \\")
     lines.append(r"\midrule")
     for sid in sorted(by):
         rs = by[sid]
         q = QMAP.get(rs[0]["question"], rs[0]["question"])
-        mk = sum(float(x["mappo_CK"]) for x in rs) / len(rs)
-        rk = sum(float(x["react_CK"]) for x in rs) / len(rs)
-        ms = sum(float(x["mappo_SC"]) for x in rs) / len(rs)
-        rs_ = sum(float(x["react_SC"]) for x in rs) / len(rs)
-        lines.append(f"{sid} & {q} & {fmt(mk)} & {fmt(rk)} & "
-                     f"{fmt(ms)} & {fmt(rs_)} \\\\")
+
+        def mean(key):
+            vals = [float(x[key]) for x in rs
+                    if x.get(key) not in (None, "")]
+            return fmt(sum(vals) / len(vals)) if vals else "--"
+
+        lines.append(f"{sid} & {q} & {mean('mappo_CK')} & "
+                     f"{mean('react_CK')} & {mean('reactlocal_CK')} & "
+                     f"{mean('mappo_SC')} & {mean('react_SC')} & "
+                     f"{mean('reactlocal_SC')} \\\\")
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
     lines.append(r"\end{table}")

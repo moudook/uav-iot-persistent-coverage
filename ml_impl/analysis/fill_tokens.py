@@ -652,7 +652,13 @@ def build_tokens():
         best = ("", 0.0)
         for r in scen:
             try:
-                d = float(r["mappo_CK"]) - float(r["react_CK"])
+                # the comparison is against the STRONGER of the two rules on
+                # that variant, so the matrix is read against the best
+                # reference the framework has
+                rule = float(r["react_CK"])
+                if r.get("reactlocal_CK") not in (None, ""):
+                    rule = max(rule, float(r["reactlocal_CK"]))
+                d = float(r["mappo_CK"]) - rule
             except (TypeError, ValueError, KeyError):
                 continue
             if d > 0.02:

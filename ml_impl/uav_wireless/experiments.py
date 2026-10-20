@@ -567,13 +567,17 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
         agents[key] = ag
 
     rows = []
-    print("\n=== Scenarios (MAPPO vs Reactive) ===")
+    print("\n=== Scenarios (MAPPO vs the rules) ===")
     for sid, question, cfgs in scenario_cfgs(base):
         for vi, c0 in enumerate(cfgs):
             c = copy.deepcopy(c0)
             agent = agents[(c.N, c.M, c.n_pads)]
             m = eval_agent(agent, c, steps=c.episode_len, seed=c.seed)
             r = baseline_reactive(c, steps=c.episode_len, seed=c.seed)
+            # the UNPRIVILEGED rule is the stronger of the two on the base
+            # configuration, and the matrix has to be read against the
+            # stronger reference
+            rl = baseline_reactive_local(c, steps=c.episode_len, seed=c.seed)
             # a short description of the variant for the CSV
             variant = (f"N={c.N} M={c.M} Rcov={c.R_cov:.0f} "
                        f"Rcomm={c.R_comm:.0f} pads={c.n_pads} "
@@ -582,7 +586,8 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
             print(f"{sid}.{vi} ({question:16s}) {variant}  "
                   f"MAPPO CK={m['CK']:.3f} SC={m['SC']:.3f} "
                   f"CI={m['CovIntegral']:.3f} | "
-                  f"Reactive CK={r['CK']:.3f} SC={r['SC']:.3f}", flush=True)
+                  f"Reactive CK={r['CK']:.3f} SC={r['SC']:.3f} | "
+                  f"Reactive-local CK={rl['CK']:.3f}", flush=True)
             rows.append(dict(scenario=sid, variant=vi, question=question,
                              config=variant,
                              mappo_CK=m["CK"], mappo_SC=m["SC"],
@@ -590,7 +595,10 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
                              mappo_CovIntegral=m["CovIntegral"],
                              react_CK=r["CK"], react_SC=r["SC"],
                              react_AG=r["AG"],
-                             react_CovIntegral=r["CovIntegral"]))
+                             react_CovIntegral=r["CovIntegral"],
+                             reactlocal_CK=rl["CK"], reactlocal_SC=rl["SC"],
+                             reactlocal_AG=rl["AG"],
+                             reactlocal_CovIntegral=rl["CovIntegral"]))
     with open(out_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
