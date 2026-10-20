@@ -44,7 +44,18 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def account(seed, steps, policy="random", agent=None, eval_seed=None):
-    """One episode, with the connectivity accounting at every step."""
+    """One episode, with the connectivity accounting at every step.
+
+    Three mechanisms can break the connectivity invariant, and they are
+    told apart here:
+
+      * an UAV LEAVES the active set (its pack empties away from a pad);
+      * an UAV is TELEPORTED to a charging pad by the reserve mechanism,
+        which can put it out of communication range of the swarm -- and
+        the number of active UAVs does not change, so a count comparison
+        alone cannot see it;
+      * neither, in which case the joint projection has failed.
+    """
     cfg = base_config()
     cfg.seed = seed
     env = UAVIoTEnv(cfg)
@@ -65,12 +76,22 @@ def account(seed, steps, policy="random", agent=None, eval_seed=None):
         else:
             acts = np.array([acts_i] * cfg.N, dtype=np.int64)
         before = len(env._active_idx())
+        p_before = env.p.copy()
+        failed_before = env.failed.copy()
         obs, _, _, done, _ = env.step(acts)
         after = len(env._active_idx())
         act, adj, _ = env.comm_graph()
         if not env.is_connected(adj):
+            # a teleport: a UAV that was out of service is re-seated at a
+            # pad, and it may be out of communication range of the swarm
+            teleported = int(np.sum(
+                np.linalg.norm(env.p - p_before, axis=1) > 2.0))
+            left = int(np.sum(failed_before & ~env.failed))
+            revived = int(np.sum(~failed_before & env.failed))
             rows.append(dict(t=t, n_active_before=before,
                              n_active_after=after, left=(after < before),
+                             teleported=teleported, left_agents=left,
+                             revived_agents=revived,
                              policy_seed=seed, eval_seed=eval_seed))
         if done:
             break
@@ -115,15 +136,24 @@ def main():
                                 agent=agent))
     n = len(rows)
     by_left = sum(1 for r in rows if r["left"])
+    by_tel = sum(1 for r in rows if r.get("teleported", 0) > 0)
+    unexplained = [r for r in rows
+                    if not r["left"] and r.get("teleported", 0) == 0]
     print(f"policy: {args.policy}{' (full matrix)' if args.full else ''}")
     print(f"disconnected steps: {n}")
-    print(f"  after an UAV left the active set : {by_left}")
-    print(f"  with NO active-set change        : {n - by_left}")
+    print(f"  an UAV left the active set           : {by_left}")
+    print(f"  an UAV was teleported to a pad       : {by_tel}")
+    print(f"  UNEXPLAINED (a hole in the filter)  : {len(unexplained)}")
+    if unexplained:
+        print("  first unexplained steps:",
+              [(r["t"], r["n_active_before"], r["n_active_after"])
+               for r in unexplained[:6]])
     out = os.path.join(HERE, "connectivity_accounting.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump(dict(policy=args.policy, full=bool(args.full),
                        disconnected_steps=n, after_active_set_change=by_left,
-                       without_active_set_change=n - by_left, rows=rows),
+                       after_teleport=by_tel,
+                       unexplained=len(unexplained), rows=rows),
                   f, indent=2)
     print(f"Saved -> {out}")
     return 0

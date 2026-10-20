@@ -702,6 +702,31 @@ def build_tokens():
                 f"of the gap is therefore an information artefact")
 
     # ------------------------------------------------------------------
+    # where the connectivity availability below 1.000 comes from
+    # ------------------------------------------------------------------
+    ca = load_json("connectivity_accounting.json")
+    if ca:
+        n = int(ca.get("disconnected_steps", 0))
+        left = int(ca.get("after_active_set_change", 0))
+        tel = int(ca.get("after_teleport", 0))
+        unex = int(ca.get("unexplained", 0))
+        tok["CONN_STEPS"] = str(n)
+        tok["CONN_LEFT"] = str(left)
+        tok["CONN_TELE"] = str(tel)
+        tok["CONN_UNEXPLAINED"] = str(unex)
+        if unex == 0:
+            tok["CONN_VERDICT"] = (
+                "every one of them is attributable to the recovery "
+                "mechanism and none to a policy action, so the filter's "
+                "guarantee holds over the actions and the availability below "
+                "1.000 is the price of the recovery")
+        else:
+            tok["CONN_VERDICT"] = (
+                f"{unex} of them are NOT attributable to either mechanism, "
+                f"which is a residual the filter does not account for and "
+                f"which we report rather than explain away")
+
+    # ------------------------------------------------------------------
     # the numbers the paper quotes about ITSELF
     # ------------------------------------------------------------------
     # the claim audit's own counts, so that the paper cannot claim a
