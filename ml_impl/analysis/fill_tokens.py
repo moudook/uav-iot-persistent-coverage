@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import csv
 import json
+import numpy as np
 import os
 import re
 import sys
