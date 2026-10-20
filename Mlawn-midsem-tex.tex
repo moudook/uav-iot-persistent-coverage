@@ -1154,9 +1154,39 @@ Stability & Mean and standard deviation across independent random seeds; trainin
 \subsection{Evaluation Scenarios}
 Nine scenarios vary the dominant environmental factors independently before they are combined: sensor density, fleet size, battery capacity, the number of charging pads, $R_{\mathrm{comm}}$, $R_{\mathrm{cov}}$, the time of a single-UAV failure, a combined-stress configuration in which energy scarcity, pad contention, weak connectivity and a failure occur together, and the initial deployment.  Each scenario has two variants, and every variant is run.
 
-For each scenario, the same random seeds and initial conditions are used for all comparison models, and the mean and sample standard deviation are reported over five independent seeds. The principal conclusions are based on the task-specific metrics in Table~\ref{tab:metrics}, not on the raw reward curves.
+\paragraph{The evaluation protocol, stated exactly.} Every controller is
+evaluated on the same scenes with the same initial conditions, and the
+sampling of a deployed policy --- Eq.~\eqref{eq:policy} specifies
+$a_i(t)\sim\pi_\theta(a_i\mid o_i(t))$, so the controller \emph{samples} ---
+is seeded from the evaluation seed alone. Three consequences follow, and
+they are properties of the protocol rather than of the controllers: an
+evaluation is a function of (policy, scene); every controller sees the
+same sampling stream on the same scene, so a difference between two
+controllers is a difference between policies and not between the luck of
+the draw; and every number in this paper can be recomputed from the
+stored policies.
 
-The ablation experiments remove, one at a time: the connectivity-criticality reward term, the degraded-service reward term, the energy-cost term, the under-coverage term, the reserve-UAV mechanism, the charging arbitration, the action mask, and each of the three observation terms. This identifies whether each proposed component contributes a measurable effect. In particular, the comparison between the full proposed framework and vanilla MAPPO is necessary to distinguish improvements caused by MAPPO itself from improvements caused by the domain-specific system design.
+A learned controller is trained several times and reported as the mean
+over those training runs, with the seed-to-seed spread of the coverage.
+The rule baselines are deterministic and their spread is over the
+evaluation scenes. The two sources of variation are reported separately in
+Section~\ref{sec:results}, because they behave differently: the
+scene-to-scene variation is common to every controller and cancels in
+every difference, while the training-seed variation does not.
+
+The single-component arms are \emph{paired}: every variant is trained on
+the same training seeds as the full configuration, at the same training
+budget, and differs from it in exactly one component. A difference is
+therefore measured on the same training runs, and it is reported as a
+confidence interval on that paired difference rather than as a comparison
+of two numbers against a threshold. We report the resolution of each arm
+--- the smallest effect it could have detected --- because a null result
+from an arm of a given width is a statement about that resolution and not
+about the component. The principal conclusions are based on the
+task-specific metrics in Table~\ref{tab:metrics}, not on the raw reward
+curves.
+
+The ablation experiments remove, one at a time: the connectivity-criticality reward term, the degraded-service reward term, the energy-cost term, the under-coverage term, the reserve-UAV mechanism, the charging arbitration, the action mask, and each of the three observation terms. This identifies whether each proposed component contributes an effect that this protocol can resolve. In particular, the comparison between the full proposed framework and vanilla MAPPO is necessary to distinguish improvements caused by MAPPO itself from improvements caused by the domain-specific system design.
 
 
 \section{Experimental Design Matrix}

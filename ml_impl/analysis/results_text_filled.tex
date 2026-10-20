@@ -20,19 +20,19 @@ should be read with that in mind.  The reactive heuristic is given the
 \emph{exact} set of under-covered sensors, which corresponds to an unbounded
 broadcast of the coverage state; the learned policy receives a fixed-size
 summary of it.  Part of the gap between them is therefore a difference of
-information rather than of control.  The gap is $0.219$ of persistent
+information rather than of control.  The gap is $@@GAP@@$ of persistent
 coverage; the 95\% interval on it, from the learned controller's
-training-seed spread over 5 training runs, is $[0.167, 0.271]$.  The
+training-seed spread over @@GAP_N@@ training runs, is $@@GAP_CI@@$.  The
 scene-to-scene variation does not enter this interval, because every
 controller is evaluated on the same scenes and it therefore cancels in the
 difference.
 
 It is worth separating the two sources of variation in the headline
-number, because they behave differently.  Across the 5
-training runs of the learned controller the coverage varies by $0.059$
-(the standard error of the mean is $0.027$); across the
-5 evaluation scenes it varies by $0.082$ (the
-standard error of the mean over the scenes is $0.037$).  The
+number, because they behave differently.  Across the @@VAR_N_SEEDS@@
+training runs of the learned controller the coverage varies by $@@VAR_SEED@@$
+(the standard error of the mean is $@@VAR_SEED_SE@@$); across the
+@@VAR_N_SCENES@@ evaluation scenes it varies by $@@VAR_SCENE@@$ (the
+standard error of the mean over the scenes is $@@VAR_SCENE_SE@@$).  The
 scene component is common to every controller in the comparison, because
 they are all evaluated on the same scenes, and it therefore cancels in
 every difference this paper reports; the seed component does not, and it
@@ -50,7 +50,7 @@ $0.797$ over its 25 episodes, and its mean over
 the first five episodes ($0.663$) is the same as its mean over
 the last five ($0.665$): the curve has flattened.  The best
 single episode, $0.797$, is on a training scene, and the same
-policy scores $0.727$ on unseen scenes, so the training-scene
+policy scores $@@CURVE_EVAL@@$ on unseen scenes, so the training-scene
 figure is not an estimate of the deployed performance.  The budget is
 therefore bounded rather than eliminated: at this configuration the curve
 is flat over the budget we can afford, and we do not claim that a larger
@@ -74,9 +74,9 @@ evaluation seed alone, so an evaluation is a function of (policy, scene),
 every controller sees the same stream on the same scene, and the numbers in
 this section can be recomputed from the stored policies.  We report the
 deterministic version of the same actor as
-well, and the difference is large: the argmax policy reaches $0.426$
-against $0.734$ for the sampled one, although it travels a comparable
-distance ($10906$~m against $9751$~m), so it is
+well, and the difference is large: the argmax policy reaches $@@ARG_CK@@$
+against $@@MAPPO_CK@@$ for the sampled one, although it travels a comparable
+distance ($@@ARG_DISTANCE@@$~m against $@@MAPPO_DISTANCE@@$~m), so it is
 not a static controller --- it is a different and worse one, and the
 difference between them is the contribution of the exploration that the
 reward does not price.  The comparison with the deterministic baselines is
@@ -87,14 +87,14 @@ Reporting both rows is the point.
 
 One further number in the table is worth stating, because it disposes of a
 concern that the framework raises.  The safety filter and the joint
-projection together did not execute $0$ of the learned
+projection together did not execute $@@MAPPO_UNEXEC@@$ of the learned
 controller's sampled actions, so the policy gradient is very nearly
 consistent with the trajectory that was actually taken; the
 "the executed action is not the chosen action" problem, which is real in
 masked reinforcement learning, is not what limits this controller.
 
 The learned controller also burns more energy than the heuristic
-($209324$~J against $183675$~J over the same episode) while
+($@@MAPPO_E@@$~J against $183675$~J over the same episode) while
 stranding fewer UAVs, which is the signature of a policy that moves
 deliberately rather than one that wanders.  Its connectivity availability is
 below $1.000$ because UAVs leave the active set when a pack empties away
@@ -150,7 +150,7 @@ credit, which a shared team reward does not supply.  The map makes the
 deficiency visible, and therefore actionable-looking, and a policy without
 the credit to act on it chases.
 
-The three arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.066, 95\% interval [-1.728, +1.596], whose upper limit is NOT below the gap of 0.219 and which therefore cannot be excluded); $the full observation of the proposed configuration$ (-0.035, 95\% interval [-0.264, +0.194], an upper limit below the gap of 0.219).  The intervals are wide relative to the gap of 0.219, so the observation content is not excluded by these arms; what they do show is that the observation terms change what the policy does far more clearly than they change the coverage it achieves.
+@@OBS_SUMMARY@@
 
 The resolution of the summary does not rescue it: $G=8$: 0.589, and the swarm's spread contracts in every case, because the policy follows the deficit instead of dividing the work.
 
@@ -176,7 +176,7 @@ that the controller had failed at energy management, and the obvious fix
 was a reward term that prices the consequence of an empty pack.
 
 The reading was wrong, and Table~\ref{tab:results_energy} says so.
-The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point: $removing the energy constraint$ (+nan, 95\% interval [+nan, +nan], whose upper limit is NOT below the gap of 0.219 and which therefore cannot be excluded); $removing the threshold term$ (+nan, 95\% interval [+nan, +nan], whose upper limit is NOT below the gap of 0.219 and which therefore cannot be excluded); $the previous energy rule$ (+nan, 95\% interval [+nan, +nan], whose upper limit is NOT below the gap of 0.219 and which therefore cannot be excluded).  Not every interval excludes the gap of 0.219, so the energy model is not excluded by these arms; what the arms do establish is that the energy model is not the whole of the explanation, and the point estimates are all far smaller than the gap.
+@@ENERGY_SUMMARY@@
 
 What the diagnostic actually found was a defect in the safety filter rather
 than a property of the policy.  The mask's energy test admitted a
