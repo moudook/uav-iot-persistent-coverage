@@ -14,9 +14,9 @@ recomputed by an automated audit.
 
 ```powershell
 cd Project1\ml_impl
-python tests\run_tests.py        # 97 tests
+python tests\run_tests.py        # 111 tests
 python analysis\claim_audit.py   # every checkable claim in the paper
-python run_all.py                # the whole experiment matrix (~4 h)
+python run_all.py                # the whole experiment matrix (~13 h)
 python run_all.py --stage obs    # just the observation A/B/C
 python run_all.py --quick        # a 20-minute smoke test of every stage
 ```
@@ -25,6 +25,37 @@ The single canonical configuration lives in
 `uav_wireless/experiments.py :: base_config()`. Every script builds from it,
 so the numbers in the paper, the CSVs and the claim audit all describe the
 same experiment.
+
+---
+
+## The measurement protocol
+
+Every number in the paper is produced under one protocol, and this is the
+protocol:
+
+1. **Training**: 25 episodes x 2000 steps per training run. The base
+   comparison trains **5** runs, the component ablation and the observation
+   arms **3**, the learned baselines 3, the energy and credit arms 1-2.
+2. **Evaluation**: 5 scenes per policy. A controller's row is the mean over
+   its **training** runs, and the reported spread is the seed-to-seed
+   spread of those runs. The rule baselines are deterministic, so their
+   spread is over the evaluation scenes.
+3. **The evaluation is seeded** (`uav_wireless/seeding.py`). The deployed
+   policy *samples*, and the sampling draws from the global torch RNG. If
+   that RNG is not seeded, an evaluation is a fresh random draw every time
+   it is run: the same policy file, evaluated three times on the same five
+   scenes, gave CK 0.734, 0.701 and 0.671, with the same standard deviation
+   to four decimals. The seed is derived from the evaluation seed **alone**,
+   so every controller sees the same stream on the same scene (common
+   random numbers) and a comparison between controllers is a comparison
+   between policies rather than between the luck of the draw.
+4. **The ablation is paired.** The variants share the training seeds, so a
+   difference is measured on the same training runs; the table reports the
+   paired difference and the seed-to-seed spread.
+5. **The ablation uses the base comparison's budget**, so its "Full" row is
+   the same experiment as the base comparison's MAPPO row.
+6. Every training run's policy is **saved** (`mappo_base_s{seed}.pt`), so
+   every number can be recomputed from a stored artefact.
 
 ---
 
@@ -72,7 +103,7 @@ identical seeds, budget and evaluation seeds.
 
 ---
 
-## Defects found and fixed (all with tests; 97 tests pass)
+## Defects found and fixed (all with tests; 111 tests pass)
 
 The most important ones, in order of severity:
 
@@ -100,24 +131,35 @@ The most important ones, in order of severity:
 | 20 | `STATE_DIM = 80` hardcoded. | Valid only for `N = 5`. |
 | 21 | `run_scenarios` passed `seed=0` over the config's own seed and evaluated only the first variant of each scenario. | Two of the scenario columns were wrong. |
 | 22 | 41 communication-graph computations per step. | 13.2 ms/step -> 8.4 ms/step once the base graph was shared and the prospective graph was spliced (exactly, not approximately: the shadowing table is symmetric, and a test asserts the equivalence). |
-`tests/mutation_check.py` proves the suite catches all 10 historical bugs.
+| 23 | **The evaluation of a sampled policy was an uncontrolled random draw.** Eq. (13) specifies that the deployed policy samples, and `mappo.py` drew from the global torch RNG, which `eval_agent` never seeded. | The paper's numbers could not be reproduced from the stored artefact, and a comparison between two controllers carried an unquantified sampling component. Fixed by `uav_wireless/seeding.py`; pinned by five tests and by claim-audit item R1. |
+| 24 | **The component ablation trained ONE seed per variant at 10 episodes**, while the base comparison trained five seeds at 25. | Its differences mixed the component with the training budget, and its spread was unmeasurable. It also disagreed with the observation arms, which said the full configuration was no better than the bare one. Now: the base comparison's seed count and budget, and the differences are paired. |
+| 25 | **The main table's learned row was ONE policy while the text claimed five training seeds.** | The table and the text described different experiments. The row is now the mean over the five runs with the seed-to-seed spread, and every run's policy is saved. |
+`tests/mutation_check.py` proves the suite catches all 11 historical bugs.
 
 ### The diagnosis the framework produced
 
 The corrected simulator revealed that the learned controller was stranding
 **all eight** UAVs in nearly every episode, while the reactive heuristic
 stranded 0.7.  That looked like a catastrophic energy-management failure.
-`analysis/ab_energy_management.py` tested it with two controlled arms:
+The obvious reading was that the controller had failed at energy
+management, and the obvious fix was a reward term that prices the
+consequence of an empty pack.  `analysis/ab_energy_management.py` tested
+that reading with four controlled arms, each differing in one respect:
 
-- a pack ten times the nominal size, so that no UAV can strand at all: the
-  coverage rises by only ~0.09, far short of the gap to the heuristic;
-- the threshold-violation reward term that the paper's own metric table
-  motivates: the stranding persists and the coverage is unchanged.
+- **A** the proposed configuration;
+- **B** a pack ten times the nominal size, so that no UAV can strand at
+  all;
+- **C** without the threshold-violation reward term;
+- **D** under the earlier energy rule of the safety filter, which admitted
+  a departure with a flat battery.
 
-Both say the same thing.  A policy that does not know what to do wanders,
-and a wandering swarm empties its packs, so the stranding is a **symptom**
-of the credit-assignment limitation, not its cause.  Removing the constraint
-removes the symptom and leaves the coverage where it was.
+All four land inside the seed-to-seed spread of the learner, so the energy
+model is **not** what limits the controller.  What the earlier rule did
+was strand seven of the eight UAVs per episode, against one for the
+corrected rule: a real defect in the safety filter, whose repair changed
+the coverage by 0.015 and not by 0.1.  The stranding was a defect in the
+filter, not a symptom of the policy, and correcting it did not explain the
+gap to the reactive heuristic.
 
 
 ---
@@ -132,6 +174,7 @@ ml_impl/
 │   ├── mappo.py                  # CTDE MAPPO (value normalisation, GAE, clipping)
 │   ├── baselines_rl.py           # Independent DQN + masked PPO with a local critic
 │   ├── train.py                  # rollout, GAE, rule-based baselines
+│   ├── seeding.py                # the RNG discipline of an evaluation
 │   ├── experiments.py            # base_config() + the experiment matrix
 │   ├── wireless.py               # PHY: log-distance path loss, LoS, shadowing, MCS rate
 │   └── omnet_bridge.py           # Phase-2 OMNeT++ TCP bridge
@@ -143,15 +186,34 @@ ml_impl/
 │   ├── feasibility.py            # region/sensor packing bounds, teleporting oracle
 │   ├── energy_regime.py          # the energy-regime sweep
 │   ├── ab_observation.py         # A/B/C on the observation
+│   ├── ab_credit.py              # A/B on the credit assignment
+│   ├── ab_energy_management.py   # the four controlled energy arms
+│   ├── ab_map_resolution.py      # the coverage-map resolution sweep
 │   ├── ab_entropy.py             # A/B on the entropy coefficient
 │   ├── ab_per_agent_adv.py       # A/B on advantage normalisation
 │   ├── symmetry_check.py         # the shared-actor symmetry diagnostic
+│   ├── make_tables.py            # the CSVs -> the LaTeX tables
+│   ├── fill_tokens.py            # the artefacts -> the prose tokens
+│   ├── assemble_results.py       # tables + tokens + the Results section + the compile
 │   └── diagnose_gap.py           # separates protocol / sharpness / regime
 ├── tests/
-│   ├── test_physics_and_env.py   # 97 tests
+│   ├── test_physics_and_env.py   # 111 tests
 │   └── mutation_check.py         # proves the suite catches the historical bugs
 └── results_*.csv, analysis/*.json  # the artefacts the paper quotes
 ```
+
+---
+
+## The paper is generated from the artefacts
+
+`python analysis/assemble_results.py` regenerates every table, fills every
+prose token from the same artefacts the tables were read from, replaces the
+Results section wholesale, replaces the marked contribution bullet in the
+Introduction, and compiles. It **aborts** if any token is left unfilled, so
+a missing artefact is a hard error and never a broken paper. No number that
+comes from an experiment is typed by hand anywhere in the paper: the audit's
+own counts, the size of the test suite and the paper's own limitations are
+tokens too.
 
 ---
 
@@ -219,3 +281,10 @@ baselines honour the seed they are given (they previously did not, which
 made a five-seed comparison one repeated scene). Vanilla MAPPO is an
 *ablation of this codebase's* design, not a claimed reproduction of Yu et
 al. — stated as such in the report.
+
+The evaluation of a stochastic controller is **reproducible and paired**:
+the sampling stream is seeded from the evaluation seed alone, so every
+controller is measured on the same stream on the same scene, and the
+component ablation's variants share their training seeds, so their
+differences are measured on the same training runs. `analysis/claim_audit.py`
+item R1 measures this property rather than asserting it.

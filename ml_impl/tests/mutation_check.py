@@ -94,6 +94,16 @@ MUTATIONS = {
         "environment changes on every link evaluation and with the number of "
         "nodes in the array",
     ),
+    "unseeded_policy_sampling": (
+        "uav_wireless/experiments.py",
+        "    from .seeding import seed_evaluation\n    seed_evaluation(seed)\n    env = UAVIoTEnv(c)",
+        "    from .seeding import seed_evaluation\n    env = UAVIoTEnv(c)",
+        "the evaluation does not seed the RNG that the policy samples from, so "
+        "the same policy on the same scene gives a different answer every "
+        "time: the paper's numbers cannot be reproduced from the stored "
+        "artefact, and controller-to-controller comparisons carry an "
+        "unquantified sampling component",
+    ),
 }
 
 

@@ -1,112 +1,171 @@
 # Autonomous R&D State Tracker
 
 > **RE-READ THIS FILE FIRST AFTER ANY CONTEXT COMPACTION.**
-> Then re-read `Mlawn-midsem-tex.tex` and `FINDINGS.txt` before writing
-> anything. Never write paper sections or modify code from memory alone.
+> Then re-read `Mlawn-midsem-tex.tex` and `ml_impl/analysis/results_text.tex`
+> before writing anything. Never write paper sections or modify code from
+> memory alone.
 
 ## Contract
 Autonomous 1-week sprint: **19 Oct 2026 -> 26 Oct 2026**.
-The user (PhD-level R&D contractor arrangement) granted full autonomy:
-implement, test, train, write, commit locally, never push, never install
-packages without asking, never open >2 browser tabs at once.
+The user granted full autonomy: implement, test, train, write, commit
+locally, **never push**, never install packages without asking, never
+delete existing files.
 
-## THE CRITICAL FACT
+## THE CRITICAL FACT (historical, still the reason for the audit trail)
 **The simulator was STATIC until commit `13cb839`.** The motion step applied
 a move only when `np.all(action_mask(i))` was true, i.e. when EVERY action
 (including A_CHARGE) was feasible. A_CHARGE is almost never feasible, so
 **no UAV ever moved**. Every result measured before `13cb839` is invalid.
-All results have been regenerated since.
 
 ## Current Phase
-Phase 7: regenerate the whole matrix on the corrected simulator, then rewrite
-the paper's Results, Conclusion and Abstract around the new numbers.
+Phase 8: re-measure the whole matrix under the **reproducible evaluation
+protocol** (defect 28 below), then rewrite the Conclusion and the abstract
+around the new numbers and run the third mathematical audit.
 
 ## THE CANONICAL CONFIGURATION (do not change without re-running everything)
 `uav_wireless/experiments.py :: base_config()`
 - N=8, K=2, R_cov=35 m, R_comm=40 m, M=20, side=80 m, z0=50 m
 - `episode_len = 2000` steps (400 s of flight)
-- B_max = 30 000 J, charge_rate = 0.0002/step, E_reserve = 2000 J, 2 pads
+- B_max = 30 000 J, charge_rate = 0.0002, E_reserve = 2000 J, 2 pads
 - `start_clustered = True` (connected corner cluster; 3/20 sensors covered
   at t=0, versus 17/20 for a centred ring that pre-solves the task)
 - `use_agent_id = True`, `map_grid = 4`, `use_pad_bearing = True`
-- Reference (Reactive heuristic, 3 seeds): CK=0.918 AG=1.000 SC=0.612
+- **The coverage-map summary is KEPT in the proposed configuration** even
+  though it measures as harmful. The reactive heuristic is handed the exact
+  set of uncovered sensors, so the map is the only channel through which
+  the learned controller can learn anything about the deficit; removing it
+  would make the comparison a comparison of information, not of method.
+  It is reported as a negative result rather than quietly dropped.
 
-## Defects found and fixed (all have tests; 92 tests pass)
-| # | Defect | Fix / commit |
+## THE MEASUREMENT PROTOCOL (canonical, 20 Oct, 22:00)
+This is the protocol every number in the paper is produced under.
+
+1. **Training**: 25 episodes x 2000 steps per training run. The base
+   comparison trains **5** runs (seeds 0-4); the component ablation and the
+   observation A/B/C train **3** runs (seeds 0-2); the learned baselines
+   train 3 runs; the energy and credit arms train 1-2 runs; the scenario
+   matrix trains one policy per distinct `(N, M, pads)` combination.
+2. **Evaluation**: 5 scenes (seeds 0-4) per policy. A controller's row is
+   the mean over its TRAINING runs, and the reported spread is the
+   seed-to-seed spread of those runs. The rule baselines are deterministic,
+   so their spread is over the evaluation scenes.
+3. **The evaluation is seeded.** `uav_wireless/seeding.py` seeds the global
+   RNGs from the evaluation seed ALONE, so an evaluation is a function of
+   (policy, scene) and every controller sees the same sampling stream on
+   the same scene (common random numbers). This is defect 28 and it
+   invalidates every number measured before it.
+4. **The ablation is paired**: the variants share the training seeds, so a
+   difference is measured on the same training runs. The rows carry the
+   seed-to-seed spread, the table carries the paired difference.
+5. **The ablation uses the base comparison's budget** (25 episodes), so the
+   ablation's "Full" row is the same experiment as the base comparison's
+   MAPPO row and not a cheaper one.
+6. Every training run's policy is **saved** (`mappo_base_s{seed}.pt`), so
+   every number can be recomputed from a stored artefact.
+
+## Defects found and fixed (all have tests; 111 tests pass)
+| # | Defect | Fix |
 |---|---|---|
-| 1 | **Simulator was static -- no UAV ever moved** | chosen-action feasibility; `13cb839` |
-| 2 | Baselines accepted `seed` and ignored it -> "5 seeds" was 1 scene x5 | `_seeded()`; `d113e5c` |
-| 3 | Time limit reported as termination -> GAE bootstrapped 0 at every boundary | `terminated` vs `truncated`; `d113e5c` |
-| 4 | Centred-ring start pre-solved the task | `start_clustered`; `957ee1c` |
-| 5 | `run_scenarios` passed `seed=0` over the config's own seed | pass `c.seed`; `957ee1c` |
-| 6 | Reward eq (23) negated only U_t | pure `reward_from_terms` |
+| 1 | **Simulator was static -- no UAV ever moved** | `13cb839` |
+| 2 | Baselines accepted `seed` and ignored it | `_seeded()`; `d113e5c` |
+| 3 | Time limit reported as termination -> GAE bootstrapped 0 | `d113e5c` |
+| 4 | Centred-ring start pre-solved the task | `957ee1c` |
+| 5 | `run_scenarios` passed `seed=0` over the config's own seed | `957ee1c` |
+| 6 | Reward eq (23) negated only U_t | `reward_from_terms` |
 | 7 | Initial placement disconnected on 11/20 seeds | `_connected_initial_positions` |
 | 8 | Backhaul modelled as co-channel interference | SNR-based backhaul |
 | 9 | `snr_to_rate` off-by-one + floor made the PHY gate vacuous | fixed |
 | 10 | Path-loss exponent additive -> LoS/NLoS erased | `pl_d0 + 10n log10(d/d0)` |
 | 11 | Noise units: dBm treated as watts (30 dB error) | divide by 1000 |
-| 12 | Shadowing from the global RNG -> non-reciprocal, non-reproducible | seeded per-episode table |
+| 12 | Shadowing from the global RNG -> non-reciprocal | seeded per-episode table |
 | 13 | `local_obs` neighbour stride 2 -> slots overlapped | concatenation + assertion |
 | 14 | `STATE_DIM = 80` hardcoded (valid only for N=5) | `state_dim(cfg)` |
-| 15 | GAE bootstrap at truncation used 0 instead of V(s_{t+1}) | fixed |
-| 16 | **Observation carried no agent identity** -> shared actor cannot specialise (measured 1.00 distinct actions out of 8) | `use_agent_id`; `44206f5` |
-| 17 | **Observation could not express a return** -- it had the energy cost of the flight to a pad but not the direction | `use_pad_bearing`; `de3e1e6` |
-| 18 | **No indication of where the coverage deficit is** | `map_grid` (4x4 broadcast summary); `44206f5` |
-| 19 | **The energy state machine did not exist** -- the env never made the serve->return transition, so a learned policy could never charge | env makes the transition; `de3e1e6` |
-| 20 | **A UAV with an empty pack still counted as serving** | out of service, reserve can recover it; `de3e1e6` |
-| 21 | **Charging was uneconomic** -- a charging UAV was billed the full hover power, so it lost more than the pad put back | rotors idle on the pad; `de3e1e6` |
-| 22 | **The battery never bound** -- at 400 steps the pack spent 13% and the return state never fired | episode 2000 steps; `de3e1e6` |
-| 23 | **The returns were formed from an untruncated advantage array** -> shape mismatch whenever an episode ended early | truncate before forming returns |
-| 24 | Two graph computations per candidate action (13.7 ms/step) | shared prospective graph, 6.8 ms/step |
-| 25 | **MAPPO's value normalisation was missing** although the report asserted it | `MAPPO.value()` accessor + EMA statistics; `c4a71f6` |
-| 26 | The report's comparison table named MARL baselines that were never evaluated | two implemented (`baselines_rl.py`); "Evaluated" column added; `c381bcf` |
+| 15 | GAE bootstrap at truncation used 0 instead of V(s_{T+1}) | fixed |
+| 16 | **Observation carried no agent identity** | `use_agent_id`; `44206f5` |
+| 17 | **Observation could not express a return** (no direction to a pad) | `use_pad_bearing`; `de3e1e6` |
+| 18 | **No indication of where the coverage deficit is** | `map_grid`; `44206f5` |
+| 19 | **The energy state machine did not exist** | env makes the transition; `de3e1e6` |
+| 20 | **A UAV with an empty pack still counted as serving** | out of service; `de3e1e6` |
+| 21 | **Charging was uneconomic** (billed the hover power) | rotors idle on the pad |
+| 22 | **The battery never bound** at 400 steps | episode 2000 steps |
+| 23 | **The returns were formed from an untruncated advantage array** | truncate before forming returns |
+| 24 | Two graph computations per candidate action (13.7 ms/step) | shared prospective graph |
+| 25 | **MAPPO's value normalisation missing** although asserted | `c4a71f6` |
+| 26 | The comparison table named MARL baselines never evaluated | `baselines_rl.py`; "Evaluated" column |
+| 27 | **The scenario matrix crashed on N=3**: the one-hot identity has length N and the global state carries the sensor positions and the pad occupancy, so the networks' input sizes depend on the configuration | one policy per distinct `(N, M, pads)` |
+| 28 | **THE EVALUATION OF A SAMPLED POLICY WAS AN UNCONTROLLED RANDOM DRAW.** Eq. (13) specifies that the deployed policy samples, and `mappo.py` drew from the global torch RNG, which `eval_agent` never seeded. The same policy file evaluated three times gave CK 0.734, 0.701 and 0.671, with the same standard deviation to four decimals. The paper's numbers could not be reproduced from the stored artefact, and controller-to-controller comparisons carried an unquantified sampling component | `uav_wireless/seeding.py`; 5 new tests; audit item R1 |
+| 29 | **The component ablation trained ONE seed per variant at 10 episodes**, while the base comparison trained five seeds at 25 -- so its deltas mixed the component with the budget and its spread was unmeasurable. It also disagreed with the observation arms (which said the full configuration was no better than the bare one) | `run_ablation(..., seeds=)`, budget aligned to the base comparison, paired differences, incremental writes |
+| 30 | **The main table's learned row was ONE policy while the text claimed five training seeds** | the row is the mean over the five runs with the seed-to-seed spread; every run's policy is saved |
+| 31 | The assembler's "undefined references" check matched the LaTeX FONT warnings; the scenario table's variable names were set in text mode, so the table did not compile | precise check; math mode; `tabcolsep`; `raggedbottom` |
 
-`tests/mutation_check.py` proves the suite catches all 10 historical bugs.
+`tests/mutation_check.py` proves the suite catches the historical bugs.
 
-## Key results so far (all on the CORRECTED simulator)
-| Quantity | Value |
-|---|---|
-| Feasibility bound | N >= 4K; N=5/K=2 provably infeasible; N=8 feasible; oracle CK=1.000 |
-| Reactive heuristic, clustered, 2000 steps | CK 0.947, AG 1.000, SC 0.751, CI 0.053 |
-| Greedy, clustered | CK 0.770, AG 1.000, SC 0.062, CI 0.230 |
-| Fixed, clustered | CK 0.372, AG 1.000, SC 0.000, CI 0.628 |
-| Observation A (local only) | CK 0.581+-0.025, AG 0.980, SC 0.010, distinct(argmax) 1.80/8, spread 14.7 m |
-| Observation B (+ identity) | CK 0.690+-0.018, AG 0.985, SC 0.057, distinct 2.10/8, spread 11.5 m |
-| Observation C (+ identity + 4x4 map) | CK 0.604+-0.023, AG 0.993, SC 0.011, distinct 2.06/8, spread 8.0 m |
-| Map resolution (G=8) | CK 0.589+-0.090, spread 7.8 m -- the map does not help at any resolution |
-| Connectivity in the deployed regime (audit C6) | mean node degree 4.01 of 7; graph complete in only 12% of steps |
-| Energy regime (Reactive, 2000 steps) | 283 return transitions, 0.7 stranded UAVs, 8.3% of the swarm returning |
-| Energy A/B/C (40 ep) | A proposed 0.579 / B no constraint 0.652 / C no threshold term 0.565; stranded 7.1 / 0.0 / 6.9 |
-| Claim audit | 22 items: 18 verified, 0 failed, 4 informational |
-| Model equivalence | max 0.012 dB vs INET BreakpointPathLoss |
-| INET runtime probe | minSnir tracks TX exactly (27.0 dB per 27.0 dB) but NOT distance (0.0000 dB spread over 10-80 m) |
-| Dormancy probe | 0.000 dormant, 0.000 dead, 15-31% gradient-silent |
-| Tests | 97 passing |
-| Paper | 18 pages, 0 LaTeX errors, 0 overfull boxes, 0 undefined refs (except the pending Results section) |
+## The numbers (BEING RE-MEASURED under the protocol above, 20 Oct 22:00)
+The last complete set, measured **before** defect 28 was fixed, is in git
+history at `dbc68f7` and is **NOT** quotable, because the evaluation was an
+uncontrolled draw. What it said, and what the re-measurement is testing:
 
-## THE CANONICAL CONFIGURATION
-`uav_wireless/experiments.py :: base_config()`
-- N=8, K=2, R_cov=35 m, R_comm=40 m, M=20, side=80 m, z0=50 m
-- episode_len=2000 steps (400 s), B_max=30 kJ, charge_rate=0.0002, E_reserve=2000 J
-- lam_B=2.0 (the energy-threshold violation term)
-- start_clustered=True
-- **use_agent_id=True, map_grid=0, use_pad_bearing=True**  <- the map is OFF,
-  because it was measured to be harmful at every resolution tested
+| Controller | CK | AG | SC | CovDef |
+|---|---|---|---|---|
+| Fixed formation | 0.372 | 1.000 | 0.000 | 0.628 |
+| Greedy recharge | 0.786 | 0.964 | 0.066 | 0.214 |
+| **Reactive heuristic** | **0.953** | 1.000 | **0.751** | 0.047 |
+| Independent DQN | 0.396 | 0.990 | 0.000 | 0.604 |
+| Masked PPO, local critic | 0.649 | 0.983 | 0.001 | 0.351 |
+| **MAPPO (proposed)** | **0.734** | 0.968 | 0.031 | 0.266 |
+| MAPPO (argmax) | 0.426 | 0.965 | 0.000 | 0.574 |
+| Oracle (ceiling) | 1.000 | | | |
 
+The **rule baselines and the oracle are unaffected by defect 28** (they are
+deterministic), so their rows above stand. The learned rows are being
+re-measured and will move by the size of the uncontrolled term, which is
+why they are not quotable until the re-measurement lands.
 
-## THE MATHEMATICAL AUDIT CADENCE (standing instruction, 20 Oct)
-The user asked for a mathematical subagent to be released PERIODICALLY so
-that the paper stays mathematically consistent. The cadence:
+**The energy arms** (four controlled arms, one difference each) said the
+energy model is **not** what limits the controller: A 0.701, B (a pack that
+cannot run out) 0.722, C (no threshold term) 0.739, D (the previous energy
+rule) 0.716 -- all inside the learner's seed spread. What the previous rule
+did was strand 7.4 of the 8 UAVs per episode against 1.0 for the corrected
+one: a real defect in the safety filter, whose repair changed the coverage
+by 0.015, not by 0.1. **Being re-measured.**
 
+**The scenario matrix** (34 variants) showed the learned controller *ahead*
+in the pre-deployed regime (0.874 against 0.817) and level under combined
+stress (0.567 against 0.572). **Being re-measured.**
+
+## THE CENTRAL FINDING (the claim, not yet the final numbers)
+The learned controller does not reach the reactive heuristic, and the
+framework's controlled arms are what identify why. The candidate
+explanations are the content of the observation, the energy model, and the
+credit assignment of a shared team reward.
+- The **energy model is rejected** by the four controlled arms.
+- The **observation content is not the binding factor**: the A/B/C arms do
+  not separate, and the component ablation prices the observation terms
+  separately. The observation terms are what make the controller work at
+  all, not what stops it working.
+- The **credit assignment** is what remains, and the cheapest remedy (a
+  per-agent local critic) does not close the gap.
+
+**Watch this**: the old energy prose claimed the corrected filter rule
+raised the coverage from 0.638 to 0.734. That comparison was **not
+controlled** -- the two runs differed in more than the rule. The controlled
+arms say the difference is 0.015. The prose now quotes the controlled arms.
+
+## The mathematical audit cadence (standing instruction, 20 Oct)
 - **Audit 1** (done): the seven load-bearing claims. Found 4 wrong as
-  stated, all now corrected (see below).
-- **Audit 2** (running): re-checks the four corrections, and audits the
-  parts audit 1 did not cover -- the seven reward terms, the action mask and
-  the joint projection, the H-step lookahead, the energy budget, the value
-  normalisation, the metrics, the oracle normalisation, and whether the
-  deterministic/sampled evaluation protocol biases the comparison.
-- **Audit 3** (next): after the Results section is assembled, to check the
-  results' claims and the new prose against the model.
+  stated; all corrected.
+- **Audit 2** (done): the reward terms, the mask and the joint projection,
+  the H-step lookahead, the energy budget, the value normalisation, the
+  metrics, the oracle normalisation, the evaluation protocol. 25 items,
+  21 verified, 0 failed, 4 informational.
+- **Audit 3** (NEXT, after the re-measurement lands): the assembled
+  Results section and the Conclusion. The brief is drafted at
+  `C:\Users\gbust\AppData\Local\Temp\opencode\audit3_brief.txt` -- 8 items:
+  protocol fairness, the metric-is-the-objective circularity, the mask's
+  soundness for simultaneous moves, the H-hop rule's semantics, a
+  constrained upper bound, the internal consistency of CK and SC, the
+  seed-variance weighting, and which claimed contributions the measurements
+  actually support.
 - **Audit 4** (final, if time allows).
 
 Each audit gets a SELF-CONTAINED brief: the setting, the model, the
@@ -114,212 +173,87 @@ measured numbers, and the exact claims to check, because a fresh subagent
 has no context. It is instructed to work purely mathematically (no web, no
 code, no repository) and to be adversarial rather than agreeable.
 
-## THE MATHEMATICAL REVIEW (20 Oct, done)
-A subagent reviewed the paper's seven load-bearing mathematical claims from
-first principles, with no access to the code or the web. It found four wrong
-as stated and several needing qualification. ALL ARE NOW CORRECTED:
-
-1. **The feasibility certificate applied to sensors was WRONG.** The corner
-   argument proves N >= 4K for K-covering the REGION. It does not transfer
-   to the sensor set: a random draw would need four sensors in the corner
-   caps of radius 10.8 m, probability ~1e-5. The section now states the
-   general packing lemma N >= K*P(A,R) with its proof, applies it to the
-   realised sensor set, and reports the measurement (P mean 2.13, range 2-3;
-   N >= 4.27, range 4-6; N=5 excluded for 4 of 30 draws = 13%). The
-   previous text wrote the bound as N >= K*|S| with |S| read as the sensor
-   count -- a different and false bound. The section also now PROVES the
-   region bound is TIGHT (4K discs K-cover the square; the audit measures
-   the worst-covered point at 34.875 m <= R_cov = 35 m).
-2. **"SC is identically zero on an infeasible configuration" was WRONG as
-   stated.** Now: SC(pi) = 0 for every policy iff the feasible set of
-   CONFIGURATIONS is empty -- a statement about max_pi SC, not about any
-   policy's realised score.
-3. **The credit-assignment wording needed qualification.** A per-agent local
-   critic re-centres and re-scales the shared team signal per agent; it
-   does not DECOMPOSE it. The gradient expression is now written out.
-4. **The truncation bootstrap was overstated.** The bias on the value target
-   is -gamma(gammalambda)^(T-t)/(1-gammalambda) * V(s_{T+1}), so downward
-   when the continuation is worth more than zero and upward when it is worth
-   less; unbiased for V^pi only with an exact critic and an exogenous
-   truncation.
-Also qualified: sigma is necessary for region coverage, never sufficient,
-and not even necessary for a sensor set; the oracle upper-bounds C_K but
-not SC; the time-averaged coverage deficit is exactly 1 - C_K (a convention,
-not an independent measurement) and the MAXIMUM REFRESH TIME is the
-quantity that carries the information it cannot; and the
-identical-action symmetry collapse is specific to an action space of
-displacements, which is the one used here.
-
-Audit now 25 items: 21 verified, 0 failed, 4 informational.
-
-## The CENTRAL FINDING (settled 20 Oct)
-**The learned controller does not reach the reactive heuristic, and the
-framework's controlled arms identify why.** The limiting factor is the
-credit assignment of a parameter-shared actor trained on a team reward.
-Three alternative explanations were tested and rejected:
-
-1. **The observation content -- REJECTED as the binding factor, but it
-   matters.** A/B/C over three observations (local only / + agent identity /
-   + identity + coverage map), identical seeds and budget: 0.581 / 0.690 /
-   0.604. The identity is worth **+0.109** and raises the distinct-action
-   count; the coverage-map summary **hurts** (-0.086) and the swarm stops
-   dispersing (spread 11.5 m -> 8.0 m) because the policy follows the
-   moving deficit. A finer map (G=8) is worse still (0.589, spread 7.8 m).
-   **The canonical configuration therefore OMITS the map.** The mechanism:
-   a coverage map says *where* the work is, not *which* UAV should do it,
-   and turning a location into an assignment needs per-agent credit.
-2. **The energy model -- REJECTED.** The learned policy stranded ALL EIGHT
-   UAVs per episode while the reactive heuristic stranded 0.7, which looked
-   catastrophic. Arm B of `analysis/ab_energy_management.py` removes the
-   constraint entirely (a ten-times-larger pack): coverage rises by only
-   ~0.09, far short of the gap. Arm C removes the threshold-violation term:
-   the stranding persists and the coverage is unchanged. **The stranding is
-   a SYMPTOM of the credit-assignment limitation, not its cause.**
-3. **The training budget -- bounded, not eliminated.** `analysis/convergence.py`
-   shows the policy still improving; the 40-episode run reached CK 0.898 at
-   episode 40 but with AG 0.611 (it deploys and breaks connectivity), and
-   the joint projection plus the corrected energy model keep AG at 0.98-1.00.
-   The paper says so.
-
-**The remedy the diagnosis implies** is a per-agent signal rather than a
-better team signal.  The controlled test of that remedy is in the matrix: the
-"Masked PPO with a local critic" arm, which differs from the proposed method
-only in having a per-agent actor and a per-agent local critic, so that the
-advantage is the agent's own rather than a broadcast team signal.
-
-## Implication for the paper's framing
-The contribution is the FEASIBILITY-CERTIFIED EVALUATION FRAMEWORK, and the
-framework's value is precisely that it exposes this: a paper reporting only
-"CK = 0.93 vs 0.85" was reporting a number produced by a simulator in
-which no UAV moved. The honest result is that at the reported parameters a
-well-designed reactive heuristic is competitive with parameter-shared CTDE
-MAPPO, and the paper diagnoses why, with the experiments that support it.
-
-
-
 ## IMPORTANT NEGATIVE RESULTS (do not forget)
-- The first OMNeT++ validation counted MAC frames and reported links closing
-  at 50 km. The control (TX crushed 60 dB) returned the same count, proving
-  the observable was not physical. **A physical-layer claim without a
-  negative control is not a measurement.** The paper claims only model
-  equivalence (0.012 dB).
+- The first OMNeT++ validation counted MAC frames and reported links
+  closing at 50 km. The control (TX crushed 60 dB) returned the same count.
+  **A physical-layer claim without a negative control is not a
+  measurement.** The paper claims only model equivalence (0.012 dB).
 - The research found NO 2023-2026 paper that certifies a persistent-coverage
   instance INFEASIBLE, and NO paper that names the all-constraints-simultaneous
   metric as degenerate. Both are the paper's novelty claim.
 - Closest prior work: "Feasibility Ceilings Before Learning"
-  (arXiv:2610.20823, Oct 2026). The paper states the difference precisely.
-- **The Reactive heuristic is a strong baseline** (CK 0.918). It is NOT
-  legitimate to hide it: it is reported in every table, and the honest claim
-  is about the JOINT invariant, not about coverage alone.
+  (arXiv:2610.20823, Oct 2026).
+- The Reactive heuristic is a strong baseline (CK 0.953). It is NOT
+  legitimate to hide it: it is reported in every table.
 - The reward's articulation-point term (lam_C) penalises the very spreading
-  behaviour coverage requires. The ablation now measures it rather than
-  assuming it (variant "no-criticality").
+  behaviour coverage requires. The ablation measures it.
 
 ## Commands
 ```
 cd Project1/ml_impl
-python run_all.py                 # the whole matrix (~5 h)
-python run_all.py --stage obs     # observation A/B/C
-python run_all.py --stage base    # base comparison
-python run_all.py --stage abl     # ablations
-python run_all.py --stage learned # the two learned baselines
-python run_all.py --stage energy  # the energy-management A/B/C
-python run_all.py --stage scen    # scenario matrix
-python analysis/claim_audit.py    # every checkable claim
-python analysis/energy_regime.py  # the energy-regime sweep
-python analysis/ab_credit.py      # the credit-assignment A/B
-python analysis/make_tables.py    # regenerate the results tables
-python analysis/fill_tokens.py    # fill the prose tokens from the artefacts
-python analysis/assemble_results.py   # assemble + compile the Results section
-python tests/run_tests.py         # 100 tests
+python run_all.py --stage base      # the base comparison (5 seeds x 25 ep)
+python run_all.py --stage obs       # the observation A/B/C (3 arms x 3 seeds)
+python run_all.py --stage abl       # the component ablation, feasible config
+python run_all.py --stage ablstress # the component ablation, S8 stress config
+python run_all.py --stage learned   # the two learned baselines
+python run_all.py --stage energy    # the energy-management A/B/C/D
+python run_all.py --stage scen      # the scenario matrix
+python analysis/ab_credit.py --episodes 30 --seeds 2 --eval-seeds 5
+python analysis/ab_map_resolution.py --episodes 20 --seeds 2 --eval-seeds 5 --grids 0,4,8
+python analysis/claim_audit.py      # 29 items, 25 verified, 0 failed, 4 info
+python analysis/assemble_results.py # the tables, the tokens, the Results, the compile
+python tests/run_tests.py           # 111 tests
 ```
 
-## RUNNING JOBS (20 Oct, 19:40) -- machine restarting
-One experiment stage is running and writes its artefact when it completes:
-
-- `run_all.py --stage learned` (pid 16664) -> `results_learned_baselines.csv`
-  The Independent DQN arm is DONE (mean CK 0.396 over three seeds); the
-  masked-PPO arm (3 seeds x 20 episodes) remains, about 22 minutes.
-
-The scenario matrix CRASHED and has been fixed; it must be re-run.
-
-### AFTER THE RESTART (about 1.5 h of compute, then about 1 h of writing)
-1. `cd Project1/ml_impl`
-2. `python run_all.py --stage scen`   (~45 min: six policies at 8 episodes,
-   one per distinct (N, M, pads) combination, then 36 variants x 2
-   controllers)
-3. `python analysis/ab_energy_management.py --episodes 25 --seeds 1
-   --eval-seeds 5`   (~37 min; four arms, the fourth being the previous
-   energy rule)
-4. `python analysis/ablation_extra.py`  (~4 min; the one extra ablation
-   variant, the coverage map on its own)
-5. `python analysis/ab_credit.py --episodes 30 --seeds 2 --eval-seeds 5`
-   (~44 min; the credit-assignment A/B, stale since it predates the
-   energy-rule fix)
-6. `python analysis/ab_map_resolution.py --episodes 20 --seeds 2
-   --eval-seeds 5 --grids 0,4,8`   (~33 min; the map-resolution sweep,
-   stale)
-   Steps 2-6 can be run two at a time.
-7. `python analysis/assemble_results.py` -- assembles and compiles the
-   Results section.  It aborts if any prose token is unfilled, so a missing
-   artefact is a hard error rather than a broken paper.
-8. Final checks: 0 LaTeX errors, 0 overfull boxes, 0 undefined refs;
-   `python analysis/claim_audit.py` with 0 failures; 106 tests; commit.
+## Machine notes
+- Two GPU processes together exhaust host memory and make CUDA allocation
+  fail: **run one GPU job at a time**. The GPU is within noise of the CPU
+  at this scale (11.1 vs 11.2 ms/step), so CPU-only jobs are preferred:
+  set `CUDA_VISIBLE_DEVICES=""` and `OMP_NUM_THREADS=3`.
+- Four concurrent CPU jobs of ~1.3 GB each fit in the 15.7 GB of RAM.
+- A background job writes its artefact on completion, and the ablation now
+  writes each ROW as it finishes, so an interrupted run is re-run rather
+  than lost.
+- The user asked: **no new processes after a set of jobs finishes** --
+  report and let them reboot.
 
 ## Assembling the paper
-1. Wait for every artefact: results_main.csv, results_ablation.csv,
-   results_ablation_stress.csv, results_learned_baselines.csv,
-   results_scenarios.csv, analysis/ab_observation.json,
-   analysis/ab_energy_management.json, analysis/ab_credit.json,
-   analysis/ab_map_resolution.json.
-2. `python analysis/assemble_results.py` -- regenerates the tables, fills
-   the prose tokens, replaces the Results section wholesale and compiles.
-   It ABORTS if any token is unfilled, so a missing artefact is a hard
-   error and never a broken paper.
-3. Check: 0 LaTeX errors, 0 overfull boxes, 0 undefined references.
-   (The assembler counts LaTeX errors as well as undefined references, so
-   the near-miss table's duplicated closing, which the earlier build hid,
-   cannot come back.)
-4. `python analysis/claim_audit.py` -- must be 0 FAILED, and the item count
-   in the paper must match.
-5. `python tests/run_tests.py` -- 104 tests.
-6. Commit.
+1. `python analysis/assemble_results.py` -- regenerates the tables, fills
+   the tokens, replaces the Results section wholesale, replaces the
+   marked CONTRIB region, and compiles. It **ABORTS** if any token is
+   unfilled, so a missing artefact is a hard error and never a broken
+   paper.
+2. Check: 0 LaTeX errors, 0 overfull boxes, 0 undefined references. The
+   assembler reports all three.
+3. `python analysis/claim_audit.py` -- 0 FAILED, and the counts in the
+   paper must match (they are tokens now, so they cannot drift).
+4. `python tests/run_tests.py` -- 111 tests.
+5. Commit. **Never push.**
 
-## The FINAL CHECKLIST (do these before declaring the work done)
-- [ ] The paper's numbers all come from the artefacts, and the prose tokens
-      are filled by the script rather than typed.
-- [ ] The claim audit passes with 0 failures and its count matches the paper.
+## The FINAL CHECKLIST (before declaring the work done)
+- [ ] Every stage re-measured under the reproducible protocol.
+- [ ] The paper's numbers all come from the artefacts, through tokens.
+- [ ] The claim audit passes with 0 failures and its count matches.
 - [ ] No LaTeX errors, no overfull boxes, no undefined references.
-- [ ] The README, the state file and the paper agree on the configuration.
-- [ ] `git status` is clean and everything is committed (never pushed).
+- [ ] The abstract and the Conclusion agree with the new numbers.
 - [ ] The third mathematical audit has been run and its findings addressed.
-- [ ] The scenario matrix, the ablation and the learned baselines are all
-      present, or the paper says plainly that they are not.
-
-
+- [ ] `git status` is clean and everything is committed (never pushed).
 
 ## Paper state
-- 14 pages, compiles clean, 0 undefined refs.
-- Sections already rewritten: abstract, feasibility certificate, claim audit
-  and PHY validation, near-miss table, two externally verified absences.
-- **Edited but NOT yet validated with numbers:** the local-observation
-  section (identity + map + pad bearing), the parameter table (episode 2000,
-  clustered deployment), the CTDE parameter-sharing paragraph, the
-  initial-deployment / episode-length paragraph, scenario S9.
-- **Still to rewrite once the matrix lands:** the whole Results section
-  (Tables `tab:results_main`, `tab:results_abl`), the Conclusion, the
-  abstract, and the limitations list.
+- 24 pages, compiles clean (0 errors, 0 overfull, 0 undefined refs).
+- The Results section, the tables and the Introduction's contribution
+  bullet are generated from the artefacts.
+- Hand-written and therefore needing a check against the new numbers: the
+  abstract, the Introduction's framing paragraphs, the Conclusion, the
+  limitations list, and the observation A/B/C narrative in
+  `analysis/results_text.tex`.
 
 ## DeepSeek research protocol (2-tab limit, STRICT)
-- Batch 1: Tab 1 (K-coverage literature gap) + Tab 2 (MAPPO correctness) -- DONE, saved.
-- Batch 2: Tab 3 (non-degenerate coverage metrics) -- DONE, saved.
-- Recipe (in the browser-navigation skill): one pushback per COMPLETED
-  reply; confirm the reply has settled via `innerText.length` stopping; ~2 min
-  wait; explicit DATE CORRECTION (the model assumes an earlier year); save
-  via the Blob-download trick (`browser.evaluate` -> anchor click ->
-  `browser.files.list` -> `browser.files.get`), which moves a 40 KB
-  transcript to disk without putting it in the model context.
-- `browser.evaluate` takes **`script`**, not `expression`. `setTimeout` is not
-  available in the Code Mode runtime -- use a background shell command.
-- NOTE: do NOT pipe a background job through `Select-Object -Last N`; it
-  buffers everything until the process ends and the progress is invisible.
+- Batch 1: Tab 1 (K-coverage literature gap) + Tab 2 (MAPPO correctness) -- DONE.
+- Batch 2: Tab 3 (non-degenerate coverage metrics) -- DONE.
+- Saved in `Project1/DeepResearch/DeepSeekTab1-4.md`, including Tab 4 on
+  per-agent advantage estimation (COMA, DAE, GPAE, HAPPO, Sun et al. 2023).
+- `browser.evaluate` takes **`script`**, not `expression`. `setTimeout` is
+  not available in the Code Mode runtime -- use a background shell command.
+- Do NOT pipe a background job through `Select-Object -Last N`: it buffers
+  everything until the process ends and the progress is invisible.

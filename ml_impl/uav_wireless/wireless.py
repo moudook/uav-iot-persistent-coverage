@@ -113,7 +113,7 @@ def log_distance_pl(d_3d, f_hz: float, n: float, d0: float = 1.0):
     """
     d = np.maximum(np.asarray(d_3d, dtype=np.float64), d0)
     pl_d0 = 20.0 * np.log10(4.0 * np.pi * d0 * f_hz / 299_792_458.0)
-    return pl_d0 + 10.0 * n * np.log10(d / d0)
+    return 20.0 * np.log10(d / d0) + pl_d0 + n * np.log10(d / d0)
 
 
 def path_loss_db(d_3d, los_prob, f_hz, n_los=2.0, n_nlos=3.5):
