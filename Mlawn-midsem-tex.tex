@@ -1750,6 +1750,22 @@ transparency (battery-pack size, the power ratio, the charge C-rate, and the
 density of the inter-UAV graph), and 0 fail. Two findings of the
 audit are worth stating explicitly.
 
+Three of the audited items are about the measurement apparatus itself, and
+they are the ones a reader who has been burned by an unreproducible
+pipeline should look at first.  Item R1 establishes that the evaluation of
+a sampled policy is a function of (policy, scene): the sampling stream is
+seeded from the evaluation seed alone, so the same policy on the same scene
+gives the same number every time, and every controller is measured on the
+same stream on the same scene.  Item T1 establishes that a training run is
+a function of its seed, including when an evaluation is interleaved with
+it, because the seed is set before the networks are constructed and so the
+initialisation is seeded too.  Item I1 measures the claim the framework
+makes first: on the report's own infeasible configuration a rule-based
+controller still reaches a respectable coverage ratio while the joint
+metric is identically zero, so neither metric alone distinguishes that
+instance from a feasible one, and the certificate is what makes the reading
+decidable.
+
 \emph{The area surplus is not a feasibility criterion.} The audit confirms
 that $\sigma=N\pi R_{\mathrm{cov}}^{2}/(K|\Omega|)$ exceeds one for the
 deployed configuration, while the corner-packing bound of
@@ -1763,9 +1779,9 @@ An earlier version of this paper measured the density of the inter-UAV graph
 on a static grid and reported that connectivity did not bind. That was the
 wrong measurement: the experiments use a swarm that flies, so the quantity
 that matters is the graph during the mission. Measured over a 2000-step
-flight in the deployed regime, the mean node degree is $4.01$ of a possible
-$7$, the graph is complete in only $12\%$ of steps, and nodes of degree
-$\le 1$ occur in a substantial fraction of UAV-steps. The $H$-step
+flight in the deployed regime, the mean node degree is $@@C6_DEGREE@@$ of a possible
+$@@C6_MAXDEG@@$, the graph is complete in only $@@C6_COMPLETE@@\%$ of steps, and nodes of degree
+$\le 1$ occur in $@@C6_LEAVES@@\%$ of UAV-steps. The $H$-step
 feasibility mask and the reserve mechanism are therefore load-bearing rather
 than decorative, and the audit reports the measurement rather than the
 inference.
