@@ -1,19 +1,19 @@
 \begin{table}[t]
-\caption{Base comparison on the corrected configuration.  The two learned baselines are implementations of the method families of Table~\ref{tab:comparison}, not reproductions of the cited papers.}
+\caption{Base comparison on the corrected configuration.  ``Unexec.'' is the number of sampled actions that the safety filter or the joint projection did not execute, which is the size of the gap between the policy gradient and the trajectory.  The two learned baselines are implementations of the method families of Table~\ref{tab:comparison}, not reproductions of the cited papers.}
 \label{tab:results_main}
 \centering
 \scriptsize
-\begin{tabular}{@{}lccccc@{}}
+\begin{tabular}{@{}lcccccc@{}}
 \toprule
-Model & CK & AG & SC & CovIntegral & Energy (J) \\
+Model & CK & AG & SC & CovIntegral & Unexec. & Energy (J) \\
 \midrule
-Fixed & 0.372 & 1.000 & 0.000 & 0.628 & 178097 \\
-Greedy & 0.770 & 1.000 & 0.062 & 0.230 & 212519 \\
-Reactive & 0.947 & 1.000 & 0.751 & 0.053 & 183928 \\
-\textbf{MAPPO (proposed)} & 0.638 & 0.907 & 0.000 & 0.362 & 221331 \\
-MAPPO (argmax) & 0.370 & 1.000 & 0.000 & 0.630 & 177600 \\
+Fixed & 0.372 & 1.000 & 0.000 & 0.628 & -- & 178097 \\
+Greedy & 0.770 & 1.000 & 0.062 & 0.230 & -- & 212519 \\
+Reactive & 0.947 & 1.000 & 0.751 & 0.053 & -- & 183928 \\
+\textbf{MAPPO (proposed)} & 0.638 & 0.907 & 0.000 & 0.362 & -- & 221331 \\
+MAPPO (argmax) & 0.370 & 1.000 & 0.000 & 0.630 & -- & 177600 \\
 \midrule
-Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 & 0 \\
+Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 & -- & 0 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -63,15 +63,19 @@ def table_main(rows, learned=None):
     lines = []
     lines.append(r"\begin{table}[t]")
     lines.append(r"\caption{Base comparison on the corrected configuration.  "
-                 r"The two learned baselines are implementations of the "
-                 r"method families of Table~\ref{tab:comparison}, not "
-                 r"reproductions of the cited papers.}")
+                 r"``Unexec.'' is the number of sampled actions that the "
+                 r"safety filter or the joint projection did not execute, "
+                 r"which is the size of the gap between the policy gradient "
+                 r"and the trajectory.  The two learned baselines are "
+                 r"implementations of the method families of "
+                 r"Table~\ref{tab:comparison}, not reproductions of the "
+                 r"cited papers.}")
     lines.append(r"\label{tab:results_main}")
     lines.append(r"\centering")
     lines.append(r"\scriptsize")
-    lines.append(r"\begin{tabular}{@{}lccccc@{}}")
+    lines.append(r"\begin{tabular}{@{}lcccccc@{}}")
     lines.append(r"\toprule")
-    lines.append(r"Model & CK & AG & SC & CovIntegral & Energy (J) \\")
+    lines.append(r"Model & CK & AG & SC & CovIntegral & Unexec. & Energy (J) \\")
     lines.append(r"\midrule")
     order = ["Fixed", "Greedy", "Reactive"]
     by_model = {r["model"]: r for r in rows}
@@ -82,12 +86,13 @@ def table_main(rows, learned=None):
         lines.append(
             f"{name} & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "
             f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & "
+            f"{fmt(r.get('UnexecutedActions'), 0)} & "
             f"{fmt(r.get('Energy'), 0)} \\\\")
     if learned:
         for r in learned:
             lines.append(
                 f"{r['model']} & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "
-                f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & -- \\\\")
+                f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & -- & -- \\\\")
     for name, disp in (("VanillaMAPPO", r"\textbf{Vanilla MAPPO}"),
                        ("MAPPO", r"\textbf{MAPPO (proposed)}"),
                        ("MAPPO-argmax", "MAPPO (argmax)")):
@@ -97,13 +102,14 @@ def table_main(rows, learned=None):
         lines.append(
             f"{disp} & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "
             f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & "
+            f"{fmt(r.get('UnexecutedActions'), 0)} & "
             f"{fmt(r.get('Energy'), 0)} \\\\")
     r = by_model.get("Oracle (ceiling)")
     if r is not None:
         lines.append(r"\midrule")
         lines.append(
             f"Oracle (ceiling) & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "
-            f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & 0 \\\\")
+            f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & -- & 0 \\\\")
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
     lines.append(r"\end{table}")
