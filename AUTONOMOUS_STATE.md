@@ -37,13 +37,26 @@ around the new numbers and run the third mathematical audit.
   would make the comparison a comparison of information, not of method.
   It is reported as a negative result rather than quietly dropped.
 
-## THE MEASUREMENT PROTOCOL (canonical, 20 Oct, 22:00)
+## THE MEASUREMENT PROTOCOL (canonical, 21 Oct)
 This is the protocol every number in the paper is produced under.
 
+0. **The device is pinned to the CPU** (`run_all.py` sets
+   `CUDA_VISIBLE_DEVICES=""`). The reason is REPRODUCIBILITY, not speed: the
+   same seed trained on the GPU and on the CPU gives different weights (max
+   |difference| about 6e-4 after one episode, and it compounds through the
+   updates), so a run is reproducible only on the device it was trained on.
+   The base table had been trained on the GPU while every arm was trained
+   on the CPU, so the ablation's full row and the main table's controller
+   were the same configuration but NOT the same policies (0.682 against
+   0.689), and the base stage was re-run on the CPU so that every table
+   describes the same policies. The speed cost is about one percent: the
+   simulator is a sequential Python loop and dominates the step (11.1
+   ms/step on the CPU against 11.2 ms/step on the GPU), so the network is
+   never the bottleneck.
 1. **Training**: 25 episodes x 2000 steps per training run. The base
    comparison trains **5** runs (seeds 0-4); the component ablation and the
    observation A/B/C train **3** runs (seeds 0-2); the learned baselines
-   train 3 runs; the energy and credit arms train 1-2 runs; the scenario
+   train 3 runs; the energy and credit arms train 3 runs; the scenario
    matrix trains one policy per distinct `(N, M, pads)` combination.
 2. **Evaluation**: 5 scenes (seeds 0-4) per policy. A controller's row is
    the mean over its TRAINING runs, and the reported spread is the
@@ -361,16 +374,41 @@ python tests/run_tests.py           # 115 tests
 ```
 
 ## Machine notes
-- Two GPU processes together exhaust host memory and make CUDA allocation
-  fail: **run one GPU job at a time**. The GPU is within noise of the CPU
-  at this scale (11.1 vs 11.2 ms/step), so CPU-only jobs are preferred:
-  set `CUDA_VISIBLE_DEVICES=""` and `OMP_NUM_THREADS=3`.
-- Four concurrent CPU jobs of ~1.3 GB each fit in the 15.7 GB of RAM.
+- **The training device is pinned to the CPU** (see rule 0 of the
+  protocol) for reproducibility, not for speed: the simulator dominates the
+  step, so the GPU is within noise (11.1 against 11.2 ms/step).
+- Four concurrent CPU jobs of ~1.3 GB each fit in the 15.7 GB of RAM. FIVE
+  of them exhausted the paging file once, and the symptom was an
+  `OSError: [WinError 1455]` from importing torch -- which looks like a
+  code failure and is not one. Keep the count at four.
 - A background job writes its artefact on completion, and the ablation now
   writes each ROW as it finishes, so an interrupted run is re-run rather
-  than lost.
+  than lost; the ablation also RESUMES, reusing a row measured under the
+  same protocol.
+- **No sleep-based watchers.** The background jobs notify on completion;
+  a watcher that sleeps and then prints a log tail is a process that costs
+  memory and tells us nothing the notification does not.
 - The user asked: **no new processes after a set of jobs finishes** --
   report and let them reboot.
+
+## RUNNING JOBS (21 Oct, 00:50)
+- `run_all.py --stage abl` -- the component ablation, 12 variants x 3 seeds
+  x 25 episodes. **THE CRITICAL PATH**: lands about 06:40.
+- `run_all.py --stage base` (re-run on the CPU) -- the base comparison, 5
+  seeds x 25 episodes. Lands about 02:15.
+- `analysis/ab_energy_management.py --episodes 25 --seeds 3` -- the four
+  energy arms. Lands about 01:25.
+- `analysis/ab_map_resolution.py --episodes 20 --seeds 3 --grids 0,4,8` --
+  the map sweep. Lands about 01:05.
+- A queue behind them: the scenario matrix, then the stress ablation.
+
+### TO DO WHEN A SLOT FREES
+- **Re-run the credit A/B at 25 episodes** (`analysis/ab_credit.py
+  --episodes 25 --seeds 3 --eval-seeds 5`). It was measured at 30 episodes,
+  so its arm A is not the same policy as the main table's controller; at
+  25 episodes it is, and the paper's claim that the two tables describe
+  the same policies becomes exactly true. The 30-episode measurement is
+  committed and is superseded by this one.
 
 ## Assembling the paper
 1. `python analysis/assemble_results.py` -- regenerates the tables, fills

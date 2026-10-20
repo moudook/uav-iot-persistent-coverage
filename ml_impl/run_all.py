@@ -48,6 +48,19 @@ from uav_wireless.train import train_mappo, collect_rollout
 HERE = os.path.dirname(os.path.abspath(__file__))
 ANALYSIS = os.path.join(HERE, "analysis")
 
+# THE DEVICE IS PINNED TO THE CPU, and the reason is reproducibility
+# rather than speed.  The same seed trained on the GPU and on the CPU gives
+# different weights (the floating-point kernels differ, and the difference
+# compounds through the updates), so a run is reproducible only on the device
+# it was trained on.  Every table in the paper quotes the same
+# configuration, and a reader who checks the ablation's full row against
+# the main table's controller must find the same number, which requires
+# every stage to train on the same device.  The speed cost is about one
+# percent: the simulator is a sequential Python loop and dominates the step
+# (11.1 ms/step on the CPU against 11.2 ms/step on the GPU), so the
+# network is never the bottleneck.
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 
 def stage_observation(episodes, seeds, eval_seeds):
     """A/B/C: identity, coverage-map summary, pad bearing."""
