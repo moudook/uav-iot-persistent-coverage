@@ -94,6 +94,26 @@ the paper's Results, Conclusion and Abstract around the new numbers.
   because it was measured to be harmful at every resolution tested
 
 
+## THE MATHEMATICAL AUDIT CADENCE (standing instruction, 20 Oct)
+The user asked for a mathematical subagent to be released PERIODICALLY so
+that the paper stays mathematically consistent. The cadence:
+
+- **Audit 1** (done): the seven load-bearing claims. Found 4 wrong as
+  stated, all now corrected (see below).
+- **Audit 2** (running): re-checks the four corrections, and audits the
+  parts audit 1 did not cover -- the seven reward terms, the action mask and
+  the joint projection, the H-step lookahead, the energy budget, the value
+  normalisation, the metrics, the oracle normalisation, and whether the
+  deterministic/sampled evaluation protocol biases the comparison.
+- **Audit 3** (next): after the Results section is assembled, to check the
+  results' claims and the new prose against the model.
+- **Audit 4** (final, if time allows).
+
+Each audit gets a SELF-CONTAINED brief: the setting, the model, the
+measured numbers, and the exact claims to check, because a fresh subagent
+has no context. It is instructed to work purely mathematically (no web, no
+code, no repository) and to be adversarial rather than agreeable.
+
 ## THE MATHEMATICAL REVIEW (20 Oct, done)
 A subagent reviewed the paper's seven load-bearing mathematical claims from
 first principles, with no access to the code or the web. It found four wrong
