@@ -198,6 +198,8 @@ def main():
                  r"Observation & CK & AG & SC & Distinct & Spread (m) \\",
                  r"\midrule"]
         for r in rows:
+            if r.get("kind") == "baseline":
+                continue
             name = r["arm"].split(":")[0]
             lines.append(
                 f"{name} & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "

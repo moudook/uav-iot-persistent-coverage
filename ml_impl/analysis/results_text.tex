@@ -41,32 +41,51 @@ better controller.
 
 %% OBS
 
-The first row is the observation of Eq.~\eqref{eq:obs} as originally
-written.  Its most striking property is not in the coverage column but in
-the ``Distinct'' column: the deterministic policy selects almost the same
-action for every one of the eight UAVs, and the swarm's spread barely grows
-beyond the radius of the initial cluster.  This is the shared-actor symmetry
-collapse, and it is precisely the failure that Foerster et al.'s
-condition~(ii) is about.  With an observation that does not identify the
-agent, a parameter-shared network has no basis on which to specialise, and
-the consequence is measurable rather than theoretical.
+The three arms have three \emph{distinct} behaviours, and the spread column
+is what distinguishes them.  Arm~A, whose observation does not identify the
+agent, disperses the most ($@@A_SPREAD@@$~m) and covers the least
+($@@A_CK@@$): the shared actor has no basis on which to specialise, the
+deterministic policy selects almost the same action for every one of the
+eight UAVs, and the swarm moves as a body.  This is precisely the failure
+that Foerster et al.'s condition~(ii) is about, and its consequence here is
+measurable rather than theoretical.
 
-Adding the identity does what the condition predicts.  The number of
-distinct actions rises, the swarm disperses, and the coverage rises with it
---- by $@@B_MINUS_A@@$, which is $@@B_SHARE@@$ of the distance between the
+Arm~B adds the identity, and the condition does what it says: the number
+of distinct actions rises, the swarm disperses, and the coverage rises with
+it, by $@@B_MINUS_A@@$, which is $@@B_SHARE@@$ of the distance between the
 local-only observation and the reactive heuristic.  The condition is
-therefore not a formality: it is worth a measurable amount of persistent
-coverage, and a reader who omits it obtains a worse controller without
-necessarily knowing why.
+therefore not a formality.  A reader who omits the identity obtains a
+visibly worse controller, and the diagnostic that explains it is a count of
+distinct actions under the argmax policy --- a measurement that costs
+nothing and that the raw coverage number does not make visible.
 
-@@C_SENTENCE@@
+Arm~C adds the broadcast coverage-map summary, which was supposed to be an
+improvement: it tells the policy \emph{where} the coverage deficit is, and
+without it an agent knows how many sensors it covers but not which are
+deficient.  It makes the controller \emph{worse}
+($@@C_CK@@$ against $@@B_CK@@$), and the spread column says why: the swarm
+contracts to $@@C_SPREAD@@$~m instead of dispersing.  The policy is
+following the map.  It moves towards the cell that currently holds the
+deficit, covers it, the deficit moves to another cell, and the swarm
+oscillates after a moving target --- a location without an assignment is
+not actionable.
 
-None of this closes the gap to the reactive heuristic, and the reason is
-instructive.  Dispersing is not the same as dividing the work: an actor
-that has learned to send its eight instances in eight different directions
-has not learned to send them to eight different sensors.  The policy is
-better at finding sensors than at dividing the work among them, and the
-credit assignment, not the observation, is what limits it.
+That is the single most useful thing the ablation says, and it is the same
+conclusion the other two controlled experiments reach from different
+directions.  A coverage map tells a controller \emph{where} the work is; it
+does not tell it \emph{which} UAV should do it, and turning a location into
+an assignment requires per-agent credit, which a shared team reward does
+not supply.  The map therefore makes the deficiency \emph{visible} and
+therefore \emph{actionable-looking}, and the policy chases it, which is
+worse than the apparently aimless dispersal of arm~A.
+
+@@MAP_RESOLUTION@@
+
+The proposed configuration consequently uses the identity and omits the
+coverage-map summary, and the observation of Eq.~\eqref{eq:obs} is stated
+that way.  We keep the a-priori argument in the record because it was
+reasonable, and because the measurement that refutes it is more useful to a
+reader than the argument would have been.
 
 %% ENERGY
 
