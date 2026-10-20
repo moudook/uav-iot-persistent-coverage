@@ -418,19 +418,22 @@ def build_tokens():
         excluded = all((m + h) < gap for _, m, h in en_stats)
         if excluded:
             tok["ENERGY_SUMMARY"] = (
-                "The three interventions are paired with the proposed "
-                "configuration -- they share its training seeds -- so each "
-                "one is reported as an interval rather than as a point, and "
-                "each interval's upper limit is below the gap of "
+                "The reading was wrong, and Table~\\ref{tab:results_energy} "
+                "says so.  The three interventions are paired with the "
+                "proposed configuration -- they share its training seeds -- "
+                "so each one is reported as an interval rather than as a "
+                "point, and each interval's upper limit is below the gap of "
                 f"{gap:.3f} to the reactive heuristic: "
                 + "; ".join(clauses)
                 + ".  The energy model is therefore not what accounts for "
                 "the gap, and the paper does not claim that it is.")
         else:
             tok["ENERGY_SUMMARY"] = (
-                "The three interventions are paired with the proposed "
-                "configuration -- they share its training seeds -- so each "
-                "one is reported as an interval rather than as a point: "
+                "Table~\\ref{tab:results_energy} bounds the energy "
+                "explanation rather than settling it.  The three "
+                "interventions are paired with the proposed configuration -- "
+                "they share its training seeds -- so each one is reported "
+                "as an interval rather than as a point: "
                 + "; ".join(clauses)
                 + f".  Not every interval excludes the gap of {gap:.3f}, so "
                 "the energy model is not excluded by these arms; what the "
@@ -809,7 +812,7 @@ def build_tokens():
         if d < 0:
             # the unprivileged rule is BETTER: the privilege was a handicap
             tok["REACTL_VERDICT"] = (
-                f"the privileged version is in fact slightly WORSE than the "
+                f"The privileged version is in fact slightly WORSE than the "
                 f"unprivileged one ({d:+.3f}), so the global coverage state "
                 f"is not what gives the rule its edge --- the global "
                 f"round-robin assignment makes the UAVs contend for "

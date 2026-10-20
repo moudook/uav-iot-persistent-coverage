@@ -16,7 +16,7 @@ service continuity of $@@REACT_SC@@$, and it is the strongest of the three
 rules.
 
 The learned controller does not reach the heuristic.  The strongest
-controller in the table is $@@BEST_RULE_NAME@@$, at $@@BEST_RULE_CK@@$, and
+controller in the table is @@BEST_RULE_NAME@@, at $@@BEST_RULE_CK@@$, and
 the gap to it is $@@GAP@@$ of persistent coverage; the 95\% interval on
 that gap, from the learned controller's spread over its @@GAP_N@@ training
 runs, is $@@GAP_CI@@$.  The scene-to-scene variation does not enter this
@@ -232,7 +232,6 @@ fly, it leaves the swarm, and it stops covering.  The obvious reading was
 that the controller had failed at energy management, and the obvious fix
 was a reward term that prices the consequence of an empty pack.
 
-The reading was wrong, and Table~\ref{tab:results_energy} says so.
 @@ENERGY_SUMMARY@@
 
 What the diagnostic actually found was a defect in the safety filter rather

@@ -16,7 +16,7 @@ service continuity of $0.751$, and it is the strongest of the three
 rules.
 
 The learned controller does not reach the heuristic.  The strongest
-controller in the table is $the unprivileged reactive rule$, at $0.972$, and
+controller in the table is the unprivileged reactive rule, at $0.972$, and
 the gap to it is $0.283$ of persistent coverage; the 95\% interval on
 that gap, from the learned controller's spread over its 5 training
 runs, is $[0.231, 0.335]$.  The scene-to-scene variation does not enter this
@@ -40,7 +40,7 @@ is no assignment, so UAVs that want the same sensor contend for it --- is
 reported as \emph{Reactive (local assignment)} in the table above.  It
 reaches $0.972$ with connectivity availability $1.000$ and
 a service continuity of $0.777$, against the privileged version's
-$0.953$, $1.000$ and $0.751$.  the privileged version is in fact slightly WORSE than the unprivileged one (-0.019), so the global coverage state is not what gives the rule its edge --- the global round-robin assignment makes the UAVs contend for sensors, and the local rule does better --- and the gap to the learned controller is therefore not an information artefact at all.
+$0.953$, $1.000$ and $0.751$.  The privileged version is in fact slightly WORSE than the unprivileged one (-0.019), so the global coverage state is not what gives the rule its edge --- the global round-robin assignment makes the UAVs contend for sensors, and the local rule does better --- and the gap to the learned controller is therefore not an information artefact at all.
 
 The connectivity invariant deserves a sentence, because the reported
 availability is below $1.000$ and the filter is claimed to guarantee
@@ -232,7 +232,6 @@ fly, it leaves the swarm, and it stops covering.  The obvious reading was
 that the controller had failed at energy management, and the obvious fix
 was a reward term that prices the consequence of an empty pack.
 
-The reading was wrong, and Table~\ref{tab:results_energy} says so.
 The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, but the arms have not yet been measured with enough shared training seeds for an interval to be computable, and no bound is claimed for them here.
 
 What the diagnostic actually found was a defect in the safety filter rather
@@ -321,14 +320,16 @@ spent.
 
 %% CREDIT
 
-The per-agent arm reaches $0.613$ against $0.638$ for
-the shared one, a difference of $-0.025$ in persistent coverage.
+The per-agent arm reaches $0.646$ against $0.683$ for
+the shared one, a difference of $-0.037$ in persistent coverage.
+Arm~A is the proposed method on the first 3 of the base
+comparison's training runs --- the same policies, not a cheaper experiment
+--- so the two rows of the first table and this table describe the same
+learner.
 The two arms share their training seeds, so the comparison is paired, and
-the 95\% interval on the paired difference is $[-0.164, +0.114]$ over
-2 training runs: the cheapest modification in the direction the
-diagnosis points does not close the gap, and the interval is consistent
-with a difference of any size up to about $0.139$ in either
-direction.  The scope of that statement is the one set out above: arm~B
+the 95\% interval on the paired difference is $[-0.069, -0.006]$ over
+3 training runs: the per-agent arm is measurably WORSE than the shared one, by 0.037 of persistent coverage, and the interval excludes zero, so the cheapest modification in the direction the diagnosis points does not close the gap --- it opens it slightly.  The scope of that
+statement is the one set out above: arm~B
 supplies each agent with its own baseline and unshares the actor, and
 neither of those changes the fact that the reward the gradient sees is the
 same team reward for every agent.
