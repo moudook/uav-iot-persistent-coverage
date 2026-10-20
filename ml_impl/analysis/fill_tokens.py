@@ -54,6 +54,8 @@ def main():
         tok[f"{key}_SC"] = f(r["SC"])
         tok[f"{key}_CI"] = f(r["CovIntegral"])
         tok[f"{key}_E"] = f(r.get("Energy", 0), 0)
+        tok[f"{key}_STR"] = f(r.get("Stranded", 0), 1)
+        tok[f"{key}_DIST"] = f(r.get("Distance", 0), 0)
     for r in load_csv("results_learned_baselines.csv"):
         key = ("IDDQN" if "DQN" in r["model"] else
                "PPOL" if "PPO" in r["model"] else None)

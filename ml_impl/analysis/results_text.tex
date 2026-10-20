@@ -30,6 +30,17 @@ removes the framework's observation terms, reward shaping, charging
 arbitration, reserve mechanism and action mask, shows how much of the
 learned method's behaviour survives without them.
 
+Two further numbers characterise what the learned controller actually
+does, and they are as informative as the coverage figure.  It consumes
+$@@MAPPO_E@@$~J against the heuristic's $@@REACT_E@@$~J over the same
+episode --- it is the more wasteful controller --- and it strands $@@MAPPO_STR@@$
+of its eight UAVs per episode against the heuristic's $@@REACT_STR@@$.  A
+policy that does not know what to do does not merely cover less; it flies
+more, empties its packs, and loses the agents it loses.  The last row of
+Table~\ref{tab:results_main} makes the same point about the deterministic
+policy of the same learned actor: it travels $@@ARG_DIST@@$~m in the whole
+episode, that is, it does not move at all.
+
 The last row is the deterministic version of the \emph{same} learned actor.
 The gap between it and the sampled policy is the symmetry collapse
 discussed in the next subsection: with a shared actor the argmax action is

@@ -1,14 +1,14 @@
 %% MAIN
 
 The rule baselines separate sharply, and the ordering is informative.  The
-Fixed formation, which never moves, covers $0.900$ of the sensor-steps:
+Fixed formation, which never moves, covers $0.372$ of the sensor-steps:
 it is the floor that the initial deployment alone provides, and it is also
 the controller that never satisfies both invariants at once.  The Greedy
 recharge controller, which returns to a pad when its battery falls below a
-threshold and otherwise holds station, reaches $0.900$ by trading
+threshold and otherwise holds station, reaches $0.770$ by trading
 coverage for energy.  The Reactive heuristic, which moves the swarm towards
-the uncovered sensors, reaches $0.900$ with full connectivity and a
-service continuity of $0.000$, and it is the strongest controller in
+the uncovered sensors, reaches $0.947$ with full connectivity and a
+service continuity of $0.751$, and it is the strongest controller in
 the comparison.
 
 It is also the controller with the most information, and the comparison
@@ -29,6 +29,17 @@ DQN arm is the value-based point of comparison.  Vanilla MAPPO, which
 removes the framework's observation terms, reward shaping, charging
 arbitration, reserve mechanism and action mask, shows how much of the
 learned method's behaviour survives without them.
+
+Two further numbers characterise what the learned controller actually
+does, and they are as informative as the coverage figure.  It consumes
+$221331$~J against the heuristic's $183928$~J over the same
+episode --- it is the more wasteful controller --- and it strands $6.0$
+of its eight UAVs per episode against the heuristic's $0.4$.  A
+policy that does not know what to do does not merely cover less; it flies
+more, empties its packs, and loses the agents it loses.  The last row of
+Table~\ref{tab:results_main} makes the same point about the deterministic
+policy of the same learned actor: it travels $0$~m in the whole
+episode, that is, it does not move at all.
 
 The last row is the deterministic version of the \emph{same} learned actor.
 The gap between it and the sampled policy is the symmetry collapse
@@ -52,7 +63,7 @@ measurable rather than theoretical.
 
 Arm~B adds the identity, and the condition does what it says: the number of
 distinct actions rises, the swarm disperses, and the coverage rises with
-it, by $+0.109$, which is $34\%$ of the distance between the
+it, by $+0.109$, which is $30\%$ of the distance between the
 local-only observation and the reactive heuristic.  The condition is
 therefore not a formality.  A reader who omits the identity obtains a
 visibly worse controller, and the diagnostic that explains it is a count of
