@@ -171,6 +171,7 @@ def build_tokens():
         tok["MAPPO_DISTANCE"] = f"{float(mp.get('Distance', 0)):.0f}"
         tok["MAPPO_STRANDED"] = f"{float(mp.get('Stranded', 0)):.1f}"
         tok["MAPPO_UNEXEC"] = f"{float(mp.get('UnexecutedActions', 0)):.0f}"
+        tok["PROJ_REVISIONS"] = f"{float(mp.get('ProjectionRevisions', 0)):.2f}"
         # THE GAP.  The reactive heuristic is deterministic, so it has no
         # training-seed spread; the uncertainty of the gap is therefore the
         # learned controller's own seed spread, divided by the number of

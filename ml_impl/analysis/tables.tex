@@ -30,11 +30,12 @@ Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 & -- & 0 \\
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
-Variant & CK & AG & SC & CovIntegral & Stranded & $\Delta$CK \\
+Variant & CK & AG & SC & CovDef & Stranded & $\Delta$CK \\
 \midrule
 \textbf{Full (proposed)} & 0.682\,$\pm$\,0.063 & 0.982 & 0.058 & 0.318 & 0.6 & +0.000 \\
 no-criticality term & 0.660\,$\pm$\,0.047 & 0.977 & 0.008 & 0.340 & 0.5 & +0.022 \\
 no-degraded-service term & 0.658\,$\pm$\,0.048 & 0.978 & 0.014 & 0.342 & 0.5 & +0.024 \\
+no-energy-cost term & 0.672\,$\pm$\,0.055 & 0.987 & 0.049 & 0.328 & 0.3 & +0.010 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -47,7 +48,7 @@ no-degraded-service term & 0.658\,$\pm$\,0.048 & 0.978 & 0.014 & 0.342 & 0.5 & +
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
-Variant & CK & AG & SC & CovIntegral & Stranded & $\Delta$CK \\
+Variant & CK & AG & SC & CovDef & Stranded & $\Delta$CK \\
 \midrule
 \textbf{Full (proposed)} & 0.384 & 0.867 & 0.000 & 0.616 & 4.3 & -- \\
 no-criticality term & 0.366 & 0.907 & 0.000 & 0.634 & 5.0 & -- \\
@@ -132,7 +133,9 @@ D & 0.716 & 1.000 & 0.040 & 7.4 & 141.4 \\
 \toprule
 Grid & CK & AG & SC & Spread (m) \\
 \midrule
-$G=8$ & 0.589 & 0.971 & 0.042 & 7.8 \\
+$G=0$ & 0.641 & 0.974 & 0.018 & 14.3 \\
+$G=4$ & 0.646 & 0.983 & 0.029 & 7.8 \\
+$G=8$ & 0.662 & 0.962 & 0.033 & 9.4 \\
 \bottomrule
 \end{tabular}
 \end{table}

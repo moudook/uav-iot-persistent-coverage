@@ -103,7 +103,7 @@ The contributions are:
     \item PHY-derived links (Al-Hourani LoS probability, log-distance path loss, shadowing, and an 802.11 MCS table) in place of abstract coverage discs, together with a quantified validity condition showing when the disc approximation is excellent and when it breaks.
     \item A non-degenerate evaluation protocol (time-averaged spatial integral of persistent coverage error, maximum refresh time, and $k$-coverage probability) replacing the degenerate all-simultaneous-constraint service-continuity metric.
 %% BEGIN CONTRIB
-    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, \textbf{[pending: ABL\_ID\_CLAUSE]}, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses. A broadcast summary of where the coverage deficit is was added a priori and measured to be \emph{harmful} at every resolution tested, which is reported rather than quietly dropped.
+    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, \textbf{[pending: ABL\_ID\_CLAUSE]}, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses. And a broadcast summary of where the coverage deficit is was added a priori and measured to make no difference to the coverage at any resolution tested, while it does change what the policy does; it is reported rather than quietly dropped.
 %% END CONTRIB
     \item Corrected deployment parameters ($N=8$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$, or $N=5$, $K=2$, $R_{\mathrm{cov}}=45\,\mathrm{m}$) derived from the feasibility certificate, replacing the infeasible $N=5$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$ baseline.
     \item An evaluation protocol that treats a physical-layer claim as requiring a negative control, and reports a measured instance in which the available instrument could not support the claim it was being used for.
@@ -266,7 +266,7 @@ A third term --- a broadcast summary of where the coverage deficit is ---
 was added a priori, on the argument that an agent which knows how many
 sensors it covers but not which are deficient has no gradient signal for
 deployment. The measurement of Section~\ref{sec:results_obs} does not
-settle that argument for the better: @@MAP_MODEL_SENTENCE@@. The summary
+settle that argument for the better: the summary makes no measurable difference to the coverage at any resolution tested, so the argument for adding it is neither supported nor refuted by the score, and what it does change is the shape of the swarm's motion. The summary
 is therefore kept in Eq.~\eqref{eq:obs} and reported as a null result
 rather than quietly dropped, and we keep the argument in the record
 because it was reasonable, and because the measurement is more useful to a
@@ -1354,11 +1354,11 @@ controllers most sharply, even though we criticise it for a different
 reason elsewhere.
 
 It is worth separating the two sources of variation in the headline
-number, because they behave differently.  Across the 5
-training runs of the learned controller the coverage varies by $0.047$
-(the standard error of the mean is $0.021$); across the
-5 evaluation scenes it varies by $0.076$ (the
-standard error of the mean over the scenes is $0.034$).  The
+number, because they behave differently.  Across the 2
+training runs of the learned controller the coverage varies by $0.113$
+(the standard error of the mean is $0.080$); across the
+5 evaluation scenes it varies by $0.100$ (the
+standard error of the mean over the scenes is $0.045$).  The
 scene component is common to every controller in the comparison, because
 they are all evaluated on the same scenes, and it therefore cancels in
 every difference this paper reports; the seed component does not, and it
@@ -1381,12 +1381,12 @@ The question that this comparison invites --- whether more training would
 have closed the gap --- deserves an answer rather than an assumption,
 because a hand-designed rule embeds a human's solution while the learner
 receives a fixed budget.  The first training run's per-episode coverage,
-measured on the training scene, runs from $0.547$ to
-$0.797$ over its 25 episodes, and its mean over
-the first five episodes ($0.663$) is the same as its mean over
-the last five ($0.665$): the curve has flattened.  The best
-single episode, $0.797$, is on a training scene, and the same
-policy scores $0.713$ on unseen scenes, so the training-scene
+measured on the training scene, runs from $0.453$ to
+$0.849$ over its 25 episodes, and its mean over
+the first five episodes ($0.643$) is the same as its mean over
+the last five ($0.687$): the curve has flattened.  The best
+single episode, $0.849$, is on a training scene, and the same
+policy scores $0.761$ on unseen scenes, so the training-scene
 figure is not an estimate of the deployed performance.  The budget is
 therefore bounded rather than eliminated: at this configuration the curve
 is flat over the budget we can afford, and we do not claim that a larger
@@ -1520,12 +1520,11 @@ the credit to act on it chases.
 
 The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.123, 95\% interval [-0.477, +0.231], an upper limit below the gap of 0.283); $the full observation of the proposed configuration$ (-0.001, 95\% interval [-0.251, +0.249], an upper limit below the gap of 0.283).  Each upper limit is below the gap of 0.283 to the reactive heuristic, so the content of the observation is not what accounts for the gap; what the observation terms buy is the ability to specialise at all, and the arms here do not separate the coverage they produce.
 
-The resolution of the summary does not rescue it: $G=8$: 0.589, and the swarm's spread contracts in every case, because the policy follows the deficit instead of dividing the work.
+The resolution of the summary makes no difference to the coverage: $G=0$: 0.641, $G=4$: 0.646, $G=8$: 0.662, and the largest of the differences is 0.021, inside the seed-to-seed spread of the learner (0.088).  What the summary does change is the swarm's behaviour: the spread falls from 14.3 m without it to 7.8 m and 9.4 m with it, because a policy that follows the deficit keeps the swarm together instead of dispersing it.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
-The observation term that does have a large effect on the coverage is not
-one of these two but the third: the bearing to the charging pad.  The
-ablation of the next section prices it, and it is the largest single
-observation effect in this work, for a reason that is easy to see in
+The observation term that has the largest effect on the coverage is not
+one of these two but the third, the bearing to the charging pad, and
+the ablation of the next section prices the observation terms individually  The reason is easy to see in
 retrospect.  Without a direction to the charger a UAV cannot come home, so
 the swarm drains its packs in the field; and a swarm that has drained its
 packs is not a swarm that can be asked to cover anything.
@@ -1618,11 +1617,12 @@ neither supported nor refuted by it.
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
-Variant & CK & AG & SC & CovIntegral & Stranded & $\Delta$CK \\
+Variant & CK & AG & SC & CovDef & Stranded & $\Delta$CK \\
 \midrule
 \textbf{Full (proposed)} & 0.682\,$\pm$\,0.063 & 0.982 & 0.058 & 0.318 & 0.6 & +0.000 \\
 no-criticality term & 0.660\,$\pm$\,0.047 & 0.977 & 0.008 & 0.340 & 0.5 & +0.022 \\
 no-degraded-service term & 0.658\,$\pm$\,0.048 & 0.978 & 0.014 & 0.342 & 0.5 & +0.024 \\
+no-energy-cost term & 0.672\,$\pm$\,0.055 & 0.987 & 0.049 & 0.328 & 0.3 & +0.010 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1685,7 +1685,7 @@ spent.
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
-Variant & CK & AG & SC & CovIntegral & Stranded & $\Delta$CK \\
+Variant & CK & AG & SC & CovDef & Stranded & $\Delta$CK \\
 \midrule
 \textbf{Full (proposed)} & 0.384 & 0.867 & 0.000 & 0.616 & 4.3 & -- \\
 no-criticality term & 0.366 & 0.907 & 0.000 & 0.634 & 5.0 & -- \\
@@ -1825,7 +1825,7 @@ tuned.  Counting the scenario variants in which the learned controller is
 ahead, behind or level with the stronger of the two rules gives
 2 ahead,
 30 behind and 2 level; the largest deficit is
-S3 (-0.586) and the largest surplus S9 (+0.057).  
+S3 (-0.586) and the largest surplus S9 (+0.057).  At the level of scenario means the learned controller is behind the stronger rule in every scenario, although it is ahead on 2 of the 34 variants, so the ordering is a property of the regime rather than of the method, and a reader told only that a learned controller loses to a rule has been told half of it.
 
 \subsection{Claim Audit and Physical-Layer Validation}
 \label{sec:validation}
@@ -2015,7 +2015,7 @@ This paper defines a persistent and fault-tolerant UAV-IoT coverage problem in w
 
 \emph{Scope of the physical-layer claim.} The Python reference PHY and INET's \texttt{BreakpointPathLoss} are the same function, to $0.012$~dB over 24 (distance, exponent) points. We deliberately do \emph{not} claim a runtime cross-validation, and the reason is measured rather than asserted: a transmit-power sweep shows that the available per-receiver SNR statistic tracks the transmit power exactly but is independent of the receiver's distance, so it cannot support a path-loss cross-validation. A physical-layer claim that has not been subjected to a negative control is not a measurement, and this is the one we would most like a reader to carry away.
 
-\emph{Honest limitations.} (i)~All results are on 2000-step episodes (400\,s of flight); the report's 10\,000-step target may change conclusions, and in particular the credit-assignment limitation may be partly a budget artefact, which the convergence measurement bounds but does not eliminate. (ii)~The single-component arms are measured with three training seeds, and that bounds what they can resolve: they resolve no effect smaller than about $n/a$ of persistent coverage. A null result from an arm of that width says that no effect above that resolution was \emph{detected}; it does not say that the component is unnecessary. A component that is redundant with another, so that removing either alone costs nothing, is invisible to an arm of this kind, and so is a component that matters only at a larger training budget; settling either needs a budget sweep or more seeds, and we run neither. (iii)~The reactive heuristic is given the exact set of under-covered sensors, which corresponds to an unbounded broadcast, while the learned policy receives a fixed-size summary; part of the gap might therefore be a difference of information and not of control.  The arm reported in the first table, in which the same rule runs without the global coverage state, measures that, and the measurement does not support the caveat. (iv)~The evaluation seed determines both the scene and the action-sampling stream, so the spread reported for a controller does not separate the scene-to-scene variation from the action-sampling variation. The two are common to every controller and cancel in the comparisons this paper draws, but they both enter the absolute numbers. (v)~The comparison is not compute-matched in the sense that a hand-designed rule embeds a human's solution while the learner receives a fixed training budget, and the learned controller's margin over the other learned arms is small compared with the seed-to-seed spread, so the differences between the learned methods should be read with that spread in mind. A learning curve is what would speak to the first point, and the convergence measurement is the only one we report. The four candidate explanations of Section~\ref{sec:experimentaldesign} are the ones the framework's own mechanisms suggest, and they do not exhaust the possibilities; the explanation that survives them was not pre-specified, so a study that had tested a different set of arms could have reached a different conclusion. (vi)~The OMNeT++ Phase-2 scenario ran and its negative control is reported, but the runtime instrument cannot support a path-loss cross-validation, so the equivalence is established from INET's source rather than from a running simulation. (vii)~Phase-3 (Simu5G PHY) is scaffolded but not executed with the learned policy. (viii)~The joint connectivity projection is correct but did not fire on the configurations tested; the per-agent mask proved sufficient, and the ablation measures that rather than asserting it. (ix)~The degenerate service-continuity metric is retained for comparison but supplemented by the non-degenerate alternatives.
+\emph{Honest limitations.} (i)~All results are on 2000-step episodes (400\,s of flight); the report's 10\,000-step target may change conclusions, and in particular the credit-assignment limitation may be partly a budget artefact, which the convergence measurement bounds but does not eliminate. (ii)~The single-component arms are measured with three training seeds, and that bounds what they can resolve: they resolve no effect smaller than about $n/a$ of persistent coverage. A null result from an arm of that width says that no effect above that resolution was \emph{detected}; it does not say that the component is unnecessary. A component that is redundant with another, so that removing either alone costs nothing, is invisible to an arm of this kind, and so is a component that matters only at a larger training budget; settling either needs a budget sweep or more seeds, and we run neither. (iii)~The reactive heuristic is given the exact set of under-covered sensors, which corresponds to an unbounded broadcast, while the learned policy receives a fixed-size summary; part of the gap might therefore be a difference of information and not of control.  The arm reported in the first table, in which the same rule runs without the global coverage state, measures that, and the measurement does not support the caveat. (iv)~The evaluation seed determines both the scene and the action-sampling stream, so the spread reported for a controller does not separate the scene-to-scene variation from the action-sampling variation. The two are common to every controller and cancel in the comparisons this paper draws, but they both enter the absolute numbers. (v)~The comparison is not compute-matched in the sense that a hand-designed rule embeds a human's solution while the learner receives a fixed training budget, and the learned controller's margin over the other learned arms is small compared with the seed-to-seed spread, so the differences between the learned methods should be read with that spread in mind. A learning curve is what would speak to the first point, and the convergence measurement is the only one we report. The four candidate explanations of Section~\ref{sec:experimentaldesign} are the ones the framework's own mechanisms suggest, and they do not exhaust the possibilities; the explanation that survives them was not pre-specified, so a study that had tested a different set of arms could have reached a different conclusion. (vi)~The OMNeT++ Phase-2 scenario ran and its negative control is reported, but the runtime instrument cannot support a path-loss cross-validation, so the equivalence is established from INET's source rather than from a running simulation. (vii)~Phase-3 (Simu5G PHY) is scaffolded but not executed with the learned policy. (viii)~The joint connectivity projection is correct, and the step-by-step accounting attributes no disconnection of the communication graph to a policy action: over the whole evaluation matrix there are $6$ transitions into a disconnected graph, of which $0$ are attributable to a move, and the projection's own revision count on the deployed configuration is $0.04$ per episode. The per-agent mask proved sufficient on the configurations tested, and the ablation measures the components' effects rather than asserting them. (ix)~The degenerate service-continuity metric is retained for comparison but supplemented by the non-degenerate alternatives.
 
 \balance
 \begin{thebibliography}{00}

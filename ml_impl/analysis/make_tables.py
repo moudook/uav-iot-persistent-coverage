@@ -175,7 +175,7 @@ def table_abl(rows, label, caption):
     lines.append(NARROW)
     lines.append(r"\begin{tabular}{@{}lcccccc@{}}")
     lines.append(r"\toprule")
-    lines.append(r"Variant & CK & AG & SC & CovIntegral & Stranded & "
+    lines.append(r"Variant & CK & AG & SC & CovDef & Stranded & "
                  r"$\Delta$CK \\")
     lines.append(r"\midrule")
     for name in ORDER:
