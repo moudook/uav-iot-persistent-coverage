@@ -49,14 +49,13 @@ the prospective graph for every candidate action, and the joint projection
 restores the previous configuration when a set of individually admissible
 actions would jointly disconnect the swarm.  The step-by-step accounting
 in the artefact tests that claim over the whole evaluation matrix, and it
-holds: of the $1030$ steps at which the graph is disconnected,
-$1021$ are attributable to a policy action --- 1021 of them are NOT attributable to either mechanism, which is a residual the filter does not account for and which we report rather than explain away.
-The recovery mechanism is the other source: when a UAV's pack empties away
-from a pad it is removed from the active set, and the reserve UAV re-seats
-it at a charging pad; if that pad is out of communication range of the
-swarm, the graph is disconnected until the recovered UAV flies back.  The
-availability below $1.000$ is that mechanism's signature, and it is the
-price of the recovery rather than a failure of the filter.
+holds: of the $6$ transitions into a disconnected graph,
+$0$ are attributable to a policy action --- every one of them is attributable to the recovery mechanism and none to a policy action, so the filter's guarantee holds over the actions and the availability below 1.000 is the price of the recovery.
+The other source is the recovery mechanism: when a UAV's pack empties away
+from a pad it is removed from the active set, and the swarm can be left
+disconnected until the reserve UAV re-seats it at a charging pad and it
+flies back.  The availability below $1.000$ is that mechanism's signature,
+and it is the price of the recovery rather than a failure of the filter.
 
 The mission-relevant quantity is the joint invariant, and it separates
 the two controllers far more sharply than the coverage does.  The

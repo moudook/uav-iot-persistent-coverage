@@ -269,38 +269,47 @@ __BLOCK_SCEN__
     if start < 0 or end < 0 or end < start:
         raise SystemExit("could not locate the Results section")
 
-    # a paper must never be assembled with an unfilled token in it
+    # The Results section is replaced only when every token in it can be
+    # filled: a section that still contains a literal token is a draft with
+    # a hole in it, and the hole is marked.
     if leftover:
-        raise SystemExit(
-            "the prose still contains unfilled tokens: " + ", ".join(leftover)
-            + "\n  (an artefact is missing -- run the stage that produces it)")
-
-    new = src[:start] + section.lstrip("\n") + src[end:]
+        print("WARNING: the Results section keeps its previous text because "
+              f"these tokens are not yet filled: {', '.join(leftover)}")
+    else:
+        src = src[:start] + section.lstrip("\n") + src[end:]
 
     # The same discipline applies to the REST of the paper: a number that
     # comes from an experiment is written as a token, so the Introduction
     # and the Conclusion cannot drift away from the Results.  The tokens are
     # filled from the same artefact table the prose blocks were filled from.
-    new, leftover = fill(new, tok)
-    if leftover:
-        raise SystemExit(
-            "the paper still contains unfilled tokens: " + ", ".join(leftover)
-            + "\n  (an artefact is missing -- run the stage that produces it)")
+    src, leftover = fill(src, tok)
 
     # the marked regions outside the Results section
     for name, (begin, end) in REGIONS.items():
         body, missing = fill(blocks[name], tok)
-        if missing:
-            raise SystemExit(
-                f"the {name} block still contains unfilled tokens: "
-                + ", ".join(missing))
-        new, ok = replace_region(new, begin, end, body)
+        src, ok = replace_region(src, begin, end, body)
         if not ok:
             raise SystemExit(f"could not locate the {begin} region in the paper")
 
+    src, leftover = fill(src, tok)
+    if leftover:
+        # a token that cannot be filled becomes a visible marker, so that
+        # the source is always a paper that compiles and the
+        # incompleteness is impossible to miss
+        print("WARNING: these tokens are not yet filled and are marked in "
+              f"the paper: {', '.join(leftover)}")
+        for name in leftover:
+            # the token's name carries underscores, which are not legal in
+            # LaTeX text mode, so they are escaped
+            esc = name.replace("_", r"\_")
+            src = src.replace(f"@@{name}@@",
+                              r"\textbf{[pending: " + esc + r"]}")
+
     with open(args.tex, "w", encoding="utf-8") as f:
-        f.write(new)
+        f.write(src)
     print(f"Results section replaced in {args.tex}")
+    if leftover:
+        raise SystemExit("the paper is incomplete: see the tokens above")
 
     if not args.no_compile:
         for _ in range(3):

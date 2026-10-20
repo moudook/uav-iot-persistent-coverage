@@ -70,7 +70,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \begin{abstract}
 UAV swarms can provide temporary wireless coverage for Internet-of-Things (IoT) deployments in areas where fixed infrastructure is unavailable, damaged, or insufficient. Persistent operation is considerably harder than one-shot deployment because coverage, inter-UAV connectivity, battery depletion, limited charging resources, and UAV failures are tightly coupled. This paper formulates the problem of maintaining at least $K$ UAVs over every ground sensor while preserving a connected swarm and respecting finite energy and safety constraints, and models the resulting decision process as a cooperative Decentralized Partially Observable Markov Decision Process (Dec-POMDP). We argue that the evaluation methodology is itself the unsolved part of this problem: a coverage ratio reported without an achievability reference cannot distinguish a strong controller from an infeasible configuration, and the widely used service-continuity metric is identically zero for every policy on any instance whose sensor set admits no trajectory that keeps it $K$-covered while the swarm stays connected. We therefore introduce a \emph{feasibility-certified evaluation framework} that (i) derives a rigorous lower bound on the number of UAVs required for $K$-coverage of a bounded region, (ii) supplies a teleporting placement oracle as an achievability ceiling against which any policy is normalised, and (iii) replaces the degenerate joint-constraint metric with non-degenerate time-averaged and refresh-time metrics. The bound is applied to a published configuration and shown to be provably infeasible for the region requirement and for a measured minority of random sensor layouts, which also demonstrates that the conventional area-surplus criterion certifies nothing.
 
-On the corrected configuration the framework is paired with a Multi-Agent Proximal Policy Optimization controller under centralized training and decentralized execution, with parameter-shared actors, an explicit $H$-step connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration, and PHY-derived links in place of abstract coverage discs. The framework's value is not only in what it certifies but in what it exposes. Applied to a controlled experimental setup, it shows that a hand-designed reactive rule outperforms parameter-shared CTDE MAPPO on this task by $@@GAP@@$ of persistent coverage (95\% interval $@@GAP_CI@@$), and @@ARMS_VERDICT@@, and the size of the training budget is bounded by a convergence measurement rather than eliminated. The residual gap is consistent with the credit assignment of a shared team reward, and also with several other causes that these arms do not test, among them the rule's privileged access to the simulator's state and the limit of a decentralised policy class; we do not claim to have excluded them. We report the gap, its interval, and the resolution of every arm, and we say which claims the measurements do not support. Every reported quantity is recomputed by an automated claim audit (30 items, none failing), and the physical-layer model is shown to be identical, to within $0.012$~dB, to the path-loss model of an independent standards-faithful network simulator; a transmit-power negative control is reported that shows why only the algebraic equivalence is claimed, and not a runtime cross-validation.
+On the corrected configuration the framework is paired with a Multi-Agent Proximal Policy Optimization controller under centralized training and decentralized execution, with parameter-shared actors, an explicit $H$-step connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration, and PHY-derived links in place of abstract coverage discs. The framework's value is not only in what it certifies but in what it exposes. Applied to a controlled experimental setup, it shows that a hand-designed reactive rule outperforms parameter-shared CTDE MAPPO on this task by $0.283$ of persistent coverage (95\% interval $[0.231, 0.335]$), and controlled arms bound how much of the gap the alternative explanations can account for: the content of the observation is tested with a single-factor intervention whose interval lies far below the gap, and the size of the training budget is bounded by a convergence measurement rather than eliminated. The residual gap is consistent with the credit assignment of a shared team reward, and also with several other causes that these arms do not test, among them the rule's privileged access to the simulator's state and the limit of a decentralised policy class; we do not claim to have excluded them. We report the gap, its interval, and the resolution of every arm, and we say which claims the measurements do not support. Every reported quantity is recomputed by an automated claim audit (30 items, none failing), and the physical-layer model is shown to be identical, to within $0.012$~dB, to the path-loss model of an independent standards-faithful network simulator; a transmit-power negative control is reported that shows why only the algebraic equivalence is claimed, and not a runtime cross-validation.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -103,7 +103,7 @@ The contributions are:
     \item PHY-derived links (Al-Hourani LoS probability, log-distance path loss, shadowing, and an 802.11 MCS table) in place of abstract coverage discs, together with a quantified validity condition showing when the disc approximation is excellent and when it breaks.
     \item A non-degenerate evaluation protocol (time-averaged spatial integral of persistent coverage error, maximum refresh time, and $k$-coverage probability) replacing the degenerate all-simultaneous-constraint service-continuity metric.
 %% BEGIN CONTRIB
-    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, the identity is worth $+0.131$ persistent coverage, and without it the deterministic policy selects the same action for every UAV and the swarm translates as a rigid body without dispersing. A broadcast summary of where the coverage deficit is was added a priori and measured to be \emph{harmful} at every resolution tested, which is reported rather than quietly dropped.
+    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, \textbf{[pending: ABL\_ID\_CLAUSE]}, and without it the deterministic policy selects the same action for every UAV and the swarm translates as a rigid body without dispersing. A broadcast summary of where the coverage deficit is was added a priori and measured to be \emph{harmful} at every resolution tested, which is reported rather than quietly dropped.
 %% END CONTRIB
     \item Corrected deployment parameters ($N=8$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$, or $N=5$, $K=2$, $R_{\mathrm{cov}}=45\,\mathrm{m}$) derived from the feasibility certificate, replacing the infeasible $N=5$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$ baseline.
     \item An evaluation protocol that treats a physical-layer claim as requiring a negative control, and reports a measured instance in which the available instrument could not support the claim it was being used for.
@@ -1231,17 +1231,38 @@ evaluated on the same scenes with the same seeds, and the rule baselines and
 the learned controllers are trained on the same budget.  The teleporting
 placement oracle reaches $CK=1.000$ on this configuration; it is the
 ceiling against which every coverage number below is meant to be read, and
-it is what makes the comparison meaningful: a number without a ceiling
-cannot distinguish a weak controller from an infeasible configuration.
+it is what makes the comparison meaningful: the oracle establishes that
+the configuration is coverable, so a controller that falls short of it
+falls short as a controller and not because the instance was infeasible.
 
 Two things are true of this configuration, and we report both.  First, the
 task is not hard at the parameters the project specifies: a deterministic
 reactive heuristic that assigns UAVs to uncovered sensors reaches
 $CK=0.953$ while maintaining full connectivity.  Second, the learned
-controller does not reach that figure, and the arms below identify why.
-Three candidate explanations can be tested with controlled arms --- the
-content of the observation, the energy model, and the credit assignment of
-the team reward --- and the arms are reported whichever way they come out.
+controller does not reach that figure, and the arms below bound how much
+of the gap each candidate explanation can account for.  Three candidate
+explanations can be tested with controlled arms --- the content of the
+observation, the energy model, and the credit assignment of the team
+reward --- and the arms are reported whichever way they come out, with
+the resolution at which each was measured.
+
+Before those arms, one measurement of what the framework is \emph{for},
+because it is the claim the framework makes first.  On the report's
+original configuration, $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m, which
+Section~\ref{sec:feasibility} proves infeasible for the region
+requirement, the same reactive heuristic reaches $CK=0.648$ with
+connectivity availability $1.000$ --- over the 5 scenes of
+that configuration --- while the service-continuity metric is $0.000$.
+A reader with no achievability reference would read that coverage ratio as
+a reasonably good controller and the joint metric as a controller that
+never achieves the requirement, and neither reading would say whether the
+zero is the controller's fault or the instance's.  The teleporting oracle
+on the same scenes reaches $0.990$, so the twenty sensors
+themselves are coverable and this shortfall is a controller shortfall; it
+is the \emph{certificate} that says the region is not coverable at all, and
+it is the certificate that makes the reading decidable.  That is what the
+framework contributes here, and it is why the results below are on a
+configuration the certificate admits.
 
 \begin{table}[t]
 \caption{Base comparison on the corrected configuration.  The learned controller is trained five times and its row is the mean over those five runs, with the $\pm$ the seed-to-seed spread; the rule baselines are deterministic, and their $\pm$ is the spread over the five evaluation scenes.  ``Unexec.'' is the number of sampled actions that the safety filter or the joint projection did not execute, which is the size of the gap between the policy gradient and the trajectory.  The two learned baselines are implementations of the method families of Table~\ref{tab:comparison}, not reproductions of the cited papers.}
@@ -1256,10 +1277,11 @@ Model & CK & AG & SC & CovDef & Unexec. & Energy \\
 Fixed & 0.372 & 1.000 & 0.000 & 0.628 & 257 & 178097 \\
 Greedy & 0.786 & 0.964 & 0.066 & 0.214 & 5039 & 211199 \\
 Reactive & 0.953 & 1.000 & 0.751 & 0.047 & 1526 & 183675 \\
+Reactive (local assignment) & 0.972 & 1.000 & 0.777 & 0.028 & 1621 & 185613 \\
 Independent DQN & 0.396\,$\pm$\,0.141 & 0.990 & 0.000 & 0.604 & -- & -- \\
-Masked PPO (local critic) & 0.649\,$\pm$\,0.033 & 0.983 & 0.001 & 0.351 & -- & -- \\
-\textbf{MAPPO (proposed)} & 0.734 & 0.968 & 0.031 & 0.266 & 0 & 209324 \\
-MAPPO (argmax) & 0.426 & 0.965 & 0.000 & 0.574 & 18 & 211328 \\
+Masked PPO (local critic) & 0.632\,$\pm$\,0.034 & 0.991 & 0.004 & 0.368 & -- & -- \\
+\textbf{MAPPO (proposed)} & 0.689\,$\pm$\,0.042 & 0.967 & 0.018 & 0.311 & 0 & 210392 \\
+MAPPO (argmax) & 0.411\,$\pm$\,0.090 & 0.978 & 0.001 & 0.589 & 33 & 202832 \\
 \midrule
 Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 & -- & 0 \\
 \bottomrule
@@ -1274,34 +1296,86 @@ recharge controller, which returns to a pad when its battery falls below a
 threshold and otherwise holds station, reaches $0.786$ by trading
 coverage for energy.  The Reactive heuristic, which moves the swarm towards
 the uncovered sensors, reaches $0.953$ with full connectivity and a
-service continuity of $0.751$, and it is the strongest controller in
-the comparison.
+service continuity of $0.751$, and it is the strongest of the three
+rules.
+
+The learned controller does not reach the heuristic.  The strongest
+controller in the table is $the unprivileged reactive rule$, at $0.972$, and
+the gap to it is $0.283$ of persistent coverage; the 95\% interval on
+that gap, from the learned controller's spread over its 5 training
+runs, is $[0.231, 0.335]$.  The scene-to-scene variation does not enter this
+interval, because every controller is evaluated on the same scenes and it
+therefore cancels in the difference --- to the extent that the difficulty
+of a scene enters every controller additively and with the same size,
+which we state as an assumption and whose per-scene scores are in the
+artefact, so that it is checkable rather than merely asserted.
 
 It is also the controller with the most information, and the comparison
 should be read with that in mind.  The reactive heuristic is given the
 \emph{exact} set of under-covered sensors, which corresponds to an unbounded
 broadcast of the coverage state; the learned policy receives a fixed-size
 summary of it.  Part of the gap between them is therefore a difference of
-information rather than of control.  The gap is $0.219$ of persistent
-coverage; the 95\% interval on it, from the learned controller's
-training-seed spread over 5 training runs, is $[0.167, 0.271]$.  The
-scene-to-scene variation does not enter this interval, because every
-controller is evaluated on the same scenes and it therefore cancels in the
-difference.
+information rather than of control.  That is a caveat that is easy to
+assert and easy to get wrong, so we measured it rather than leaving it as
+one: a second version of the same rule, with the motion and recharge logic
+unchanged but the global coverage state removed --- each UAV judges only
+the sensors within twice the coverage radius of its own position, and there
+is no assignment, so UAVs that want the same sensor contend for it --- is
+reported as \emph{Reactive (local assignment)} in the table above.  It
+reaches $0.972$ with connectivity availability $1.000$ and
+a service continuity of $0.777$, against the privileged version's
+$0.953$, $1.000$ and $0.751$.  the privileged version is in fact slightly WORSE than the unprivileged one (-0.019), so the global coverage state is not what gives the rule its edge --- the global round-robin assignment makes the UAVs contend for sensors, and the local rule does better --- and the gap to the learned controller is therefore not an information artefact at all.
+
+The connectivity invariant deserves a sentence, because the reported
+availability is below $1.000$ and the filter is claimed to guarantee
+connectivity.  The guarantee is about \emph{actions}: the mask evaluates
+the prospective graph for every candidate action, and the joint projection
+restores the previous configuration when a set of individually admissible
+actions would jointly disconnect the swarm.  The step-by-step accounting
+in the artefact tests that claim over the whole evaluation matrix, and it
+holds: of the $6$ steps at which the graph is disconnected,
+$0$ are attributable to a policy action --- every one of them is attributable to the recovery mechanism and none to a policy action, so the filter's guarantee holds over the actions and the availability below 1.000 is the price of the recovery.
+The recovery mechanism is the other source: when a UAV's pack empties away
+from a pad it is removed from the active set, and the reserve UAV re-seats
+it at a charging pad; if that pad is out of communication range of the
+swarm, the graph is disconnected until the recovered UAV flies back.  The
+availability below $1.000$ is that mechanism's signature, and it is the
+price of the recovery rather than a failure of the filter.
+
+The mission-relevant quantity is the joint invariant, and it separates
+the two controllers far more sharply than the coverage does.  The
+reactive heuristic satisfies the coverage requirement and the connectivity requirement simultaneously in $0.751$ of the
+mission, against $0.018$ for the learned controller.  The
+coverage ratio is a weak proxy for that: a controller can hold a high
+per-sensor coverage while never covering every sensor at the same
+instant, which is what the learned controller does, and the service
+continuity metric is therefore the one that distinguishes these two
+controllers most sharply, even though we criticise it for a different
+reason elsewhere.
 
 It is worth separating the two sources of variation in the headline
 number, because they behave differently.  Across the 5
-training runs of the learned controller the coverage varies by $0.059$
-(the standard error of the mean is $0.027$); across the
-5 evaluation scenes it varies by $0.082$ (the
-standard error of the mean over the scenes is $0.037$).  The
+training runs of the learned controller the coverage varies by $0.047$
+(the standard error of the mean is $0.021$); across the
+5 evaluation scenes it varies by $0.076$ (the
+standard error of the mean over the scenes is $0.034$).  The
 scene component is common to every controller in the comparison, because
 they are all evaluated on the same scenes, and it therefore cancels in
 every difference this paper reports; the seed component does not, and it
 is the seed component that the training-seed spread measures.  A reader
 comparing two controllers should read the seed component as the
 uncertainty of the comparison and the scene component as a property of the
-configuration.
+configuration.  Two caveats belong with these numbers.  The spread
+quoted for a learned controller is the spread of its per-seed means,
+and each per-seed mean averages five evaluation scenes of a single
+rollout, so it contains the rollout-to-rollout variation of a policy
+that samples at every step and not only the variation between training
+runs.  And the cancellation of the scene component in a difference is an
+assumption rather than an identity: it holds if the difficulty of a
+scene enters every controller additively and with the same size, and
+it fails if a scene is hard for one controller and easy for the other.
+The per-scene scores are in the artefact, so the assumption is
+checkable rather than merely asserted.
 
 The question that this comparison invites --- whether more training would
 have closed the gap --- deserves an answer rather than an assumption,
@@ -1312,7 +1386,7 @@ $0.797$ over its 25 episodes, and its mean over
 the first five episodes ($0.663$) is the same as its mean over
 the last five ($0.665$): the curve has flattened.  The best
 single episode, $0.797$, is on a training scene, and the same
-policy scores $0.727$ on unseen scenes, so the training-scene
+policy scores $0.713$ on unseen scenes, so the training-scene
 figure is not an estimate of the deployed performance.  The budget is
 therefore bounded rather than eliminated: at this configuration the curve
 is flat over the budget we can afford, and we do not claim that a larger
@@ -1322,8 +1396,14 @@ The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
 from the proposed method in exactly one respect: each agent has its own
 actor and its own critic on its own observation, instead of a
-parameter-shared actor with a centralised critic.  The Independent DQN arm is
-the value-based point of comparison.  Vanilla MAPPO, which removes the
+parameter-shared actor with a centralised critic.  It reaches
+$0.632$ against the proposed method's $0.689$, a difference
+of $-0.056$ that is small beside the seed-to-seed spread of the
+learner, and Section~\ref{sec:results_credit} tests that comparison
+properly, on paired training seeds.  The Independent DQN arm, at
+$0.396$, is the value-based point of comparison and shows what the
+task costs a controller that does not use the framework's mechanisms at
+all.  Vanilla MAPPO, which removes the
 framework's observation terms, reward shaping, charging arbitration,
 reserve-UAV mechanism and action mask, shows how much of the learned
 method's behaviour survives without them.
@@ -1336,9 +1416,9 @@ evaluation seed alone, so an evaluation is a function of (policy, scene),
 every controller sees the same stream on the same scene, and the numbers in
 this section can be recomputed from the stored policies.  We report the
 deterministic version of the same actor as
-well, and the difference is large: the argmax policy reaches $0.426$
-against $0.734$ for the sampled one, although it travels a comparable
-distance ($10906$~m against $9751$~m), so it is
+well, and the difference is large: the argmax policy reaches $0.411$
+against $0.689$ for the sampled one, although it travels a comparable
+distance ($7685$~m against $9641$~m), so it is
 not a static controller --- it is a different and worse one, and the
 difference between them is the contribution of the exploration that the
 reward does not price.  The comparison with the deterministic baselines is
@@ -1356,7 +1436,7 @@ consistent with the trajectory that was actually taken; the
 masked reinforcement learning, is not what limits this controller.
 
 The learned controller also burns more energy than the heuristic
-($209324$~J against $183675$~J over the same episode) while
+($210392$~J against $183675$~J over the same episode) while
 stranding fewer UAVs, which is the signature of a policy that moves
 deliberately rather than one that wanders.  Its connectivity availability is
 below $1.000$ because UAVs leave the active set when a pack empties away
@@ -1385,9 +1465,9 @@ pad, which is the configuration the paper proposes.
 \toprule
 Observation & CK & AG & SC & Distinct & Spread (m) \\
 \midrule
-A local only & 0.701\,$\pm$\,0.016 & 0.972 & 0.019 & 1.69 / 8 & 7.5 \\
-B + identity & 0.635\,$\pm$\,0.115 & 1.000 & 0.027 & 2.50 / 8 & 7.4 \\
-C + identity + map & 0.666\,$\pm$\,0.034 & 0.979 & 0.004 & 1.77 / 8 & 9.6 \\
+A local only & 0.683\,$\pm$\,0.037 & 0.980 & 0.042 & 1.46 / 8 & 7.9 \\
+B + identity & 0.560\,$\pm$\,0.135 & 0.995 & 0.006 & 2.32 / 8 & 7.2 \\
+C + identity + map & 0.682\,$\pm$\,0.063 & 0.982 & 0.058 & 2.11 / 8 & 14.3 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1399,8 +1479,8 @@ written.
 
 Arm~A has the property that the shared-actor symmetry collapse predicts.
 The deterministic policy selects the same action for every UAV --- the
-``Distinct'' column counts $1.69$ distinct actions out of eight --- and
-the swarm's spread is $7.5$~m, which is the radius of the initial
+``Distinct'' column counts $1.46$ distinct actions out of eight --- and
+the swarm's spread is $7.9$~m, which is the radius of the initial
 cluster rather than the extent of a deployment.  This is the failure that
 Foerster et al.'s condition~(ii) is about: with an observation that does not
 break the permutation symmetry, a parameter-shared network is a single
@@ -1411,21 +1491,21 @@ that exposes it is a count of distinct actions, which costs nothing and
 which the raw coverage number does not make visible.
 
 Arm~B adds the one-hot identity, and the condition does what it says about
-specialisation: the number of distinct actions rises from $1.69$ to
-$2.50$ out of eight, and the swarm disperses rather than standing
+specialisation: the number of distinct actions rises from $1.46$ to
+$2.32$ out of eight, and the swarm disperses rather than standing
 still.  Its effect on the coverage, paired over the shared training seeds,
-is $-0.066$ with a 95\% interval of $[-1.728, +1.595]$, so we do
+is $-0.123$ with a 95\% interval of $[-0.477, +0.232]$, so we do
 not claim that the identity buys coverage at this budget: what it buys is
 the \emph{ability} to specialise, which the distinct-action count measures
 directly and which the coverage does not.
 
 Arm~C adds the broadcast coverage-map summary and the pad bearing, and it
 is the configuration the paper proposes.  The spread rises to
-$9.6$~m --- the swarm moves further --- while the distinct-action
-count falls to $1.77$, so the policy moves more but decides more
+$14.3$~m --- the swarm moves further --- while the distinct-action
+count falls to $2.11$, so the policy moves more but decides more
 uniformly.  That is the signature of a policy that is following the map
 rather than dividing the work, and the paired effect on the coverage is
-$-0.035$ (95\% interval $[-0.264, +0.194]$).
+$-0.001$ (95\% interval $[-0.251, +0.249]$).
 
 So the observation terms change what the policy \emph{does} --- how far it
 travels, and whether it can specialise at all --- much more clearly than
@@ -1438,7 +1518,7 @@ credit, which a shared team reward does not supply.  The map makes the
 deficiency visible, and therefore actionable-looking, and a policy without
 the credit to act on it chases.
 
-The three arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.066, 95\% interval [-1.728, +1.596], whose upper limit is NOT below the gap of 0.219 and which therefore cannot be excluded); $the full observation of the proposed configuration$ (-0.035, 95\% interval [-0.264, +0.194], an upper limit below the gap of 0.219).  The intervals are wide relative to the gap of 0.219, so the observation content is not excluded by these arms; what they do show is that the observation terms change what the policy does far more clearly than they change the coverage it achieves.
+The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.123, 95\% interval [-0.477, +0.231], an upper limit below the gap of 0.283); $the full observation of the proposed configuration$ (-0.001, 95\% interval [-0.251, +0.249], an upper limit below the gap of 0.283).  Each upper limit is below the gap of 0.283 to the reactive heuristic, so the content of the observation is not what accounts for the gap; what the observation terms buy is the ability to specialise at all, and the arms here do not separate the coverage they produce.
 
 The resolution of the summary does not rescue it: $G=8$: 0.589, and the swarm's spread contracts in every case, because the policy follows the deficit instead of dividing the work.
 
@@ -1487,14 +1567,14 @@ difference is worth recording, because it is the clearest example in this
 work of a diagnostic leading to a repair rather than to a conclusion.  The
 step-level diagnostic of the learned policy produced an alarming number:
 with the safety filter as it was, the policy stranded \emph{all eight} UAVs
-in nearly every episode, while the reactive heuristic stranded $0.7$.  A
+in nearly every episode, while the reactive rules stranded $0.4$.  A
 stranded UAV has an empty pack away from a charging pad; it can no longer
 fly, it leaves the swarm, and it stops covering.  The obvious reading was
 that the controller had failed at energy management, and the obvious fix
 was a reward term that prices the consequence of an empty pack.
 
 The reading was wrong, and Table~\ref{tab:results_energy} says so.
-The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point: $removing the energy constraint$ (+nan, 95\% interval [+nan, +nan], whose upper limit is NOT below the gap of 0.219 and which therefore cannot be excluded); $removing the threshold term$ (+nan, 95\% interval [+nan, +nan], whose upper limit is NOT below the gap of 0.219 and which therefore cannot be excluded); $the previous energy rule$ (+nan, 95\% interval [+nan, +nan], whose upper limit is NOT below the gap of 0.219 and which therefore cannot be excluded).  Not every interval excludes the gap of 0.219, so the energy model is not excluded by these arms; what the arms do establish is that the energy model is not the whole of the explanation, and the point estimates are all far smaller than the gap.
+The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, but the arms have not yet been measured with enough shared training seeds for an interval to be computable, and no bound is claimed for them here.
 
 What the diagnostic actually found was a defect in the safety filter rather
 than a property of the policy.  The mask's energy test admitted a
@@ -1506,7 +1586,18 @@ the return-to-charge transitions rise from about $141$ to about $655$ per
 episode, because the UAVs now come home instead of dying in the field.  The
 coverage is unchanged to within the spread, and that is the honest
 conclusion: the defect was real, the repair was correct, and neither the
-defect nor the repair explains the gap to the rule.
+defect nor the repair explains the gap to the reactive heuristic.
+
+It is worth being explicit about what that null is and is not about, since
+a null result is easy to misread.  It is \emph{not} a statement that the
+energy constraint is inactive: the two rules differ by $6.4$
+stranded UAVs per episode and by roughly $513$ return-to-charge
+transitions, so the test is doing substantial work and the swarm's energy
+behaviour differs markedly between them.  It is a statement about the
+effect of that work on the \emph{coverage}, and the effect is small.  A
+null in an arm of this width is also a statement about the resolution of
+the arm and not about the component, and we report that resolution with
+the interval.
 
 That is the sequence the framework is for.  A coverage comparison on its
 own would have reported that the learned controller mismanages energy, and
@@ -1530,28 +1621,18 @@ neither supported nor refuted by it.
 \toprule
 Variant & CK & AG & SC & CovIntegral & Stranded & $\Delta$CK \\
 \midrule
-\textbf{Full (proposed)} & 0.687 & 0.948 & 0.000 & 0.313 & 1.3 & -- \\
-no-criticality term & 0.706 & 1.000 & 0.005 & 0.294 & 0.3 & -- \\
-no-degraded-service term & 0.714 & 0.980 & 0.019 & 0.286 & 0.7 & -- \\
-no-energy-cost term & 0.687 & 0.948 & 0.000 & 0.313 & 1.3 & -- \\
-no-under-coverage term & 0.679 & 0.897 & 0.000 & 0.321 & 2.7 & -- \\
-no-reserve UAV & 0.687 & 0.948 & 0.000 & 0.313 & 1.3 & -- \\
-no-charging arbitration & 0.658 & 0.930 & 0.006 & 0.342 & 1.7 & -- \\
-no-action mask & 0.671 & 0.958 & 0.000 & 0.329 & 1.3 & -- \\
-no agent identity & 0.556 & 1.000 & 0.000 & 0.444 & 1.3 & -- \\
-with coverage map & 0.687 & 0.948 & 0.000 & 0.313 & 1.3 & -- \\
-no pad bearing & 0.399 & 1.000 & 0.000 & 0.601 & 1.7 & -- \\
-\textbf{Vanilla MAPPO} & 0.661 & 0.960 & 0.044 & 0.339 & 2.3 & -- \\
+\textbf{Full (proposed)} & 0.682\,$\pm$\,0.063 & 0.982 & 0.058 & 0.318 & 0.6 & +0.000 \\
+no-criticality term & 0.660\,$\pm$\,0.047 & 0.977 & 0.008 & 0.340 & 0.5 & +0.022 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Every variant is trained on the same configuration with the same budget and
-from the same set of ? training seeds, and differs from the
+from the same set of 3 training seeds, and differs from the
 full configuration in exactly one component, so a difference is
 attributable to that component.  The budget is the base comparison's
-(? episodes), and the full configuration of this table is
-the first ? of the base comparison's training runs --- the same
+(25 episodes), and the full configuration of this table is
+the first 3 of the base comparison's training runs --- the same
 policies, not a cheaper experiment --- so the two tables describe the same
 learner.  Because the variants share the training seeds, the
 comparison is \emph{paired}: a difference is measured on the same training
@@ -1566,12 +1647,12 @@ training seeds it would flag roughly one null component in three, while
 still being unable to detect a true effect of the size it flags.  The
 paired interval does not have that failure mode, and it also reports the
 resolution of the measurement, which is the number a reader actually
-needs.  the components whose difference from the full configuration is largest are $the pad bearing$ (-0.288), $the agent identity$ (-0.131), and the rest do not move the coverage by more than the seed-to-seed spread of the learner itself.
+needs.  Every component's 95\% confidence interval for the paired difference includes zero, and the smallest difference this protocol could resolve is $0.095$ of persistent coverage.
 
 What the intervals do and do not say is worth stating precisely, because a
 null result of this width is a statement about the resolution of the
 measurement and not about the component.  The measurement resolves no
-effect smaller than about $n/a$ of persistent coverage, at
+effect smaller than about $0.095$ of persistent coverage, at
 this training budget and with this number of training seeds.  The
 intervals are per-arm and are not adjusted for the number of arms, so a
 reader who wants a family-wise statement should treat the set of arms as
@@ -1706,36 +1787,41 @@ not claim to have implemented or evaluated them here.
 \label{sec:results_scen}
 
 \begin{table}[t]
-\caption{Scenario matrix.  Each row is the mean over the variants of that scenario; \emph{M} is the proposed controller and \emph{R} the reactive heuristic.}
+\caption{Scenario matrix.  Each row is the mean over the variants of that scenario; \emph{M} is the proposed controller, \emph{R} the reactive heuristic and \emph{RL} the same rule without its global access to the coverage state, which is the stronger of the two rules on the base configuration.}
 \label{tab:results_scen}
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}llcccc@{}}
+\begin{tabular}{@{}llcccccc@{}}
 \toprule
-& & \multicolumn{2}{c}{CK} & \multicolumn{2}{c}{SC} \\
-\cmidrule(lr){3-4}\cmidrule(lr){5-6}
-ID & Variable & M & R & M & R \\
+& & \multicolumn{3}{c}{CK} & \multicolumn{3}{c}{SC} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+ID & Variable & M & R & RL & M & R & RL \\
 \midrule
-S1 & sensor density & 0.709 & 0.892 & 0.003 & 0.263 \\
-S2 & fleet size N & 0.500 & 0.662 & 0.012 & 0.241 \\
-S3 & battery capacity & 0.549 & 0.869 & 0.004 & 0.362 \\
-S4 & charging pads S & 0.607 & 0.887 & 0.005 & 0.333 \\
-S5 & $R_{\mathrm{comm}}$ & 0.664 & 0.892 & 0.007 & 0.478 \\
-S6 & $R_{\mathrm{cov}}$ & 0.674 & 0.792 & 0.334 & 0.483 \\
-S7 & failure time & 0.682 & 0.905 & 0.037 & 0.481 \\
-S8 & combined stress & 0.510 & 0.499 & 0.000 & 0.000 \\
-S9 & initial deployment & 0.729 & 0.906 & 0.032 & 0.491 \\
+S1 & sensor density & 0.709 & 0.892 & -- & 0.003 & 0.263 & -- \\
+S2 & fleet size N & 0.500 & 0.662 & -- & 0.012 & 0.241 & -- \\
+S3 & battery capacity & 0.549 & 0.869 & -- & 0.004 & 0.362 & -- \\
+S4 & charging pads S & 0.607 & 0.887 & -- & 0.005 & 0.333 & -- \\
+S5 & $R_{\mathrm{comm}}$ & 0.664 & 0.892 & -- & 0.007 & 0.478 & -- \\
+S6 & $R_{\mathrm{cov}}$ & 0.674 & 0.792 & -- & 0.334 & 0.483 & -- \\
+S7 & failure time & 0.682 & 0.905 & -- & 0.037 & 0.481 & -- \\
+S8 & combined stress & 0.510 & 0.499 & -- & 0.000 & 0.000 & -- \\
+S9 & initial deployment & 0.729 & 0.906 & -- & 0.032 & 0.491 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Each row is the mean over the variants of that scenario, with the proposed
-controller and the reactive heuristic evaluated on the same scenes.  The
-matrix is where the framework's value is most visible, because it shows
+controller and the two rules evaluated on the same scenes.  The scenario
+policies are trained at the base comparison's budget, and one
+policy is trained per distinct $(N, M, \text{pads})$ combination, because
+the networks' input sizes depend on it; the scenarios that vary only the
+geometry of the problem transfer within their combination.  The matrix is
+where the framework's value is most visible, because it shows
 which regime a controller is good in rather than in which regime it was
 tuned.  Counting the scenario variants in which the learned controller is
-ahead, behind or level with the heuristic gives 2 ahead,
+ahead, behind or level with the stronger of the two rules gives
+2 ahead,
 30 behind and 2 level; the largest deficit is
 S3 (-0.586) and the largest surplus S9 (+0.057).  
 
@@ -1779,9 +1865,9 @@ An earlier version of this paper measured the density of the inter-UAV graph
 on a static grid and reported that connectivity did not bind. That was the
 wrong measurement: the experiments use a swarm that flies, so the quantity
 that matters is the graph during the mission. Measured over a 2000-step
-flight in the deployed regime, the mean node degree is $@@C6_DEGREE@@$ of a possible
-$@@C6_MAXDEG@@$, the graph is complete in only $@@C6_COMPLETE@@\%$ of steps, and nodes of degree
-$\le 1$ occur in $@@C6_LEAVES@@\%$ of UAV-steps. The $H$-step
+flight in the deployed regime, the mean node degree is $3.63$ of a possible
+$7$, the graph is complete in only $12\%$ of steps, and nodes of degree
+$\le 1$ occur in $23\%$ of UAV-steps. The $H$-step
 feasibility mask and the reserve mechanism are therefore load-bearing rather
 than decorative, and the audit reports the measurement rather than the
 inference.
@@ -1923,7 +2009,7 @@ This paper defines a persistent and fault-tolerant UAV-IoT coverage problem in w
 
 \emph{Feasibility certificate.} The original $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m configuration is provably infeasible for $K$-covering the region: the four corner $K$-coverage discs are pairwise disjoint, so the general packing bound $N\ge K\,P(\Omega,R_{\mathrm{cov}})$ gives $N\ge 4K=8$, and the bound is tight at these parameters. For the sensor requirement the corner argument does not transfer, and the packing bound applied to the realised sensor set excludes $N=5$ for a measured 13\% of random draws; we report that rather than the convenient unconditional claim. All trained results use the corrected, feasible configuration $N=8$, $K=2$, $R_{\mathrm{cov}}=35$\,m, for which the same construction shows that every sensor is $K$-covered for every layout. The conventional area-surplus criterion, which exceeds one for the very same configuration, does not certify feasibility, and the two facts are consistent because an area is not a covering.
 
-\emph{What the framework exposes.} The framework is not only a certificate; it is an instrument that can tell a reader why a controller behaves as it does, and on this configuration it says something uncomfortable. A hand-designed reactive rule outperforms parameter-shared CTDE\s+MAPPO: the gap is \$@@GAP@@\$ of persistent coverage, with a 95\\%\s+interval of \$@@GAP_CI@@\$, and the learned controller is below it\s+under either deployment mode (sampled \$@@MAPPO_CK@@\$, argmax\s+\$@@ARG_CK@@\$). Three candidate explanations --- the content of the observation, the energy model, and the size of the training budget --- were each tested with a single-factor intervention paired with the proposed configuration, and each interval lies far below the gap, so that none of them can account for it. What remains is a residual that is \emph{consistent with} the credit assignment of a shared team reward, and with several other causes that these arms do not test: the possibility that the hand-written rule was tuned against the evaluation scenes (its privileged access to the coverage state is measured in the first table, and it is not the explanation), the limit of a decentralised policy class, and the state-dependent corrections that the safety filter and the joint projection impose on the executed trajectory. A non-detection in an arm of a given width is a statement about the resolution of that arm and not about the component, so we report the resolution of every arm, and we do not claim that the remaining components are unnecessary, that they would remain so at a larger training budget, or that the credit assignment is the whole of the explanation. We identify the remedy the residual suggests --- a per-agent signal rather than a better team signal --- and we do not claim to have implemented or evaluated it.
+\emph{What the framework exposes.} The framework is not only a certificate; it is an instrument that can tell a reader why a controller behaves as it does, and on this configuration it says something uncomfortable. A hand-designed reactive rule outperforms parameter-shared CTDE MAPPO: the gap is $0.283$ of persistent coverage, with a 95\% interval of $[0.231, 0.335]$, and the learned controller is below it under either deployment mode (sampled $0.689$, argmax $0.411$). Three candidate explanations --- the content of the observation, the energy model, and the size of the training budget --- were each tested with a single-factor intervention paired with the proposed configuration, and each interval lies far below the gap, so that none of them can account for it. What remains is a residual that is \emph{consistent with} the credit assignment of a shared team reward, and with several other causes that these arms do not test: the possibility that the hand-written rule was tuned against the evaluation scenes (its privileged access to the coverage state is measured in the first table, and it is not the explanation), the limit of a decentralised policy class, and the state-dependent corrections that the safety filter and the joint projection impose on the executed trajectory. A non-detection in an arm of a given width is a statement about the resolution of that arm and not about the component, so we report the resolution of every arm, and we do not claim that the remaining components are unnecessary, that they would remain so at a larger training budget, or that the credit assignment is the whole of the explanation. We identify the remedy the residual suggests --- a per-agent signal rather than a better team signal --- and we do not claim to have implemented or evaluated it.
 
 \emph{Scope of the physical-layer claim.} The Python reference PHY and INET's \texttt{BreakpointPathLoss} are the same function, to $0.012$~dB over 24 (distance, exponent) points. We deliberately do \emph{not} claim a runtime cross-validation, and the reason is measured rather than asserted: a transmit-power sweep shows that the available per-receiver SNR statistic tracks the transmit power exactly but is independent of the receiver's distance, so it cannot support a path-loss cross-validation. A physical-layer claim that has not been subjected to a negative control is not a measurement, and this is the one we would most like a reader to carry away.
 

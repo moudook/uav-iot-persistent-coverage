@@ -33,6 +33,7 @@ Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 & -- & 0 \\
 Variant & CK & AG & SC & CovIntegral & Stranded & $\Delta$CK \\
 \midrule
 \textbf{Full (proposed)} & 0.682\,$\pm$\,0.063 & 0.982 & 0.058 & 0.318 & 0.6 & +0.000 \\
+no-criticality term & 0.660\,$\pm$\,0.047 & 0.977 & 0.008 & 0.340 & 0.5 & +0.022 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -64,26 +65,26 @@ no pad bearing & 0.234 & 0.803 & 0.000 & 0.766 & 5.3 & -- \\
 \end{table}
 
 \begin{table}[t]
-\caption{Scenario matrix.  Each row is the mean over the variants of that scenario; \emph{M} is the proposed controller and \emph{R} the reactive heuristic.}
+\caption{Scenario matrix.  Each row is the mean over the variants of that scenario; \emph{M} is the proposed controller, \emph{R} the reactive heuristic and \emph{RL} the same rule without its global access to the coverage state, which is the stronger of the two rules on the base configuration.}
 \label{tab:results_scen}
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}llcccc@{}}
+\begin{tabular}{@{}llcccccc@{}}
 \toprule
-& & \multicolumn{2}{c}{CK} & \multicolumn{2}{c}{SC} \\
-\cmidrule(lr){3-4}\cmidrule(lr){5-6}
-ID & Variable & M & R & M & R \\
+& & \multicolumn{3}{c}{CK} & \multicolumn{3}{c}{SC} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+ID & Variable & M & R & RL & M & R & RL \\
 \midrule
-S1 & sensor density & 0.709 & 0.892 & 0.003 & 0.263 \\
-S2 & fleet size N & 0.500 & 0.662 & 0.012 & 0.241 \\
-S3 & battery capacity & 0.549 & 0.869 & 0.004 & 0.362 \\
-S4 & charging pads S & 0.607 & 0.887 & 0.005 & 0.333 \\
-S5 & $R_{\mathrm{comm}}$ & 0.664 & 0.892 & 0.007 & 0.478 \\
-S6 & $R_{\mathrm{cov}}$ & 0.674 & 0.792 & 0.334 & 0.483 \\
-S7 & failure time & 0.682 & 0.905 & 0.037 & 0.481 \\
-S8 & combined stress & 0.510 & 0.499 & 0.000 & 0.000 \\
-S9 & initial deployment & 0.729 & 0.906 & 0.032 & 0.491 \\
+S1 & sensor density & 0.709 & 0.892 & -- & 0.003 & 0.263 & -- \\
+S2 & fleet size N & 0.500 & 0.662 & -- & 0.012 & 0.241 & -- \\
+S3 & battery capacity & 0.549 & 0.869 & -- & 0.004 & 0.362 & -- \\
+S4 & charging pads S & 0.607 & 0.887 & -- & 0.005 & 0.333 & -- \\
+S5 & $R_{\mathrm{comm}}$ & 0.664 & 0.892 & -- & 0.007 & 0.478 & -- \\
+S6 & $R_{\mathrm{cov}}$ & 0.674 & 0.792 & -- & 0.334 & 0.483 & -- \\
+S7 & failure time & 0.682 & 0.905 & -- & 0.037 & 0.481 & -- \\
+S8 & combined stress & 0.510 & 0.499 & -- & 0.000 & 0.000 & -- \\
+S9 & initial deployment & 0.729 & 0.906 & -- & 0.032 & 0.491 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
