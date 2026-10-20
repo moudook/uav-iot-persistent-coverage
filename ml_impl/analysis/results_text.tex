@@ -12,18 +12,19 @@ recharge controller, which returns to a pad when its battery falls below a
 threshold and otherwise holds station, reaches $@@GREEDY_CK@@$ by trading
 coverage for energy.  The Reactive heuristic, which moves the swarm towards
 the uncovered sensors, reaches $@@REACT_CK@@$ with full connectivity and a
-service continuity of $@@REACT_SC@@$, and it is the strongest controller in
-the comparison.
+service continuity of $@@REACT_SC@@$, and it is the strongest of the three
+rules.
 
-The learned controller does not reach the heuristic.  The gap is $@@GAP@@$ of
-persistent coverage; the 95\% interval on it, from the learned
-controller's spread over its @@GAP_N@@ training runs, is $@@GAP_CI@@$.  The
-scene-to-scene variation does not enter this interval, because every
-controller is evaluated on the same scenes and it therefore cancels in the
-difference --- to the extent that the difficulty of a scene enters every
-controller additively and with the same size, which we state as an
-assumption and whose per-scene scores are in the artefact, so that it is
-checkable rather than merely asserted.
+The learned controller does not reach the heuristic.  The strongest
+controller in the table is $@@BEST_RULE_NAME@@$, at $@@BEST_RULE_CK@@$, and
+the gap to it is $@@GAP@@$ of persistent coverage; the 95\% interval on
+that gap, from the learned controller's spread over its @@GAP_N@@ training
+runs, is $@@GAP_CI@@$.  The scene-to-scene variation does not enter this
+interval, because every controller is evaluated on the same scenes and it
+therefore cancels in the difference --- to the extent that the difficulty
+of a scene enters every controller additively and with the same size,
+which we state as an assumption and whose per-scene scores are in the
+artefact, so that it is checkable rather than merely asserted.
 
 It is also the controller with the most information, and the comparison
 should be read with that in mind.  The reactive heuristic is given the

@@ -178,7 +178,28 @@ def build_tokens():
         # in the difference.
         react = main_rows.get("Reactive")
         if react:
-            gap = float(react["CK"]) - float(mp["CK"])
+            # THE GAP is against the STRONGEST controller in the table, which
+            # is not necessarily the privileged heuristic: the gap has to
+            # be the hardest one the learned controller faces.
+            best = None
+            for cand in ("Reactive-local", "Reactive", "Greedy", "Fixed"):
+                r = main_rows.get(cand)
+                if r is None:
+                    continue
+                if best is None or float(r["CK"]) > float(best[1]["CK"]):
+                    best = (cand, r)
+            if best is not None:
+                name, r = best
+                tok["BEST_RULE_NAME"] = {
+                    "Reactive-local": "the unprivileged reactive rule",
+                    "Reactive": "the reactive heuristic",
+                    "Greedy": "the greedy recharge controller",
+                    "Fixed": "the fixed formation",
+                }.get(name, name)
+                tok["BEST_RULE_CK"] = f(r["CK"])
+                gap = float(r["CK"]) - float(mp["CK"])
+            else:
+                gap = float(react["CK"]) - float(mp["CK"])
             tok["GAP"] = f"{gap:.3f}"
             s = mp.get("CK_std")
             n = int(mp.get("train_seeds", 0) or 0)

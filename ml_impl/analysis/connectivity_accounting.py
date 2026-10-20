@@ -61,6 +61,7 @@ def account(seed, steps, policy="random", agent=None, eval_seed=None):
     env = UAVIoTEnv(cfg)
     obs, _ = env.reset()
     rows = []
+    was_connected = True
     for t in range(steps):
         mask = np.stack(env.action_masks())
         for i in range(cfg.N):
@@ -81,9 +82,11 @@ def account(seed, steps, policy="random", agent=None, eval_seed=None):
         obs, _, _, done, _ = env.step(acts)
         after = len(env._active_idx())
         act, adj, _ = env.comm_graph()
-        if not env.is_connected(adj):
-            # a teleport: a UAV that was out of service is re-seated at a
-            # pad, and it may be out of communication range of the swarm
+        connected = env.is_connected(adj)
+        # only a TRANSITION into disconnection is a new event: a graph that
+        # was already disconnected stays disconnected, and the cause is in
+        # an earlier step
+        if not connected and was_connected:
             teleported = int(np.sum(
                 np.linalg.norm(env.p - p_before, axis=1) > 2.0))
             left = int(np.sum(failed_before & ~env.failed))
@@ -93,6 +96,7 @@ def account(seed, steps, policy="random", agent=None, eval_seed=None):
                              teleported=teleported, left_agents=left,
                              revived_agents=revived,
                              policy_seed=seed, eval_seed=eval_seed))
+        was_connected = connected
         if done:
             break
     return rows

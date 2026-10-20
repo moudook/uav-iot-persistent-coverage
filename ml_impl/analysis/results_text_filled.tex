@@ -12,18 +12,19 @@ recharge controller, which returns to a pad when its battery falls below a
 threshold and otherwise holds station, reaches $0.786$ by trading
 coverage for energy.  The Reactive heuristic, which moves the swarm towards
 the uncovered sensors, reaches $0.953$ with full connectivity and a
-service continuity of $0.751$, and it is the strongest controller in
-the comparison.
+service continuity of $0.751$, and it is the strongest of the three
+rules.
 
-The learned controller does not reach the heuristic.  The gap is $0.264$ of
-persistent coverage; the 95\% interval on it, from the learned
-controller's spread over its 5 training runs, is $[0.212, 0.316]$.  The
-scene-to-scene variation does not enter this interval, because every
-controller is evaluated on the same scenes and it therefore cancels in the
-difference --- to the extent that the difficulty of a scene enters every
-controller additively and with the same size, which we state as an
-assumption and whose per-scene scores are in the artefact, so that it is
-checkable rather than merely asserted.
+The learned controller does not reach the heuristic.  The strongest
+controller in the table is $the unprivileged reactive rule$, at $0.972$, and
+the gap to it is $0.283$ of persistent coverage; the 95\% interval on
+that gap, from the learned controller's spread over its 5 training
+runs, is $[0.231, 0.335]$.  The scene-to-scene variation does not enter this
+interval, because every controller is evaluated on the same scenes and it
+therefore cancels in the difference --- to the extent that the difficulty
+of a scene enters every controller additively and with the same size,
+which we state as an assumption and whose per-scene scores are in the
+artefact, so that it is checkable rather than merely asserted.
 
 It is also the controller with the most information, and the comparison
 should be read with that in mind.  The reactive heuristic is given the
@@ -37,9 +38,9 @@ unchanged but the global coverage state removed --- each UAV judges only
 the sensors within twice the coverage radius of its own position, and there
 is no assignment, so UAVs that want the same sensor contend for it --- is
 reported as \emph{Reactive (local assignment)} in the table above.  It
-reaches $@@REACTL_CK@@$ with connectivity availability $@@REACTL_AG@@$ and
-a service continuity of $@@REACTL_SC@@$, against the privileged version's
-$0.953$, $1.000$ and $0.751$.  @@REACTL_VERDICT@@.
+reaches $0.972$ with connectivity availability $1.000$ and
+a service continuity of $0.777$, against the privileged version's
+$0.953$, $1.000$ and $0.751$.  the privileged version is in fact slightly WORSE than the unprivileged one (-0.019), so the global coverage state is not what gives the rule its edge --- the global round-robin assignment makes the UAVs contend for sensors, and the local rule does better --- and the gap to the learned controller is therefore not an information artefact at all.
 
 The connectivity invariant deserves a sentence, because the reported
 availability is below $1.000$ and the filter is claimed to guarantee
@@ -48,8 +49,8 @@ the prospective graph for every candidate action, and the joint projection
 restores the previous configuration when a set of individually admissible
 actions would jointly disconnect the swarm.  The step-by-step accounting
 in the artefact tests that claim over the whole evaluation matrix, and it
-holds: of the $0$ steps at which the graph is disconnected,
-$0$ are attributable to a policy action --- every one of them is attributable to the recovery mechanism and none to a policy action, so the filter's guarantee holds over the actions and the availability below 1.000 is the price of the recovery.
+holds: of the $1030$ steps at which the graph is disconnected,
+$1021$ are attributable to a policy action --- 1021 of them are NOT attributable to either mechanism, which is a residual the filter does not account for and which we report rather than explain away.
 The recovery mechanism is the other source: when a UAV's pack empties away
 from a pad it is removed from the active set, and the reserve UAV re-seats
 it at a charging pad; if that pad is out of communication range of the
@@ -207,7 +208,7 @@ credit, which a shared team reward does not supply.  The map makes the
 deficiency visible, and therefore actionable-looking, and a policy without
 the credit to act on it chases.
 
-The three arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.123, 95\% interval [-0.477, +0.231], an upper limit below the gap of 0.264); $the full observation of the proposed configuration$ (-0.001, 95\% interval [-0.251, +0.249], an upper limit below the gap of 0.264).  Each upper limit is below the gap of 0.264 to the reactive heuristic, so the content of the observation is not what accounts for the gap; what the observation terms buy is the ability to specialise at all, and the arms here do not separate the coverage they produce.
+The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.123, 95\% interval [-0.477, +0.231], an upper limit below the gap of 0.283); $the full observation of the proposed configuration$ (-0.001, 95\% interval [-0.251, +0.249], an upper limit below the gap of 0.283).  Each upper limit is below the gap of 0.283 to the reactive heuristic, so the content of the observation is not what accounts for the gap; what the observation terms buy is the ability to specialise at all, and the arms here do not separate the coverage they produce.
 
 The resolution of the summary does not rescue it: $G=8$: 0.589, and the swarm's spread contracts in every case, because the policy follows the deficit instead of dividing the work.
 
@@ -233,7 +234,7 @@ that the controller had failed at energy management, and the obvious fix
 was a reward term that prices the consequence of an empty pack.
 
 The reading was wrong, and Table~\ref{tab:results_energy} says so.
-The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point: $removing the energy constraint$ (+nan, 95\% interval [+nan, +nan], whose upper limit is NOT below the gap of 0.264 and which therefore cannot be excluded); $removing the threshold term$ (+nan, 95\% interval [+nan, +nan], whose upper limit is NOT below the gap of 0.264 and which therefore cannot be excluded); $the previous energy rule$ (+nan, 95\% interval [+nan, +nan], whose upper limit is NOT below the gap of 0.264 and which therefore cannot be excluded).  Not every interval excludes the gap of 0.264, so the energy model is not excluded by these arms; what the arms do establish is that the energy model is not the whole of the explanation, and the point estimates are all far smaller than the gap.
+The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, but the arms have not yet been measured with enough shared training seeds for an interval to be computable, and no bound is claimed for them here.
 
 What the diagnostic actually found was a defect in the safety filter rather
 than a property of the policy.  The mask's energy test admitted a
