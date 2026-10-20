@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 import os
 import re
 import sys
@@ -949,9 +950,18 @@ def build_tokens():
 
 
 def fill(text, tok):
-    """Replace every @@TOKEN@@ in `text`; return (filled_text, missing)."""
-    for k, v in tok.items():
-        text = text.replace(f"@@{k}@@", str(v))
+    """Replace every @@TOKEN@@ in `text`; return (filled_text, missing).
+
+    The substitution is repeated until it reaches a fixed point, because a
+    token's VALUE can itself contain a token: the ablation's summary quotes
+    the resolution, and if the two are substituted in the wrong order the
+    quoted token reaches the paper as text.
+    """
+    for _ in range(4):
+        for k, v in tok.items():
+            text = text.replace(f"@@{k}@@", str(v))
+        if not re.search(r"@@[A-Z_0-9]+@@", text):
+            break
     missing = sorted(set(re.findall(r"@@([A-Z_0-9]+)@@", text)))
     return text, missing
 
