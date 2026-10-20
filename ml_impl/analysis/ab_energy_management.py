@@ -60,9 +60,9 @@ def main():
     args = ap.parse_args()
 
     arms = [
-        ("A as-is (consumption only)", dict(lam_B=0.0)),
-        ("B no energy constraint", dict(lam_B=0.0, B_max=300_000.0)),
-        ("C + threshold violation", dict(lam_B=args.lam_B)),
+        ("A: the proposed configuration", dict(lam_B=2.0)),
+        ("B: + a pack that cannot run out", dict(lam_B=2.0, B_max=300_000.0)),
+        ("C: without the threshold term", dict(lam_B=0.0)),
     ]
 
     print("=" * 96)

@@ -58,6 +58,7 @@ def base_config(**overrides) -> SimConfig:
     cfg = SimConfig(
         N=8, K=2, R_cov=35.0, M=20, episode_len=2000, seed=0,
         B_max=30_000.0, charge_rate=0.0002,
+        lam_B=2.0,
         start_clustered=True,
         use_agent_id=True, map_grid=4, use_pad_bearing=True,
     )

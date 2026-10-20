@@ -176,8 +176,11 @@ def main():
 
     if args.stage in ("learned", "all"):
         print("[4/6] learned baselines (Table VI) ...", flush=True)
+        # The learned baselines get the SAME episode budget as the proposed
+        # method, so that the comparison is a comparison of learning
+        # machinery and not of budgets.
         run_learned_baselines(base_config(), "results_learned_baselines.csv",
-                              episodes=abl_episodes, eval_seeds=eval_seeds,
+                              episodes=episodes, eval_seeds=eval_seeds,
                               seeds=2 if quick else 3)
         print()
 

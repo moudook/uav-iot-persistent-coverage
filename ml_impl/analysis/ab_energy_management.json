@@ -1,0 +1,48 @@
+[
+  {
+    "arm": "A as-is (consumption only)",
+    "lam_B": 0.0,
+    "CK": 0.5653526201988974,
+    "CK_std": 0.07375571313443657,
+    "AG": 0.9817406009647304,
+    "SC": 0.0013917884481558802,
+    "CovIntegral": 0.43464737980110013,
+    "stranded_per_episode": 7.1,
+    "return_events_per_episode": 88.5,
+    "per_seed_CK": [
+      0.4915969070644608,
+      0.6391083333333339
+    ]
+  },
+  {
+    "arm": "B no energy constraint",
+    "lam_B": 0.0,
+    "B_max": 300000.0,
+    "CK": 0.6516416666666708,
+    "CK_std": 0.11415000000000441,
+    "AG": 1.0,
+    "SC": 0.059,
+    "CovIntegral": 0.34835833333333577,
+    "stranded_per_episode": 0.0,
+    "return_events_per_episode": 0.0,
+    "per_seed_CK": [
+      0.5374916666666664,
+      0.7657916666666752
+    ]
+  },
+  {
+    "arm": "C + threshold violation",
+    "lam_B": 2.0,
+    "CK": 0.5791549086757944,
+    "CK_std": 0.050570091324201316,
+    "AG": 0.9931621882683527,
+    "SC": 0.0,
+    "CovIntegral": 0.42084509132420256,
+    "stranded_per_episode": 6.9,
+    "return_events_per_episode": 82.5,
+    "per_seed_CK": [
+      0.5285848173515931,
+      0.6297249999999958
+    ]
+  }
+]
