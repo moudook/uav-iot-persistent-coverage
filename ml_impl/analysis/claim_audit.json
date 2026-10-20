@@ -173,7 +173,13 @@
     "status": "PASS",
     "measured": "mean node degree 3.63 of a possible 7; the graph was complete in 12.0% of steps; 22.6% of UAV-steps left a node of degree <= 1",
     "expected": "< 7.00 (the graph must not be complete throughout)",
-    "note": "measured on a 2000-step flight in the clustered deployment, the configuration the experiments use. The graph is not complete throughout, so a single UAV can be critical and the H-step feasibility mask and the reserve mechanism are load-bearing rather than decorative."
+    "note": "measured on a 2000-step flight in the clustered deployment, the configuration the experiments use. The graph is not complete throughout, so a single UAV can be critical and the H-step feasibility mask and the reserve mechanism are load-bearing rather than decorative.",
+    "data": {
+      "mean_degree": 3.629212611288083,
+      "max_degree": 7,
+      "frac_complete": 0.12006861063464837,
+      "frac_leaves": 0.22620068610634647
+    }
   },
   {
     "id": "PH1",
@@ -227,8 +233,16 @@
     "id": "R1",
     "claim": "the evaluation of a sampled policy is a function of (policy, scene) and does not depend on the ambient state of the global RNG",
     "status": "PASS",
-    "measured": "CK=0.997916667 and Energy=3604.0 and Distance=188.0 and CovIntegral=0.002083333  |  CK=0.997916667 and Energy=3604.0 and Distance=188.0 and CovIntegral=0.002083333",
+    "measured": "CK=1.0 and Energy=3569.0 and Distance=181.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3569.0 and Distance=181.0 and CovIntegral=0.0",
     "expected": "identical",
     "note": "the policy samples, so the sampling stream is seeded from the evaluation seed; every controller therefore sees the same stream on the same scene"
+  },
+  {
+    "id": "T1",
+    "claim": "a training run is reproducible from its seed: the seed is set before the networks are constructed, so the initialisation is seeded too",
+    "status": "PASS",
+    "measured": "max |difference| over the trained parameters = 0",
+    "expected": "0 (bitwise identical)",
+    "note": "the seed is set at the start of train_mappo, before the actor and the critic are built, so the initial weights do not depend on the ambient state of the global RNG"
   }
 ]

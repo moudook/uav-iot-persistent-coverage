@@ -28,10 +28,11 @@ RESULTS = []
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
-def check(claim_id, claim, ok, measured, expected, note=""):
+def check(claim_id, claim, ok, measured, expected, note="", data=None):
     RESULTS.append(
         dict(id=claim_id, claim=claim, status="PASS" if ok else "FAIL",
-             measured=measured, expected=expected, note=note)
+             measured=measured, expected=expected, note=note,
+             **({"data": data} if data else {}))
     )
     flag = "PASS" if ok else "FAIL"
     print(f"[{flag}] {claim_id:<6} {claim}")
@@ -404,7 +405,9 @@ def main():
           "configuration the experiments use. The graph is not complete "
           "throughout, so a single UAV can be critical and the H-step "
           "feasibility mask and the reserve mechanism are load-bearing "
-          "rather than decorative.")
+          "rather than decorative.",
+          data=dict(mean_degree=mean_deg_run, max_degree=cfg.N - 1,
+                    frac_complete=frac_complete, frac_leaves=frac_leaves))
 
     # --- PHY: LoS probability at z0 -------------------------------------
     p_los = phy.los_probability(Z0, 100.0) if hasattr(phy, "los_probability") else None
@@ -524,6 +527,29 @@ def main():
               "same stream on the same scene")
     except Exception as exc:  # pragma: no cover - diagnostic path
         print(f"[SKIP] R1 reproducibility check: {exc}\n")
+
+    # --- a training run is a function of its seed -------------------------
+    try:
+        import torch
+        from uav_wireless.train import train_mappo
+        c = SimConfig(N=4, K=1, M=8, episode_len=40, seed=0)
+        a1, _ = train_mappo(c, episodes=2, n_steps=40, seed=0, verbose=False)
+        torch.manual_seed(987_654)      # perturb the ambient RNG
+        a2, _ = train_mappo(c, episodes=2, n_steps=40, seed=0, verbose=False)
+        p1 = dict(a1.actor.named_parameters())
+        p2 = dict(a2.actor.named_parameters())
+        worst = max(float((p1[k] - p2[k]).abs().max()) for k in p1)
+        check("T1", "a training run is reproducible from its seed: the seed "
+                    "is set before the networks are constructed, so the "
+                    "initialisation is seeded too",
+              worst == 0.0,
+              f"max |difference| over the trained parameters = {worst:g}",
+              "0 (bitwise identical)",
+              "the seed is set at the start of train_mappo, before the "
+              "actor and the critic are built, so the initial weights do "
+              "not depend on the ambient state of the global RNG")
+    except Exception as exc:  # pragma: no cover - diagnostic path
+        print(f"[SKIP] T1 training-determinism check: {exc}\n")
 
     # --- report the audit ------------------------------------------------
     n_fail = sum(1 for r in RESULTS if r["status"] == "FAIL")

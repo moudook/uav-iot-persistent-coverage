@@ -1690,3 +1690,46 @@ class TestEvaluationReproducibility:
         a = eval_agent(agent, c, steps=40, seed=2, deterministic=True)
         b = eval_agent(agent, c, steps=40, seed=2, deterministic=True)
         assert a["CK"] == b["CK"]
+
+    def test_a_training_run_is_reproducible_from_its_seed(self):
+        """A training run must be a function of its seed.
+
+        The seed is set at the start of train_mappo, BEFORE the networks are
+        constructed, so the initialisation is seeded too.  If it were set
+        afterwards, the initial weights would depend on whatever the global
+        RNG happened to be holding, and the run would not be reproducible.
+        """
+        import torch
+        from uav_wireless.env import UAVIoTEnv
+        from uav_wireless.train import train_mappo
+        c = SimConfig(N=4, K=1, M=8, episode_len=40, seed=0)
+        a1, _ = train_mappo(c, episodes=2, n_steps=40, seed=0, verbose=False)
+        torch.manual_seed(123456)          # perturb the ambient RNG
+        a2, _ = train_mappo(c, episodes=2, n_steps=40, seed=0, verbose=False)
+        p1 = dict(a1.actor.named_parameters())
+        p2 = dict(a2.actor.named_parameters())
+        assert p1.keys() == p2.keys()
+        for k in p1:
+            assert torch.equal(p1[k], p2[k]), (
+                f"the trained parameter {k} differs between two runs of the "
+                f"same seed, so the run is not reproducible")
+
+    def test_an_interleaved_evaluation_does_not_change_the_training(self):
+        """The evaluation reseeds the global RNGs, so a training run that
+        follows an evaluation must still be the run its seed describes."""
+        import torch
+        from uav_wireless.env import UAVIoTEnv
+        from uav_wireless.train import train_mappo
+        from uav_wireless.experiments import eval_agent
+        c = SimConfig(N=4, K=1, M=8, episode_len=40, seed=0)
+        a1, _ = train_mappo(c, episodes=2, n_steps=40, seed=0, verbose=False)
+        eval_agent(a1, c, steps=40, seed=0)      # reseeds the global RNGs
+        torch.manual_seed(654321)
+        a2, _ = train_mappo(c, episodes=2, n_steps=40, seed=0, verbose=False)
+        p1 = dict(a1.actor.named_parameters())
+        p2 = dict(a2.actor.named_parameters())
+        for k in p1:
+            assert torch.equal(p1[k], p2[k]), (
+                f"the trained parameter {k} changed because an evaluation "
+                f"ran in between, so the training run is not a function of "
+                f"its seed")

@@ -59,6 +59,19 @@ def main():
     ap.add_argument("--lam-B", type=float, default=2.0)
     args = ap.parse_args()
 
+    # The four arms differ from arm A in one respect each, and they share
+    # arm A's TRAINING SEEDS, so the comparison between an arm and arm A is
+    # paired: the difference is measured on the same training runs and its
+    # interval is a paired t interval.  A paired interval needs at least
+    # three training seeds to be worth reporting (with two, the interval
+    # half-width is a multiple of twelve standard deviations), so the
+    # script enforces that minimum rather than accepting a schedule that
+    # cannot support the inference the paper draws from it.
+    if args.seeds < 3:
+        print(f"  (raising the training seeds from {args.seeds} to 3: a "
+              f"paired interval over the shared seeds needs at least three)")
+        args.seeds = 3
+
     arms = [
         ("A: the proposed configuration", dict(lam_B=2.0)),
         ("B: + a pack that cannot run out", dict(lam_B=2.0, B_max=300_000.0)),

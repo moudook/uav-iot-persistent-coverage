@@ -1,6 +1,6 @@
 %% CONTRIB
 
-    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. The identity is worth $@@ABL_ID_DELTA@@$ persistent coverage, and without it the deterministic policy selects the same action for every UAV and the swarm translates as a rigid body without dispersing. A broadcast summary of where the coverage deficit is was added a priori and measured to be \emph{harmful} at every resolution tested, which is reported rather than quietly dropped.
+    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, @@ABL_ID_CLAUSE@@, and without it the deterministic policy selects the same action for every UAV and the swarm translates as a rigid body without dispersing. A broadcast summary of where the coverage deficit is was added a priori and measured to be \emph{harmful} at every resolution tested, which is reported rather than quietly dropped.
 
 %% MAIN
 
@@ -20,7 +20,12 @@ should be read with that in mind.  The reactive heuristic is given the
 \emph{exact} set of under-covered sensors, which corresponds to an unbounded
 broadcast of the coverage state; the learned policy receives a fixed-size
 summary of it.  Part of the gap between them is therefore a difference of
-information rather than of control.
+information rather than of control.  The gap is $@@GAP@@$ of persistent
+coverage; the 95\% interval on it, from the learned controller's
+training-seed spread over @@GAP_N@@ training runs, is $@@GAP_CI@@$.  The
+scene-to-scene variation does not enter this interval, because every
+controller is evaluated on the same scenes and it therefore cancels in the
+difference.
 
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
@@ -35,7 +40,11 @@ method's behaviour survives without them.
 \paragraph{On the evaluation protocol, which is not neutral.} The rule
 baselines are deterministic, so they have no sampling step; the learned
 policy is evaluated by sampling, because Eq.~\eqref{eq:policy} specifies a
-sampled policy.  We report the deterministic version of the same actor as
+sampled policy.  The sampling is seeded: the stream is derived from the
+evaluation seed alone, so an evaluation is a function of (policy, scene),
+every controller sees the same stream on the same scene, and the numbers in
+this section can be recomputed from the stored policies.  We report the
+deterministic version of the same actor as
 well, and the difference is large: the argmax policy reaches $@@ARG_CK@@$
 against $@@MAPPO_CK@@$ for the sampled one, although it travels a comparable
 distance ($@@ARG_DISTANCE@@$~m against $@@MAPPO_DISTANCE@@$~m), so it is
@@ -87,10 +96,10 @@ which the raw coverage number does not make visible.
 Arm~B adds the one-hot identity, and the condition does what it says about
 specialisation: the number of distinct actions rises from $@@A_DIST@@$ to
 $@@B_DIST@@$ out of eight, and the swarm disperses rather than standing
-still.  Its effect on the coverage, $@@B_CK@@$ against $@@A_CK@@$, is
-however inside the seed-to-seed spread of the learner, so we do not claim
-that the identity buys coverage at this budget: what it buys is the
-\emph{ability} to specialise, which the distinct-action count measures
+still.  Its effect on the coverage, paired over the shared training seeds,
+is $@@OBS_B_PAIRED@@$ with a 95\% interval of $@@OBS_B_CI@@$, so we do
+not claim that the identity buys coverage at this budget: what it buys is
+the \emph{ability} to specialise, which the distinct-action count measures
 directly and which the coverage does not.
 
 Arm~C adds the broadcast coverage-map summary and the pad bearing, and it
@@ -98,8 +107,8 @@ is the configuration the paper proposes.  The spread rises to
 $@@C_SPREAD@@$~m --- the swarm moves further --- while the distinct-action
 count falls to $@@C_DIST@@$, so the policy moves more but decides more
 uniformly.  That is the signature of a policy that is following the map
-rather than dividing the work, and the coverage moves by $@@C_DELTA@@$,
-again inside the seed spread.
+rather than dividing the work, and the paired effect on the coverage is
+$@@OBS_C_PAIRED@@$ (95\% interval $@@OBS_C_CI@@$).
 
 So the observation terms change what the policy \emph{does} --- how far it
 travels, and whether it can specialise at all --- much more clearly than
@@ -111,6 +120,8 @@ should do it, and turning a location into an assignment requires per-agent
 credit, which a shared team reward does not supply.  The map makes the
 deficiency visible, and therefore actionable-looking, and a policy without
 the credit to act on it chases.
+
+@@OBS_SUMMARY@@
 
 @@MAP_RESOLUTION@@
 
@@ -135,14 +146,8 @@ fly, it leaves the swarm, and it stops covering.  The obvious reading was
 that the controller had failed at energy management, and the obvious fix
 was a reward term that prices the consequence of an empty pack.
 
-The reading was wrong, and Table~\ref{tab:results_energy} says so.  All
-four arms of that table differ in one respect each, and they all land
-inside the seed-to-seed spread of the learner itself, which is
-$@@ABL_YARDSTICK@@$: a pack that cannot run out at all is worth
-$@@ENERGY_DELTA@@$, removing the threshold-violation term is worth
-$@@EC_DELTA@@$, and using the previous energy rule is worth
-$@@ED_DELTA@@$.  The energy model is not what limits the controller, and
-the paper does not claim that it is.
+The reading was wrong, and Table~\ref{tab:results_energy} says so.
+@@ENERGY_SUMMARY@@
 
 What the diagnostic actually found was a defect in the safety filter rather
 than a property of the policy.  The mask's energy test admitted a
@@ -175,10 +180,30 @@ attributable to that component.  The budget is the base comparison's
 is the same experiment as the proposed controller of the first table, and
 not a cheaper one.  Because the variants share the training seeds, the
 comparison is \emph{paired}: a difference is measured on the same training
-runs, so its spread is the spread of the difference rather than the spread
-of two independent measurements.  The yardstick is the spread of the
-learner itself, @@ABL_YARDSTICK@@, which is how much the training seed
-moves the coverage of the full configuration.  @@ABL_SUMMARY@@.
+runs, and what is reported is a confidence interval for that difference
+rather than a comparison of two numbers against a threshold.  A threshold
+would be the wrong instrument here, and it is worth saying why, because
+the older version of this table used one.  A rule that calls a difference
+``measurable'' when it exceeds some other number --- the learner's own
+seed-to-seed spread, say --- has a false-positive rate that depends on
+the spread of that other number, and it buys nothing in power: at three
+training seeds it would flag roughly one null component in three, while
+still being unable to detect a true effect of the size it flags.  The
+paired interval does not have that failure mode, and it also reports the
+resolution of the measurement, which is the number a reader actually
+needs.  @@ABL_SUMMARY@@.
+
+What the intervals do and do not say is worth stating precisely, because a
+null result of this width is a statement about the resolution of the
+measurement and not about the component.  The measurement resolves no
+effect smaller than about $@@ABL_RESOLUTION@@$ of persistent coverage, at
+this training budget and with this number of training seeds.  It does
+\emph{not} show that a component is unnecessary.  A component can be
+redundant with another, in which case removing either one alone costs
+nothing while removing both costs a great deal; and a component that
+matters only at a larger budget is invisible at this one.  Establishing
+budget-independence would need a budget sweep, which we do not run, and
+we therefore do not claim it.
 
 Two of the null results are explained rather than merely reported.  The
 articulation-point term makes no measurable difference because the safety
@@ -196,9 +221,13 @@ spent.
 %% CREDIT
 
 The per-agent arm reaches $@@CREDIT_B_CK@@$ against $@@CREDIT_A_CK@@$ for
-the shared one, a difference of $@@CREDIT_DELTA@@$ in persistent coverage,
-so the cheapest modification in the direction the diagnosis points is not
-sufficient.  The scope of that statement is the one set out above: arm~B
+the shared one, a difference of $@@CREDIT_DELTA@@$ in persistent coverage.
+The two arms share their training seeds, so the comparison is paired, and
+the 95\% interval on the paired difference is $@@CREDIT_CI@@$ over
+@@CREDIT_N@@ training runs: the cheapest modification in the direction the
+diagnosis points does not close the gap, and the interval is consistent
+with a difference of any size up to about $@@CREDIT_HALF@@$ in either
+direction.  The scope of that statement is the one set out above: arm~B
 supplies each agent with its own baseline and unshares the actor, and
 neither of those changes the fact that the reward the gradient sees is the
 same team reward for every agent.

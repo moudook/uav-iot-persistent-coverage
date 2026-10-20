@@ -58,6 +58,65 @@ def per_seed_ck(row):
     return out
 
 
+def bound_clause(label, mean, half, gap):
+    """One clause of an exclusion argument, derived from the measurement.
+
+    To EXCLUDE an explanation of a gap of size `gap`, the arm that tests it
+    must be shown to be too small to account for the gap: it is not enough
+    for the arm's point estimate to be small, its upper confidence limit
+    has to be below the gap.  The clause says which of the two happened.
+    """
+    upper = mean + half
+    if gap is None or gap != gap:
+        return (f"${label}$ ({mean:+.3f}, 95\\% interval "
+                f"[{mean-half:+.3f}, {upper:+.3f}])")
+    if upper < gap:
+        return (f"${label}$ ({mean:+.3f}, 95\\% interval "
+                f"[{mean-half:+.3f}, {upper:+.3f}], an upper limit below "
+                f"the gap of {gap:.3f})")
+    return (f"${label}$ ({mean:+.3f}, 95\\% interval "
+            f"[{mean-half:+.3f}, {upper:+.3f}], whose upper limit is NOT "
+            f"below the gap of {gap:.3f} and which therefore cannot be "
+            f"excluded)")
+
+
+def paired_stat(a, b):
+    """The paired comparison of two arms that share their training seeds.
+
+    `a` and `b` are the per-training-seed coverage values of the two arms.
+    The arms are trained on the SAME seeds, so the difference is measured on
+    the same training runs, and the interval is a paired t interval on the
+    per-seed differences.  Returns (mean difference, half width of the 95%
+    interval, two-sided p, number of pairs).
+
+    A threshold on the size of a difference is not a test, so nothing here
+    decides "the component matters" by comparing the difference with some
+    other number: the interval does the work, and the reader can see what
+    the measurement resolved.
+    """
+    try:
+        from scipy import stats as _st
+    except Exception:                                      # pragma: no cover
+        _st = None
+    n = min(len(a), len(b))
+    if n < 2:
+        return (float("nan"), float("nan"), float("nan"), n)
+    d = [float(a[i]) - float(b[i]) for i in range(n)]
+    mean = float(np.mean(d))
+    sd = float(np.std(d, ddof=1))
+    crit = _st.t.ppf(0.975, n - 1) if _st else 1.96
+    half = crit * sd / np.sqrt(n)
+    if _st:
+        if sd > 0:
+            tv = mean / (sd / np.sqrt(n))
+            p = float(2 * (1 - _st.t.cdf(abs(tv), n - 1)))
+        else:
+            p = 0.0 if mean != 0 else 1.0
+    else:                                                   # pragma: no cover
+        p = float("nan")
+    return (mean, float(half), p, n)
+
+
 def build_tokens():
     """Read every artefact and return the token table.
 
@@ -104,6 +163,46 @@ def build_tokens():
         tok["MAPPO_DISTANCE"] = f"{float(mp.get('Distance', 0)):.0f}"
         tok["MAPPO_STRANDED"] = f"{float(mp.get('Stranded', 0)):.1f}"
         tok["MAPPO_UNEXEC"] = f"{float(mp.get('UnexecutedActions', 0)):.0f}"
+        # THE GAP.  The reactive heuristic is deterministic, so it has no
+        # training-seed spread; the uncertainty of the gap is therefore the
+        # learned controller's own seed spread, divided by the number of
+        # training runs.  The scene-to-scene variation is common to every
+        # controller -- they are evaluated on the same scenes -- and cancels
+        # in the difference.
+        react = main_rows.get("Reactive")
+        if react:
+            gap = float(react["CK"]) - float(mp["CK"])
+            tok["GAP"] = f"{gap:.3f}"
+            s = mp.get("CK_std")
+            n = int(mp.get("train_seeds", 0) or 0)
+            if s not in (None, "") and n > 1:
+                try:
+                    from scipy import stats as _st
+                    half = (float(_st.t.ppf(0.975, n - 1))
+                            * float(s) / np.sqrt(n))
+                except Exception:                          # pragma: no cover
+                    half = 1.96 * float(s) / np.sqrt(n)
+                tok["GAP_HALF"] = f"{half:.3f}"
+                tok["GAP_CI"] = f"[{gap-half:.3f}, {gap+half:.3f}]"
+                tok["GAP_N"] = str(n)
+    # the fallback for the gap's interval: the per-seed training artefact
+    if "GAP_CI" not in tok and "GAP" in tok:
+        bs_path = os.path.join(HERE, "base_training_seeds.json")
+        if os.path.exists(bs_path):
+            bs = json.load(open(bs_path, encoding="utf-8"))
+            cks = [float(b["CK"]) for b in bs]
+            n = len(cks)
+            if n > 1:
+                try:
+                    from scipy import stats as _st
+                    crit = float(_st.t.ppf(0.975, n - 1))
+                except Exception:                          # pragma: no cover
+                    crit = 1.96
+                gap = float(tok["GAP"])
+                half = crit * float(np.std(cks, ddof=1)) / np.sqrt(n)
+                tok["GAP_HALF"] = f"{half:.3f}"
+                tok["GAP_CI"] = f"[{gap-half:.3f}, {gap+half:.3f}]"
+                tok["GAP_N"] = str(n)
 
     # ------------------------------------------------------------------
     # the observation A/B/C
@@ -147,6 +246,54 @@ def build_tokens():
         tok["C_SC"] = f(c["SC"])
         tok["C_DIST"] = f(c["distinct_actions"], 2)
         tok["C_SPREAD"] = f(c["mean_spread_m"], 1)
+        # the paired intervals: the three arms share their training seeds
+        for key, x, y in (("OBS_B", b, a), ("OBS_C", c, a)):
+            if not (x and y):
+                continue
+            pa = x.get("per_seed_CK") or []
+            pb = y.get("per_seed_CK") or []
+            if not (pa and pb):
+                continue
+            mean, half, p, n = paired_stat(pa, pb)
+            tok[f"{key}_PAIRED"] = f"{mean:+.3f}"
+            tok[f"{key}_HALF"] = f"{half:.3f}"
+            tok[f"{key}_CI"] = f"[{mean-half:+.3f}, {mean+half:+.3f}]"
+            tok[f"{key}_P"] = f"{p:.3f}"
+            tok[f"{key}_N"] = str(n)
+        # the exclusion argument for the observation content
+        obs_stats = []
+        for key, label in (("OBS_B", "adding the agent identity"),
+                           ("OBS_C", "the full observation of the proposed "
+                                     "configuration")):
+            if f"{key}_PAIRED" in tok:
+                obs_stats.append((label, float(tok[f"{key}_PAIRED"]),
+                                  float(tok[f"{key}_HALF"])))
+        if obs_stats and "GAP" in tok:
+            gap = float(tok["GAP"])
+            clauses = [bound_clause(lab, m, h, gap) for lab, m, h in obs_stats]
+            excluded = all((m + h) < gap for _, m, h in obs_stats)
+            if excluded:
+                tok["OBS_SUMMARY"] = (
+                    "The three arms share their training seeds, so the "
+                    "comparisons are paired: "
+                    + "; ".join(clauses)
+                    + ".  Each upper limit is below the gap of "
+                    f"{gap:.3f} to the reactive heuristic, so the content "
+                    "of the observation is not what accounts for the gap; "
+                    "what the observation terms buy is the ability to "
+                    "specialise at all, and the arms here do not separate "
+                    "the coverage they produce.")
+            else:
+                tok["OBS_SUMMARY"] = (
+                    "The three arms share their training seeds, so the "
+                    "comparisons are paired: "
+                    + "; ".join(clauses)
+                    + f".  The intervals are wide relative to the gap of "
+                    f"{gap:.3f}, so the observation content is not excluded "
+                    "by these arms; what they do show is that the "
+                    "observation terms change what the policy does far "
+                    "more clearly than they change the coverage it "
+                    "achieves.")
 
     mr = load_json("ab_map_resolution.json")
     if mr:
@@ -195,6 +342,51 @@ def build_tokens():
         tok["ED_STR"] = f(ed["stranded_per_episode"], 1)
         tok["ED_CK"] = f(ed["CK"])
         tok["ED_RET"] = f(ed["return_events_per_episode"], 1)
+    # the paired intervals of the energy arms against arm A
+    en_stats = []
+    for key, arm, label in (("EB", "B", "removing the energy constraint"),
+                             ("EC", "C", "removing the threshold term"),
+                             ("ED", "D", "the previous energy rule")):
+        r = arms_en.get(arm)
+        if not (ea and r):
+            continue
+        pa = ea.get("per_seed_CK") or []
+        pb = r.get("per_seed_CK") or []
+        if not (pa and pb):
+            continue
+        mean, half, p, n = paired_stat(pb, pa)
+        tok[f"{key}_PAIRED"] = f"{mean:+.3f}"
+        tok[f"{key}_HALF"] = f"{half:.3f}"
+        tok[f"{key}_CI"] = f"[{mean-half:+.3f}, {mean+half:+.3f}]"
+        tok[f"{key}_P"] = f"{p:.3f}"
+        tok[f"{key}_N"] = str(n)
+        en_stats.append((label, mean, half))
+    # the exclusion argument, derived from the measurements
+    if en_stats and "GAP" in tok:
+        gap = float(tok["GAP"])
+        clauses = [bound_clause(lab, m, h, gap) for lab, m, h in en_stats]
+        excluded = all((m + h) < gap for _, m, h in en_stats)
+        if excluded:
+            tok["ENERGY_SUMMARY"] = (
+                "The three interventions are paired with the proposed "
+                "configuration -- they share its training seeds -- so each "
+                "one is reported as an interval rather than as a point, and "
+                "each interval's upper limit is below the gap of "
+                f"{gap:.3f} to the reactive heuristic: "
+                + "; ".join(clauses)
+                + ".  The energy model is therefore not what accounts for "
+                "the gap, and the paper does not claim that it is.")
+        else:
+            tok["ENERGY_SUMMARY"] = (
+                "The three interventions are paired with the proposed "
+                "configuration -- they share its training seeds -- so each "
+                "one is reported as an interval rather than as a point: "
+                + "; ".join(clauses)
+                + f".  Not every interval excludes the gap of {gap:.3f}, so "
+                "the energy model is not excluded by these arms; what the "
+                "arms do establish is that the energy model is not the "
+                "whole of the explanation, and the point estimates are all "
+                "far smaller than the gap.")
 
     # ------------------------------------------------------------------
     # the component ablation
@@ -249,30 +441,133 @@ def build_tokens():
             if fs and len(vs) == len(fs):
                 diffs = [fs[i] - vs[i] for i in range(len(fs))]
                 pmean = float(np.mean(diffs))
-                pstd = float(np.std(diffs))
+                pstd = float(np.std(diffs, ddof=1)) if len(diffs) > 1 else 0.0
                 paired.append((name, pmean, pstd))
             (moved if abs(delta) >= yardstick else still).append(
                 (name, delta, pmean, pstd))
-        if moved:
-            parts = []
-            for n, dlt, pmean, pstd in sorted(moved, key=lambda x: -abs(x[1])):
-                nm = names.get(n, n)
-                if pmean is not None:
-                    parts.append(f"${nm}$ ({pmean:+.3f} paired, "
-                                 f"seed-to-seed spread {pstd:.3f})")
+
+        # --------------------------------------------------------------
+        # THE INFERENCE.  A threshold on the size of a difference is not a
+        # test: with a per-arm null error rate of about a third at R = 3,
+        # a rule that calls an effect "measurable" when it exceeds the
+        # learner's own seed spread would flag one null component in three
+        # and would still be unable to detect a true effect of that size.
+        # The paired design supplies the right test instead: the variants
+        # share the training seeds, so the difference is measured on the
+        # same training runs, and the paired t interval says what the
+        # measurement resolved.  Where the interval includes zero, the
+        # honest statement is that NO EFFECT LARGER THAN THE INTERVAL'S
+        # HALF-WIDTH WAS DETECTED -- not that the component is inert.
+        # --------------------------------------------------------------
+        if paired:
+            try:
+                from scipy import stats as _st
+            except Exception:                                  # pragma: no cover
+                _st = None
+            n_p = len(paired[0][1] and [1] or [1])
+            R = len(fs)
+            crit = (_st.t.ppf(0.975, R - 1) if (_st and R > 1) else 0.0)
+            rows_p = []
+            for n, pmean, pstd in paired:
+                half = crit * pstd / math.sqrt(R) if R > 1 else float("nan")
+                if _st and R > 1 and pstd > 0:
+                    tv = pmean / (pstd / math.sqrt(R))
+                    pval = 2 * (1 - _st.t.cdf(abs(tv), R - 1))
+                elif _st and R > 1:
+                    pval = 0.0 if pmean != 0 else 1.0
                 else:
-                    parts.append(f"${nm}$ ({dlt:+.3f})")
-            tok["ABL_SUMMARY"] = (
-                f"On this configuration {', '.join(parts)} "
-                f"{'has' if len(parts) == 1 else 'have'} a measurable "
-                f"effect on persistent coverage, and the remaining "
-                f"variants do not")
+                    pval = float("nan")
+                rows_p.append(dict(name=n, mean=pmean, sd=pstd, half=half,
+                                    p=pval,
+                                    excludes_zero=(pmean - half > 0
+                                                   or pmean + half < 0)))
+            sig = [r for r in rows_p if r["excludes_zero"]]
+            nulls = [r for r in rows_p if not r["excludes_zero"]]
+            # the resolution of the measurement: the widest half-width among
+            # the components whose interval includes zero
+            delta_res = max([r["half"] for r in nulls], default=0.0)
+            tok["ABL_N_SEEDS"] = str(R)
+            tok["ABL_RESOLUTION"] = f"{delta_res:.3f}"
+            tok["ABL_RESOLUTION_SD"] = f"{delta_res / crit:.3f}" if crit else "n/a"
+            tok["ABL_CRIT"] = f"{crit:.2f}"
+            if sig:
+                parts = []
+                for r in sorted(sig, key=lambda x: -abs(x["mean"])):
+                    nm = names.get(r["name"], r["name"])
+                    parts.append(f"${nm}$ ({r['mean']:+.3f}, 95\\% CI "
+                                 f"[{r['mean']-r['half']:+.3f}, "
+                                 f"{r['mean']+r['half']:+.3f}])")
+                tok["ABL_SUMMARY"] = (
+                    "The paired comparison, in which every variant is "
+                    "trained on the same training seeds as the full "
+                    "configuration, separates the components into two "
+                    "groups.  The components whose 95\\% confidence interval "
+                    "for the paired difference excludes zero are "
+                    + ", ".join(parts)
+                    + "; every other component's interval includes zero, "
+                    "and the smallest difference this protocol could "
+                    "resolve is $@@ABL_RESOLUTION@@$ of persistent coverage")
+            else:
+                tok["ABL_SUMMARY"] = (
+                    "Every component's 95\\% confidence interval for the "
+                    "paired difference includes zero, and the smallest "
+                    "difference this protocol could resolve is "
+                    "$@@ABL_RESOLUTION@@$ of persistent coverage")
+            for r in rows_p:
+                key = {"no-agent-id": "ID", "no-pad-bearing": "PAD",
+                       "no-map": "MAP", "no-mask": "MASK"}.get(r["name"])
+                if key:
+                    tok[f"ABL_{key}_DELTA"] = f"{r['mean']:+.3f}"
+                    tok[f"ABL_{key}_SPREAD"] = f"{r['sd']:.3f}"
+                    tok[f"ABL_{key}_CI"] = (f"[{r['mean']-r['half']:+.3f}, "
+                                            f"{r['mean']+r['half']:+.3f}]")
+                    tok[f"ABL_{key}_P"] = f"{r['p']:.3f}"
+                    if key == "ID":
+                        # the contribution bullet must not overstate: if the
+                        # interval includes zero, the honest sentence is
+                        # about the ability to specialise, not the coverage
+                        if r["excludes_zero"]:
+                            tok["ABL_ID_CLAUSE"] = (
+                                f"the identity is worth "
+                                f"${r['mean']:+.3f}$ persistent coverage "
+                                f"(95\\% interval $@@ABL_ID_CI@@$)")
+                        else:
+                            tok["ABL_ID_CLAUSE"] = (
+                                f"the identity changes persistent coverage by "
+                                f"${r['mean']:+.3f}$, an interval "
+                                f"$@@ABL_ID_CI@@$ that includes zero, so at "
+                                f"this budget what it demonstrably buys is "
+                                f"the ability to specialise")
         else:
-            tok["ABL_SUMMARY"] = (
-                "On this configuration no single component changes the "
-                "persistent coverage by more than the seed-to-seed spread "
-                "of the learner itself, and the table is reported in "
-                "full because that is the result")
+            tok["ABL_N_SEEDS"] = "?"
+            tok["ABL_RESOLUTION"] = "n/a"
+            tok["ABL_RESOLUTION_SD"] = "n/a"
+            tok["ABL_CRIT"] = "n/a"
+            # no per-seed values in the artefact: the paired comparison is
+            # not available, and the unpaired differences are reported with
+            # that stated rather than dressed up as an interval
+            if moved:
+                parts = []
+                for n, dlt, pmean, pstd in sorted(moved, key=lambda x: -abs(x[1])):
+                    parts.append(f"${names.get(n, n)}$ ({dlt:+.3f})")
+                tok["ABL_SUMMARY"] = (
+                    "the components whose difference from the full "
+                    "configuration is largest are " + ", ".join(parts)
+                    + ", and the rest do not move the coverage by more than "
+                    "the seed-to-seed spread of the learner itself")
+                for n, dlt, pmean, pstd in moved:
+                    if n == "no-agent-id":
+                        tok["ABL_ID_CLAUSE"] = (
+                            f"the identity is worth ${-dlt:+.3f}$ persistent "
+                            f"coverage")
+                        tok.setdefault("ABL_ID_CI", "n/a")
+                        tok.setdefault("ABL_ID_DELTA", f"{-dlt:+.3f}")
+            else:
+                tok["ABL_SUMMARY"] = (
+                    "no single component changes the persistent coverage by "
+                    "more than the seed-to-seed spread of the learner "
+                    "itself, and the table is reported in full because that "
+                    "is the result")
         # the paired deltas of the components that matter, for the prose
         if paired:
             parts = []
@@ -344,6 +639,16 @@ def build_tokens():
             gap = float(react["CK"]) - a["CK"]
             tok["CREDIT_OF_GAP"] = (f"{100*abs(d)/gap:.0f}\\%" if abs(gap) > 1e-9
                                      else "0\\%")
+        # the paired comparison of the two learners
+        pa = a.get("per_seed_CK") or []
+        pb = b.get("per_seed_CK") or []
+        if pa and pb:
+            mean, half, p, n = paired_stat(pb, pa)
+            tok["CREDIT_PAIRED"] = f"{mean:+.3f}"
+            tok["CREDIT_HALF"] = f"{half:.3f}"
+            tok["CREDIT_CI"] = f"[{mean-half:+.3f}, {mean+half:+.3f}]"
+            tok["CREDIT_P"] = f"{p:.3f}"
+            tok["CREDIT_N"] = str(n)
 
     # ------------------------------------------------------------------
     # the numbers the paper quotes about ITSELF
@@ -359,6 +664,14 @@ def build_tokens():
         tok["AUDIT_PASS"] = str(n_pass)
         tok["AUDIT_FAIL"] = str(n_fail)
         tok["AUDIT_INFO"] = str(n_info)
+        # the connectivity regime, as the audit measured it
+        for r in audit:
+            d = r.get("data") or {}
+            if r.get("id") == "C6" and d:
+                tok["C6_DEGREE"] = f(d["mean_degree"], 2)
+                tok["C6_MAXDEG"] = str(int(d["max_degree"]))
+                tok["C6_COMPLETE"] = f"{100*d['frac_complete']:.0f}"
+                tok["C6_LEAVES"] = f"{100*d['frac_leaves']:.0f}"
 
     # the size of the test suite, counted the way the runner discovers it
     try:
