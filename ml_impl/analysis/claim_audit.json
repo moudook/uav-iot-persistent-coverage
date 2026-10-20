@@ -24,6 +24,30 @@
     "note": "the discrete mask enforces sample-time separation, not braking; this is a stated limitation of the discrete-time abstraction"
   },
   {
+    "id": "C2a",
+    "claim": "the four corner coverage discs are pairwise disjoint, so K-covering the REGION needs N >= 4K",
+    "status": "PASS",
+    "measured": "corner separation 80 m vs 2*R_cov = 70 m -> N >= 8 (4K), available 5",
+    "expected": "N >= 4K with the corner discs disjoint",
+    "note": "the region requirement. It does NOT transfer to the sensor set: the sensors need not be near the corners, so the applicable bound is the packing bound below."
+  },
+  {
+    "id": "C2b",
+    "claim": "the region bound N >= 4K is TIGHT at these parameters (a construction with 4K discs K-covers the square)",
+    "status": "PASS",
+    "measured": "the worst covered point is 34.875 m from its nearest of the 8 disc centres; R_cov = 35 m (cell half-diagonal 28.28 m, margin 6.72 m)",
+    "expected": "<= R_cov = 35 m",
+    "note": "so N = 4K is not merely a lower bound at these parameters: it is the exact minimum for K-covering the region."
+  },
+  {
+    "id": "C2c",
+    "claim": "the packing bound applied to the realised sensor set excludes N=5 for a MINORITY of random draws, not for all",
+    "status": "PASS",
+    "measured": "packing number P mean 2.13 (range 2..3); N >= K*P mean 4.27 (range 4..6); N=5 excluded for 4 of 30 draws (13%)",
+    "expected": "reported, not asserted",
+    "note": "the corner certificate is a statement about the REGION and does not transfer to a random sensor draw; the report says so."
+  },
+  {
     "id": "C3a",
     "claim": "z0=50 m with 74 deg FOV yields footprint half-width ~37 m",
     "status": "PASS",

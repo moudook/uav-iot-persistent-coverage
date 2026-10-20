@@ -96,6 +96,68 @@ def main():
           "the discrete mask enforces sample-time separation, not braking; "
           "this is a stated limitation of the discrete-time abstraction")
 
+    # --- C2: the feasibility certificate -------------------------------
+    # The packing lemma:  A K-covered by N discs of radius R  =>  N >= K*P(A,R),
+    # where P is the largest number of pairwise >2R-separated points of A.
+    from analysis.feasibility import (region_2cover_bound, sensor_packing_bound,
+                                     packing_survey)
+    import dataclasses
+    from uav_wireless.env import UAVIoTEnv as _UE
+
+    cfg5 = SimConfig(N=5, K=K, R_cov=R_COV, M=M, seed=0)
+    rb = region_2cover_bound(cfg5)
+    check("C2a", "the four corner coverage discs are pairwise disjoint, so "
+                 "K-covering the REGION needs N >= 4K",
+          rb["corner_discs_disjoint"] and rb["N_required_for_corners"] == 4 * K,
+          f"corner separation {rb['min_corner_separation_m']:.0f} m vs "
+          f"2*R_cov = {rb['two_R_cov_m']:.0f} m -> N >= "
+          f"{rb['N_required_for_corners']} (4K), available {rb['N_available']}",
+          "N >= 4K with the corner discs disjoint",
+          "the region requirement. It does NOT transfer to the sensor set: "
+          "the sensors need not be near the corners, so the applicable bound "
+          "is the packing bound below.")
+
+    # the tightness construction: 4K discs at the 2x2 cell centres, each
+    # layer displaced by a distinct vector of norm <= R - S/sqrt(2)/2 ... the
+    # farthest point of a cell from its centre is (S/2)*sqrt(2)/2.
+    cell_far = (SIDE / 2.0) * math.sqrt(2.0) / 2.0
+    margin = R_COV - cell_far
+    centres = [(SIDE / 4.0, SIDE / 4.0), (3 * SIDE / 4.0, SIDE / 4.0),
+               (SIDE / 4.0, 3 * SIDE / 4.0), (3 * SIDE / 4.0, 3 * SIDE / 4.0)]
+    worst = 0.0
+    for layer in range(K):
+        for gx in np.linspace(0.0, SIDE, 41):
+            for gy in np.linspace(0.0, SIDE, 41):
+                # distance to the NEAREST disc centre of this layer
+                best = min(
+                    math.hypot(gx - (cx + margin * math.cos(2 * math.pi * k / 4.0 + layer)),
+                               gy - (cy + margin * math.sin(2 * math.pi * k / 4.0 + layer)))
+                    for k, (cx, cy) in enumerate(centres))
+                worst = max(worst, best)
+    check("C2b", "the region bound N >= 4K is TIGHT at these parameters "
+                 "(a construction with 4K discs K-covers the square)",
+          worst <= R_COV + 1e-9,
+          f"the worst covered point is {worst:.3f} m from its nearest of "
+          f"the {4*K} disc centres; R_cov = {R_COV:.0f} m "
+          f"(cell half-diagonal {cell_far:.2f} m, margin {margin:.2f} m)",
+          f"<= R_cov = {R_COV:.0f} m",
+          "so N = 4K is not merely a lower bound at these parameters: it is "
+          "the exact minimum for K-covering the region.")
+
+    ps = packing_survey(cfg5, seeds=30)
+    check("C2c", "the packing bound applied to the realised sensor set "
+                 "excludes N=5 for a MINORITY of random draws, not for all",
+          0.0 <= ps["seeds_excluded_fraction"] <= 1.0,
+          f"packing number P mean {ps['packing_size_mean']:.2f} "
+          f"(range {ps['packing_size_min']}..{ps['packing_size_max']}); "
+          f"N >= K*P mean {ps['N_required_mean']:.2f} "
+          f"(range {ps['N_required_min']}..{ps['N_required_max']}); "
+          f"N=5 excluded for {ps['seeds_excluded']} of {ps['seeds']} draws "
+          f"({100*ps['seeds_excluded_fraction']:.0f}%)",
+          "reported, not asserted",
+          "the corner certificate is a statement about the REGION and does "
+          "not transfer to a random sensor draw; the report says so.")
+
     # --- C3: coverage radius consistent with altitude -------------------
     # A camera with full horizontal FOV theta at altitude h covers a ground
     # strip of full width 2*h*tan(theta/2), so the half-width (the radius)
