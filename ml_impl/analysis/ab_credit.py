@@ -1,25 +1,31 @@
 """
 A/B: is the credit assignment the limitation?
 
-THE REMEDY THE DIAGNOSIS IMPLIES
-  The diagnosis is that a parameter-shared actor trained on a team reward
-  cannot learn a division of labour: every agent receives the SAME
-  advantage, so the gradient cannot distinguish an agent whose action
-  helped from one whose action was irrelevant.  The remedy is a per-agent
-  signal.
+WHAT THIS ACTUALLY TESTS, PRECISELY
+  The two arms differ in the learner that produces the advantage:
 
-THE TWO ARMS
-  A  the proposed method: a parameter-shared actor with a centralised
-     critic, so the advantage is a broadcast team signal.
-  B  the same learner with the credit changed and nothing else: a
-     per-agent actor and a per-agent LOCAL critic on the agent's own
-     observation, so the advantage is the agent's own.
+    A  the proposed method: a PARAMETER-SHARED actor with a CENTRALISED
+       critic, so every agent receives the same broadcast team advantage.
+    B  the same simulator, observation, action mask, team reward and episode
+       budget, with a PER-AGENT actor and a PER-AGENT LOCAL critic, so each
+       agent's advantage has its own baseline.
 
-  Both use the same simulator, the same observation, the same action mask,
-  the same team reward and the same episode budget.  The only difference
-  is whose advantage the gradient sees.  If B is much better than A, the
-  diagnosis is confirmed and the remedy is demonstrated.  If they are the
-  same, the diagnosis is wrong and the paper must say so.
+  It is worth being exact about what that does and does not change.  With a
+  team reward r_t broadcast to every agent, the advantage is
+  r_t + gamma V(o') - V(o).  Giving each agent its own value function
+  changes the BASELINE of that expression, and therefore the variance of
+  the advantage -- it does not change its SIGNAL, which is still the same
+  team reward for every agent.  So arm B is a comparison of a per-agent
+  BASELINE and of parameter sharing; it is NOT an implementation of the
+  per-agent ADVANTAGE estimators of COMA, DAE or GPAE, which change the
+  signal by supplying a per-agent reward (a difference reward) or a
+  counterfactual baseline.
+
+  This is the cheapest available test of the hypothesis, and the result
+  has to be read with that scope in mind: if arm B does not close the gap,
+  the correct conclusion is that a per-agent baseline and unshared
+  parameters are not sufficient -- not that per-agent credit is
+  insufficient, which is a different and more expensive experiment.
 
 Run:  python analysis/ab_credit.py [--episodes 30] [--seeds 2]
 """

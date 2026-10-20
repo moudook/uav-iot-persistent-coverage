@@ -250,13 +250,16 @@ def main():
     cr = load_json("ab_credit.json")
     if cr:
         lines = [r"\begin{table}[t]",
-                 r"\caption{The credit-assignment experiment.  The two arms "
-                 r"differ in exactly one respect: whether the advantage the "
-                 r"gradient sees is the agent's own or a broadcast team "
-                 r"signal.}",
+                 r"\caption{The cheapest test of the credit-assignment "
+                 r"hypothesis.  The two arms differ in the learner that "
+                 r"produces the advantage: a parameter-shared actor with a "
+                 r"centralised critic, or a per-agent actor with a per-agent "
+                 r"local critic.  A per-agent \\emph{baseline} changes the "
+                 r"variance of the advantage, not its signal, which remains "
+                 r"the shared team reward.}",
                  r"\label{tab:results_credit}", r"\centering", r"\scriptsize",
                  r"\begin{tabular}{@{}lccccc@{}}", r"\toprule",
-                 r"Learner & CK & AG & SC & CovIntegral & Distinct \\",
+                 r"Learner & CK & AG & SC & CovIntegral & Energy (J) \\",
                  r"\midrule"]
         for r in cr:
             name = r["arm"].split(":")[0]

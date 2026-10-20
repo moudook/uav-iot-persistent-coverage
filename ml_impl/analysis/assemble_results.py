@@ -148,7 +148,7 @@ Table~\\ref{{tab:reward}}.
 
 {blocks['%% ABL']}
 
-\\subsection{{The credit assignment, and the remedy}}
+\\subsection{{The credit assignment, and the cheapest test of it}}
 \\label{{sec:results_credit}}
 
 The diagnosis of Sections~\\ref{{sec:results_obs}} and
@@ -163,15 +163,27 @@ None of them has been evaluated on a persistent-coverage task, and the
 question of whether the credit assignment is what limits a
 parameter-shared controller in that setting appears to be open.
 
-Table~\\ref{{tab:results_credit}} is the cheapest controlled test of it, and
-it is deliberately minimal: the two arms differ in exactly one respect, the
-learner that produces the advantage.  Arm~A is the proposed method, a
-parameter-shared actor with a centralised critic, so the advantage is a
-broadcast team signal.  Arm~B keeps the same simulator, the same
-observation, the same action mask, the same team reward and the same
-episode budget, and replaces the learner with a per-agent actor and a
-per-agent local critic, so that the advantage is the agent's own.  Nothing
-else changes.
+Table~\\ref{{tab:results_credit}} is the cheapest test of it that does not
+require implementing a new algorithm, and it is worth being exact about
+what it does and does not change.  The two arms differ in the learner that
+produces the advantage.  Arm~A is the proposed method: a parameter-shared
+actor with a centralised critic, so every agent receives the same broadcast
+team advantage.  Arm~B keeps the same simulator, the same observation, the
+same action mask, the same team reward and the same episode budget, and
+replaces the learner with a per-agent actor and a per-agent local critic.
+Nothing else changes.
+
+What that does and does not change is worth stating plainly, because it
+bounds the conclusion.  With a team reward $r_t$ broadcast to every agent,
+the advantage is $r_t+\\gamma V(o')-V(o)$.  Giving each agent its own
+value function changes the \\emph{baseline} of that expression, and
+therefore the variance of the advantage; it does not change its
+\\emph{signal}, which is still the same team reward for every agent.  Arm~B
+is thus a comparison of a per-agent baseline and of parameter sharing.  It
+is not an implementation of the per-agent advantage estimators above, all
+of which change the signal by supplying a per-agent reward or a
+counterfactual baseline, and all of which are considerably more than a
+change of critic.
 
 {tab('tab:results_credit')}
 

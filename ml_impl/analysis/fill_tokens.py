@@ -216,7 +216,10 @@ def main():
         a, b = cr[0], cr[1]
         d = b["CK"] - a["CK"]
         tok["CREDIT_DELTA"] = f"{d:+.3f}"
-        tok["CREDIT_SHARE"] = f"{100*d/max(a['CK'], 1e-9):.0f}\\%"
+        tok["CREDIT_A_CK"] = f(a["CK"])
+        tok["CREDIT_B_CK"] = f(b["CK"])
+        tok["CREDIT_A_SC"] = f(a["SC"])
+        tok["CREDIT_B_SC"] = f(b["SC"])
         react = main_rows.get("Reactive")
         if react:
             gap = float(react["CK"]) - a["CK"]
