@@ -236,6 +236,8 @@ The state available to the centralized critic during training is
 \end{equation}
 where $\mathcal{V}_t^{\mathrm{act}}=\{\,i\in\{1,\dots,N\}:F_i(t)=0\,\}$ is the set of active UAVs, from which any UAV with $F_i(t)=1$ is removed in all coverage, connectivity and energy sums. $\mathbf v_i$ is velocity, $b_i\in[0,1]$ is normalized battery level, $m_i\in\{\mathrm{serve},\mathrm{return},\mathrm{charge}\}$ is operating mode, $F_i\in\{0,1\}$ is the failure indicator, and $\mathbf Q_t\in\{0,1\}^{S}$ records charging-pad occupancy. A failed UAV is removed from the active set used in coverage and connectivity calculations.
 
+The critic sees the joint state, so it is a function of the coverage deficit and can represent it; but the state does not carry the per-sensor coverage counts $n_d(t)$ directly, so the critic has to infer the deficit from the geometry of the UAV and sensor positions. That distinction matters for the credit assignment: a critic that could read $n_d(t)$ would face a different problem from one that must reconstruct it, and the difference is not visible in the reward. The same asymmetry appears on the actor's side, and it is the reason the broadcast summary of the deficit is part of the observation model.
+
 \subsection{Local Observation}
 At deployment, UAV $i$ uses only locally available information, plus two
 broadcast quantities:
