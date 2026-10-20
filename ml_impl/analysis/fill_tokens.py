@@ -697,6 +697,44 @@ def build_tokens():
     except Exception as exc:  # pragma: no cover - diagnostic path
         print(f"WARNING: the test count could not be determined: {exc}",
               file=sys.stderr)
+    # the variance decomposition of the headline number: the seed-to-seed
+    # component and the scene-to-scene component, reported separately.  The
+    # scene component is COMMON to every controller, because they are all
+    # evaluated on the same scenes, and it therefore cancels in every
+    # comparison the paper draws; the seed component does not.
+    seed_rows = os.path.join(HERE, "base_seed_rows.jsonl")
+    if os.path.exists(seed_rows):
+        by_seed = {}
+        for line in open(seed_rows, encoding="utf-8"):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                d = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            ps = d.get("per_seed") or []
+            if ps:
+                # the file is appended to, so the LAST row for a seed is the
+                # one from the most recent run
+                by_seed[int(d.get("train_seed", len(by_seed)))] = \
+                    [float(x["CK"]) for x in ps]
+        per_seed_scenes = [by_seed[k] for k in sorted(by_seed)]
+        if len(per_seed_scenes) > 1:
+            n_scenes = min(len(x) for x in per_seed_scenes)
+            seed_means = [float(np.mean(x[:n_scenes])) for x in per_seed_scenes]
+            scene_means = [float(np.mean([x[e] for x in per_seed_scenes]))
+                           for e in range(n_scenes)]
+            s_seed = float(np.std(seed_means, ddof=1))
+            s_scene = float(np.std(scene_means, ddof=1))
+            tok["VAR_SEED"] = f"{s_seed:.3f}"
+            tok["VAR_SCENE"] = f"{s_scene:.3f}"
+            tok["VAR_SEED_SE"] = f"{s_seed / np.sqrt(len(seed_means)):.3f}"
+            tok["VAR_SCENE_SE"] = f"{s_scene / np.sqrt(n_scenes):.3f}"
+            tok["VAR_N_SEEDS"] = str(len(seed_means))
+            tok["VAR_N_SCENES"] = str(n_scenes)
+            # the yardstick of the whole paper: the seed-to-seed spread
+            tok["ABL_YARDSTICK"] = f"{s_seed:.3f}"
     return tok
 
 

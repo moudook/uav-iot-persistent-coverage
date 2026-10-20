@@ -78,6 +78,11 @@ def stage_base(episodes, train_seeds, eval_seeds):
     print("=" * 78, flush=True)
     rows = []
     sampled_runs, argmax_runs = [], []
+    # the per-seed rows are written fresh for this run, so that the
+    # variance decomposition reads the current experiment
+    with open(os.path.join(ANALYSIS, "base_seed_rows.jsonl"), "w",
+              encoding="utf-8") as f:
+        f.write("")
     for s in range(train_seeds):
         t0 = time.time()
         c = base_config(seed=s)

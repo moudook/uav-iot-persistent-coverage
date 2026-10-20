@@ -1255,6 +1255,20 @@ scene-to-scene variation does not enter this interval, because every
 controller is evaluated on the same scenes and it therefore cancels in the
 difference.
 
+It is worth separating the two sources of variation in the headline
+number, because they behave differently.  Across the 5
+training runs of the learned controller the coverage varies by $0.059$
+(the standard error of the mean is $0.027$); across the
+5 evaluation scenes it varies by $0.082$ (the
+standard error of the mean over the scenes is $0.037$).  The
+scene component is common to every controller in the comparison, because
+they are all evaluated on the same scenes, and it therefore cancels in
+every difference this paper reports; the seed component does not, and it
+is the seed component that the training-seed spread measures.  A reader
+comparing two controllers should read the seed component as the
+uncertainty of the comparison and the scene component as a property of the
+configuration.
+
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
 from the proposed method in exactly one respect: each agent has its own
@@ -1487,9 +1501,10 @@ Every variant is trained on the same configuration with the same budget and
 from the same set of ? training seeds, and differs from the
 full configuration in exactly one component, so a difference is
 attributable to that component.  The budget is the base comparison's
-(? episodes), so that the full configuration of this table
-is the same experiment as the proposed controller of the first table, and
-not a cheaper one.  Because the variants share the training seeds, the
+(? episodes), and the full configuration of this table is
+the first ? of the base comparison's training runs --- the same
+policies, not a cheaper experiment --- so the two tables describe the same
+learner.  Because the variants share the training seeds, the
 comparison is \emph{paired}: a difference is measured on the same training
 runs, and what is reported is a confidence interval for that difference
 rather than a comparison of two numbers against a threshold.  A threshold
@@ -1508,13 +1523,16 @@ What the intervals do and do not say is worth stating precisely, because a
 null result of this width is a statement about the resolution of the
 measurement and not about the component.  The measurement resolves no
 effect smaller than about $n/a$ of persistent coverage, at
-this training budget and with this number of training seeds.  It does
-\emph{not} show that a component is unnecessary.  A component can be
-redundant with another, in which case removing either one alone costs
-nothing while removing both costs a great deal; and a component that
-matters only at a larger budget is invisible at this one.  Establishing
-budget-independence would need a budget sweep, which we do not run, and
-we therefore do not claim it.
+this training budget and with this number of training seeds.  The
+intervals are per-arm and are not adjusted for the number of arms, so a
+reader who wants a family-wise statement should treat the set of arms as
+one test with several comparisons rather than as several independent
+tests.  The intervals do \emph{not} show that a component is unnecessary.
+A component can be redundant with another, in which case removing either
+one alone costs nothing while removing both costs a great deal; and a
+component that matters only at a larger budget is invisible at this one.
+Establishing budget-independence would need a budget sweep, which we do
+not run, and we therefore do not claim it.
 
 Two of the null results are explained rather than merely reported.  The
 articulation-point term makes no measurable difference because the safety
