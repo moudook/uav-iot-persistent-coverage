@@ -349,6 +349,10 @@ def build_tokens():
         tok["ED_STR"] = f(ed["stranded_per_episode"], 1)
         tok["ED_CK"] = f(ed["CK"])
         tok["ED_RET"] = f(ed["return_events_per_episode"], 1)
+        tok["ED_STR_DELTA"] = f(ed["stranded_per_episode"]
+                                - ea["stranded_per_episode"], 1)
+        tok["ED_RET_DELTA"] = f(abs(ed["return_events_per_episode"]
+                                    - ea["return_events_per_episode"]), 0)
     # the paired intervals of the energy arms against arm A
     en_stats = []
     for key, arm, label in (("EB", "B", "removing the energy constraint"),

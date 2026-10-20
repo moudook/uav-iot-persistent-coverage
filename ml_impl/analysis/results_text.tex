@@ -226,6 +226,17 @@ coverage is unchanged to within the spread, and that is the honest
 conclusion: the defect was real, the repair was correct, and neither the
 defect nor the repair explains the gap to the reactive heuristic.
 
+It is worth being explicit about what that null is and is not about, since
+a null result is easy to misread.  It is \emph{not} a statement that the
+energy constraint is inactive: the two rules differ by $@@ED_STR_DELTA@@$
+stranded UAVs per episode and by roughly $@@ED_RET_DELTA@@$ return-to-charge
+transitions, so the test is doing substantial work and the swarm's energy
+behaviour differs markedly between them.  It is a statement about the
+effect of that work on the \emph{coverage}, and the effect is small.  A
+null in an arm of this width is also a statement about the resolution of
+the arm and not about the component, and we report that resolution with
+the interval.
+
 That is the sequence the framework is for.  A coverage comparison on its
 own would have reported that the learned controller mismanages energy, and
 a reward re-weighting would have been the wrong repair.  The controlled
