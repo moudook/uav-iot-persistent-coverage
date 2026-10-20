@@ -279,28 +279,25 @@ def build_tokens():
             gap = float(tok["GAP"])
             clauses = [bound_clause(lab, m, h, gap) for lab, m, h in obs_stats]
             excluded = all((m + h) < gap for _, m, h in obs_stats)
-            if excluded:
-                tok["OBS_SUMMARY"] = (
-                    "The three arms share their training seeds, so the "
-                    "comparisons are paired: "
-                    + "; ".join(clauses)
-                    + ".  Each upper limit is below the gap of "
-                    f"{gap:.3f} to the reactive heuristic, so the content "
-                    "of the observation is not what accounts for the gap; "
-                    "what the observation terms buy is the ability to "
-                    "specialise at all, and the arms here do not separate "
-                    "the coverage they produce.")
-            else:
-                tok["OBS_SUMMARY"] = (
-                    "The three arms share their training seeds, so the "
-                    "comparisons are paired: "
-                    + "; ".join(clauses)
-                    + f".  The intervals are wide relative to the gap of "
-                    f"{gap:.3f}, so the observation content is not excluded "
-                    "by these arms; what they do show is that the "
-                    "observation terms change what the policy does far "
-                    "more clearly than they change the coverage it "
-                    "achieves.")
+            n = len(obs_stats)
+            tok["OBS_SUMMARY"] = (
+                ("The arms" if n > 1 else "The arm")
+                + " share their training seeds, so the "
+                + ("comparisons are paired: " if n > 1 else "comparison is paired: ")
+                + "; ".join(clauses)
+                + ((".  Each upper limit is below the gap of " if n > 1
+                    else ".  The upper limit is below the gap of ")
+                   if excluded else
+                   (".  The intervals are wide relative to the gap of "
+                    if n > 1 else
+                    ".  The interval is wide relative to the gap of "))
+                + f"{gap:.3f} to the reactive heuristic, so the content "
+                + ("of the observation is not what accounts for the gap; "
+                   if excluded else
+                   "of the observation is not excluded by these arms; ")
+                + "what the observation terms buy is the ability to "
+                "specialise at all, and the arms here do not separate "
+                "the coverage they produce.")
 
     mr = load_json("ab_map_resolution.json")
     if mr:
@@ -366,14 +363,34 @@ def build_tokens():
         if not (pa and pb):
             continue
         mean, half, p, n = paired_stat(pb, pa)
+        if not (mean == mean and half == half):
+            # fewer than two shared training seeds: no interval is
+            # computable, and the paper must say so rather than print a
+            # not-a-number
+            tok[f"{key}_PAIRED"] = "not measured"
+            tok[f"{key}_HALF"] = "not measured"
+            tok[f"{key}_CI"] = "not measured"
+            tok[f"{key}_P"] = "not measured"
+            tok[f"{key}_N"] = str(n)
+            continue
         tok[f"{key}_PAIRED"] = f"{mean:+.3f}"
         tok[f"{key}_HALF"] = f"{half:.3f}"
         tok[f"{key}_CI"] = f"[{mean-half:+.3f}, {mean+half:+.3f}]"
         tok[f"{key}_P"] = f"{p:.3f}"
         tok[f"{key}_N"] = str(n)
         en_stats.append((label, mean, half))
+    # ------------------------------------------------------------------
     # the exclusion argument, derived from the measurements
-    if en_stats and "GAP" in tok:
+    # ------------------------------------------------------------------
+    if "GAP" in tok and not en_stats:
+        tok["ENERGY_SUMMARY"] = (
+            "The three interventions are paired with the proposed "
+            "configuration -- they share its training seeds -- so each one "
+            "is reported as an interval rather than as a point, but the "
+            "arms have not yet been measured with enough shared training "
+            "seeds for an interval to be computable, and no bound is "
+            "claimed for them here.")
+    elif en_stats and "GAP" in tok:
         gap = float(tok["GAP"])
         clauses = [bound_clause(lab, m, h, gap) for lab, m, h in en_stats]
         excluded = all((m + h) < gap for _, m, h in en_stats)
@@ -662,6 +679,55 @@ def build_tokens():
             tok["CREDIT_N"] = str(n)
 
     # ------------------------------------------------------------------
+    # THE ARMS' VERDICT, derived.  The abstract and the introduction both
+    # say what the controlled arms establish.  Whether they establish it
+    # depends on the measurements, so the sentence is derived here: an
+    # explanation is excluded only if the arm that tests it has an upper
+    # confidence limit below the gap.
+    # ------------------------------------------------------------------
+    arm_bounds = []
+    if obs_stats and "GAP" in tok:
+        arm_bounds.append(("the content of the observation",
+                           max(m + h for _, m, h in obs_stats)))
+    if en_stats and "GAP" in tok:
+        arm_bounds.append(("the energy model",
+                           max(m + h for _, m, h in en_stats)))
+    if arm_bounds:
+        gap = float(tok["GAP"])
+        excluded = [lab for lab, up in arm_bounds if up == up and up < gap]
+        not_excluded = [lab for lab, up in arm_bounds
+                        if not (up == up and up < gap)]
+        # the sentence names ONLY the arms that were actually measured, so
+        # it cannot claim an arm was tested when its artefact is missing
+        names_all = " and ".join(lab for lab, _ in arm_bounds)
+        if not not_excluded:
+            tok["ARMS_VERDICT"] = (
+                "controlled arms bound how much of the gap the alternative "
+                "explanations can account for: "
+                + names_all
+                + (" is" if len(arm_bounds) == 1 else " are")
+                + " tested with a single-factor intervention whose "
+                "interval lies far below the gap")
+        else:
+            tok["ARMS_VERDICT"] = (
+                "controlled arms bound how much of the gap the alternative "
+                "explanations can account for: the interval of "
+                + ("the arm testing " if len(arm_bounds) == 1
+                   else "the arms testing ")
+                + names_all + " "
+                + ("does" if len(arm_bounds) == 1 else "do")
+                + " not exclude the whole gap"
+                + (", so " + " and ".join(not_excluded)
+                   + (" is" if len(not_excluded) == 1 else " are")
+                   + " not excluded by "
+                   + ("it" if len(not_excluded) == 1 else "them")
+                   if not_excluded else ""))
+    else:
+        tok["ARMS_VERDICT"] = (
+            "the arms that test the alternative explanations have not been "
+            "measured yet, so no bound is claimed for them")
+
+    # ------------------------------------------------------------------
     # what the metrics do on an INFEASIBLE configuration
     # ------------------------------------------------------------------
     inf = load_json("infeasible_instance.json")
@@ -686,20 +752,31 @@ def build_tokens():
         priv = float(rp["CK"])
         loc = float(rl["CK"])
         gap = float(tok["GAP"])
-        share = (priv - loc) / gap if abs(gap) > 1e-9 else 0.0
+        d = priv - loc
+        share = d / gap if abs(gap) > 1e-9 else 0.0
         tok["REACTL_SHARE"] = f"{100 * share:.0f}"
-        if abs(priv - loc) < 0.5 * abs(gap):
+        if d < 0:
+            # the unprivileged rule is BETTER: the privilege was a handicap
             tok["REACTL_VERDICT"] = (
-                f"the privilege is therefore worth {priv - loc:.3f} of "
-                f"persistent coverage, which is a small part of the "
-                f"{gap:.3f} gap to the learned controller, and the gap is "
-                f"not an information artefact")
+                f"the privileged version is in fact slightly WORSE than the "
+                f"unprivileged one ({d:+.3f}), so the global coverage state "
+                f"is not what gives the rule its edge --- the global "
+                f"round-robin assignment makes the UAVs contend for "
+                f"sensors, and the local rule does better --- and the gap "
+                f"to the learned controller is therefore not an information "
+                f"artefact at all")
+        elif abs(d) < 0.5 * abs(gap):
+            tok["REACTL_VERDICT"] = (
+                f"the privilege is therefore worth {d:.3f} of persistent "
+                f"coverage, which is a small part of the {gap:.3f} gap to "
+                f"the learned controller, and the gap is not an information "
+                f"artefact")
         else:
             tok["REACTL_VERDICT"] = (
-                f"the privilege is therefore worth {priv - loc:.3f} of "
-                f"persistent coverage, which is {100 * share:.0f}\\% of the "
-                f"{gap:.3f} gap to the learned controller, and a large part "
-                f"of the gap is therefore an information artefact")
+                f"the privilege is therefore worth {d:.3f} of persistent "
+                f"coverage, which is {100 * share:.0f}\\% of the {gap:.3f} "
+                f"gap to the learned controller, and a large part of the "
+                f"gap is therefore an information artefact")
 
     # ------------------------------------------------------------------
     # where the connectivity availability below 1.000 comes from
