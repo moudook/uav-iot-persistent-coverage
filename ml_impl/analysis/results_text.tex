@@ -140,14 +140,19 @@ does not claim that it is.
 
 Every variant is trained from the same seed on the same configuration
 except for the one component that is removed, so a difference is
-attributable to that component.  The table is reported in full, including
-the variants that make no measurable difference, because the claim this
-paper supports is a claim about which components are load-bearing.  On
-this configuration @@ABL_MOVED@@, while @@ABL_STILL@@.  The separation is
-the point: the components that make the framework a
-\emph{framework}---the feasibility mask, the agent identity, the reserve and
-the charging machinery---are not interchangeable with the reward-shaping
-terms, and the honest statement of the result is which is which.
+attributable to that component.  @@ABL_SUMMARY@@.
+
+That is worth stating plainly rather than reading around: the components
+that a reader might expect to matter most here are the ones the hard
+constraints have already discharged.  The articulation-point term makes
+almost no difference because the safety filter already forbids any move
+that would create an articulation point, so on an executed trajectory the
+quantity it measures is nearly constant and the term has almost no variance
+to act on; the degraded-service term is close to inert for the same
+reason, since the filter keeps the graph connected whenever the active set
+is unchanged.  The terms that the filter cannot enforce are the ones the
+controller actually has to learn: who covers what, and how the energy is
+spent.
 
 Two of the null results are explained rather than merely reported.  The
 articulation-point term makes no measurable difference because the safety

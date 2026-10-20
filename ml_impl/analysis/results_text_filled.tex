@@ -52,51 +52,50 @@ was unchanged (Section~\ref{sec:results_abl}).
 
 %% OBS
 
-The three arms have three \emph{distinct} behaviours, and the spread column
-is what distinguishes them.  Arm~A, whose observation does not identify the
-agent, disperses the most ($14.7$~m) and covers the least
-($0.581$): the shared actor has no basis on which to specialise, the
-deterministic policy selects almost the same action for every one of the
-eight UAVs, and the swarm moves as a body.  This is precisely the failure
-that Foerster et al.'s condition~(ii) is about, and its consequence here is
-measurable rather than theoretical.
+The three arms are cumulative, and arm~C is the proposed configuration; the
+component ablation of the next section isolates the three observation terms
+individually.  Arm~A is the observation of Eq.~\eqref{eq:obs} as originally
+written.
 
-Arm~B adds the identity, and the condition does what it says: the number of
-distinct actions rises, the swarm disperses, and the coverage rises with
-it, by $+0.109$, which is $29\%$ of the distance between the
-local-only observation and the reactive heuristic.  The condition is
-therefore not a formality.  A reader who omits the identity obtains a
-visibly worse controller, and the diagnostic that explains it is a count of
-distinct actions under the argmax policy --- a measurement that costs
-nothing and that the raw coverage number does not make visible.
+Arm~A has the property that the shared-actor symmetry collapse predicts.
+The deterministic policy selects the same action for every UAV --- the
+``Distinct'' column counts $1.80$ distinct actions out of eight --- and
+the swarm's spread is $14.7$~m, which is the radius of the initial
+cluster rather than the extent of a deployment.  This is the failure that
+Foerster et al.'s condition~(ii) is about: with an observation that does not
+break the permutation symmetry, a parameter-shared network is a single
+function of the observation, so two agents in symmetric states must receive
+the same action distribution, and no amount of training can change that.
+The consequence is measurable rather than theoretical, and the diagnostic
+that exposes it is a count of distinct actions, which costs nothing and
+which the raw coverage number does not make visible.
 
-Arm~C adds the broadcast coverage-map summary, which was supposed to be an
-improvement: it tells the policy \emph{where} the coverage deficit is, and
-without it an agent knows how many sensors it covers but not which are
-deficient.  It makes the controller \emph{worse}
-($0.604$ against $0.690$), and the spread column says why: the swarm
-contracts to $8.0$~m instead of dispersing.  The policy is
+Arm~B adds the one-hot identity, and the condition does what it says: the
+number of distinct actions rises to $2.10$ out of eight and the swarm
+disperses, and the coverage rises to $0.690$ from $0.581$.
+
+Arm~C adds the broadcast coverage-map summary and the pad bearing, and it is
+the configuration the paper proposes --- but it is \emph{worse} than arm~B on
+coverage ($0.604$ against $0.690$).  The spread column says why: the
+swarm contracts to $8.0$~m instead of dispersing.  The policy is
 following the map.  It moves towards the cell that currently holds the
 deficit, covers it, the deficit moves to another cell, and the swarm
-oscillates after a moving target --- a location without an assignment is
-not actionable.
+oscillates after a moving target.
 
-That is the single most useful thing the ablation says, and it is the same
-conclusion the other two controlled experiments reach from different
-directions.  A coverage map tells a controller \emph{where} the work is; it
-does not tell it \emph{which} UAV should do it, and turning a location into
-an assignment requires per-agent credit, which a shared team reward does
-not supply.  The map therefore makes the deficiency \emph{visible} and
-therefore \emph{actionable-looking}, and the policy chases it, which is
-worse than the apparently aimless dispersal of arm~A.
+That is the most useful thing the observation comparison says, and it points
+at the same mechanism the other two controlled experiments reach from
+different directions.  A coverage map tells a controller \emph{where} the
+work is; it does not tell it \emph{which} UAV should do it, and turning a
+location into an assignment requires per-agent credit, which a shared team
+reward does not supply.  The map therefore makes the deficiency
+\emph{visible} and therefore \emph{actionable-looking}, and a policy without
+the credit to act on it chases.  The map is retained in the proposed
+configuration because the reactive heuristic is given the exact deficit set
+and the comparison is otherwise not like-for-like, and the measurement above
+is reported rather than quietly dropped; the component ablation of the next
+section prices the map on its own.
 
 The resolution of the summary does not rescue it: $G=8$: 0.589, and the swarm's spread contracts in every case, because the policy follows the deficit instead of dividing the work.
-
-The proposed configuration consequently uses the identity and omits the
-coverage-map summary, and the observation of Eq.~\eqref{eq:obs} is stated
-that way.  We keep the a-priori argument in the record because it was
-reasonable, and because the measurement that refutes it is more useful to a
-reader than the argument would have been.
 
 %% ENERGY
 
@@ -141,14 +140,19 @@ does not claim that it is.
 
 Every variant is trained from the same seed on the same configuration
 except for the one component that is removed, so a difference is
-attributable to that component.  The table is reported in full, including
-the variants that make no measurable difference, because the claim this
-paper supports is a claim about which components are load-bearing.  On
-this configuration $the reserve UAV$ (-0.058) have a measurable effect on persistent coverage, while no-connectivity, the charging arbitration, the action mask do not, at this budget and on this configuration.  The separation is
-the point: the components that make the framework a
-\emph{framework}---the feasibility mask, the agent identity, the reserve and
-the charging machinery---are not interchangeable with the reward-shaping
-terms, and the honest statement of the result is which is which.
+attributable to that component.  On this configuration $the reserve UAV$ (-0.058) has a measurable effect on persistent coverage, and the remaining variants do not.
+
+That is worth stating plainly rather than reading around: the components
+that a reader might expect to matter most here are the ones the hard
+constraints have already discharged.  The articulation-point term makes
+almost no difference because the safety filter already forbids any move
+that would create an articulation point, so on an executed trajectory the
+quantity it measures is nearly constant and the term has almost no variance
+to act on; the degraded-service term is close to inert for the same
+reason, since the filter keeps the graph connected whenever the active set
+is unchanged.  The terms that the filter cannot enforce are the ones the
+controller actually has to learn: who covers what, and how the energy is
+spent.
 
 Two of the null results are explained rather than merely reported.  The
 articulation-point term makes no measurable difference because the safety

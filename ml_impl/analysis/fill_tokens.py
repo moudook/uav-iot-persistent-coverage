@@ -184,19 +184,17 @@ def main():
                 parts = []
                 for n, dlt in sorted(moved, key=lambda x: -abs(x[1])):
                     parts.append(f"${names.get(n, n)}$ ({dlt:+.3f})")
-                tok["ABL_MOVED"] = (", ".join(parts) +
-                                    " have a measurable effect on persistent "
-                                    "coverage")
+                tok["ABL_SUMMARY"] = (
+                    f"On this configuration {', '.join(parts)} "
+                    f"{'has' if len(parts) == 1 else 'have'} a measurable "
+                    f"effect on persistent coverage, and the remaining "
+                    f"variants do not")
             else:
-                tok["ABL_MOVED"] = ("no single component has a measurable "
-                                    "effect on persistent coverage")
-            if still:
-                parts = [names.get(n, n) for n, _ in still]
-                tok["ABL_STILL"] = (", ".join(parts) +
-                                     " do not, at this budget and on this "
-                                     "configuration")
-            else:
-                tok["ABL_STILL"] = ""
+                tok["ABL_SUMMARY"] = (
+                    "On this configuration no single component changes the "
+                    "persistent coverage by more than the seed-to-seed spread "
+                    "of the learner itself, and the table is reported in "
+                    "full because that is the result")
     scen = load_csv("results_scenarios.csv")
     if scen:
         wins = losses = ties = 0
