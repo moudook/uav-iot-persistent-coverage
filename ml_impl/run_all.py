@@ -41,7 +41,7 @@ import torch
 from uav_wireless.env import UAVIoTEnv
 from uav_wireless.experiments import (base_config, run_base_comparison,
                                        run_ablation, run_scenarios,
-                                       run_learned_baselines)
+                                       run_learned_baselines, eval_agent)
 from uav_wireless.mappo import MAPPO
 from uav_wireless.train import train_mappo, collect_rollout
 
@@ -57,6 +57,18 @@ def stage_observation(episodes, seeds, eval_seeds):
     return ab_main()
 
 def stage_base(episodes, train_seeds, eval_seeds):
+    """The base comparison.
+
+    PROTOCOL.  The learned controller is trained `train_seeds` times and
+    reported as the MEAN over those training runs, with the seed-to-seed
+    spread of CK.  Each trained policy is then evaluated on `eval_seeds`
+    scenes.  The table therefore reports the controller, not one lucky
+    policy, which is what the text of the paper describes and what the
+    table did not do before.
+
+    Every training run's policy is SAVED, so that every number in the
+    table can be recomputed from a stored artefact.
+    """
     cfg = base_config()
     print("=" * 78)
     print(f" BASE COMPARISON  N={cfg.N} K={cfg.K} M={cfg.M} "
@@ -65,48 +77,80 @@ def stage_base(episodes, train_seeds, eval_seeds):
           f"evaluation: {eval_seeds} seeds")
     print("=" * 78, flush=True)
     rows = []
+    sampled_runs, argmax_runs = [], []
     for s in range(train_seeds):
         t0 = time.time()
         c = base_config(seed=s)
         agent, hist = train_mappo(c, episodes=episodes, n_steps=c.episode_len,
                                   seed=s, log_every=max(1, episodes // 5),
                                   verbose=True)
+        agent.save(f"mappo_base_s{s}.pt")
         if s == 0:
             agent.save("mappo_base.pt")
             with open("hist_base.json", "w", encoding="utf-8") as f:
                 json.dump(hist, f, indent=2)
-        evs = [__import__("uav_wireless.experiments", fromlist=["eval_agent"])
-               .eval_agent(agent, c, steps=c.episode_len, seed=e)
+
+        # the SAMPLED policy, which is the policy Eq. (13) specifies
+        evs = [eval_agent(agent, c, steps=c.episode_len, seed=e)
                for e in range(eval_seeds)]
-        agg = {k: float(np.mean([x[k] for x in evs])) for k in evs[0]}
-        std = {k: float(np.std([x[k] for x in evs])) for k in evs[0]}
+        samp = {k: float(np.mean([x[k] for x in evs])) for k in evs[0]}
+        samp_std = {k: float(np.std([x[k] for x in evs])) for k in evs[0]}
+        sampled_runs.append(samp)
+
+        # the DETERMINISTIC (argmax) policy of the SAME actor
+        det = [eval_agent(agent, c, steps=c.episode_len, seed=e,
+                           deterministic=True) for e in range(eval_seeds)]
+        argmax_runs.append({k: float(np.mean([x[k] for x in det]))
+                             for k in det[0]})
+
         # the per-seed rows are written as they are produced, so that an
         # interrupted run does not throw away the training it has already done
         with open(os.path.join(ANALYSIS, "base_seed_rows.jsonl"), "a",
                   encoding="utf-8") as f:
             f.write(json.dumps(dict(train_seed=s,
-                                    **{k: agg[k] for k in
+                                    **{k: samp[k] for k in
                                        ("CK", "AG", "SC", "CovIntegral")},
-                                    **{f"{k}_std": std[k]
+                                    **{f"{k}_std": samp_std[k]
                                        for k in ("CK", "AG", "SC")},
                                     per_seed=[{k: x[k] for k in
                                                ("CK", "AG", "SC")}
                                               for x in evs])) + "\n")
-        print(f"  seed {s}: CK={agg['CK']:.3f}±{std['CK']:.3f} "
-              f"AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
-              f"CI={agg['CovIntegral']:.3f} "
+        print(f"  seed {s}: CK={samp['CK']:.3f}+-{samp_std['CK']:.3f} "
+              f"AG={samp['AG']:.3f} SC={samp['SC']:.3f} "
+              f"CI={samp['CovIntegral']:.3f} "
               f"best_ck={max(h['CK'] for h in hist):.3f} "
               f"({time.time()-t0:.0f}s)", flush=True)
-        rows.append(dict(train_seed=s, **{k: agg[k] for k in
+        rows.append(dict(train_seed=s, **{k: samp[k] for k in
                                           ("CK", "AG", "SC", "CovIntegral")},
-                         **{f"{k}_std": std[k] for k in ("CK", "AG", "SC")},
+                         **{f"{k}_std": samp_std[k]
+                            for k in ("CK", "AG", "SC")},
                          best_ck=float(max(h["CK"] for h in hist)),
                          final_ck=float(hist[-1]["CK"])))
     out = os.path.join(ANALYSIS, "base_training_seeds.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump(rows, f, indent=2)
     print(f"  saved -> {out}\n", flush=True)
-    return rows
+
+    # aggregate the training runs into the rows of the main table
+    def agg_over_seeds(runs):
+        keys = runs[0].keys()
+        a = {k: float(np.mean([r[k] for r in runs])) for k in keys}
+        a["CK_std"] = float(np.std([r["CK"] for r in runs]))
+        a["train_seeds"] = int(len(runs))
+        return a
+
+    learned = {"MAPPO": agg_over_seeds(sampled_runs),
+               "MAPPO-argmax": agg_over_seeds(argmax_runs)}
+    return learned
+
+
+def stage_base_table(learned, eval_seeds):
+    """Write results_main.csv from the multi-seed learned rows."""
+    from uav_wireless.experiments import run_base_comparison
+    cfg = base_config()
+    run_base_comparison(cfg, "results_main.csv", eval_seeds=eval_seeds,
+                        train=False, learned=learned)
+    print()
 
 
 def stage_dormancy():
@@ -137,16 +181,21 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--stage", default="all",
-                    choices=["obs", "base", "abl", "learned", "energy", "scen", "all"])
+                    choices=["obs", "base", "abl", "ablstress", "learned",
+                             "energy", "scen", "all"])
     args = ap.parse_args()
 
     quick = args.quick
     episodes = 6 if quick else 25
     train_seeds = 2 if quick else 5
     eval_seeds = 2 if quick else 5
-    abl_episodes = 3 if quick else 10
+    # The ablation must use the BASE comparison's budget, or the table
+    # measures the budget rather than the component: the "Full" row has to be
+    # the same experiment as the MAPPO row of the base comparison.
+    abl_episodes = 3 if quick else episodes
+    abl_seeds = 1 if quick else 3
     stress_episodes = 2 if quick else 6
-    obs_seeds = 2 if quick else 2
+    obs_seeds = 2 if quick else 3
 
     t0 = time.time()
     print("=" * 78)
@@ -165,26 +214,25 @@ def main():
 
     if args.stage in ("base", "all"):
         print("[2/6] base comparison ...", flush=True)
-        stage_base(episodes, train_seeds, eval_seeds)
+        learned = stage_base(episodes, train_seeds, eval_seeds)
         stage_dormancy()
-        # the rule baselines on the same scenes
-        from uav_wireless.experiments import run_base_comparison
-        cfg = base_config()
-        agent = MAPPO(n_agents=cfg.N, obs_dim=UAVIoTEnv(cfg).obs_dim,
-                       state_dim=UAVIoTEnv(cfg).state_dim)
-        agent.load("mappo_base.pt")
-        run_base_comparison(cfg, "results_main.csv", eval_seeds=eval_seeds,
-                            train=False, agent=agent)
+        stage_base_table(learned, eval_seeds)
         print()
 
     if args.stage in ("abl", "all"):
         print("[3/6] ablations ...", flush=True)
         cfg = base_config()
         run_ablation(cfg, "results_ablation.csv", stress=False,
-                     episodes=abl_episodes)
+                     episodes=abl_episodes, eval_seeds=eval_seeds,
+                     seeds=abl_seeds)
         print()
+
+    if args.stage in ("ablstress", "all"):
+        print("[3b/6] ablations on the combined-stress scenario ...", flush=True)
+        cfg = base_config()
         run_ablation(cfg, "results_ablation_stress.csv", stress=True,
-                     episodes=stress_episodes)
+                     episodes=stress_episodes, eval_seeds=eval_seeds,
+                     seeds=abl_seeds)
         print()
 
     if args.stage in ("learned", "all"):

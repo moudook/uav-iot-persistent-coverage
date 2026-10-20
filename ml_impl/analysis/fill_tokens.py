@@ -1,5 +1,5 @@
 """
-Fill the @@TOKEN@@ placeholders in the results prose from the artefacts.
+Fill the @@TOKEN@@ placeholders in the prose from the artefacts.
 
 The prose is written with placeholders so that no number in the text can be
 typed by hand: every value is read from the same artefact that the table
@@ -12,10 +12,10 @@ from __future__ import annotations
 
 import csv
 import json
-import numpy as np
 import os
 import re
-import sys
+
+import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ML = os.path.dirname(HERE)
@@ -40,7 +40,26 @@ def f(x, nd=3):
     return f"{float(x):.{nd}f}"
 
 
-def main():
+def per_seed_ck(row):
+    """The per-training-seed CK values of an ablation row, if present."""
+    v = row.get("per_seed_CK", "") if row else ""
+    if not v:
+        return []
+    out = []
+    for part in str(v).split(";"):
+        try:
+            out.append(float(part))
+        except ValueError:
+            return []
+    return out
+
+
+def build_tokens():
+    """Read every artefact and return the token table.
+
+    The tokens are the ONLY way a number reaches the paper's prose, so this
+    function is the single point at which the paper's numbers are decided.
+    """
     tok = {}
 
     main_rows = {r["model"]: r for r in load_csv("results_main.csv")}
@@ -57,6 +76,9 @@ def main():
         tok[f"{key}_E"] = f(r.get("Energy", 0), 0)
         tok[f"{key}_STR"] = f(r.get("Stranded", 0), 1)
         tok[f"{key}_DIST"] = f(r.get("Distance", 0), 0)
+        if r.get("CK_std") not in (None, ""):
+            tok[f"{key}_CK_STD"] = f(r["CK_std"])
+
     for r in load_csv("results_learned_baselines.csv"):
         key = ("IDDQN" if "DQN" in r["model"] else
                "PPOL" if "PPO" in r["model"] else None)
@@ -66,9 +88,9 @@ def main():
         tok[f"{key}_AG"] = f(r["AG"])
         tok[f"{key}_SC"] = f(r["SC"])
         tok[f"{key}_CI"] = f(r["CovIntegral"])
+        if r.get("CK_std") not in (None, ""):
+            tok[f"{key}_CK_STD"] = f(r["CK_std"])
 
-    for r in load_csv("results_main.csv"):
-        pass
     arg = main_rows.get("MAPPO-argmax")
     if arg is not None:
         tok["ARG_DISTANCE"] = f"{float(arg.get('Distance', 0)):.0f}"
@@ -79,6 +101,9 @@ def main():
         tok["MAPPO_STRANDED"] = f"{float(mp.get('Stranded', 0)):.1f}"
         tok["MAPPO_UNEXEC"] = f"{float(mp.get('UnexecutedActions', 0)):.0f}"
 
+    # ------------------------------------------------------------------
+    # the observation A/B/C
+    # ------------------------------------------------------------------
     obs = load_json("ab_observation.json")
     arms = {}
     for r in obs:
@@ -93,11 +118,13 @@ def main():
         tok["A_SC"] = f(a["SC"])
         tok["A_DIST"] = f(a["distinct_actions"], 2)
         tok["A_SPREAD"] = f(a["mean_spread_m"], 1)
+        tok["A_CK_STD"] = f(a.get("CK_std", 0.0))
         tok["B_CK"] = f(b["CK"])
         tok["B_AG"] = f(b["AG"])
         tok["B_SC"] = f(b["SC"])
         tok["B_DIST"] = f(b["distinct_actions"], 2)
         tok["B_SPREAD"] = f(b["mean_spread_m"], 1)
+        tok["B_CK_STD"] = f(b.get("CK_std", 0.0))
         delta = b["CK"] - a["CK"]
         tok["B_MINUS_A"] = f"{delta:+.3f}"
         react = main_rows.get("Reactive")
@@ -107,6 +134,7 @@ def main():
             tok["B_SHARE"] = f"{100*share:.0f}\\%"
     if c:
         tok["C_CK"] = f(c["CK"])
+        tok["C_CK_STD"] = f(c.get("CK_std", 0.0))
         if a:
             tok["C_DELTA"] = f"{c['CK'] - a['CK']:+.3f}"
         if b:
@@ -127,6 +155,9 @@ def main():
             ", and the swarm's spread contracts in every case, because the "
             "policy follows the deficit instead of dividing the work.")
 
+    # ------------------------------------------------------------------
+    # the energy arms
+    # ------------------------------------------------------------------
     en = load_json("ab_energy_management.json")
     arms_en = {}
     for r in en:
@@ -158,11 +189,15 @@ def main():
     if ea and ed:
         tok["ED_DELTA"] = f(ed["CK"] - ea["CK"])
         tok["ED_STR"] = f(ed["stranded_per_episode"], 1)
+        tok["ED_CK"] = f(ed["CK"])
+        tok["ED_RET"] = f(ed["return_events_per_episode"], 1)
 
-    # the ablation and the scenario summary are written by hand from the
-    # tables, but their anchors are computed here so that the sentences
-    # cannot drift from the numbers.
-    # the yardstick: the seed-to-seed spread of the learner itself
+    # ------------------------------------------------------------------
+    # the component ablation
+    # ------------------------------------------------------------------
+    # The yardstick is the spread of the learner itself: how much the
+    # training seed moves the coverage of the FULL configuration.  A
+    # component effect smaller than this is not measurable at this budget.
     yardstick = 0.02
     bs_path = os.path.join(HERE, "base_training_seeds.json")
     if os.path.exists(bs_path):
@@ -170,52 +205,98 @@ def main():
         cks = [float(b["CK"]) for b in bs]
         if len(cks) > 1:
             yardstick = float(np.std(cks))
-    tok["ABL_YARDSTICK"] = f"{yardstick:.3f}"
 
     abl = load_csv("results_ablation.csv")
     if abl:
         by = {r["model"]: r for r in abl}
         full = by.get("Full")
         van = by.get("VanillaMAPPO")
+        # the full configuration's own seed spread, if the ablation measured
+        # it, is the better yardstick: it is the same experiment
+        if full:
+            fs = per_seed_ck(full)
+            if len(fs) > 1:
+                yardstick = float(np.std(fs))
         if full and van:
             d = float(full["CK"]) - float(van["CK"])
             tok["ABL_DELTA"] = f"{d:+.3f}"
-            # which components actually move the coverage?
-            moved, still = [], []
-            for name, r in by.items():
-                if name in ("Full", "VanillaMAPPO"):
+
+        names = {"no-criticality": "the criticality term",
+                 "no-degraded": "the degraded-service term",
+                 "no-energy-cost": "the energy-cost term",
+                 "no-undercoverage": "the under-coverage term",
+                 "no-reserve": "the reserve UAV",
+                 "no-arbitration": "the charging arbitration",
+                 "no-mask": "the action mask",
+                 "no-agent-id": "the agent identity",
+                 "no-map": "the coverage map",
+                 "no-pad-bearing": "the pad bearing"}
+        moved, still, paired = [], [], []
+        fs = per_seed_ck(full) if full else []
+        for name, r in by.items():
+            if name in ("Full", "VanillaMAPPO"):
+                continue
+            try:
+                delta = float(r["CK"]) - float(full["CK"])
+            except (TypeError, ValueError, KeyError):
+                continue
+            vs = per_seed_ck(r)
+            pmean = pstd = None
+            if fs and len(vs) == len(fs):
+                diffs = [fs[i] - vs[i] for i in range(len(fs))]
+                pmean = float(np.mean(diffs))
+                pstd = float(np.std(diffs))
+                paired.append((name, pmean, pstd))
+            (moved if abs(delta) >= yardstick else still).append(
+                (name, delta, pmean, pstd))
+        if moved:
+            parts = []
+            for n, dlt, pmean, pstd in sorted(moved, key=lambda x: -abs(x[1])):
+                nm = names.get(n, n)
+                if pmean is not None:
+                    parts.append(f"${nm}$ ({pmean:+.3f} paired, "
+                                 f"seed-to-seed spread {pstd:.3f})")
+                else:
+                    parts.append(f"${nm}$ ({dlt:+.3f})")
+            tok["ABL_SUMMARY"] = (
+                f"On this configuration {', '.join(parts)} "
+                f"{'has' if len(parts) == 1 else 'have'} a measurable "
+                f"effect on persistent coverage, and the remaining "
+                f"variants do not")
+        else:
+            tok["ABL_SUMMARY"] = (
+                "On this configuration no single component changes the "
+                "persistent coverage by more than the seed-to-seed spread "
+                "of the learner itself, and the table is reported in "
+                "full because that is the result")
+        # the paired deltas of the components that matter, for the prose
+        if paired:
+            parts = []
+            for n, pmean, pstd in sorted(paired, key=lambda x: -abs(x[1])):
+                if abs(pmean) < yardstick:
                     continue
-                try:
-                    delta = abs(float(r["CK"]) - float(full["CK"]))
-                except (TypeError, ValueError, KeyError):
-                    continue
-                (moved if delta >= yardstick else still).append(
-                    (name, float(r["CK"]) - float(full["CK"])))
-            names = {"no-criticality": "the criticality term",
-                     "no-degraded": "the degraded-service term",
-                     "no-energy-cost": "the energy-cost term",
-                     "no-undercoverage": "the under-coverage term",
-                     "no-reserve": "the reserve UAV",
-                     "no-arbitration": "the charging arbitration",
-                     "no-mask": "the action mask",
-                     "no-agent-id": "the agent identity",
-                     "with-map": "the coverage map",
-                     "no-pad-bearing": "the pad bearing"}
-            if moved:
-                parts = []
-                for n, dlt in sorted(moved, key=lambda x: -abs(x[1])):
-                    parts.append(f"${names.get(n, n)}$ ({dlt:+.3f})")
-                tok["ABL_SUMMARY"] = (
-                    f"On this configuration {', '.join(parts)} "
-                    f"{'has' if len(parts) == 1 else 'have'} a measurable "
-                    f"effect on persistent coverage, and the remaining "
-                    f"variants do not")
-            else:
-                tok["ABL_SUMMARY"] = (
-                    "On this configuration no single component changes the "
-                    "persistent coverage by more than the seed-to-seed spread "
-                    "of the learner itself, and the table is reported in "
-                    "full because that is the result")
+                parts.append(f"{names.get(n, n)} {pmean:+.3f}"
+                             f"\\,({pstd:.3f})")
+            tok["ABL_PAIRS"] = ", ".join(parts) if parts else "none"
+            for n, pmean, pstd in paired:
+                key = {"no-agent-id": "ID", "no-pad-bearing": "PAD",
+                       "no-map": "MAP", "no-mask": "MASK"}.get(n)
+                if key:
+                    tok[f"ABL_{key}_DELTA"] = f"{pmean:+.3f}"
+                    tok[f"ABL_{key}_SPREAD"] = f"{pstd:.3f}")
+        tok["ABL_YARDSTICK"] = f"{yardstick:.3f}"
+        tok["ABL_SEEDS"] = str(full.get("train_seeds", "?")) if full else "?"
+        tok["ABL_EPISODES"] = str(full.get("episodes", "?")) if full else "?"
+        # the fall-back for the components that matter: if the per-seed
+        # values are not in the artefact, the unpaired difference is used and
+        # is reported as such
+        for n, dlt, pmean, pstd in moved:
+            key = {"no-agent-id": "ID", "no-pad-bearing": "PAD",
+                   "no-map": "MAP", "no-mask": "MASK"}.get(n)
+            if key and f"ABL_{key}_DELTA" not in tok:
+                tok[f"ABL_{key}_DELTA"] = f"{-dlt:+.3f}"
+                tok[f"ABL_{key}_SPREAD"] = f"{yardstick:.3f}"
+
     scen = load_csv("results_scenarios.csv")
     if scen:
         wins = losses = ties = 0
@@ -259,20 +340,29 @@ def main():
             gap = float(react["CK"]) - a["CK"]
             tok["CREDIT_OF_GAP"] = (f"{100*abs(d)/gap:.0f}\\%" if abs(gap) > 1e-9
                                      else "0\\%")
+    return tok
 
+
+def fill(text, tok):
+    """Replace every @@TOKEN@@ in `text`; return (filled_text, missing)."""
+    for k, v in tok.items():
+        text = text.replace(f"@@{k}@@", str(v))
+    missing = sorted(set(re.findall(r"@@([A-Z_0-9]+)@@", text)))
+    return text, missing
+
+
+def main():
+    tok = build_tokens()
     tmpl = os.path.join(HERE, "results_text.tex")
     out = os.path.join(HERE, "results_text_filled.tex")
     s = open(tmpl, encoding="utf-8").read()
-    missing = []
-    for k, v in tok.items():
-        s = s.replace(f"@@{k}@@", v)
-    for m in re.findall(r"@@([A-Z_0-9]+)@@", s):
-        missing.append(m)
-    open(out, "w", encoding="utf-8").write(s)
+    s, missing = fill(s, tok)
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(s)
     if missing:
-        print("UNFILLED TOKENS:", sorted(set(missing)))
-    else:
-        print("all tokens filled")
+        print("UNFILLED TOKENS:", missing)
+        return 1
+    print("all tokens filled")
     return 0
 
 

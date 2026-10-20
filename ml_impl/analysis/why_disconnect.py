@@ -71,6 +71,8 @@ def main():
     print()
     print("=== step-level diagnosis of one episode ===")
     cfg = base_config(seed=args.seed)
+    from uav_wireless.seeding import seed_evaluation
+    seed_evaluation(cfg.seed)
     env = UAVIoTEnv(cfg)
     obs, _ = env.reset()
     n_active = len(env._active_idx())

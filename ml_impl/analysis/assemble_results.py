@@ -29,15 +29,32 @@ TEX = os.path.join(PROJ, "Mlawn-midsem-tex.tex")
 TABLES = os.path.join(HERE, "tables.tex")
 TEXT = os.path.join(HERE, "results_text_filled.tex")
 
-MARKERS = ["%% MAIN", "%% OBS", "%% ENERGY", "%% ABL", "%% CREDIT",
+MARKERS = ["%% CONTRIB", "%% MAIN", "%% OBS", "%% ENERGY", "%% ABL", "%% CREDIT",
            "%% SCEN"]
+
+# A region of the paper that is replaced wholesale from the template, so
+# that a number which comes from an experiment can live outside the Results
+# section without being typed by hand.  The markers stay in the .tex, so the
+# file is still a complete, compilable paper on its own.
+REGIONS = {
+    "%% CONTRIB": ("%% BEGIN CONTRIB", "%% END CONTRIB"),
+}
+
+
+def replace_region(src, begin, end, body):
+    """Replace the text between the two markers with `body`."""
+    i = src.find(begin)
+    j = src.find(end)
+    if i < 0 or j < 0 or j < i:
+        return src, False
+    return src[:i + len(begin)] + "\n" + body + "\n" + src[j:], True
 
 
 def read_blocks(path):
     if not os.path.exists(path):
         return {m.strip(): "" for m in MARKERS}
     raw = open(path, encoding="utf-8").read()
-    parts = re.split(r"^%%\s*(MAIN|OBS|ENERGY|ABL|CREDIT|SCEN)\s*$", raw,
+    parts = re.split(r"^%%\s*(CONTRIB|MAIN|OBS|ENERGY|ABL|CREDIT|SCEN)\s*$", raw,
                      flags=re.M)
     blocks = {}
     for i in range(1, len(parts), 2):
@@ -98,11 +115,11 @@ cannot distinguish a weak controller from an infeasible configuration.
 Two things are true of this configuration, and we report both.  First, the
 task is not hard at the parameters the project specifies: a deterministic
 reactive heuristic that assigns UAVs to uncovered sensors reaches
-$CK=0.947$ while maintaining full connectivity.  Second, the learned
-controller does not reach that figure, and the ablations below identify
-why.  The limiting factor is neither the content of the observation nor the
-energy model, but the credit assignment of a parameter-shared actor trained
-on a team reward.
+$CK=@@REACT_CK@@$ while maintaining full connectivity.  Second, the learned
+controller does not reach that figure, and the arms below identify why.
+Three candidate explanations can be tested with controlled arms --- the
+content of the observation, the energy model, and the credit assignment of
+the team reward --- and the arms are reported whichever way they come out.
 
 __TAB_MAIN__
 
@@ -115,10 +132,10 @@ The observation of Eq.~\eqref{eq:obs} is the interface between the
 framework's communication assumption and the shared policy, and the claim
 that parameter sharing requires the observation to break the permutation
 symmetry is testable.  Table~\ref{tab:results_obs} compares three
-observations under identical seeds, budget and evaluation scenes: the
-observation of Eq.~\eqref{eq:obs} as originally written; the same
-observation without the broadcast coverage-map summary; and that without the
-agent identity either.
+observations under identical seeds, budget and evaluation scenes: the local
+observation alone; that observation plus the one-hot agent identity; and that
+plus the broadcast coverage-map summary and the bearing to the charging
+pad, which is the configuration the paper proposes.
 
 __TAB_OBS__
 
@@ -134,9 +151,10 @@ away from a charging pad; it can no longer fly, it leaves the swarm, and it
 stops covering.  The obvious reading is that the controller has failed at
 energy management, and the obvious fix is a reward term that prices the
 consequence of an empty pack.  Table~\ref{tab:results_energy} tests that
-reading with two controlled arms: the same policy with a pack that cannot
-run out, and the same policy without the threshold-violation term of
-Table~\ref{tab:reward}.
+reading with four controlled arms: the same policy with a pack that cannot
+run out, the same policy without the threshold-violation term of
+Table~\ref{tab:reward}, and the same policy under the earlier energy rule
+of the safety filter.
 
 __TAB_ENERGY__
 
@@ -228,6 +246,30 @@ __BLOCK_SCEN__
             + "\n  (an artefact is missing -- run the stage that produces it)")
 
     new = src[:start] + section.lstrip("\n") + src[end:]
+
+    # The same discipline applies to the REST of the paper: a number that
+    # comes from an experiment is written as a token, so the Introduction
+    # and the Conclusion cannot drift away from the Results.  The tokens are
+    # filled from the same artefact table the prose blocks were filled from.
+    from fill_tokens import build_tokens, fill
+    tok = build_tokens()
+    new, leftover = fill(new, tok)
+    if leftover:
+        raise SystemExit(
+            "the paper still contains unfilled tokens: " + ", ".join(leftover)
+            + "\n  (an artefact is missing -- run the stage that produces it)")
+
+    # the marked regions outside the Results section
+    for name, (begin, end) in REGIONS.items():
+        body, missing = fill(blocks[name], tok)
+        if missing:
+            raise SystemExit(
+                f"the {name} block still contains unfilled tokens: "
+                + ", ".join(missing))
+        new, ok = replace_region(new, begin, end, body)
+        if not ok:
+            raise SystemExit(f"could not locate the {begin} region in the paper")
+
     with open(args.tex, "w", encoding="utf-8") as f:
         f.write(new)
     print(f"Results section replaced in {args.tex}")

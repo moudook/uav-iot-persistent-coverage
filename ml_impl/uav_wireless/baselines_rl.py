@@ -366,6 +366,8 @@ def eval_id_dqn(agent, cfg, steps=None, seed=0):
     steps = steps or cfg.episode_len
     c = copy.deepcopy(cfg)
     c.seed = seed
+    from .seeding import seed_evaluation
+    seed_evaluation(seed)
     env = UAVIoTEnv(c)
     obs, _ = env.reset()
     for _ in range(steps):
@@ -384,6 +386,10 @@ def eval_ppo_local(agent, cfg, steps=None, seed=0, deterministic=False):
     steps = steps or cfg.episode_len
     c = copy.deepcopy(cfg)
     c.seed = seed
+    # this policy samples, so the global torch RNG must be seeded: see
+    # uav_wireless/seeding.py
+    from .seeding import seed_evaluation
+    seed_evaluation(seed)
     env = UAVIoTEnv(c)
     obs, _ = env.reset()
     for _ in range(steps):

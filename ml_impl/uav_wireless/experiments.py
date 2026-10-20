@@ -132,6 +132,12 @@ def eval_agent(agent, cfg, steps=1000, seed=0, deterministic=False):
     import copy
     c = copy.deepcopy(cfg)
     c.seed = seed
+    # The policy samples, and the sampling draws from the global torch RNG.
+    # Seed it from the evaluation seed alone, so that the evaluation is a
+    # function of (policy, scene) and every controller sees the same stream
+    # on the same scene.  See uav_wireless/seeding.py.
+    from .seeding import seed_evaluation
+    seed_evaluation(seed)
     env = UAVIoTEnv(c)
     obs, st = env.reset()
     for _ in range(steps):
@@ -149,7 +155,7 @@ def eval_agent(agent, cfg, steps=1000, seed=0, deterministic=False):
 
 
 def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
-                        eval_seeds=5, train=True, agent=None):
+                        eval_seeds=5, train=True, agent=None, learned=None):
     """Train MAPPO on the base config, compare against the rule baselines.
 
     The baselines are evaluated on the SAME seeds as the learned policy.
@@ -157,6 +163,13 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
     comparison ran one scene five times for the baselines while the learned
     policy was evaluated on five different scenes -- which flatters the
     learned policy whenever the extra seeds happen to be easier.)
+
+    `learned` carries the learned controller's numbers when they have
+    already been measured over several TRAINING seeds, which is the
+    protocol the paper describes: a controller is trained N times and
+    reported as the mean over the N runs, with the seed-to-seed spread.
+    Passing a single `agent` instead reports that one policy, which is
+    what this table did before and is NOT the protocol the text describes.
     """
     import csv
     rows = []
@@ -180,27 +193,39 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
               f"CI={agg['CovIntegral']:.3f} E={agg['Energy']:.0f}")
         rows.append(dict(model=name, **agg))
 
-    print(f"\n=== MAPPO (proposed) evaluation ({eval_seeds} seeds) ===")
-    evs = [eval_agent(agent, base, steps=base.episode_len, seed=s)
-           for s in range(eval_seeds)]
-    agg = {k: float(np.mean([s[k] for s in evs])) for k in evs[0]}
-    std = {k: float(np.std([s[k] for s in evs])) for k in evs[0]}
-    print(f"{'MAPPO':10s} CK={agg['CK']:.3f}±{std['CK']:.3f} AG={agg['AG']:.3f} "
-          f"SC={agg['SC']:.3f} CI={agg['CovIntegral']:.3f} "
-          f"E={agg['Energy']:.0f}")
-    rows.append(dict(model="MAPPO", **agg))
+    if learned:
+        # the learned controller, measured over several training seeds
+        for name in ("MAPPO", "MAPPO-argmax"):
+            r = learned.get(name)
+            if r is None:
+                continue
+            print(f"{name:10s} CK={r['CK']:.3f}+-{r.get('CK_std', 0.0):.3f} "
+                  f"AG={r['AG']:.3f} SC={r['SC']:.3f} "
+                  f"CI={r['CovIntegral']:.3f} E={r.get('Energy', 0.0):.0f} "
+                  f"({r.get('train_seeds', '?')} training seeds)")
+            rows.append(dict(model=name, **r))
+    else:
+        print(f"\n=== MAPPO (proposed) evaluation ({eval_seeds} seeds) ===")
+        evs = [eval_agent(agent, base, steps=base.episode_len, seed=s)
+               for s in range(eval_seeds)]
+        agg = {k: float(np.mean([s[k] for s in evs])) for k in evs[0]}
+        std = {k: float(np.std([s[k] for s in evs])) for k in evs[0]}
+        print(f"{'MAPPO':10s} CK={agg['CK']:.3f}+-{std['CK']:.3f} "
+              f"AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
+              f"CI={agg['CovIntegral']:.3f} E={agg['Energy']:.0f}")
+        rows.append(dict(model="MAPPO", **agg))
 
-    # the deterministic (argmax) policy of the SAME learned actor, for
-    # comparison.  This is not the policy Eq. (13) specifies, and the gap
-    # between the two is a reported result, not an implementation detail.
-    det = [eval_agent(agent, base, steps=base.episode_len, seed=s,
-                       deterministic=True) for s in range(eval_seeds)]
-    dagg = {k: float(np.mean([s[k] for s in det])) for k in det[0]}
-    dstd = {k: float(np.std([s[k] for s in det])) for k in det[0]}
-    print(f"{'MAPPO(argmax)':10s} CK={dagg['CK']:.3f}±{dstd['CK']:.3f} "
-          f"AG={dagg['AG']:.3f} SC={dagg['SC']:.3f} "
-          f"CI={dagg['CovIntegral']:.3f}")
-    rows.append(dict(model="MAPPO-argmax", **dagg))
+        # The deterministic (argmax) policy of the SAME learned actor, for
+        # comparison.  This is not the policy Eq. (13) specifies, and the gap
+        # between the two is a reported result, not an implementation detail.
+        det = [eval_agent(agent, base, steps=base.episode_len, seed=s,
+                           deterministic=True) for s in range(eval_seeds)]
+        dagg = {k: float(np.mean([s[k] for s in det])) for k in det[0]}
+        dstd = {k: float(np.std([s[k] for s in det])) for k in det[0]}
+        print(f"{'MAPPO(argmax)':10s} CK={dagg['CK']:.3f}+-{dstd['CK']:.3f} "
+              f"AG={dagg['AG']:.3f} SC={dagg['SC']:.3f} "
+              f"CI={dagg['CovIntegral']:.3f}")
+        rows.append(dict(model="MAPPO-argmax", **dagg))
 
     # ---- the achievability ceiling ---------------------------------
     # The teleporting placement oracle is the reference against which every
@@ -233,7 +258,7 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
 
 
 def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
-                 episodes=12, eval_seeds=3):
+                 episodes=12, eval_seeds=3, seeds=1, only=None, append=False):
     """Turn off one proposed component at a time (Table VIII).
 
     stress=True  -- ablate on the S8 combined-stress scenario.  The stress
@@ -246,12 +271,30 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
                     controller can actually solve.  This is the table that
                     supports the paper's claims.
 
-    Every variant is trained from the same seed on the same configuration
-    except for the one component that is removed, so the differences are
-    attributable to that component.
+    PROTOCOL.  Every variant is trained on the same configuration with the
+    same budget, from the same set of training seeds, and differs from the
+    full configuration in exactly one component, so a difference is
+    attributable to that component.  Each variant is trained `seeds` times
+    and the row reports the mean over those training seeds together with the
+    seed-to-seed spread of CK.  A single-seed ablation cannot support a
+    claim either way: the seed-to-seed spread of the learner is larger than
+    most of the effects being measured, so a one-seed table reports noise
+    with the appearance of a result.
+
+    The budget must also match the base comparison's, or the table measures
+    the budget rather than the component.  `episodes` is therefore the same
+    number the base comparison uses.
+
+    `only` restricts the run to a named subset of variants (used to add a
+    single missing row under the same protocol), and `append` adds the rows
+    to an existing CSV instead of replacing it.
     """
-    import copy, csv
+    import copy, csv, json, os
+    here = os.path.dirname(os.path.abspath(__file__))
+    analysis = os.path.join(os.path.dirname(here), "analysis")
     print(f"\n=== Ablations ({'S8 combined stress' if stress else 'feasible base config'}) ===")
+    print(f" protocol: {episodes} episodes x {c_episode(base)} steps, "
+          f"{seeds} training seeds, {eval_seeds} eval seeds")
     variants = {
         "Full": dict(),
         "no-criticality": dict(lam_C=0.0),
@@ -262,50 +305,103 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
         "no-arbitration": dict(use_charging_arbitration=False),
         "no-mask": dict(use_action_mask=False),
         "no-agent-id": dict(use_agent_id=False),
-        "with-map": dict(map_grid=4),
+        "no-map": dict(map_grid=0),
         "no-pad-bearing": dict(use_pad_bearing=False),
         "VanillaMAPPO": dict(lam_C=0.0, lam_D=0.0, use_reserve=False,
                              use_charging_arbitration=False,
                              use_action_mask=False, use_agent_id=False,
                              map_grid=0, use_pad_bearing=False),
     }
+    if only:
+        variants = {k: v for k, v in variants.items() if k in only}
     rows = []
     for name, kw in variants.items():
-        c = copy.deepcopy(base)
-        if stress:
-            # Ablate on the COMBINED-STRESS scenario (S8), not the base config.
-            # On the base config no UAV fails and nobody contends for a pad, so
-            # the reserve / arbitration mechanisms never fire and every ablation
-            # trivially matches. The stress config is what actually exercises them.
-            c.failure_enabled = True
-            c.failure_time = 500
-            c.n_pads = 1
-            c.B_max = 15_000.0
-            c.charge_rate = 0.0004
-            c.R_comm = 30.0
-            c.R_cov = 30.0
-        for k, v in kw.items():
-            setattr(c, k, v)
-        agent, _ = train_mappo(c, episodes=episodes, n_steps=c.episode_len,
-                               seed=0, verbose=False)
-        evs = [eval_agent(agent, c, steps=c.episode_len, seed=s)
-               for s in range(eval_seeds)]
-        agg = {k: float(np.mean([s[k] for s in evs])) for k in evs[0]}
-        agg["Reserve"] = float(np.mean([s["Reserve"] for s in evs]))
-        agg["Denied"] = float(np.mean([s["Denied"] for s in evs]))
-        agg["Stranded"] = float(np.mean([s["Stranded"] for s in evs]))
-        print(f"{name:18s} CK={agg['CK']:.3f} AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
+        per_seed = []
+        for s in range(seeds):
+            c = copy.deepcopy(base)
+            if stress:
+                # Ablate on the COMBINED-STRESS scenario (S8), not the base
+                # config.  On the base config no UAV fails and nobody contends
+                # for a pad, so the reserve / arbitration mechanisms never fire
+                # and every ablation trivially matches.  The stress config is
+                # what actually exercises them.
+                c.failure_enabled = True
+                c.failure_time = 500
+                c.n_pads = 1
+                c.B_max = 15_000.0
+                c.charge_rate = 0.0004
+                c.R_comm = 30.0
+                c.R_cov = 30.0
+            for k, v in kw.items():
+                setattr(c, k, v)
+            c.seed = s
+            agent, _ = train_mappo(c, episodes=episodes, n_steps=c.episode_len,
+                                   seed=s, verbose=False)
+            evs = [eval_agent(agent, c, steps=c.episode_len, seed=e)
+                   for e in range(eval_seeds)]
+            per_seed.append({k: float(np.mean([x[k] for x in evs]))
+                             for k in evs[0]})
+            print(f"  {name:16s} seed {s}: CK={per_seed[-1]['CK']:.3f} "
+                  f"AG={per_seed[-1]['AG']:.3f} SC={per_seed[-1]['SC']:.3f} "
+                  f"CI={per_seed[-1]['CovIntegral']:.3f}", flush=True)
+        agg = {k: float(np.mean([p[k] for p in per_seed])) for k in per_seed[0]}
+        agg["Reserve"] = float(np.mean([p["Reserve"] for p in per_seed]))
+        agg["Denied"] = float(np.mean([p["Denied"] for p in per_seed]))
+        agg["Stranded"] = float(np.mean([p["Stranded"] for p in per_seed]))
+        agg["CK_std"] = float(np.std([p["CK"] for p in per_seed]))
+        agg["train_seeds"] = int(seeds)
+        agg["episodes"] = int(episodes)
+        # the per-seed values are kept, so that a variant can be compared
+        # with the full configuration PAIRED: the variants share the
+        # training seeds, so the difference is measured on the same
+        # training runs and its spread is much smaller than the spread of
+        # either row
+        agg["per_seed_CK"] = ";".join(f"{p['CK']:.6f}" for p in per_seed)
+        print(f"{name:18s} CK={agg['CK']:.3f}+-{agg['CK_std']:.3f} "
+              f"AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
               f"CI={agg['CovIntegral']:.3f} Reserve={agg['Reserve']:.1f} "
               f"Denied={agg['Denied']:.0f} Stranded={agg['Stranded']:.1f}",
               flush=True)
         rows.append(dict(model=name, **agg))
+        # the row is written as soon as it is finished, so that an
+        # interrupted run does not throw away the training it has done
+        stem = os.path.splitext(os.path.basename(out_csv))[0]
+        with open(os.path.join(analysis, f"{stem}_rows.jsonl"), "a",
+                  encoding="utf-8") as f:
+            f.write(json.dumps(dict(out_csv=os.path.basename(out_csv),
+                                    stress=stress, per_seed_CK=[
+                                        p["CK"] for p in per_seed],
+                                    **rows[-1])) + "\n")
 
+    existing = []
+    if append and os.path.exists(out_csv):
+        with open(out_csv, newline="", encoding="utf-8") as f:
+            existing = list(csv.DictReader(f))
+    allrows = existing + rows
+    fields = []
+    for r in allrows:
+        for k in r:
+            if k not in fields:
+                fields.append(k)
     with open(out_csv, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
-        w.writerows(rows)
+        for r in allrows:
+            w.writerow({k: r.get(k, "") for k in fields})
+    # the protocol is written next to the table, so that any row added later
+    # (the extra "no-map" variant) is measured under the same budget
+    with open(os.path.join(analysis, "ablation_protocol.json"), "w",
+              encoding="utf-8") as f:
+        json.dump(dict(out_csv=os.path.basename(out_csv), stress=stress,
+                       episodes=int(episodes), eval_seeds=int(eval_seeds),
+                       seeds=int(seeds)), f, indent=2)
     print(f"Saved -> {out_csv}")
     return rows
+
+
+def c_episode(cfg):
+    """The episode length of a configuration (a small helper for the logs)."""
+    return int(getattr(cfg, "episode_len", 0))
 
 
 def run_learned_baselines(base: SimConfig, out_csv="results_learned_baselines.csv",

@@ -62,6 +62,8 @@ def distinct_actions(agent, cfg, seed=0, steps=200, deterministic=True):
     import copy
     c = copy.deepcopy(cfg)
     c.seed = seed
+    from uav_wireless.seeding import seed_evaluation
+    seed_evaluation(seed)
     env = UAVIoTEnv(c)
     obs, st = env.reset()
     distinct, spreads = [], []

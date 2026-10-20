@@ -1624,3 +1624,69 @@ class TestValueNormalisation:
         assert agent._ret_mean != 0.0, (
             "the running return statistics were never updated")
         assert agent._ret_std > 0.0
+
+# ======================================================================
+# The reproducibility of an evaluation
+# ======================================================================
+class TestEvaluationReproducibility:
+    """Eq. (13) specifies that the deployed policy SAMPLES, so an
+    evaluation draws from the global torch RNG.  If that RNG is not seeded,
+    the same policy on the same scene gives a different answer every time
+    it is run: the paper's numbers cannot be reproduced from the stored
+    artefact, and a comparison between two controllers carries an
+    unquantified sampling component.  These tests pin the discipline."""
+
+    def _agent_and_cfg(self):
+        from uav_wireless.env import UAVIoTEnv
+        from uav_wireless.mappo import MAPPO
+        c = SimConfig(N=4, K=1, M=8, episode_len=40, seed=0)
+        e = UAVIoTEnv(c)
+        agent = MAPPO(n_agents=c.N, obs_dim=e.obs_dim, state_dim=e.state_dim)
+        return agent, c
+
+    def test_the_same_policy_gives_the_same_number_twice(self):
+        import torch
+        from uav_wireless.experiments import eval_agent
+        agent, c = self._agent_and_cfg()
+        torch.manual_seed(1234)
+        a = eval_agent(agent, c, steps=40, seed=3)
+        b = eval_agent(agent, c, steps=40, seed=3)
+        assert a["CK"] == b["CK"], (
+            "an evaluation of a sampled policy is not reproducible: the "
+            "same policy on the same scene gave two different numbers")
+
+    def test_the_ambient_rng_state_does_not_leak_into_an_evaluation(self):
+        import torch
+        from uav_wireless.experiments import eval_agent
+        agent, c = self._agent_and_cfg()
+        torch.manual_seed(7)
+        a = eval_agent(agent, c, steps=40, seed=5)
+        torch.manual_seed(999999)          # perturb the global RNG
+        np.random.seed(123456)
+        b = eval_agent(agent, c, steps=40, seed=5)
+        assert a["CK"] == b["CK"], (
+            "an evaluation depends on the ambient state of the global RNG, "
+            "so it is not a function of (policy, scene)")
+
+    def test_every_evaluator_seeds_the_policy_sampling(self):
+        import inspect
+        from uav_wireless import experiments, baselines_rl
+        for mod, fn in ((experiments, "eval_agent"),
+                        (baselines_rl, "eval_id_dqn"),
+                        (baselines_rl, "eval_ppo_local")):
+            src = inspect.getsource(getattr(mod, fn))
+            assert "seed_evaluation" in src, (
+                f"{fn} rolls a policy out without seeding the RNG that the "
+                f"policy samples from, so its measurement is a random draw")
+
+    def test_the_seed_derives_only_from_the_evaluation_seed(self):
+        from uav_wireless.seeding import seed_evaluation
+        assert seed_evaluation(3) == seed_evaluation(3)
+        assert seed_evaluation(3) != seed_evaluation(4)
+
+    def test_the_deterministic_evaluation_is_unaffected(self):
+        from uav_wireless.experiments import eval_agent
+        agent, c = self._agent_and_cfg()
+        a = eval_agent(agent, c, steps=40, seed=2, deterministic=True)
+        b = eval_agent(agent, c, steps=40, seed=2, deterministic=True)
+        assert a["CK"] == b["CK"]

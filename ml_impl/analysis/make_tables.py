@@ -59,10 +59,30 @@ def load_json(name):
     return json.load(open(p, encoding="utf-8"))
 
 
+def ck_cell(r, nd=3):
+    """The coverage with its spread, when the row has one.
+
+    A learned controller is trained several times, so its row carries the
+    seed-to-seed spread of CK.  The rule baselines are deterministic, so
+    their rows carry the spread over the evaluation scenes instead; the
+    cell says which spread it is in the caption.
+    """
+    v = fmt(r.get("CK"), nd)
+    s = r.get("CK_std")
+    if s in (None, ""):
+        return v
+    return f"{v} $\\pm$ {fmt(s, nd)}"
+
+
 def table_main(rows, learned=None):
     lines = []
     lines.append(r"\begin{table}[t]")
     lines.append(r"\caption{Base comparison on the corrected configuration.  "
+                 r"The learned controller is trained five times and its row "
+                 r"is the mean over those five runs, with the $\pm$ the "
+                 r"seed-to-seed spread; the rule baselines are "
+                 r"deterministic, and their $\pm$ is the spread over the "
+                 r"five evaluation scenes.  "
                  r"``Unexec.'' is the number of sampled actions that the "
                  r"safety filter or the joint projection did not execute, "
                  r"which is the size of the gap between the policy gradient "
@@ -84,14 +104,14 @@ def table_main(rows, learned=None):
         if r is None:
             continue
         lines.append(
-            f"{name} & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "
+            f"{name} & {ck_cell(r)} & {fmt(r.get('AG'))} & "
             f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & "
             f"{fmt(r.get('UnexecutedActions'), 0)} & "
             f"{fmt(r.get('Energy'), 0)} \\\\")
     if learned:
         for r in learned:
             lines.append(
-                f"{r['model']} & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "
+                f"{r['model']} & {ck_cell(r)} & {fmt(r.get('AG'))} & "
                 f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & -- & -- \\\\")
     for name, disp in (("VanillaMAPPO", r"\textbf{Vanilla MAPPO}"),
                        ("MAPPO", r"\textbf{MAPPO (proposed)}"),
@@ -100,7 +120,7 @@ def table_main(rows, learned=None):
         if r is None:
             continue
         lines.append(
-            f"{disp} & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "
+            f"{disp} & {ck_cell(r)} & {fmt(r.get('AG'))} & "
             f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & "
             f"{fmt(r.get('UnexecutedActions'), 0)} & "
             f"{fmt(r.get('Energy'), 0)} \\\\")
@@ -116,25 +136,50 @@ def table_main(rows, learned=None):
     return "\n".join(lines)
 
 
+def _per_seed_ck(row):
+    v = row.get("per_seed_CK", "") if row else ""
+    if not v:
+        return []
+    out = []
+    for part in str(v).split(";"):
+        try:
+            out.append(float(part))
+        except ValueError:
+            return []
+    return out
+
+
 def table_abl(rows, label, caption):
+    by = {r["model"]: r for r in rows}
+    full = by.get("Full")
+    fs = _per_seed_ck(full) if full else []
     lines = []
     lines.append(r"\begin{table}[t]")
     lines.append(rf"\caption{{{caption}}}")
     lines.append(rf"\label{{{label}}}")
     lines.append(r"\centering")
     lines.append(r"\scriptsize")
-    lines.append(r"\begin{tabular}{@{}lccccc@{}}")
+    lines.append(r"\begin{tabular}{@{}lcccccc@{}}")
     lines.append(r"\toprule")
-    lines.append(r"Variant & CK & AG & SC & CovIntegral & Stranded \\")
+    lines.append(r"Variant & CK & AG & SC & CovIntegral & Stranded & "
+                 r"$\Delta$CK \\")
     lines.append(r"\midrule")
     for name in ORDER:
         r = next((x for x in rows if x["model"] == name), None)
         if r is None:
             continue
+        # the paired difference: the variants share the training seeds, so
+        # the difference is measured on the same training runs
+        d = "--"
+        vs = _per_seed_ck(r)
+        if fs and len(vs) == len(fs):
+            diffs = [fs[i] - vs[i] for i in range(len(fs))]
+            d = f"{sum(diffs)/len(diffs):+.3f}"
         lines.append(
-            f"{NAMES[name]} & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "
+            f"{NAMES[name]} & {ck_cell(r)} & {fmt(r.get('AG'))} & "
             f"{fmt(r.get('SC'))} & "
-            f"{fmt(r.get('CovIntegral'))} & {fmt(r.get('Stranded'), 1)} \\\\")
+            f"{fmt(r.get('CovIntegral'))} & {fmt(r.get('Stranded'), 1)} & "
+            f"{d} \\\\")
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
     lines.append(r"\end{table}")
@@ -186,8 +231,12 @@ def main():
         parts.append(table_abl(
             abl, "tab:results_abl",
             "Component ablation on the feasible base configuration.  Every "
-            "variant is trained from the same seed on the same configuration "
-            "except for the one component that is removed."))
+            "variant is trained on the same configuration with the same "
+            "budget and from the same training seeds, and differs from the "
+            "full configuration in exactly one component.  The $\\pm$ is the "
+            "seed-to-seed spread of the training runs, and $\\Delta$CK is the "
+            "paired difference from the full configuration, measured on the "
+            "same training runs."))
     stress = load_csv("results_ablation_stress.csv")
     if stress:
         parts.append(table_abl(
@@ -216,7 +265,7 @@ def main():
                 continue
             name = r["arm"].split(":")[0]
             lines.append(
-                f"{name} & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "
+                f"{name} & {ck_cell(r)} & {fmt(r.get('AG'))} & "
                 f"{fmt(r.get('SC'))} & "
                 f"{fmt(r.get('distinct_actions'), 2)} / 8 & "
                 f"{fmt(r.get('mean_spread_m'), 1)} \\\\")
@@ -277,7 +326,7 @@ def main():
         for r in cr:
             name = r["arm"].split(":")[0]
             lines.append(
-                f"{name} & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "
+                f"{name} & {ck_cell(r)} & {fmt(r.get('AG'))} & "
                 f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & -- \\\\")
         lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
         parts.append("\n".join(lines))
