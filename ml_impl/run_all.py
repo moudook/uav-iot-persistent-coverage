@@ -56,7 +56,7 @@ def stage_observation(episodes, seeds, eval_seeds):
                 "--seeds", str(seeds), "--eval-seeds", str(eval_seeds)]
     return ab_main()
 
-def stage_base(episodes, train_seeds, eval_seeds):
+def stage_base(episodes, train_seeds, eval_seeds, resume=False):
     """The base comparison.
 
     PROTOCOL.  The learned controller is trained `train_seeds` times and
@@ -74,7 +74,9 @@ def stage_base(episodes, train_seeds, eval_seeds):
     print(f" BASE COMPARISON  N={cfg.N} K={cfg.K} M={cfg.M} "
           f"episode={cfg.episode_len} steps")
     print(f" training: {episodes} episodes x {train_seeds} seeds; "
-          f"evaluation: {eval_seeds} seeds")
+          f"evaluation: {eval_seeds} seeds"
+          + ("   [RESUME: the stored policies are evaluated, not retrained]"
+             if resume else ""))
     print("=" * 78, flush=True)
     rows = []
     sampled_runs, argmax_runs = [], []
@@ -86,19 +88,34 @@ def stage_base(episodes, train_seeds, eval_seeds):
     for s in range(train_seeds):
         t0 = time.time()
         c = base_config(seed=s)
-        agent, hist = train_mappo(c, episodes=episodes, n_steps=c.episode_len,
-                                  seed=s, log_every=max(1, episodes // 5),
-                                  verbose=True)
-        agent.save(f"mappo_base_s{s}.pt")
-        if s == 0:
-            agent.save("mappo_base.pt")
-            with open("hist_base.json", "w", encoding="utf-8") as f:
+        hist = []
+        if resume and os.path.exists(f"mappo_base_s{s}.pt"):
+            # the training is reproducible from its seed and is the
+            # expensive part; evaluating a STORED policy is cheaper and is
+            # a stronger statement about reproducibility
+            agent = MAPPO(n_agents=cfg.N, obs_dim=UAVIoTEnv(cfg).obs_dim,
+                          state_dim=UAVIoTEnv(cfg).state_dim)
+            agent.load(f"mappo_base_s{s}.pt")
+            hp = os.path.join(ANALYSIS, f"hist_base_s{s}.json")
+            if os.path.exists(hp):
+                with open(hp, encoding="utf-8") as f:
+                    hist = json.load(f)
+        else:
+            agent, hist = train_mappo(c, episodes=episodes,
+                                      n_steps=c.episode_len,
+                                      seed=s,
+                                      log_every=max(1, episodes // 5),
+                                      verbose=True)
+            agent.save(f"mappo_base_s{s}.pt")
+            if s == 0:
+                agent.save("mappo_base.pt")
+                with open("hist_base.json", "w", encoding="utf-8") as f:
+                    json.dump(hist, f, indent=2)
+            # every run's training curve is kept, so that the learning
+            # curve is not a single run's story
+            with open(os.path.join(ANALYSIS, f"hist_base_s{s}.json"), "w",
+                      encoding="utf-8") as f:
                 json.dump(hist, f, indent=2)
-        # every run's training curve is kept, so that the learning curve is
-        # not a single run's story
-        with open(os.path.join(ANALYSIS, f"hist_base_s{s}.json"), "w",
-                  encoding="utf-8") as f:
-            json.dump(hist, f, indent=2)
 
         # the SAMPLED policy, which is the policy Eq. (13) specifies
         evs = [eval_agent(agent, c, steps=c.episode_len, seed=e)
@@ -190,6 +207,10 @@ def stage_dormancy():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true")
+    ap.add_argument("--resume", action="store_true",
+                    help="evaluate the stored policies instead of "
+                         "retraining them (the training is reproducible "
+                         "from its seed and is the expensive part)")
     ap.add_argument("--stage", default="all",
                     choices=["obs", "base", "abl", "ablstress", "learned",
                              "energy", "scen", "all"])
@@ -224,7 +245,8 @@ def main():
 
     if args.stage in ("base", "all"):
         print("[2/6] base comparison ...", flush=True)
-        learned = stage_base(episodes, train_seeds, eval_seeds)
+        learned = stage_base(episodes, train_seeds, eval_seeds,
+                             resume=args.resume)
         stage_dormancy()
         stage_base_table(learned, eval_seeds)
         print()

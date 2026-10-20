@@ -250,9 +250,17 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
         print(f"{'Oracle':10s} (not computed: {exc})")
 
     with open(out_csv, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        # the fieldnames are the UNION over the rows: the learned rows carry
+        # the seed-to-seed spread and the seed count, and the rule baselines
+        # do not, so taking the fields from the first row alone loses them
+        fields = []
+        for r in rows:
+            for k in r:
+                if k not in fields:
+                    fields.append(k)
+        w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
-        w.writerows(rows)
+        w.writerows({k: r.get(k, "") for k in fields} for r in rows)
     print(f"\nSaved -> {out_csv}")
     return agent, rows
 
