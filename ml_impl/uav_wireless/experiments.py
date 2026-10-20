@@ -370,13 +370,37 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
     """
     import csv
     import copy
-    agent, _ = train_mappo(base, episodes=episodes, n_steps=base.episode_len,
-                           seed=0, verbose=False)
+
+    # The networks have fixed input sizes, and those sizes depend on the
+    # configuration: the one-hot agent identity has length N, the global
+    # state carries the sensor positions and the pad-occupancy vector, and
+    # the actor's map summary is fixed.  A policy trained at one (N, M,
+    # pads) combination therefore cannot be evaluated at another -- the
+    # input layer does not fit.  One policy is therefore trained per
+    # combination, and the scenarios that vary only the geometry of the
+    # problem transfer within their combination.
+    groups = {}
+    for sid, question, cfgs in scenario_cfgs(base):
+        for vi, c0 in enumerate(cfgs):
+            key = (c0.N, c0.M, c0.n_pads)
+            groups.setdefault(key, []).append((sid, vi, question, c0))
+    agents = {}
+    for key in sorted(groups):
+        kN, kM, kp = key
+        c = copy.deepcopy(base)
+        c.N, c.M, c.n_pads = kN, kM, kp
+        print(f"  training a policy for N={kN} M={kM} pads={kp} ...",
+              flush=True)
+        ag, _ = train_mappo(c, episodes=episodes, n_steps=c.episode_len,
+                            seed=0, verbose=False)
+        agents[key] = ag
+
     rows = []
     print("\n=== Scenarios (MAPPO vs Reactive) ===")
     for sid, question, cfgs in scenario_cfgs(base):
         for vi, c0 in enumerate(cfgs):
             c = copy.deepcopy(c0)
+            agent = agents[(c.N, c.M, c.n_pads)]
             m = eval_agent(agent, c, steps=c.episode_len, seed=c.seed)
             r = baseline_reactive(c, steps=c.episode_len, seed=c.seed)
             # a short description of the variant for the CSV
