@@ -14,7 +14,7 @@ recomputed by an automated audit.
 
 ```powershell
 cd Project1\ml_impl
-python tests\run_tests.py        # 92 tests
+python tests\run_tests.py        # 97 tests
 python analysis\claim_audit.py   # every checkable claim in the paper
 python run_all.py                # the whole experiment matrix (~4 h)
 python run_all.py --stage obs    # just the observation A/B/C
@@ -72,7 +72,7 @@ identical seeds, budget and evaluation seeds.
 
 ---
 
-## Defects found and fixed (all with tests; 92 tests pass)
+## Defects found and fixed (all with tests; 97 tests pass)
 
 The most important ones, in order of severity:
 
@@ -86,20 +86,39 @@ The most important ones, in order of severity:
 | 6 | **Baselines ignored their seed.** `baseline_fixed/greedy/reactive` accepted a `seed` argument and never applied it. | The "five seeds" of the base comparison ran the *same* scene five times for the baselines while the learned policy saw five different scenes. |
 | 7 | **The time limit was reported as a termination.** | The GAE recursion bootstrapped from zero at *every* episode boundary, biasing every value target downward (Pardo et al., ICML 2018). |
 | 8 | **The returns were formed from an untruncated advantage array.** | A shape mismatch whenever an episode ended early. |
-| 9 | **The observation carried no agent identity.** | 1.00 distinct actions out of 8; the swarm never dispersed. |
-| 10 | **MAPPO's value normalisation was missing.** | The report asserted a component the code did not have. |
-| 11 | The centred-ring start pre-solved the task. | The achievable range was `[0.9, 1.0]`, so nothing could be separated. |
-| 12 | Reward eq. (23) negated only `U_t`. | Energy burn, partitions and motion were *rewarded*. |
-| 13 | `snr_to_rate` off-by-one plus a floor. | The PHY gate was vacuous. |
-| 14 | Path-loss exponent was additive. | LoS/NLoS were erased. |
-| 15 | Noise power: dBm treated as watts. | A 30 dB error. |
-| 16 | Shadowing drawn from the global RNG. | Non-reciprocal and non-reproducible links. |
-| 17 | `local_obs` neighbour stride 2 with 4 fields per slot. | Neighbour 3 overwrote the neighbour count; the actor was trained on a corrupted observation. |
-| 18 | `STATE_DIM = 80` hardcoded. | Valid only for `N = 5`. |
-| 19 | `run_scenarios` passed `seed=0` over the config's own seed and evaluated only the first variant of each scenario. | Two of the scenario columns were wrong. |
-| 20 | Two graph computations per candidate action. | 13.7 ms/step → 6.8 ms/step after the fix. |
-
+| 9 | **The observation carried no agent identity.** | 1.00-1.8 distinct actions out of 8 under the argmax policy; the swarm barely dispersed. |
+| 10 | **MAPPO's value normalisation was missing** although the report asserted it. | The report claimed a component the code did not have. |
+| 11 | **The observation could not express a return** -- it carried the *energy* cost of the flight to a pad but not its direction. | A learned policy could not fly home. |
+| 12 | **The observation did not say where the deficit was.** | No gradient signal for deployment at all. |
+| 13 | The centred-ring start pre-solved the task. | The achievable range was `[0.9, 1.0]`, so nothing could be separated. |
+| 14 | Reward eq. (23) negated only `U_t`. | Energy burn, partitions and motion were *rewarded*. |
+| 15 | `snr_to_rate` off-by-one plus a floor. | The PHY gate was vacuous. |
+| 16 | Path-loss exponent was additive. | LoS/NLoS were erased. |
+| 17 | Noise power: dBm treated as watts. | A 30 dB error. |
+| 18 | Shadowing drawn from the global RNG. | Non-reciprocal and non-reproducible links. |
+| 19 | `local_obs` neighbour stride 2 with 4 fields per slot. | Neighbour 3 overwrote the neighbour count; the actor was trained on a corrupted observation. |
+| 20 | `STATE_DIM = 80` hardcoded. | Valid only for `N = 5`. |
+| 21 | `run_scenarios` passed `seed=0` over the config's own seed and evaluated only the first variant of each scenario. | Two of the scenario columns were wrong. |
+| 22 | 41 communication-graph computations per step. | 13.2 ms/step -> 8.4 ms/step once the base graph was shared and the prospective graph was spliced (exactly, not approximately: the shadowing table is symmetric, and a test asserts the equivalence). |
 `tests/mutation_check.py` proves the suite catches all 10 historical bugs.
+
+### The diagnosis the framework produced
+
+The corrected simulator revealed that the learned controller was stranding
+**all eight** UAVs in nearly every episode, while the reactive heuristic
+stranded 0.7.  That looked like a catastrophic energy-management failure.
+`analysis/ab_energy_management.py` tested it with two controlled arms:
+
+- a pack ten times the nominal size, so that no UAV can strand at all: the
+  coverage rises by only ~0.09, far short of the gap to the heuristic;
+- the threshold-violation reward term that the paper's own metric table
+  motivates: the stranding persists and the coverage is unchanged.
+
+Both say the same thing.  A policy that does not know what to do wanders,
+and a wandering swarm empties its packs, so the stranding is a **symptom**
+of the credit-assignment limitation, not its cause.  Removing the constraint
+removes the symptom and leaves the coverage where it was.
+
 
 ---
 
@@ -129,7 +148,7 @@ ml_impl/
 │   ├── symmetry_check.py         # the shared-actor symmetry diagnostic
 │   └── diagnose_gap.py           # separates protocol / sharpness / regime
 ├── tests/
-│   ├── test_physics_and_env.py   # 92 tests
+│   ├── test_physics_and_env.py   # 97 tests
 │   └── mutation_check.py         # proves the suite catches the historical bugs
 └── results_*.csv, analysis/*.json  # the artefacts the paper quotes
 ```

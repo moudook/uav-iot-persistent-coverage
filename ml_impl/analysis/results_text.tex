@@ -1,15 +1,15 @@
 %% MAIN
 
 The rule baselines separate sharply, and the ordering is informative.  The
-Fixed formation, which never moves, covers $0.372$ of the sensor-steps: it
-is the floor that the initial deployment alone provides, and it is also the
-controller that never satisfies both invariants at once.  The Greedy recharge
-controller, which returns to a pad when its battery falls below a threshold
-and otherwise holds station, reaches $0.770$ by trading coverage for
-energy.  The Reactive heuristic, which moves the swarm towards the
-uncovered sensors, reaches $0.947$ with full connectivity and a service
-continuity of $0.751$, and it is the strongest controller in the
-comparison.
+Fixed formation, which never moves, covers $@@FIXED_CK@@$ of the sensor-steps:
+it is the floor that the initial deployment alone provides, and it is also
+the controller that never satisfies both invariants at once.  The Greedy
+recharge controller, which returns to a pad when its battery falls below a
+threshold and otherwise holds station, reaches $@@GREEDY_CK@@$ by trading
+coverage for energy.  The Reactive heuristic, which moves the swarm towards
+the uncovered sensors, reaches $@@REACT_CK@@$ with full connectivity and a
+service continuity of $@@REACT_SC@@$, and it is the strongest controller in
+the comparison.
 
 It is also the controller with the most information, and the comparison
 should be read with that in mind.  The reactive heuristic is given the
@@ -43,30 +43,30 @@ better controller.
 
 The first row is the observation of Eq.~\eqref{eq:obs} as originally
 written.  Its most striking property is not in the coverage column but in
-the ``Distinct'' column: the deterministic policy selects the same action
-for every one of the eight UAVs, and the swarm's spread never grows beyond
-the radius of the initial cluster.  This is the shared-actor symmetry
+the ``Distinct'' column: the deterministic policy selects almost the same
+action for every one of the eight UAVs, and the swarm's spread barely grows
+beyond the radius of the initial cluster.  This is the shared-actor symmetry
 collapse, and it is precisely the failure that Foerster et al.'s
 condition~(ii) is about.  With an observation that does not identify the
 agent, a parameter-shared network has no basis on which to specialise, and
 the consequence is measurable rather than theoretical.
 
-Adding the identity does what the condition predicts: the number of
-distinct actions rises and the swarm disperses.  It does not, however,
-improve the coverage, and the reason is instructive.  Dispersing is not the
-same as dividing the work.  An actor that has learned to send its eight
-instances in eight different directions has not learned to send them to
-eight different sensors, and the coverage falls as the swarm spreads away
-from the region that the observation summarises.  The broadcast coverage-map
-summary, which tells the policy \emph{where} the deficit is, does not
-rescue it either.
+Adding the identity does what the condition predicts.  The number of
+distinct actions rises, the swarm disperses, and the coverage rises with it
+--- by $@@B_MINUS_A@@$, which is $@@B_SHARE@@$ of the distance between the
+local-only observation and the reactive heuristic.  The condition is
+therefore not a formality: it is worth a measurable amount of persistent
+coverage, and a reader who omits it obtains a worse controller without
+necessarily knowing why.
 
-We therefore draw a negative conclusion and state it as such: the content of
-the observation is not the binding limitation of the learned controller.
-The identity is necessary for the shared actor to specialise at all, and the
-measurement above quantifies what its absence costs, but a richer
-observation does not by itself produce a division of labour.  The binding
-limitation is the credit assignment, and the next subsection isolates it.
+@@C_SENTENCE@@
+
+None of this closes the gap to the reactive heuristic, and the reason is
+instructive.  Dispersing is not the same as dividing the work: an actor
+that has learned to send its eight instances in eight different directions
+has not learned to send them to eight different sensors.  The policy is
+better at finding sensors than at dividing the work among them, and the
+credit assignment, not the observation, is what limits it.
 
 %% ENERGY
 
@@ -74,7 +74,7 @@ Arm~B removes the energy constraint entirely: the pack is ten times the
 nominal size, so no UAV can strand and none ever needs to return.  The
 coverage rises, and the service continuity rises with it, but by far less
 than the gap to the reactive heuristic.  The energy constraint is a real
-cost, worth roughly $0.09$ of persistent coverage, and it is not the
+cost, worth $@@ENERGY_DELTA@@$ of persistent coverage, and it is not the
 explanation.  Arm~C removes the threshold-violation term of
 Table~\ref{tab:reward}, and it makes almost no difference: the stranding
 persists and the coverage is unchanged.
@@ -101,7 +101,7 @@ Every variant is trained from the same seed on the same configuration
 except for the one component that is removed, so a difference is
 attributable to that component.  The table is reported in full, including
 the variants that make no measurable difference, because the claim this
-paper supports is a claim about which components are load-bearing.
+paper supports is a claim about which components are load-bearing.  @@ABL_TEXT@@
 
 %% SCEN
 
@@ -109,4 +109,4 @@ Each row is the mean over the variants of that scenario, with the proposed
 controller and the reactive heuristic evaluated on the same scenes.  The
 matrix is where the framework's value is most visible, because it shows
 which regime a controller is good in rather than in which regime it was
-tuned.
+tuned.  @@SCEN_TEXT@@
