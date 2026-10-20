@@ -100,30 +100,42 @@ reader than the argument would have been.
 
 %% ENERGY
 
-Arm~B removes the energy constraint entirely: the pack is ten times the
-nominal size, so no UAV can strand and none ever needs to return.  The
-coverage rises, and the service continuity rises with it, but by far less
-than the gap to the reactive heuristic.  The energy constraint is a real
-cost, worth $@@ENERGY_DELTA@@$ of persistent coverage, and it is not the
-explanation.  Arm~C removes the threshold-violation term of
-Table~\ref{tab:reward}, and it makes almost no difference: the stranding
-persists and the coverage is unchanged.
+The first version of this section told a different story, and the
+difference is worth recording, because it is the clearest example in this
+work of a diagnostic leading to a repair rather than to a conclusion.  The
+step-level diagnostic of the learned policy produced an alarming number: it
+stranded \emph{all eight} UAVs in nearly every episode, while the reactive
+heuristic stranded $0.7$.  A stranded UAV has an empty pack away from a
+charging pad; it can no longer fly, it leaves the swarm, and it stops
+covering.  The obvious reading was that the controller had failed at
+energy management, and the obvious fix was a reward term that prices the
+consequence of an empty pack.
 
-Both results point the same way.  The learned policy's failure is not that
-it mismanages energy; it is that it does not know what to do.  A policy
-that does not know what to do wanders, and a wandering swarm empties its
-packs, so the stranding is a \emph{symptom} of the credit-assignment
-limitation and not its cause.  Removing the constraint removes the symptom
-and leaves the coverage where it was.
+The reading was wrong, and the controlled arms say so.  Arm~B removes the
+energy constraint entirely --- a pack ten times the nominal size, so that no
+UAV can strand and none ever needs to return --- and the coverage moves by
+$@@ENERGY_DELTA@@$, which is inside the seed-to-seed spread of the learned
+controller itself.  Arm~C removes the threshold-violation term of
+Table~\ref{tab:reward}, and the coverage moves by $@@EC_DELTA@@$, also inside
+that spread.
 
-This is the point at which the framework earns its keep.  A comparison that
-reported only coverage numbers would have had to choose between two
-explanations --- a badly specified energy reward, or something more
-fundamental --- and would have had no way to distinguish them, because the
-symptom and the cause have the same ordering.  The controlled arms
-distinguish them, and the conclusion is the one from which the remedy
-follows: the controller needs a per-agent signal, not a better team signal
-and not a better observation.
+What the diagnostic actually found was a defect in the safety filter rather
+than a property of the policy.  The mask's energy test admitted a departure
+with a flat battery, so a UAV could fly until its pack was empty away from a
+pad; the correction is to require a UAV to retain, after the move, the
+energy to reach a charging pad plus the reserve margin.  With that rule the
+stranding falls from about six UAVs per episode to $@@EA_STR@@$, the
+connectivity availability of the learned controller rises to $@@EA_AG@@$, and
+the learned controller's coverage rises from $0.638$ to $@@EA_CK@@$ --- and
+the explanation the diagnostic suggested is no longer needed.
+
+That is the sequence the framework is for.  A coverage comparison on its own
+would have reported that the learned controller mismanages energy, and a
+reward re-weighting would have been the wrong repair.  The controlled arm
+that removes the constraint altogether is what showed that the constraint
+was not the problem, and the defect it exposed in the filter was the actual
+problem.  The energy model is not what limits the controller, and the paper
+does not claim that it is.
 
 %% ABL
 

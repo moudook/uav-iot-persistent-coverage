@@ -5,9 +5,9 @@ Fixed formation, which never moves, covers $0.372$ of the sensor-steps:
 it is the floor that the initial deployment alone provides, and it is also
 the controller that never satisfies both invariants at once.  The Greedy
 recharge controller, which returns to a pad when its battery falls below a
-threshold and otherwise holds station, reaches $0.770$ by trading
+threshold and otherwise holds station, reaches $0.786$ by trading
 coverage for energy.  The Reactive heuristic, which moves the swarm towards
-the uncovered sensors, reaches $0.947$ with full connectivity and a
+the uncovered sensors, reaches $0.953$ with full connectivity and a
 service continuity of $0.751$, and it is the strongest controller in
 the comparison.
 
@@ -32,7 +32,7 @@ method's behaviour survives without them.
 baselines are deterministic, so they have no sampling step; the learned
 policy is evaluated by sampling, because Eq.~\eqref{eq:policy} specifies a
 sampled policy and because the deterministic version of the same actor
-travels $0.0$~m over the whole episode --- with a shared actor
+travels $10906.4$~m over the whole episode --- with a shared actor
 the argmax action is the same for every UAV, so the swarm stands still.  We
 report both, and the comparison is not like-for-like in either direction:
 sampling makes the learned controller take risks it would not take
@@ -42,7 +42,7 @@ better controller; it is a different and degenerate one, and reporting it is
 the point.
 
 The learned controller also burns more energy than the heuristic
-($221331$~J against $183928$~J over the same episode) while
+($209324$~J against $183675$~J over the same episode) while
 stranding fewer UAVs, which is the signature of a policy that moves
 deliberately rather than one that wanders.  Its connectivity availability is
 below $1.000$ because UAVs leave the active set when a pack empties away
@@ -63,7 +63,7 @@ measurable rather than theoretical.
 
 Arm~B adds the identity, and the condition does what it says: the number of
 distinct actions rises, the swarm disperses, and the coverage rises with
-it, by $+0.109$, which is $30\%$ of the distance between the
+it, by $+0.109$, which is $29\%$ of the distance between the
 local-only observation and the reactive heuristic.  The condition is
 therefore not a formality.  A reader who omits the identity obtains a
 visibly worse controller, and the diagnostic that explains it is a count of
@@ -100,30 +100,42 @@ reader than the argument would have been.
 
 %% ENERGY
 
-Arm~B removes the energy constraint entirely: the pack is ten times the
-nominal size, so no UAV can strand and none ever needs to return.  The
-coverage rises, and the service continuity rises with it, but by far less
-than the gap to the reactive heuristic.  The energy constraint is a real
-cost, worth $0.086$ of persistent coverage, and it is not the
-explanation.  Arm~C removes the threshold-violation term of
-Table~\ref{tab:reward}, and it makes almost no difference: the stranding
-persists and the coverage is unchanged.
+The first version of this section told a different story, and the
+difference is worth recording, because it is the clearest example in this
+work of a diagnostic leading to a repair rather than to a conclusion.  The
+step-level diagnostic of the learned policy produced an alarming number: it
+stranded \emph{all eight} UAVs in nearly every episode, while the reactive
+heuristic stranded $0.7$.  A stranded UAV has an empty pack away from a
+charging pad; it can no longer fly, it leaves the swarm, and it stops
+covering.  The obvious reading was that the controller had failed at
+energy management, and the obvious fix was a reward term that prices the
+consequence of an empty pack.
 
-Both results point the same way.  The learned policy's failure is not that
-it mismanages energy; it is that it does not know what to do.  A policy
-that does not know what to do wanders, and a wandering swarm empties its
-packs, so the stranding is a \emph{symptom} of the credit-assignment
-limitation and not its cause.  Removing the constraint removes the symptom
-and leaves the coverage where it was.
+The reading was wrong, and the controlled arms say so.  Arm~B removes the
+energy constraint entirely --- a pack ten times the nominal size, so that no
+UAV can strand and none ever needs to return --- and the coverage moves by
+$0.021$, which is inside the seed-to-seed spread of the learned
+controller itself.  Arm~C removes the threshold-violation term of
+Table~\ref{tab:reward}, and the coverage moves by $@@EC_DELTA@@$, also inside
+that spread.
 
-This is the point at which the framework earns its keep.  A comparison that
-reported only coverage numbers would have had to choose between two
-explanations --- a badly specified energy reward, or something more
-fundamental --- and would have had no way to distinguish them, because the
-symptom and the cause have the same ordering.  The controlled arms
-distinguish them, and the conclusion is the one from which the remedy
-follows: the controller needs a per-agent signal, not a better team signal
-and not a better observation.
+What the diagnostic actually found was a defect in the safety filter rather
+than a property of the policy.  The mask's energy test admitted a departure
+with a flat battery, so a UAV could fly until its pack was empty away from a
+pad; the correction is to require a UAV to retain, after the move, the
+energy to reach a charging pad plus the reserve margin.  With that rule the
+stranding falls from about six UAVs per episode to $1.0$, the
+connectivity availability of the learned controller rises to $0.984$, and
+the learned controller's coverage rises from $0.638$ to $0.701$ --- and
+the explanation the diagnostic suggested is no longer needed.
+
+That is the sequence the framework is for.  A coverage comparison on its own
+would have reported that the learned controller mismanages energy, and a
+reward re-weighting would have been the wrong repair.  The controlled arm
+that removes the constraint altogether is what showed that the constraint
+was not the problem, and the defect it exposed in the filter was the actual
+problem.  The energy model is not what limits the controller, and the paper
+does not claim that it is.
 
 %% ABL
 
