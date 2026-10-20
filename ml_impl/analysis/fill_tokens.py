@@ -152,6 +152,16 @@ def main():
     # the ablation and the scenario summary are written by hand from the
     # tables, but their anchors are computed here so that the sentences
     # cannot drift from the numbers.
+    # the yardstick: the seed-to-seed spread of the learner itself
+    yardstick = 0.02
+    bs_path = os.path.join(HERE, "base_training_seeds.json")
+    if os.path.exists(bs_path):
+        bs = json.load(open(bs_path, encoding="utf-8"))
+        cks = [float(b["CK"]) for b in bs]
+        if len(cks) > 1:
+            yardstick = float(np.std(cks))
+    tok["ABL_YARDSTICK"] = f"{yardstick:.3f}"
+
     abl = load_csv("results_ablation.csv")
     if abl:
         by = {r["model"]: r for r in abl}
@@ -169,7 +179,7 @@ def main():
                     delta = abs(float(r["CK"]) - float(full["CK"]))
                 except (TypeError, ValueError, KeyError):
                     continue
-                (moved if delta >= 0.02 else still).append(
+                (moved if delta >= yardstick else still).append(
                     (name, float(r["CK"]) - float(full["CK"])))
             names = {"no-criticality": "the criticality term",
                      "no-degraded": "the degraded-service term",
