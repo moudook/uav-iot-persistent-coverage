@@ -72,7 +72,11 @@ def main():
 
     def tab(name):
         if name not in tparts:
-            raise SystemExit(f"table {name} was not generated")
+            # the artefact has not been produced yet; leave a marker rather
+            # than a wrong number, and say so loudly
+            print(f"WARNING: table {name} is missing from the artefacts")
+            return (f"% WARNING: the table {name} has not been generated; "
+                    f"re-run run_all.py")
         return tparts[name]
 
     section = f"""
@@ -172,9 +176,17 @@ Table~\\ref{{tab:reward}}.
         log = open(os.path.join(PROJ, "Mlawn-midsem-tex.log"),
                    encoding="utf-8", errors="ignore").read()
         undef = len(re.findall(r"undefined", log))
+        errors = re.findall(r"^! .*$", log, flags=re.M)
         pages = re.findall(r"Output written on .*?\((\d+) pages", log)
         print(f"undefined references: {undef}; pages: "
               f"{pages[0] if pages else '?'}")
+        if errors:
+            print("LATEX ERRORS:")
+            for e in errors[:10]:
+                print("   ", e)
+            raise SystemExit("the paper does not compile cleanly")
+        if undef:
+            print("NOTE: undefined references remain -- check the labels")
     return 0
 
 
