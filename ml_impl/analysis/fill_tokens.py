@@ -70,12 +70,13 @@ def main():
         pass
     arg = main_rows.get("MAPPO-argmax")
     if arg is not None:
-        tok["ARG_DISTANCE"] = f"{float(arg.get('Distance', 0)):.1f}"
+        tok["ARG_DISTANCE"] = f"{float(arg.get('Distance', 0)):.0f}"
         tok["ARG_CK"] = f(arg["CK"])
     mp = main_rows.get("MAPPO")
     if mp is not None:
         tok["MAPPO_DISTANCE"] = f"{float(mp.get('Distance', 0)):.0f}"
         tok["MAPPO_STRANDED"] = f"{float(mp.get('Stranded', 0)):.1f}"
+        tok["MAPPO_UNEXEC"] = f"{float(mp.get('UnexecutedActions', 0)):.0f}"
 
     obs = load_json("ab_observation.json")
     arms = {}

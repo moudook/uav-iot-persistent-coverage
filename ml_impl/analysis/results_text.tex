@@ -31,15 +31,25 @@ method's behaviour survives without them.
 \paragraph{On the evaluation protocol, which is not neutral.} The rule
 baselines are deterministic, so they have no sampling step; the learned
 policy is evaluated by sampling, because Eq.~\eqref{eq:policy} specifies a
-sampled policy and because the deterministic version of the same actor
-travels $@@ARG_DISTANCE@@$~m over the whole episode --- with a shared actor
-the argmax action is the same for every UAV, so the swarm stands still.  We
-report both, and the comparison is not like-for-like in either direction:
-sampling makes the learned controller take risks it would not take
-deterministically, and it is scored on the mean of a distribution of
-trajectories rather than on one of them.  The deterministic row is not a
-better controller; it is a different and degenerate one, and reporting it is
-the point.
+sampled policy.  We report the deterministic version of the same actor as
+well, and the difference is large: the argmax policy reaches $@@ARG_CK@@$
+against $@@MAPPO_CK@@$ for the sampled one, although it travels a comparable
+distance ($@@ARG_DISTANCE@@$~m against $@@MAPPO_DISTANCE@@$~m), so it is
+not a static controller --- it is a different and worse one, and the
+difference between them is the contribution of the exploration that the
+reward does not price.  The comparison with the deterministic baselines is
+therefore not like-for-like in either direction: sampling makes the learned
+controller take risks it would not take deterministically, and it is scored
+on the mean of a distribution of trajectories rather than on one of them.
+Reporting both rows is the point.
+
+One further number in the table is worth stating, because it disposes of a
+concern that the framework raises.  The safety filter and the joint
+projection together did not execute $@@MAPPO_UNEXEC@@$ of the learned
+controller's sampled actions, so the policy gradient is very nearly
+consistent with the trajectory that was actually taken; the
+"the executed action is not the chosen action" problem, which is real in
+masked reinforcement learning, is not what limits this controller.
 
 The learned controller also burns more energy than the heuristic
 ($@@MAPPO_E@@$~J against $@@REACT_E@@$~J over the same episode) while
