@@ -107,6 +107,10 @@ def main():
             tok["B_SHARE"] = f"{100*share:.0f}\\%"
     if c:
         tok["C_CK"] = f(c["CK"])
+        if a:
+            tok["C_DELTA"] = f"{c['CK'] - a['CK']:+.3f}"
+        if b:
+            tok["B_DELTA"] = f"{b['CK'] - a['CK']:+.3f}" if a else "n/a"
         tok["C_AG"] = f(c["AG"])
         tok["C_SC"] = f(c["SC"])
         tok["C_DIST"] = f(c["distinct_actions"], 2)

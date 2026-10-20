@@ -69,8 +69,8 @@ written.
 
 Arm~A has the property that the shared-actor symmetry collapse predicts.
 The deterministic policy selects the same action for every UAV --- the
-``Distinct'' column counts $1.80$ distinct actions out of eight --- and
-the swarm's spread is $14.7$~m, which is the radius of the initial
+``Distinct'' column counts $1.69$ distinct actions out of eight --- and
+the swarm's spread is $7.5$~m, which is the radius of the initial
 cluster rather than the extent of a deployment.  This is the failure that
 Foerster et al.'s condition~(ii) is about: with an observation that does not
 break the permutation symmetry, a parameter-shared network is a single
@@ -80,32 +80,43 @@ The consequence is measurable rather than theoretical, and the diagnostic
 that exposes it is a count of distinct actions, which costs nothing and
 which the raw coverage number does not make visible.
 
-Arm~B adds the one-hot identity, and the condition does what it says: the
-number of distinct actions rises to $2.10$ out of eight and the swarm
-disperses, and the coverage rises to $0.690$ from $0.581$.
+Arm~B adds the one-hot identity, and the condition does what it says about
+specialisation: the number of distinct actions rises from $1.69$ to
+$2.50$ out of eight, and the swarm disperses rather than standing
+still.  Its effect on the coverage, $0.635$ against $0.701$, is
+however inside the seed-to-seed spread of the learner, so we do not claim
+that the identity buys coverage at this budget: what it buys is the
+\emph{ability} to specialise, which the distinct-action count measures
+directly and which the coverage does not.
 
-Arm~C adds the broadcast coverage-map summary and the pad bearing, and it is
-the configuration the paper proposes --- but it is \emph{worse} than arm~B on
-coverage ($0.604$ against $0.690$).  The spread column says why: the
-swarm contracts to $8.0$~m instead of dispersing.  The policy is
-following the map.  It moves towards the cell that currently holds the
-deficit, covers it, the deficit moves to another cell, and the swarm
-oscillates after a moving target.
+Arm~C adds the broadcast coverage-map summary and the pad bearing, and it
+is the configuration the paper proposes.  The spread rises to
+$9.6$~m --- the swarm moves further --- while the distinct-action
+count falls to $1.77$, so the policy moves more but decides more
+uniformly.  That is the signature of a policy that is following the map
+rather than dividing the work, and the coverage moves by $-0.035$,
+again inside the seed spread.
 
-That is the most useful thing the observation comparison says, and it points
-at the same mechanism the other two controlled experiments reach from
-different directions.  A coverage map tells a controller \emph{where} the
-work is; it does not tell it \emph{which} UAV should do it, and turning a
-location into an assignment requires per-agent credit, which a shared team
-reward does not supply.  The map therefore makes the deficiency
-\emph{visible} and therefore \emph{actionable-looking}, and a policy without
-the credit to act on it chases.  The map is retained in the proposed
-configuration because the reactive heuristic is given the exact deficit set
-and the comparison is otherwise not like-for-like, and the measurement above
-is reported rather than quietly dropped; the component ablation of the next
-section prices the map on its own.
+So the observation terms change what the policy \emph{does} --- how far it
+travels, and whether it can specialise at all --- much more clearly than
+they change the coverage it achieves.  That is worth stating, because the
+alternative reading of the same table is that the observation does not
+matter, and it is not what the data support.  A coverage map tells a
+controller \emph{where} the work is; it does not tell it \emph{which} UAV
+should do it, and turning a location into an assignment requires per-agent
+credit, which a shared team reward does not supply.  The map makes the
+deficiency visible, and therefore actionable-looking, and a policy without
+the credit to act on it chases.
 
 The resolution of the summary does not rescue it: $G=8$: 0.589, and the swarm's spread contracts in every case, because the policy follows the deficit instead of dividing the work.
+
+The observation term that does have a large effect on the coverage is not
+one of these two but the third: the bearing to the charging pad.  The
+ablation of the next section prices it, and it is the largest single
+observation effect in this work, for a reason that is easy to see in
+retrospect.  Without a direction to the charger a UAV cannot come home, so
+the swarm drains its packs in the field; and a swarm that has drained its
+packs is not a swarm that can be asked to cover anything.
 
 %% ENERGY
 
@@ -150,7 +161,7 @@ does not claim that it is.
 
 Every variant is trained from the same seed on the same configuration
 except for the one component that is removed, so a difference is
-attributable to that component.  On this configuration $the reserve UAV$ (-0.058) has a measurable effect on persistent coverage, and the remaining variants do not.
+attributable to that component.  On this configuration $the pad bearing$ (-0.288), $the agent identity$ (-0.131) have a measurable effect on persistent coverage, and the remaining variants do not.
 
 That is worth stating plainly rather than reading around: the components
 that a reader might expect to matter most here are the ones the hard
