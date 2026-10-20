@@ -29,7 +29,8 @@ NAMES = {
     "no-arbitration": "no-charging arbitration",
     "no-mask": "no-action mask",
     "no-agent-id": "no agent identity",
-    "no-map": "no coverage map",
+    "with-map": "with coverage map",
+    "no-map": "with coverage map",
     "no-pad-bearing": "no pad bearing",
     "VanillaMAPPO": r"\textbf{Vanilla MAPPO}",
 }
