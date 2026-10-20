@@ -484,6 +484,47 @@ def main():
     except Exception as exc:  # pragma: no cover - diagnostic path
         print(f"[SKIP] F1 oracle check: {exc}\n")
 
+    # --- the evaluation of a sampled policy is reproducible ---------------
+    # Eq. (13) specifies that the deployed policy samples, and the sampling
+    # draws from the global torch RNG.  If that RNG is not seeded, the same
+    # policy on the same scene gives a different answer every time, and the
+    # paper's numbers cannot be reproduced from the stored artefact.  This
+    # item measures the property rather than asserting it.
+    try:
+        import torch
+        from uav_wireless.mappo import MAPPO
+        from uav_wireless.experiments import eval_agent
+        c = SimConfig(N=4, K=2, M=8, episode_len=60, seed=0)
+        e = UAVIoTEnv(c)
+        ag = MAPPO(n_agents=c.N, obs_dim=e.obs_dim, state_dim=e.state_dim)
+        # the quantities compared are CONTINUOUS, so that a check on them
+        # cannot pass by accident
+        keys = ("CK", "Energy", "Distance", "CovIntegral")
+
+        def fingerprint(env_seed):
+            torch.manual_seed(11)
+            r = eval_agent(ag, c, steps=60, seed=env_seed)
+            return tuple(round(float(r[k]), 9) for k in keys)
+
+        torch.manual_seed(11)
+        a1 = eval_agent(ag, c, steps=60, seed=2)
+        torch.manual_seed(999983)          # perturb the ambient RNG
+        a2 = eval_agent(ag, c, steps=60, seed=2)
+        f1 = tuple(round(float(a1[k]), 9) for k in keys)
+        f2 = tuple(round(float(a2[k]), 9) for k in keys)
+        check("R1", "the evaluation of a sampled policy is a function of "
+                    "(policy, scene) and does not depend on the ambient "
+                    "state of the global RNG",
+              f1 == f2,
+              " and ".join(f"{k}={v}" for k, v in zip(keys, f1))
+              + "  |  " + " and ".join(f"{k}={v}" for k, v in zip(keys, f2)),
+              "identical",
+              "the policy samples, so the sampling stream is seeded from "
+              "the evaluation seed; every controller therefore sees the "
+              "same stream on the same scene")
+    except Exception as exc:  # pragma: no cover - diagnostic path
+        print(f"[SKIP] R1 reproducibility check: {exc}\n")
+
     # --- report the audit ------------------------------------------------
     n_fail = sum(1 for r in RESULTS if r["status"] == "FAIL")
     n_pass = sum(1 for r in RESULTS if r["status"] == "PASS")

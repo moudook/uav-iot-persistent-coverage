@@ -222,5 +222,13 @@
     "measured": "oracle CK (connected) = 1.000, SC reachable = True",
     "expected": "> 0.95",
     "note": "achievability ceiling for the trained policy"
+  },
+  {
+    "id": "R1",
+    "claim": "the evaluation of a sampled policy is a function of (policy, scene) and does not depend on the ambient state of the global RNG",
+    "status": "PASS",
+    "measured": "CK=0.997916667 and Energy=3604.0 and Distance=188.0 and CovIntegral=0.002083333  |  CK=0.997916667 and Energy=3604.0 and Distance=188.0 and CovIntegral=0.002083333",
+    "expected": "identical",
+    "note": "the policy samples, so the sampling stream is seeded from the evaluation seed; every controller therefore sees the same stream on the same scene"
   }
 ]

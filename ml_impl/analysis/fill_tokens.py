@@ -14,11 +14,15 @@ import csv
 import json
 import os
 import re
+import sys
 
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ML = os.path.dirname(HERE)
+# the package under test lives one level up, and the test module imports it
+if ML not in sys.path:
+    sys.path.insert(0, ML)
 
 
 def load_csv(name):
@@ -340,6 +344,46 @@ def build_tokens():
             gap = float(react["CK"]) - a["CK"]
             tok["CREDIT_OF_GAP"] = (f"{100*abs(d)/gap:.0f}\\%" if abs(gap) > 1e-9
                                      else "0\\%")
+
+    # ------------------------------------------------------------------
+    # the numbers the paper quotes about ITSELF
+    # ------------------------------------------------------------------
+    # the claim audit's own counts, so that the paper cannot claim a
+    # different number of verified claims than the audit verifies
+    audit = load_json("claim_audit.json")
+    if audit:
+        n_pass = sum(1 for r in audit if r.get("status") == "PASS")
+        n_fail = sum(1 for r in audit if r.get("status") == "FAIL")
+        n_info = sum(1 for r in audit if r.get("status") == "INFO")
+        tok["AUDIT_ITEMS"] = str(len(audit))
+        tok["AUDIT_PASS"] = str(n_pass)
+        tok["AUDIT_FAIL"] = str(n_fail)
+        tok["AUDIT_INFO"] = str(n_info)
+
+    # the size of the test suite, counted the way the runner discovers it
+    try:
+        import importlib.util
+        import inspect
+        tests_dir = os.path.join(ML, "tests")
+        n_tests = 0
+        for fname in sorted(os.listdir(tests_dir)):
+            if not fname.startswith("test_") or not fname.endswith(".py"):
+                continue
+            path = os.path.join(tests_dir, fname)
+            spec = importlib.util.spec_from_file_location(
+                os.path.splitext(fname)[0], path)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            for cname, cls in inspect.getmembers(mod, inspect.isclass):
+                if not cname.startswith("Test") or cls.__module__ != mod.__name__:
+                    continue
+                for mname, meth in inspect.getmembers(cls, inspect.isfunction):
+                    if mname.startswith("test_"):
+                        n_tests += 1
+        tok["N_TESTS"] = str(n_tests)
+    except Exception as exc:  # pragma: no cover - diagnostic path
+        print(f"WARNING: the test count could not be determined: {exc}",
+              file=sys.stderr)
     return tok
 
 
