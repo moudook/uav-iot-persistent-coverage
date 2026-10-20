@@ -148,12 +148,15 @@ class IDDQN:
             if self.double:
                 q_online = self.q(obs2)
                 a_star = q_online.argmax(dim=-1, keepdim=True)
-                q_next = q_next.gather(-1, a_star).squeeze(-1)
+                q_next = q_next.gather(-1, a_star).squeeze(-1)     # (B, N)
             else:
-                q_next = q_next.max(dim=-1).values
-            target = rew.unsqueeze(-1) + self.gamma * (1.0 - done).unsqueeze(-1) * \
-                q_next.unsqueeze(-1)
-        q = self.q(obs).gather(-1, acts.unsqueeze(-1)).squeeze(-1)
+                q_next = q_next.max(dim=-1).values                 # (B, N)
+            # the team reward and the done flag are per time step, shape
+            # (B,); they have to be broadcast across the agents
+            target = (rew[:, None, None]
+                      + self.gamma * (1.0 - done)[:, None, None]
+                      * q_next.unsqueeze(-1))                      # (B, N, 1)
+        q = self.q(obs).gather(-1, acts.unsqueeze(-1)).squeeze(-1)  # (B, N)
         loss = F.smooth_l1_loss(q, target.squeeze(-1))
         self.opt.zero_grad()
         loss.backward()
