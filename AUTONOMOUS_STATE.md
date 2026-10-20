@@ -94,7 +94,45 @@ the paper's Results, Conclusion and Abstract around the new numbers.
   because it was measured to be harmful at every resolution tested
 
 
-## THE CENTRAL FINDING (settled 20 Oct)
+## THE MATHEMATICAL REVIEW (20 Oct, done)
+A subagent reviewed the paper's seven load-bearing mathematical claims from
+first principles, with no access to the code or the web. It found four wrong
+as stated and several needing qualification. ALL ARE NOW CORRECTED:
+
+1. **The feasibility certificate applied to sensors was WRONG.** The corner
+   argument proves N >= 4K for K-covering the REGION. It does not transfer
+   to the sensor set: a random draw would need four sensors in the corner
+   caps of radius 10.8 m, probability ~1e-5. The section now states the
+   general packing lemma N >= K*P(A,R) with its proof, applies it to the
+   realised sensor set, and reports the measurement (P mean 2.13, range 2-3;
+   N >= 4.27, range 4-6; N=5 excluded for 4 of 30 draws = 13%). The
+   previous text wrote the bound as N >= K*|S| with |S| read as the sensor
+   count -- a different and false bound. The section also now PROVES the
+   region bound is TIGHT (4K discs K-cover the square; the audit measures
+   the worst-covered point at 34.875 m <= R_cov = 35 m).
+2. **"SC is identically zero on an infeasible configuration" was WRONG as
+   stated.** Now: SC(pi) = 0 for every policy iff the feasible set of
+   CONFIGURATIONS is empty -- a statement about max_pi SC, not about any
+   policy's realised score.
+3. **The credit-assignment wording needed qualification.** A per-agent local
+   critic re-centres and re-scales the shared team signal per agent; it
+   does not DECOMPOSE it. The gradient expression is now written out.
+4. **The truncation bootstrap was overstated.** The bias on the value target
+   is -gamma(gammalambda)^(T-t)/(1-gammalambda) * V(s_{T+1}), so downward
+   when the continuation is worth more than zero and upward when it is worth
+   less; unbiased for V^pi only with an exact critic and an exogenous
+   truncation.
+Also qualified: sigma is necessary for region coverage, never sufficient,
+and not even necessary for a sensor set; the oracle upper-bounds C_K but
+not SC; the time-averaged coverage deficit is exactly 1 - C_K (a convention,
+not an independent measurement) and the MAXIMUM REFRESH TIME is the
+quantity that carries the information it cannot; and the
+identical-action symmetry collapse is specific to an action space of
+displacements, which is the one used here.
+
+Audit now 25 items: 21 verified, 0 failed, 4 informational.
+
+## The CENTRAL FINDING (settled 20 Oct)
 **The learned controller does not reach the reactive heuristic, and the
 framework's controlled arms identify why.** The limiting factor is the
 credit assignment of a parameter-shared actor trained on a team reward.
