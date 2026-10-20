@@ -1,6 +1,6 @@
 %% CONTRIB
 
-    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, the identity is worth $+0.131$ persistent coverage, and without it the deterministic policy selects the same action for every UAV and the swarm translates as a rigid body without dispersing. A broadcast summary of where the coverage deficit is was added a priori and measured to be \emph{harmful} at every resolution tested, which is reported rather than quietly dropped.
+    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, @@ABL_ID_CLAUSE@@, and without it the deterministic policy selects the same action for every UAV and the swarm translates as a rigid body without dispersing. A broadcast summary of where the coverage deficit is was added a priori and measured to be \emph{harmful} at every resolution tested, which is reported rather than quietly dropped.
 
 %% MAIN
 
@@ -27,19 +27,40 @@ scene-to-scene variation does not enter this interval, because every
 controller is evaluated on the same scenes and it therefore cancels in the
 difference.
 
+The mission-relevant quantity is the joint invariant, and it separates
+the two controllers far more sharply than the coverage does.  The
+reactive heuristic satisfies the coverage requirement and the connectivity requirement simultaneously in $0.751$ of the
+mission, against $@@MAPPO_SC@@$ for the learned controller.  The
+coverage ratio is a weak proxy for that: a controller can hold a high
+per-sensor coverage while never covering every sensor at the same
+instant, which is what the learned controller does, and the service
+continuity metric is therefore the one that distinguishes these two
+controllers most sharply, even though we criticise it for a different
+reason elsewhere.
+
 It is worth separating the two sources of variation in the headline
-number, because they behave differently.  Across the @@VAR_N_SEEDS@@
-training runs of the learned controller the coverage varies by $@@VAR_SEED@@$
-(the standard error of the mean is $@@VAR_SEED_SE@@$); across the
-@@VAR_N_SCENES@@ evaluation scenes it varies by $@@VAR_SCENE@@$ (the
-standard error of the mean over the scenes is $@@VAR_SCENE_SE@@$).  The
+number, because they behave differently.  Across the 5
+training runs of the learned controller the coverage varies by $0.047$
+(the standard error of the mean is $0.021$); across the
+5 evaluation scenes it varies by $0.076$ (the
+standard error of the mean over the scenes is $0.034$).  The
 scene component is common to every controller in the comparison, because
 they are all evaluated on the same scenes, and it therefore cancels in
 every difference this paper reports; the seed component does not, and it
 is the seed component that the training-seed spread measures.  A reader
 comparing two controllers should read the seed component as the
 uncertainty of the comparison and the scene component as a property of the
-configuration.
+configuration.  Two caveats belong with these numbers.  The spread
+quoted for a learned controller is the spread of its per-seed means,
+and each per-seed mean averages five evaluation scenes of a single
+rollout, so it contains the rollout-to-rollout variation of a policy
+that samples at every step and not only the variation between training
+runs.  And the cancellation of the scene component in a difference is an
+assumption rather than an identity: it holds if the difficulty of a
+scene enters every controller additively and with the same size, and
+it fails if a scene is hard for one controller and easy for the other.
+The per-scene scores are in the artefact, so the assumption is
+checkable rather than merely asserted.
 
 The question that this comparison invites --- whether more training would
 have closed the gap --- deserves an answer rather than an assumption,
@@ -50,7 +71,7 @@ $0.797$ over its 25 episodes, and its mean over
 the first five episodes ($0.663$) is the same as its mean over
 the last five ($0.665$): the curve has flattened.  The best
 single episode, $0.797$, is on a training scene, and the same
-policy scores $@@CURVE_EVAL@@$ on unseen scenes, so the training-scene
+policy scores $0.713$ on unseen scenes, so the training-scene
 figure is not an estimate of the deployed performance.  The budget is
 therefore bounded rather than eliminated: at this configuration the curve
 is flat over the budget we can afford, and we do not claim that a larger
@@ -202,11 +223,11 @@ neither supported nor refuted by it.
 %% ABL
 
 Every variant is trained on the same configuration with the same budget and
-from the same set of ? training seeds, and differs from the
+from the same set of 3 training seeds, and differs from the
 full configuration in exactly one component, so a difference is
 attributable to that component.  The budget is the base comparison's
-(? episodes), and the full configuration of this table is
-the first ? of the base comparison's training runs --- the same
+(25 episodes), and the full configuration of this table is
+the first 3 of the base comparison's training runs --- the same
 policies, not a cheaper experiment --- so the two tables describe the same
 learner.  Because the variants share the training seeds, the
 comparison is \emph{paired}: a difference is measured on the same training
@@ -221,7 +242,7 @@ training seeds it would flag roughly one null component in three, while
 still being unable to detect a true effect of the size it flags.  The
 paired interval does not have that failure mode, and it also reports the
 resolution of the measurement, which is the number a reader actually
-needs.  the components whose difference from the full configuration is largest are $the pad bearing$ (-0.288), $the agent identity$ (-0.131), and the rest do not move the coverage by more than the seed-to-seed spread of the learner itself.
+needs.  no single component changes the persistent coverage by more than the seed-to-seed spread of the learner itself, and the table is reported in full because that is the result.
 
 What the intervals do and do not say is worth stating precisely, because a
 null result of this width is a statement about the resolution of the
