@@ -245,7 +245,7 @@ broadcast quantities:
 \end{equation}
 Here $\mathcal N_i$ is the set of nearby UAVs, $C_i^{\mathrm{local}}$ is the number of nearby sensors currently covered, $\rho_i$ is a locally computed bridge-risk estimate, $\tau_i^{\mathrm{return}}$ is the estimated time until the return threshold is reached, $E_i^{\mathrm{pad}}$ is the estimated energy needed to reach a feasible charging pad, $\mathbf 1_i\in\{0,1\}^{N}$ is the agent's own identity, and $\hat{\mathbf d}_i^{\mathrm{pad}}$ is the unit bearing to the nearest charging pad (whose range is carried by $E_i^{\mathrm{pad}}$).
 
-Two properties of this observation are not cosmetic, and both are load-bearing for the shared-parameter design of Section~\ref{sec:mappo}. The first is the identity. Parameter sharing is sound only when each agent's own observation identifies it, so that a shared network can still specialise~\cite{foerster2016}; the first version of $\mathbf o_i$ did not satisfy this condition, and the consequence was measurable rather than theoretical: in a symmetric deployment every agent received an almost identical input, the deterministic policy selected the same action for all of them, and the swarm translated as a rigid body without ever dispersing. The second is the bearing to the charger. Without it the observation carries the \emph{cost} of the flight to a pad but not its \emph{direction}, and a learned policy cannot express the return at all. We assume that the infrastructure which owns the charging pads also broadcasts their positions, which is a communication assumption rather than an oracle.
+Two properties of this observation are not cosmetic, and both are load-bearing for the shared-parameter design of Section~\ref{sec:mappo}. The first is the identity. Parameter sharing is sound only when each agent's own observation identifies it, so that a shared network can still specialise~\cite{foerster2016}; the first version of $\mathbf o_i$ did not satisfy this condition, and the consequence was measurable rather than theoretical: in a symmetric deployment every agent received an almost identical input, the deterministic policy selected the same action for all of them, and the swarm translated as a rigid body without ever dispersing. The implication is specific to an action space of displacements, which is the one used here: identical displacements translate the configuration rigidly and so freeze its shape. In an action space whose symbols index agent-local targets, the same symbol would send different agents to different places, and dispersion would be possible after all. The second is the bearing to the charger. Without it the observation carries the \emph{cost} of the flight to a pad but not its \emph{direction}, and a learned policy cannot express the return at all. We assume that the infrastructure which owns the charging pads also broadcasts their positions, which is a communication assumption rather than an oracle.
 
 A third term --- a broadcast summary of where the coverage deficit is ---
 was added a priori, on the argument that an agent which knows how many
@@ -428,38 +428,134 @@ line cap=round, line join=round
 \subsection{Feasibility Certificate for $K$-Coverage}
 \label{sec:feasibility}
 
-Before any policy is trained, the configuration must be shown to admit a feasible
-solution. The report's original $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m
-configuration does \emph{not}: the four corner $K$-coverage discs are pairwise
-disjoint because the corner separation $80$\,m exceeds $2R_{\mathrm{cov}}=70$\,m,
-so covering the region requires $N\ge 4K=8$ (classical $k$-fold covering,
-Kershner 1939). The area-surplus metric $\sigma=1.503$ does not rescue this:
-an area ratio is not a covering bound.
+Before any policy is trained, the configuration must be shown to admit a
+feasible solution.  Two different requirements have to be separated here,
+because they have different certificates: the requirement that every point
+of the operational region $\Omega$ is $K$-covered, and the requirement that
+every one of the $M$ sensors is $K$-covered.  The second is what the
+experiments measure, and the distinction is not academic: the corner
+argument that settles the first does not settle the second.
 
-\emph{Feasibility certificate (two bounds).}
-\begin{itemize}
-  \item \textbf{Region bound:} $N \ge 4K$ for a square of side $S$ with
-    $S > 2R_{\mathrm{cov}}$. For $K=2$, $N\ge 8$.
-  \item \textbf{Sensor-set bound:} $N \ge K\cdot |S|$ for a given sensor
-    draw $S$. Over 30 random seeds this gives mean $4.4$, maximum $6$; so
-    $N=5$ is feasible for \emph{most} random scenes but not universally.
-\end{itemize}
+\emph{The packing lemma.} Let $A$ be the set of points to be $K$-covered and
+define the \emph{packing number}
+\begin{equation}
+P(A,R)=\max\bigl\{\,|X|:\ X\subseteq A,\ \|x-x'\|>2R\ \ \forall x\neq x'\,\bigr\}.
+\label{eq:packing}
+\end{equation}
+Then $A$ cannot be $K$-covered by fewer than $K\,P(A,R)$ discs of radius
+$R$.  The proof is one line: a disc of radius $R$ contains at most one
+point of $X$, because two such points would be within $2R$; so the discs
+that serve the $K$ coverings of each point of $X$ are pairwise disjoint
+across distinct points, and each point consumes $K$ of them.  This is the
+classical $k$-fold covering argument, and it is the only form of it that
+applies to an arbitrary point set.
+
+\emph{Region bound.} For $A=\Omega$ and the four corners of the square,
+the corner separations are $80$\,m and the side is $80\,\mathrm{m}>2R_{\mathrm{cov}}=70$\,m, so the four corner discs are pairwise disjoint and $P(\Omega,R_{\mathrm{cov}})=4$: partition $\Omega$ into four $40\times40$ sub-squares, whose diameter $40\sqrt2=56.6$\,m is below $2R_{\mathrm{cov}}$, so no two packed points share a sub-square, and the four corners attain the bound.  By \eqref{eq:packing}, $K$-covering the region therefore requires
+\begin{equation}
+N\ \ge\ 4K\ =\ 8 .
+\label{eq:regionbound}
+\end{equation}
+The report's original $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m configuration
+is therefore \emph{provably infeasible} for the region requirement, and
+\eqref{eq:regionbound} is \emph{tight} at these parameters: the four points
+$\{(20,20),(60,20),(20,60),(60,60)\}$ cover the square once, since the
+farthest point of a cell from its centre is $40/\sqrt2=28.28$\,m $<35$\,m,
+and $K$ layers of those points, each displaced by a distinct vector of
+norm at most $35-28.28=6.72$\,m, cover it $K$ times with $4K$ discs.  So
+$N=8$ is not merely sufficient for the region; it is exactly sufficient.
+
+\emph{Sensor-set bound, and what the corner certificate does not say.} The
+sensors are not at the corners, so \eqref{eq:regionbound} does not transfer
+to them: a random draw would have to place four sensors in the corner caps
+of radius $\approx10.8$\,m, an event of probability $\approx10^{-5}$ for
+$20$ uniform sensors.  The applicable bound is \eqref{eq:packing} applied
+to the realised sensor set.  Measured over 30 random draws
+(\texttt{analysis/feasibility.py}), the packing number has mean $2.13$ and
+range $2$--$3$, so the bound is $N\ge 4.27$ on average and $N\ge 6$ in the
+worst case, and $N=5$ is \emph{excluded} for $4$ of the $30$ draws
+($13\%$).  For the remaining draws the teleporting oracle reaches
+$CK=0.990$ at $N=5$, so for the sensor requirement $N=5$ is usually
+feasible and the correct statement is a probabilistic one, not a
+certificate.  We state this rather than the convenient one: the
+configuration is \emph{provably} infeasible for the region, and
+\emph{probably} infeasible for a minority of sensor draws.
+
+\emph{The corrected configuration is feasible for both requirements.}
+$N=8$, $K=2$, $R_{\mathrm{cov}}=35$\,m satisfies \eqref{eq:regionbound}
+with equality and the construction above, so every sensor is $K$-covered
+for \emph{every} sensor layout, not merely for the ones that were drawn.
+The teleporting oracle of Section~\ref{sec:feasibility} confirms it,
+reaching $CK=1.000$ with a connected placement.
+
+\emph{The area-surplus criterion certifies nothing.} The metric
+$\sigma=N\pi R_{\mathrm{cov}}^{2}/(K|\Omega|)$ equals $1.503$ at $N=5$ and
+exceeds one, and the configuration is nonetheless infeasible for the region.
+The reason is that area is a measure condition and covering is a pointwise
+one: $N$ discs can be piled over a small patch, satisfying $\sigma>1$ while
+most of $\Omega$ is uncovered, and conversely a clustered sensor set can be
+covered with $\sigma<1$.  In particular $\sigma\ge1$ is \emph{necessary}
+for $K$-covering the region and is \emph{not even necessary} for
+$K$-covering a sensor set, and it is never sufficient: at $N=7$, $K=2$ it is
+$2.10$ and the region bound \eqref{eq:regionbound} still excludes the
+configuration.  A feasibility certificate has to be a covering argument.
+
+\emph{What the degenerate metric does, exactly.} Let $\mathcal{F}$ be the
+set of configurations in which every sensor is $K$-covered and the
+communication graph is connected.  The service-continuity metric of
+Table~\ref{tab:metrics} satisfies
+\begin{equation}
+SC(\pi)=0\quad\text{for every policy }\pi
+\quad\Longleftrightarrow\quad
+\mathcal{F}=\varnothing ,
+\label{eq:scdegenerate}
+\end{equation}
+because $SC(\pi)>0$ exactly when the trajectory visits $\mathcal{F}$ at some
+instant.  The statement is therefore about the best achievable value
+$\max_\pi SC(\pi)$ and not about the value any particular policy realises:
+a poor policy on a perfectly feasible instance also scores $SC=0$.  When
+$\mathcal{F}=\varnothing$ the metric is uninformative, and the
+time-averaged coverage deficit of the same table is not, which is the
+point of reporting it alongside.
 
 \emph{Corrected, feasible deployments:} $N=8$, $K=2$, $R_{\mathrm{cov}}=35$\,m
-(provably feasible) or $N=5$, $K=2$, $R_{\mathrm{cov}}=45$\,m ($R_{\mathrm{cov}}>42.5$\,m
+(provably feasible for both requirements, and tight against the region
+bound) or $N=5$, $K=2$, $R_{\mathrm{cov}}=45$\,m ($R_{\mathrm{cov}}>42.5$\,m
 required). All trained results in this paper use the former.
 
 \emph{Achievability ceiling.} A teleporting placement oracle
-(\texttt{analysis/feasibility.py}) upper-bounds any policy's coverage and
-separates ``the policy is weak'' from ``the task is infeasible''. Policy
-performance is reported as achieved divided by oracle.
+(\texttt{analysis/feasibility.py}) places the $N$ UAVs anywhere, at no
+motion cost and ignoring energy, and upper-bounds the coverage fraction
+$C_K$ of any policy, because the per-step coverage fraction of any
+trajectory is bounded by the best static placement.  It therefore separates
+``the policy is weak'' from ``the task is infeasible'', and it is the
+ceiling against which the reported coverage is read.  Two limits on the
+claim are worth stating.  The oracle is an upper bound on $C_K$ and \emph{not}
+on the service-continuity metric, which additionally requires the
+requirement to hold at every instant of a kinematically constrained
+trajectory; and it does not certify that a feasible trajectory achieving the
+certified coverage exists.  At the corrected configuration the value is
+$C_K=1.000$ and it is attained for \emph{every} sensor layout, because the
+construction of \eqref{eq:regionbound} covers the whole region, so the
+ceiling is deterministic rather than a random variable over layouts.
 
 \emph{Non-degenerate metrics.} The service-continuity metric
 ``fraction of time all sensors are $K$-covered \emph{and} the graph is
-connected'' is identically zero on an infeasible configuration. It is retained
-for comparison but supplemented by (i) a time-averaged coverage deficit
-$\frac1T\sum_t(1-\overline{\mathrm{CK}}_t)$ and (ii) a maximum refresh time
-(longest run of steps with any under-covered sensor).
+connected'' is identically zero for every policy when $\mathcal{F}$ is
+empty, by \eqref{eq:scdegenerate}.  It is retained for comparison, and
+reported alongside two quantities that are not.  The first is the
+time-averaged coverage deficit $\frac1T\sum_t(1-\overline{\mathrm{CK}}_t)$,
+which is graded: it gives partial credit for a near miss, where the binary
+flag gives none, and it is the better-behaved quantity as a training
+signal.  We note that it is, exactly, the complement of the coverage
+fraction $C_K$, so it is a change of convention rather than an independent
+measurement, and that it is blind to the connectivity half of the
+requirement.  The second is the maximum refresh time, the longest run of
+consecutive steps with any under-covered sensor, which is not a function of
+$C_K$: a controller can hold a high average coverage while leaving one
+sensor dark for a long time, and the refresh time is what detects that.  It
+is the maximum refresh time, rather than the deficit, that carries the
+information the binary flag cannot.
 
 \subsection{Connectivity Model}
 The inter-UAV communication graph is
@@ -762,7 +858,7 @@ The proposed algorithm uses parameter-shared MAPPO. During training, the central
 a_i(t)\sim\pi_{\theta}\left(a_i\mid\mathbf o_i(t)\right).
 \label{eq:policy}
 \end{equation}
-Parameter sharing is appropriate when (i) the environment is equivariant to agent permutations---identical observation and action spaces and identical transition/reward structure---and (ii) each agent's own observation identifies it, so a shared network can still specialise (Foerster et al. \cite{foerster2016}). Condition (ii) is what the identity term $\mathbf 1_i$ of Eq.~\eqref{eq:obs} exists to satisfy, and it is worth being explicit that the first version of $\mathbf o_i$ did not satisfy it: the observation distinguished agents only through their individual position, battery and mode, which in a symmetric deployment are nearly identical across the swarm. The measured consequence was that the deterministic policy chose the same action for every UAV and the swarm moved as a rigid body, so the shared-parameter claim could not be sustained on the evidence. We therefore treat $\mathbf 1_i$ as part of the model rather than as an implementation detail, and Section~\ref{sec:results} reports the controlled comparison. The known limitation (Fu et al. \cite{fu2022}, Theorem 4.2) is that a shared policy provably cannot learn an optimal policy for non-symmetric tasks such as the XOR game; this does not apply here because the swarm is homogeneous. If grounded or docked UAVs with heterogeneous roles are introduced, parameters must not be shared.
+Parameter sharing is appropriate when (i) the environment is equivariant to agent permutations---identical observation and action spaces and identical transition/reward structure---and (ii) each agent's own observation \emph{breaks the permutation symmetry}, so that a shared network can still specialise (Foerster et al. \cite{foerster2016}). Condition~(ii) does not require a literal index: relative coordinates to the other agents break the symmetry just as well, because they distinguish the agents. What it does require is that no two agents in the same physical situation receive the same observation, and the consequence is a statement about the hypothesis class rather than about optimisation: if $\mathbf o_i=\mathbf o_j$ then a shared policy is a function and $\pi_\theta(\cdot|\mathbf o_i)=\pi_\theta(\cdot|\mathbf o_j)$, so no amount of training can make the two agents differ. The first version of $\mathbf o_i$ did not satisfy condition~(ii) --- it distinguished the agents only through their individual position, battery and mode, which in a symmetric deployment are nearly identical across the swarm --- and the measured consequence was that the deterministic policy chose the same action for every UAV and the swarm moved as a rigid body, so the shared-parameter claim could not be sustained on the evidence. We therefore treat $\mathbf 1_i$ as part of the model rather than as an implementation detail, and Section~\ref{sec:results} reports the controlled comparison. The known limitation (Fu et al. \cite{fu2022}, Theorem 4.2) is that a shared policy provably cannot learn an optimal policy for non-symmetric tasks such as the XOR game; this does not apply here because the swarm is homogeneous. If grounded or docked UAVs with heterogeneous roles are introduced, parameters must not be shared.
 
 For a collected rollout, the temporal-difference residual is
 \begin{equation}
@@ -774,7 +870,7 @@ and the generalized advantage estimate (GAE) is
 \widehat A_t=\sum_{l=0}^{T-t-1}(\gamma\lambda)^l\delta_{t+l}.
 \label{eq:gae}
 \end{equation}
-A fixed-length rollout ends either in a genuine terminal state or in a time-limit truncation, and the two must not be conflated. At a truncation boundary the last state is not absorbing, so the advantage recursion must cut without treating the state as terminal; the correct treatment is to bootstrap the temporal-difference residual from $V(\mathbf s_{T})$ rather than from zero~\cite{pardo2018}. Conflating the two injects a systematic downward bias into the advantage estimates. This is not a hypothetical concern for this work: the simulator initially reported the end of the mission time limit through the same flag it used for a genuine dead end, so every episode boundary was bootstrapped from zero and every value target was biased downward. The simulator now reports termination and truncation separately --- the mission time limit is a truncation, and only the loss of every UAV is a terminal state --- and the rollout consults that flag rather than inferring termination from the episode-end flag. The distinction is pinned by unit tests, one of which asserts that a time-limit episode is reported as a truncation and not as a termination, and another that asserts the rollout reads the environment's flag rather than re-deriving it.
+A fixed-length rollout ends either in a genuine terminal state or in a time-limit truncation, and the two must not be conflated. At a truncation boundary the last state is not absorbing, so the advantage recursion must cut without treating the state as terminal; the correct treatment is to bootstrap the temporal-difference residual from $V(\mathbf s_{T})$ rather than from zero~\cite{pardo2018}. The size of the error is explicit: replacing the bootstrap by zero changes the value target by $-\frac{\gamma(\gamma\lambda)^{T-t}}{1-\gamma\lambda}V(\mathbf s_{T+1})$, so the target is biased downward whenever the continuation is worth more than zero and upward when it is worth less, and the sign follows the sign of the continuation value. The claim is about the value target and not about a fixed direction of policy improvement, since a mis-estimated advantage near zero can push an update either way. The bootstrap is unbiased for $V^\pi$ only in the idealisation that the critic is exact and the truncation is exogenous; with an approximate critic it inherits the critic's error at the boundary, scaled by $\gamma^{T-t}$. Conflating the two nevertheless injects a systematic error, and it did so in this work: the simulator initially reported the end of the mission time limit through the same flag it used for a genuine dead end, so every episode boundary was bootstrapped from zero. The simulator now reports termination and truncation separately --- the mission time limit is a truncation, and only the loss of every UAV is a terminal state --- and the rollout consults that flag rather than inferring termination from the episode-end flag. The distinction is pinned by unit tests, one of which asserts that a time-limit episode is reported as a truncation and not as a termination, and another that asserts the rollout reads the environment's flag rather than re-deriving it.
 The probability ratio is
 \begin{equation}
 r_t(\theta)=\frac{\pi_\theta(a_t\mid o_t)}{\pi_{\theta_{\mathrm{old}}}(a_t\mid o_t)}.
@@ -812,10 +908,19 @@ where $\mu$ and $\sigma$ are updated from the current rollout's returns. The con
 The advantage is normalised as well, by the mean and standard deviation of the batch. We also implemented a per-agent variant, in which each agent's advantages are normalised over its own history rather than over the pooled batch, and we report the measurement in Section~\ref{sec:results}: with a shared team reward every agent's advantage sequence is nearly identical, so the per-agent normalisation is close to a rescaling and does not change the credit assignment, which is the limitation of shared team rewards rather than a normalisation choice.
 
 \paragraph{The credit assignment is a property of the reward, not of the
-normalisation.} Because the team reward is broadcast, every agent receives
-the \emph{same} advantage, and the policy gradient therefore cannot
+normalisation.} With a team reward and a parameter-shared actor, the
+policy gradient is $\sum_t\sum_i\gamma^t\nabla_\theta\log\pi_\theta(a_t^i|o_t^i)
+\bigl(G_t-b(\mathbf s_t)\bigr)$: the factor that weights every agent's
+score is the \emph{same} number for all of them, so the gradient cannot
 distinguish an agent whose action helped from one whose action was
-irrelevant. This is the credit-assignment objection that the per-agent
+irrelevant. Giving each agent its own value function does not repair
+that: it re-centres and re-scales the shared team signal per agent,
+so the advantage is no longer a single shared number, but it cannot
+decompose it, because the advantage's dependence on the other agents
+enters only through the aggregate reward and through the observation,
+which are symmetric in the other agents. Redistribution of credit
+requires a per-agent reward, a joint-action critic, or a
+counterfactual baseline. This is the credit-assignment objection that the per-agent
 estimators make explicitly: COMA~\cite{foerster2018} observes that a
 global temporal-difference error ``does not explicitly reason about how
 that particular agent's actions contribute to that global reward'', and

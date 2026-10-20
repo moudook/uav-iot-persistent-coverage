@@ -55,6 +55,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from uav_wireless import SimConfig, UAVIoTEnv
+from dataclasses import replace
 
 
 # ======================================================================
@@ -317,6 +318,52 @@ def geometric_surplus(cfg: SimConfig) -> dict:
 # ======================================================================
 # CLI
 # ======================================================================
+def packing_survey(cfg: SimConfig, seeds: int = 30) -> dict:
+    """How the packing bound behaves over random sensor draws.
+
+    The corner argument of `region_2cover_bound` is a statement about the
+    REGION: it applies to the requirement that every point of Omega is
+    K-covered.  It does NOT apply to the requirement that every SENSOR is
+    K-covered, because the sensors need not be anywhere near the corners.
+
+    The bound that does apply to a set of points is the packing lemma:
+
+        A is K-covered by N discs of radius R  =>  N >= K * P(A, R)
+
+    where P(A, R) is the largest number of points of A that are pairwise
+    farther apart than 2R.  A disc of radius R contains at most one such
+    point, so the discs that serve them are disjoint, and each of the P
+    points needs K of them.
+
+    This survey measures P over random sensor draws, which is what the
+    experiments actually face, and it reports how many draws the corner
+    certificate would wrongly be needed for.
+    """
+    ps, reqs = [], []
+    for s in range(seeds):
+        c = replace(cfg, seed=s)
+        env = UAVIoTEnv(c)
+        env.reset()
+        b = sensor_packing_bound(env.sensors, c)
+        ps.append(int(b["packing_size"]))
+        reqs.append(int(b["N_required"]))
+    ps_a, req_a = np.array(ps), np.array(reqs)
+    return dict(
+        seeds=seeds,
+        packing_size_mean=float(ps_a.mean()),
+        packing_size_min=int(ps_a.min()),
+        packing_size_max=int(ps_a.max()),
+        N_required_mean=float(req_a.mean()),
+        N_required_min=int(req_a.min()),
+        N_required_max=int(req_a.max()),
+        N_available=int(cfg.N),
+        seeds_excluded=int(np.sum(req_a > cfg.N)),
+        seeds_excluded_fraction=float(np.mean(req_a > cfg.N)),
+        packing_sizes=ps,
+        N_required=reqs,
+    )
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", type=int, default=5)
@@ -349,6 +396,22 @@ def main():
     for k, v in geometric_surplus(base).items():
         print(f"    {k:28s} {v:12.3f}")
     payload["surplus"] = geometric_surplus(base)
+
+    print()
+    print("=" * 74)
+    print("PACKING BOUND OVER RANDOM SENSOR DRAWS  (the sensor requirement)")
+    print("=" * 74)
+    ps = packing_survey(base, seeds=30)
+    payload["packing_survey"] = ps
+    print(f"  packing number P(A, R_cov)     mean {ps['packing_size_mean']:.2f}, "
+          f"range {ps['packing_size_min']}..{ps['packing_size_max']}")
+    print(f"  => N >= K * P                  mean {ps['N_required_mean']:.2f}, "
+          f"range {ps['N_required_min']}..{ps['N_required_max']}")
+    print(f"  => draws excluded at N = {base.N}       {ps['seeds_excluded']} "
+          f"of {ps['seeds']} ({100*ps['seeds_excluded_fraction']:.0f}%)")
+    print("  (the corner certificate applies to the REGION, not to a random")
+    print("   sensor draw; see the report for the two requirements)")
+    print()
 
     print()
     print("=" * 74)
