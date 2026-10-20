@@ -234,15 +234,39 @@ python analysis/assemble_results.py   # assemble + compile the Results section
 python tests/run_tests.py         # 100 tests
 ```
 
-## RUNNING JOBS (20 Oct, 12:55)
-- `base_stage.log`    -- base comparison, 5 training seeds x 30 episodes
-- `abl_stage.log`     -- the component ablation (queued behind the base stage)
-- `learned_stage.log` -- the two learned baselines (queued)
-- `scen_stage.log`    -- the scenario matrix (queued)
-- `ab_credit.log`     -- the credit-assignment A/B (running in parallel)
-- **STILL TO RUN:** the energy-management A/B/C stage -- the label scheme
-  changed, so the old artefact cannot be quoted.  3 arms x 1 seed x 30
-  episodes, about 25 minutes.
+## RUNNING JOBS (20 Oct, 19:28) -- machine restarting
+Two experiment stages are running and each writes its artefact as soon as
+it completes, so a restart loses at most the unfinished runs:
+
+- `run_all.py --stage learned` (pid 19740) -> `results_learned_baselines.csv`
+  Two methods x 3 seeds x 20 episodes.  The Independent DQN arm finished
+  (CK 0.271); the masked-PPO arm and two more seeds remain.
+- `run_all.py --stage scen` (pid 16664) -> `results_scenarios.csv`
+  12 training episodes plus 36 scenario variants x 2 controllers.
+
+Estimated remaining: **about 50 minutes**, i.e. both should be finished by
+about 20:20.
+
+### AFTER THE RESTART
+1. `cd Project1/ml_impl`
+2. `python run_all.py --stage learned` and `python run_all.py --stage scen`
+   (both are idempotent: they overwrite their own CSV, so re-running is
+   safe; if the CSV already exists from before the restart, check its
+   timestamp and keep it.)
+3. `python analysis/ab_energy_management.py --episodes 25 --seeds 1
+   --eval-seeds 5` -- the energy experiment now has a fourth arm (the
+   previous energy rule) and must be re-run on the current code.
+4. `python analysis/ablation_extra.py` -- the one extra ablation variant
+   (no coverage map), which the ablation table needs.
+5. `python analysis/ab_credit.py --episodes 30 --seeds 2 --eval-seeds 5`
+   -- the credit-assignment A/B, stale (it predates the energy-rule fix).
+6. `python analysis/ab_map_resolution.py --episodes 20 --seeds 2
+   --eval-seeds 5 --grids 0,4,8` -- the map-resolution sweep, stale.
+7. `python analysis/assemble_results.py` -- assembles and compiles the
+   Results section.  It aborts if any prose token is unfilled, so a missing
+   artefact is a hard error rather than a broken paper.
+8. Final checks: 0 LaTeX errors, 0 overfull boxes, 0 undefined refs;
+   `python analysis/claim_audit.py` with 0 failures; 106 tests; commit.
 
 ## Assembling the paper
 1. Wait for every artefact: results_main.csv, results_ablation.csv,
