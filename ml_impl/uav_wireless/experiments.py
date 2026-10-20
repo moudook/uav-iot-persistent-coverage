@@ -50,20 +50,24 @@ def base_config(**overrides) -> SimConfig:
         The pack size and charge rate of the report's parameter table; the
         episode length is what changed.
 
-    use_agent_id, map_grid = 0, use_pad_bearing
+    use_agent_id, map_grid = 4, use_pad_bearing
         The observation must identify the agent for a shared policy to
-        specialise, and must give the direction of the charging pad.  The
-        broadcast coverage-map summary is OFF because it was measured to be
-        harmful at every resolution tested (G=4: CK 0.604, G=8: CK 0.589,
-        against 0.690 without it): a location without an assignment is not
-        actionable, and the policy chases the moving deficit.
+        specialise, must carry a summary of where the coverage deficit is
+        (the reactive heuristic is given the EXACT deficit set, so the
+        comparison is only like-for-like if the learned policy has a
+        broadcast summary of it too), and must give the direction of the
+        charging pad.  The map summary is MEASURED to hurt the learned
+        controller at this budget -- the policy follows the deficit, because
+        a location without an assignment is not actionable -- and the
+        measurement is reported in the results, together with the variant
+        that omits it.
     """
     cfg = SimConfig(
         N=8, K=2, R_cov=35.0, M=20, episode_len=2000, seed=0,
         B_max=30_000.0, charge_rate=0.0002,
         lam_B=2.0,
         start_clustered=True,
-        use_agent_id=True, map_grid=0, use_pad_bearing=True,
+        use_agent_id=True, map_grid=4, use_pad_bearing=True,
     )
     for k, v in overrides.items():
         setattr(cfg, k, v)

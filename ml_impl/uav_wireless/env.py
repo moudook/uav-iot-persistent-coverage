@@ -216,6 +216,7 @@ class UAVIoTEnv:
         self.stranded = 0           # UAVs that ran out of energy away from a pad
         self.reserve_activations = 0
         self.projection_revisions = 0   # moves reverted by the joint projection
+        self.unexecuted_actions = 0    # sampled actions that were not executed
 
         self.ep = self.metrics()
         self._under_streak = 0
@@ -842,6 +843,12 @@ class UAVIoTEnv:
         # mask is not recomputed per action.
         masks = self.action_masks()
         old_p = self.p.copy()
+        masked_actions = 0
+        for i in self._active_idx():
+            a = int(actions[i])
+            if a in (A_PX, A_NX, A_PY, A_NY) and not masks[i][a]:
+                # the policy asked for a move the safety filter rejects
+                masked_actions += 1
         for i in self._active_idx():
             a = int(actions[i])
             if a in (A_PX, A_NX, A_PY, A_NY):
@@ -884,6 +891,13 @@ class UAVIoTEnv:
             if moved:
                 self.projection_revisions += self._project_connected(old_p,
                                                                      moved)
+        # the number of sampled actions that were NOT executed: either the
+        # filter rejected them, or the joint projection reverted them.  The
+        # agent is not told, so the policy gradient is computed for actions
+        # that were not taken, and this count is the size of that gap.
+        reverted = sum(1 for i in self._active_idx()
+                       if not np.allclose(self.p[i], old_p[i]))
+        self.unexecuted_actions += masked_actions + max(0, len(moved) - reverted)
 
         # --- 2. failure injection --------------------------------------
         if self.failure_t >= 0 and self.t == self.failure_t:
@@ -1121,6 +1135,7 @@ class UAVIoTEnv:
         m["return_events"] = self.return_events
         m["stranded"] = self.stranded
         m["projection_revisions"] = self.projection_revisions
+        m["unexecuted_actions"] = self.unexecuted_actions
         # fraction of the swarm currently in the return-to-charge state
         m["returning"] += float(np.mean(self.mode[self._active_idx()] == 1)) \
             if len(self._active_idx()) else 0.0
@@ -1138,7 +1153,7 @@ class UAVIoTEnv:
             service_cont=0.0, crit=0.0, energy=0.0, distance=0.0,
             min_batt=float("inf"), steps=0, denied=0, reserve_activations=0,
             return_events=0, stranded=0, returning=0.0,
-            projection_revisions=0,
+            projection_revisions=0, unexecuted_actions=0,
             # Non-degenerate metrics (Deep Research recommendation):
             # time-averaged coverage deficit and worst-case refresh streak.
             cov_integral=0.0, max_under_streak=0,
@@ -1164,6 +1179,7 @@ class UAVIoTEnv:
             Stranded=self.ep["stranded"],
             Returning=self.ep["returning"] / s,
             ProjectionRevisions=self.ep["projection_revisions"],
+            UnexecutedActions=self.ep["unexecuted_actions"],
             # Non-degenerate metrics (Deep Research recommendation):
             # CovIntegral = time-averaged coverage deficit (0 = perfect coverage)
             # MaxRefresh  = longest run of steps with any under-covered sensor

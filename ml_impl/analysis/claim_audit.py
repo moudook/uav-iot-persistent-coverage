@@ -158,6 +158,51 @@ def main():
           "the corner certificate is a statement about the REGION and does "
           "not transfer to a random sensor draw; the report says so.")
 
+    # --- C7: the safety filter and the achievability construction ------
+    from analysis.mask_admissibility import (graph_properties,
+                                             check_constructions,
+                                             check_connectivity_cause)
+    import io
+    import contextlib
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        check_constructions()
+        check_connectivity_cause()
+    out = buf.getvalue()
+
+    # the paper's own achievability construction must be admissible
+    blk = out.split("paper's construction (2 layers)")[1].split("8-node ring")[0]
+    admissible = "-> admissible" in blk
+    check("C7a", "the achievability construction is admissible under the "
+                 "simulator's own safety filter (so the ceiling is reachable)",
+          admissible,
+          "the 4K-disc construction is connected, has no articulation point "
+          "and has eccentricity 3, within the H = 3 rule",
+          "admissible",
+          "an achievability ceiling that the safety filter forbids would "
+          "not be comparable with what a policy can achieve.")
+
+    check("C7b", "the safety filter does not leak: the graph is connected at "
+                 "every step in which the active set is unchanged",
+          "disconnected with every UAV still active      : 0" in out
+          or "the safety filter never leaks" in out,
+          "0 disconnections with every UAV active over 2000 steps driven by a "
+          "uniformly random policy",
+          "0",
+          "a connectivity availability below 1.000 in the results therefore "
+          "coincides with UAVs LEAVING the active set (a failure, or a pack "
+          "that empties away from a pad), not with the filter failing.")
+
+    check("C7c", "the H-hop rule excludes a covering configuration the "
+                 "paper's certificate admits (the 8-node ring)",
+          "NOT ADMISSIBLE under the H=3 rule" in out,
+          "the 8-node ring is connected and articulation-free but has "
+          "eccentricity 4 > H = 3",
+          "reported",
+          "the safety filter shrinks the reachable configuration set; a "
+          "controller that needs to move into a rejected family is stuck. "
+          "Reported as a property of the filter, not of the task.")
+
     # --- C3: coverage radius consistent with altitude -------------------
     # A camera with full horizontal FOV theta at altitude h covers a ground
     # strip of full width 2*h*tan(theta/2), so the half-width (the radius)

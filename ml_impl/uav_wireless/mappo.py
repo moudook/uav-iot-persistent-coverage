@@ -99,6 +99,10 @@ class MAPPO:
         # distribution; the value is un-normalised at every point of use.
         self.value_norm = value_norm
         self.ret_ema_beta = 0.99
+        # floor on the standard deviation of the returns, so that a policy
+        # with nearly constant returns cannot drive the normalisation to
+        # zero and collapse the advantage
+        self.ret_std_floor = 1.0
         self._ret_mean = 0.0
         self._ret_std = 1.0
 
@@ -194,7 +198,15 @@ class MAPPO:
             with torch.no_grad():
                 b = self.ret_ema_beta
                 self._ret_mean = (1 - b) * self._ret_mean + b * float(ret_c.mean())
-                self._ret_std = (1 - b) * self._ret_std + b * float(ret_c.std())
+                sd = float(ret_c.std())
+                # The standard deviation of the returns is FLOORED.  Without a
+                # floor, a policy whose returns become nearly constant drives
+                # sigma to zero, and the normalised target (R - mu)/sigma then
+                # explodes; the advantage collapses to zero and the policy
+                # gradient vanishes.  That failure mode is self-reinforcing,
+                # and it is a plausible cause of a policy that freezes.
+                self._ret_std = max((1 - b) * self._ret_std + b * sd,
+                                    self.ret_std_floor)
             target_c = (ret_c - self._ret_mean) / (self._ret_std + 1e-8)
             critic_loss = ((new_val - target_c) ** 2).mean()
             # The value-clipping auxiliary term compares the new prediction

@@ -48,6 +48,30 @@
     "note": "the corner certificate is a statement about the REGION and does not transfer to a random sensor draw; the report says so."
   },
   {
+    "id": "C7a",
+    "claim": "the achievability construction is admissible under the simulator's own safety filter (so the ceiling is reachable)",
+    "status": "PASS",
+    "measured": "the 4K-disc construction is connected, has no articulation point and has eccentricity 3, within the H = 3 rule",
+    "expected": "admissible",
+    "note": "an achievability ceiling that the safety filter forbids would not be comparable with what a policy can achieve."
+  },
+  {
+    "id": "C7b",
+    "claim": "the safety filter does not leak: the graph is connected at every step in which the active set is unchanged",
+    "status": "PASS",
+    "measured": "0 disconnections with every UAV active over 2000 steps driven by a uniformly random policy",
+    "expected": "0",
+    "note": "a connectivity availability below 1.000 in the results therefore coincides with UAVs LEAVING the active set (a failure, or a pack that empties away from a pad), not with the filter failing."
+  },
+  {
+    "id": "C7c",
+    "claim": "the H-hop rule excludes a covering configuration the paper's certificate admits (the 8-node ring)",
+    "status": "PASS",
+    "measured": "the 8-node ring is connected and articulation-free but has eccentricity 4 > H = 3",
+    "expected": "reported",
+    "note": "the safety filter shrinks the reachable configuration set; a controller that needs to move into a rejected family is stuck. Reported as a property of the filter, not of the task."
+  },
+  {
     "id": "C3a",
     "claim": "z0=50 m with 74 deg FOV yields footprint half-width ~37 m",
     "status": "PASS",

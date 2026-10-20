@@ -59,7 +59,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \begin{abstract}
 UAV swarms can provide temporary wireless coverage for Internet-of-Things (IoT) deployments in areas where fixed infrastructure is unavailable, damaged, or insufficient. Persistent operation is considerably harder than one-shot deployment because coverage, inter-UAV connectivity, battery depletion, limited charging resources, and UAV failures are tightly coupled. This paper formulates the problem of maintaining at least $K$ UAVs over every ground sensor while preserving a connected swarm and respecting finite energy and safety constraints, and models the resulting decision process as a cooperative Decentralized Partially Observable Markov Decision Process (Dec-POMDP). We argue that the evaluation methodology is itself the unsolved part of this problem: a coverage ratio reported without an achievability reference cannot distinguish a strong controller from an infeasible configuration, and the widely used service-continuity metric is identically zero whenever the configuration is infeasible. We therefore introduce a \emph{feasibility-certified evaluation framework} that (i) derives a rigorous lower bound on the number of UAVs required for $K$-coverage of a bounded region, (ii) supplies a teleporting placement oracle as an achievability ceiling against which any policy is normalised, and (iii) replaces the degenerate joint-constraint metric with non-degenerate time-averaged and refresh-time metrics. The bound is applied to a published configuration and shown to be provably infeasible for the region requirement and for a measured minority of random sensor layouts, which also demonstrates that the conventional area-surplus criterion certifies nothing.
 
-On the corrected configuration the framework is paired with a Multi-Agent Proximal Policy Optimization controller under centralized training and decentralized execution, with parameter-shared actors, an explicit $H$-step connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration, and PHY-derived links in place of abstract coverage discs. The framework's value is not only in what it certifies but in what it exposes. Applied to a controlled experimental setup, it shows that a hand-designed reactive heuristic is competitive with parameter-shared CTDE MAPPO on this task, and controlled arms isolate the reason: the limiting factor is the credit assignment of a shared team reward, while the content of the observation and the energy model are each tested and rejected as explanations and the size of the training budget is bounded by a convergence measurement rather than eliminated. Every reported quantity is recomputed by an automated claim audit (25 items, none failing), and the physical-layer model is shown to be identical, to within $0.012$~dB, to the path-loss model of an independent standards-faithful network simulator; a transmit-power negative control is reported that shows why only the algebraic equivalence is claimed, and not a runtime cross-validation.
+On the corrected configuration the framework is paired with a Multi-Agent Proximal Policy Optimization controller under centralized training and decentralized execution, with parameter-shared actors, an explicit $H$-step connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration, and PHY-derived links in place of abstract coverage discs. The framework's value is not only in what it certifies but in what it exposes. Applied to a controlled experimental setup, it shows that a hand-designed reactive heuristic is competitive with parameter-shared CTDE MAPPO on this task, and controlled arms isolate the reason: the limiting factor is the credit assignment of a shared team reward, while the content of the observation and the energy model are each tested and rejected as explanations and the size of the training budget is bounded by a convergence measurement rather than eliminated. Every reported quantity is recomputed by an automated claim audit (28 items, none failing), and the physical-layer model is shown to be identical, to within $0.012$~dB, to the path-loss model of an independent standards-faithful network simulator; a transmit-power negative control is reported that shows why only the algebraic equivalence is claimed, and not a runtime cross-validation.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -534,7 +534,17 @@ claim are worth stating.  The oracle is an upper bound on $C_K$ and \emph{not}
 on the service-continuity metric, which additionally requires the
 requirement to hold at every instant of a kinematically constrained
 trajectory; and it does not certify that a feasible trajectory achieving the
-certified coverage exists.  At the corrected configuration the value is
+certified coverage exists.  That last point is checked rather than
+assumed: the construction of \eqref{eq:regionbound} is admissible under
+the simulator's own safety filter --- its communication graph is connected,
+it has no articulation point, and its eccentricity is $3$, within the
+$H$-hop rule --- so the certified configuration is reachable by a policy
+and the ceiling is comparable with what a policy can achieve.  The
+normalisation by the oracle is, at this configuration, the identity, since
+the ceiling is $1.000$ for every sensor layout; its information is that the
+task is coverable at all with $N=8$, and the informative ceiling for a
+comparison of controllers is the constrained one, which we do not
+compute here.  At the corrected configuration the value is
 $C_K=1.000$ and it is attained for \emph{every} sensor layout, because the
 construction of \eqref{eq:regionbound} covers the whole region, so the
 ceiling is deterministic rather than a random variable over layouts.
@@ -935,11 +945,28 @@ the same learner with the advantage made per-agent, and nothing else
 changed.
 
 \subsection{Action Feasibility Mask}
-Before the sampled action is executed, the simulator evaluates the predicted next position and applies the following checks: workspace bounds, maximum speed, minimum UAV separation, charge validity, and connectivity-preservation constraints. If a candidate movement would disconnect the communication graph, it is masked in normal operation. During an active recovery event, the connectivity rule remains a hard constraint unless the simulator enters a predefined recovery mode in which temporary reconnection is required by the recovery objective.
+Before the sampled action is executed, the simulator evaluates the predicted next position and applies the following checks: workspace bounds, maximum speed, minimum UAV separation, charge validity, and connectivity-preservation constraints. If a candidate movement would disconnect the communication graph, it is masked in normal operation.  The $H$-step rule is a statement about the mover's \emph{eccentricity}, not about robustness: it prevents a UAV from drifting to the end of a long chain, and it does not by itself prevent articulation points, which the separate articulation test forbids.  A rule expressed as a hop radius therefore restricts the topology more than it protects it, as the ring example above shows. During an active recovery event, the connectivity rule remains a hard constraint unless the simulator enters a predefined recovery mode in which temporary reconnection is required by the recovery objective.
 
 This separation between policy learning and hard feasibility is important. The neural network learns how to trade off several feasible actions, while the safety layer prevents the network from selecting actions that violate non-negotiable physical constraints.
 
-The masking is applied at the logit level, before the softmax, so that the policy that is sampled from, the importance ratio that is computed against, and the entropy bonus that is regularised are all the same masked distribution. This is the mechanism that Huang and Onta~$n$~\cite{huang2022} show to correspond to a valid policy-gradient update rather than a biased surrogate: masking is implemented as a state-dependent differentiable transformation of the action-probability distribution, which is exactly what setting the masked logits to $-\infty$ before the softmax does. We note the limit of that result, which was stated explicitly in the same work and is repeated in the UAV action-masking literature~\cite{rizvi2025}: the validity argument is formulated for a single policy, and extending it to a centralized critic with heterogeneous per-agent masks requires the critic's training distribution to be consistent with the induced joint-action support. We therefore apply the identical mask to the rollout distribution, the stored log-probabilities and the update, and we verify this by construction in the test suite rather than by assumption.
+The masking is applied at the logit level, before the softmax, so that the policy that is sampled from, the importance ratio that is computed against, and the entropy bonus that is regularised are all the same masked distribution.
+
+\paragraph{The filter does not leak, but it does restrict.} Two properties of the
+filter are measured rather than assumed.  First, the graph is connected at
+every step in which the active set is unchanged: over 2000 steps driven by a
+uniformly random policy, the graph was disconnected on no step
+(\texttt{analysis/mask\_admissibility.py}).  A connectivity availability
+below $1.000$ in the results therefore coincides with UAVs \emph{leaving}
+the active set --- a failure, or a pack that empties away from a charging
+pad --- and not with the filter failing, because a removed UAV takes its
+share of the coverage and of the graph with it.  Second, the filter
+excludes configurations that a covering argument would admit: the
+$8$-node ring is connected, has no articulation point, and is a valid
+covering family, but its eccentricity is $4$, so the $H=3$ rule rejects
+every move that would preserve it.  The safety filter thus shrinks the
+reachable configuration set, and a controller that needs to move into a
+rejected family is stuck; we report this as a property of the filter and
+not as a property of the task. This is the mechanism that Huang and Onta~$n$~\cite{huang2022} show to correspond to a valid policy-gradient update rather than a biased surrogate: masking is implemented as a state-dependent differentiable transformation of the action-probability distribution, which is exactly what setting the masked logits to $-\infty$ before the softmax does. We note the limit of that result, which was stated explicitly in the same work and is repeated in the UAV action-masking literature~\cite{rizvi2025}: the validity argument is formulated for a single policy, and extending it to a centralized critic with heterogeneous per-agent masks requires the critic's training distribution to be consistent with the induced joint-action support. We therefore apply the identical mask to the rollout distribution, the stored log-probabilities and the update, and we verify this by construction in the test suite rather than by assumption.
 
 \subsection{Failure-Aware Execution}
 When a failure event is detected, the environment removes the failed UAV from the active graph, activates the reserve UAV if the reserve is available, and updates the local observations. The reserve UAV uses the same shared actor after insertion into the mission. The other UAVs also re-evaluate their local bridge-risk and coverage information. No prediction of the failure event is required; the controller reacts to the observed state change.
@@ -1204,7 +1231,7 @@ overclaimed.
 
 Every quantitative claim in this paper that is checkable is recomputed by an
 automated audit from the same primitives the simulator uses
-(\texttt{analysis/claim\_audit.py}). Of 25 audited items, 21 are verified
+(\texttt{analysis/claim\_audit.py}). Of 28 audited items, 24 are verified
 exactly, four are recorded for transparency (battery-pack size, the
 power ratio, the charge C-rate, and the density of the inter-UAV graph), and
 none fails. Two findings of the audit are worth stating explicitly.

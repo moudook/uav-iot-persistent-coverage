@@ -144,7 +144,8 @@ def main():
     episodes = 6 if quick else 30
     train_seeds = 2 if quick else 5
     eval_seeds = 2 if quick else 5
-    abl_episodes = 3 if quick else 15
+    abl_episodes = 3 if quick else 12
+    stress_episodes = 2 if quick else 8
     obs_seeds = 2 if quick else 2
 
     t0 = time.time()
@@ -183,7 +184,7 @@ def main():
                      episodes=abl_episodes)
         print()
         run_ablation(cfg, "results_ablation_stress.csv", stress=True,
-                     episodes=abl_episodes)
+                     episodes=stress_episodes)
         print()
 
     if args.stage in ("learned", "all"):
