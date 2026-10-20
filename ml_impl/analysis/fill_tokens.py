@@ -990,6 +990,33 @@ def build_tokens():
                 f"which we report rather than explain away")
 
     # ------------------------------------------------------------------
+    # the plasticity probe of the trained actor
+    # ------------------------------------------------------------------
+    dor = load_json("dormancy.json")
+    if dor:
+        silent_vals, dormant_any = [], 0
+        for r in dor:
+            lay = str(r.get("layer", "L0")).upper()
+            for tau, tag in (("0.001", "T001"), ("0.01", "T01"),
+                             ("0.05", "T05"), ("0.1", "T1")):
+                tok[f"DORM_{lay}_{tag}_DORMANT"] = f(
+                    r.get(f"dormant_frac_{tau}", 0.0), 3)
+                tok[f"DORM_{lay}_{tag}_SILENT"] = f(
+                    r.get(f"silent_frac_{tau}", 0.0), 3)
+                tok[f"DORM_{lay}_{tag}_DEAD"] = f(
+                    r.get(f"dead_frac_{tau}", 0.0), 3)
+                if tau in ("0.001", "0.01", "0.05", "0.1"):
+                    silent_vals.append(float(r.get(f"silent_frac_{tau}", 0.0)))
+                    dormant_any = max(dormant_any,
+                                      float(r.get(f"dormant_frac_{tau}", 0.0)))
+            tok[f"DORM_{lay}_SOME"] = str(
+                r.get("neurons_dormant_for_some_agent_only", 0))
+        if silent_vals:
+            tok["DORM_SILENT_MIN"] = f"{100 * min(silent_vals):.0f}"
+            tok["DORM_SILENT_MAX"] = f"{100 * max(silent_vals):.0f}"
+        tok["DORM_DORMANT_MAX"] = f"{dormant_any:.3f}"
+
+    # ------------------------------------------------------------------
     # the numbers the paper quotes about ITSELF
     # ------------------------------------------------------------------
     # the claim audit's own counts, so that the paper cannot claim a

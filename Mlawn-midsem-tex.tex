@@ -1976,12 +1976,13 @@ mean absolute gradient does, and dead when it is both.
 
 Table~\ref{tab:dormancy} reports the result for the trained policy. The
 actor has \textbf{no forward-dormant neurons} in either hidden layer at any
-threshold from $10^{-3}$ to $10^{-1}$ of the layer mean, and consequently no
+threshold from $10^{-3}$ to $10^{-1}$ of the layer mean (the largest
+dormant fraction measured is $@@DORM_DORMANT_MAX@@$), and consequently no
 dead neurons, in contrast to the 40--45\% dormancy reported for vanilla
-MAPPO. Roughly a fifth to a third of first-layer neurons are gradient-silent,
-which is the expected and benign consequence of a low-dimensional observation
-feeding a 128-unit layer, and no neuron is dormant for one agent while alive
-for another. The probe is not decorative: a test kills half the neurons of a
+MAPPO. Between $@@DORM_SILENT_MIN@@\%$ and $@@DORM_SILENT_MAX@@\%$ of the
+neurons are gradient-silent, which is the expected and benign consequence
+of a low-dimensional observation feeding a 128-unit layer, and no neuron is
+dormant for one agent while alive for another. The probe is not decorative: a test kills half the neurons of a
 hidden layer by zeroing their incoming weights and asserts that the probe
 reports them as dormant, and a second test asserts that a healthy network is
 not reported as dead.
@@ -1998,10 +1999,10 @@ per-agent gradient; ``dead'' is both.}
 \toprule
 Layer & $\tau$ & Dormant & Silent & Dead & Dormant for some agent only \\
 \midrule
-Hidden 1 & $10^{-3}$ & 0.000 & 0.203 & 0.000 & 0 \\
-Hidden 1 & $10^{-1}$ & 0.000 & 0.305 & 0.000 & 0 \\
-Hidden 2 & $10^{-3}$ & 0.000 & 0.156 & 0.000 & 0 \\
-Hidden 2 & $10^{-1}$ & 0.000 & 0.219 & 0.000 & 0 \\
+Hidden 1 & $10^{-3}$ & @@DORM_L0_T001_DORMANT@@ & @@DORM_L0_T001_SILENT@@ & @@DORM_L0_T001_DEAD@@ & @@DORM_L0_SOME@@ \\
+Hidden 1 & $10^{-1}$ & @@DORM_L0_T1_DORMANT@@ & @@DORM_L0_T1_SILENT@@ & @@DORM_L0_T1_DEAD@@ & @@DORM_L0_SOME@@ \\
+Hidden 2 & $10^{-3}$ & @@DORM_L1_T001_DORMANT@@ & @@DORM_L1_T001_SILENT@@ & @@DORM_L1_T001_DEAD@@ & @@DORM_L1_SOME@@ \\
+Hidden 2 & $10^{-1}$ & @@DORM_L1_T1_DORMANT@@ & @@DORM_L1_T1_SILENT@@ & @@DORM_L1_T1_DEAD@@ & @@DORM_L1_SOME@@ \\
 \bottomrule
 \end{tabular}
 \end{table}
