@@ -29,14 +29,15 @@ TEX = os.path.join(PROJ, "Mlawn-midsem-tex.tex")
 TABLES = os.path.join(HERE, "tables.tex")
 TEXT = os.path.join(HERE, "results_text_filled.tex")
 
-MARKERS = ["%% MAIN", "%% OBS", "%% ENERGY", "%% ABL", "%% SCEN"]
+MARKERS = ["%% MAIN", "%% OBS", "%% ENERGY", "%% ABL", "%% CREDIT",
+           "%% SCEN"]
 
 
 def read_blocks(path):
     if not os.path.exists(path):
         return {m.strip(): "" for m in MARKERS}
     raw = open(path, encoding="utf-8").read()
-    parts = re.split(r"^%%\s*(MAIN|OBS|ENERGY|ABL|SCEN)\s*$", raw,
+    parts = re.split(r"^%%\s*(MAIN|OBS|ENERGY|ABL|CREDIT|SCEN)\s*$", raw,
                      flags=re.M)
     blocks = {}
     for i in range(1, len(parts), 2):
@@ -146,6 +147,35 @@ Table~\\ref{{tab:reward}}.
 {tab('tab:results_abl')}
 
 {blocks['%% ABL']}
+
+\\subsection{{The credit assignment, and the remedy}}
+\\label{{sec:results_credit}}
+
+The diagnosis of Sections~\\ref{{sec:results_obs}} and
+\\ref{{sec:results_energy}} points at one mechanism: with a shared team
+reward every agent receives the same advantage, so the gradient cannot
+distinguish an agent whose action helped from one whose action was
+irrelevant.  The literature calls this the credit-assignment problem, and
+the remedies are known: the counterfactual advantage of COMA, the
+difference-based estimator of DAE, the per-agent value iteration of GPAE, and
+the advantage decomposition of HAPPO/HATRPO~\\cite{{foerster2018,li2022,kim2026,kuba2022}}.
+None of them has been evaluated on a persistent-coverage task, and the
+question of whether the credit assignment is what limits a
+parameter-shared controller in that setting appears to be open.
+
+Table~\\ref{{tab:results_credit}} is the cheapest controlled test of it, and
+it is deliberately minimal: the two arms differ in exactly one respect, the
+learner that produces the advantage.  Arm~A is the proposed method, a
+parameter-shared actor with a centralised critic, so the advantage is a
+broadcast team signal.  Arm~B keeps the same simulator, the same
+observation, the same action mask, the same team reward and the same
+episode budget, and replaces the learner with a per-agent actor and a
+per-agent local critic, so that the advantage is the agent's own.  Nothing
+else changes.
+
+{tab('tab:results_credit')}
+
+{blocks['%% CREDIT']}
 
 {tab('tab:results_ablstress')}
 

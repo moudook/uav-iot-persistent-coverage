@@ -145,7 +145,20 @@ def main():
             d = float(full["CK"]) - float(van["CK"])
             tok["ABL_DELTA"] = f"{d:+.3f}"
     tok.setdefault("ABL_TEXT", "")
+    tok.setdefault("CREDIT_TEXT", "")
     tok.setdefault("SCEN_TEXT", "")
+
+    cr = load_json("ab_credit.json")
+    if len(cr) >= 2:
+        a, b = cr[0], cr[1]
+        d = b["CK"] - a["CK"]
+        tok["CREDIT_DELTA"] = f"{d:+.3f}"
+        tok["CREDIT_SHARE"] = f"{100*d/max(a['CK'], 1e-9):.0f}\\%"
+        react = main_rows.get("Reactive")
+        if react:
+            gap = float(react["CK"]) - a["CK"]
+            tok["CREDIT_OF_GAP"] = (f"{100*abs(d)/gap:.0f}\\%" if abs(gap) > 1e-9
+                                     else "0\\%")
 
     tmpl = os.path.join(HERE, "results_text.tex")
     out = os.path.join(HERE, "results_text_filled.tex")

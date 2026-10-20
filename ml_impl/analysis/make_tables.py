@@ -247,6 +247,24 @@ def main():
                 f"{fmt(r.get('SC'))} & {fmt(r.get('mean_spread_m'), 1)} \\\\")
         lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
         parts.append("\n".join(lines))
+    cr = load_json("ab_credit.json")
+    if cr:
+        lines = [r"\begin{table}[t]",
+                 r"\caption{The credit-assignment experiment.  The two arms "
+                 r"differ in exactly one respect: whether the advantage the "
+                 r"gradient sees is the agent's own or a broadcast team "
+                 r"signal.}",
+                 r"\label{tab:results_credit}", r"\centering", r"\scriptsize",
+                 r"\begin{tabular}{@{}lccccc@{}}", r"\toprule",
+                 r"Learner & CK & AG & SC & CovIntegral & Distinct \\",
+                 r"\midrule"]
+        for r in cr:
+            name = r["arm"].split(":")[0]
+            lines.append(
+                f"{name} & {fmt(r.get('CK'))} & {fmt(r.get('AG'))} & "
+                f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & -- \\\\")
+        lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+        parts.append("\n".join(lines))
     text = "\n\n".join(parts)
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(text + "\n")
