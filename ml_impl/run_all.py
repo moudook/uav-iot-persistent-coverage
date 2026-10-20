@@ -208,7 +208,7 @@ def main():
     if args.stage in ("scen", "all"):
         print("[6/6] scenario matrix ...", flush=True)
         run_scenarios(base_config(), "results_scenarios.csv",
-                      episodes=12)
+                      episodes=8)
         print()
 
     print("=" * 78)
