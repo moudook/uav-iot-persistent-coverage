@@ -27,7 +27,7 @@ PROJ = os.path.dirname(ML)
 
 TEX = os.path.join(PROJ, "Mlawn-midsem-tex.tex")
 TABLES = os.path.join(HERE, "tables.tex")
-TEXT = os.path.join(HERE, "results_text.tex")
+TEXT = os.path.join(HERE, "results_text_filled.tex")
 
 MARKERS = ["%% MAIN", "%% OBS", "%% ENERGY", "%% ABL", "%% SCEN"]
 
@@ -52,11 +52,12 @@ def main():
     ap.add_argument("--no-compile", action="store_true")
     args = ap.parse_args()
 
-    # regenerate the tables
-    r = subprocess.run([sys.executable,
-                        os.path.join(HERE, "make_tables.py")],
-                       capture_output=True, text=True)
-    print(r.stdout.strip() or r.stderr.strip())
+    # regenerate the tables and fill the prose tokens
+    for script in ("make_tables.py", "fill_tokens.py"):
+        r = subprocess.run([sys.executable,
+                            os.path.join(HERE, script)],
+                           capture_output=True, text=True)
+        print(r.stdout.strip() or r.stderr.strip())
     tables = open(TABLES, encoding="utf-8").read()
     blocks = read_blocks(TEXT)
 

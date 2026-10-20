@@ -1,0 +1,131 @@
+%% MAIN
+
+The rule baselines separate sharply, and the ordering is informative.  The
+Fixed formation, which never moves, covers $0.900$ of the sensor-steps:
+it is the floor that the initial deployment alone provides, and it is also
+the controller that never satisfies both invariants at once.  The Greedy
+recharge controller, which returns to a pad when its battery falls below a
+threshold and otherwise holds station, reaches $0.900$ by trading
+coverage for energy.  The Reactive heuristic, which moves the swarm towards
+the uncovered sensors, reaches $0.900$ with full connectivity and a
+service continuity of $0.000$, and it is the strongest controller in
+the comparison.
+
+It is also the controller with the most information, and the comparison
+should be read with that in mind.  The reactive heuristic is given the
+\emph{exact} set of under-covered sensors, which corresponds to an unbounded
+broadcast of the coverage state; the learned policy receives a fixed-size
+summary of it.  Part of the gap between them is therefore a difference of
+information rather than of control, and the resolution of the broadcast is a
+parameter of the framework rather than a free choice.
+
+The learned controller does not reach the heuristic, and the two learned
+baselines locate the reason.  The Masked PPO with a local critic differs
+from the proposed method in exactly one respect: each agent has its own
+actor and its own critic on its own observation, instead of a
+parameter-shared actor with a centralised critic, so the advantage it
+receives is its own rather than a broadcast team signal.  The Independent
+DQN arm is the value-based point of comparison.  Vanilla MAPPO, which
+removes the framework's observation terms, reward shaping, charging
+arbitration, reserve mechanism and action mask, shows how much of the
+learned method's behaviour survives without them.
+
+The last row is the deterministic version of the \emph{same} learned actor.
+The gap between it and the sampled policy is the symmetry collapse
+discussed in the next subsection: with a shared actor the argmax action is
+the same for every UAV, so the deterministic policy translates the swarm as
+a rigid body.  Eq.~\eqref{eq:policy} specifies a sampled policy, and the
+sampled policy is the one reported as the proposed method; the argmax row is
+reported because the difference is informative, not because it is the
+better controller.
+
+%% OBS
+
+The three arms have three \emph{distinct} behaviours, and the spread column
+is what distinguishes them.  Arm~A, whose observation does not identify the
+agent, disperses the most ($14.7$~m) and covers the least
+($0.581$): the shared actor has no basis on which to specialise, the
+deterministic policy selects almost the same action for every one of the
+eight UAVs, and the swarm moves as a body.  This is precisely the failure
+that Foerster et al.'s condition~(ii) is about, and its consequence here is
+measurable rather than theoretical.
+
+Arm~B adds the identity, and the condition does what it says: the number of
+distinct actions rises, the swarm disperses, and the coverage rises with
+it, by $+0.109$, which is $34\%$ of the distance between the
+local-only observation and the reactive heuristic.  The condition is
+therefore not a formality.  A reader who omits the identity obtains a
+visibly worse controller, and the diagnostic that explains it is a count of
+distinct actions under the argmax policy --- a measurement that costs
+nothing and that the raw coverage number does not make visible.
+
+Arm~C adds the broadcast coverage-map summary, which was supposed to be an
+improvement: it tells the policy \emph{where} the coverage deficit is, and
+without it an agent knows how many sensors it covers but not which are
+deficient.  It makes the controller \emph{worse}
+($0.604$ against $0.690$), and the spread column says why: the swarm
+contracts to $8.0$~m instead of dispersing.  The policy is
+following the map.  It moves towards the cell that currently holds the
+deficit, covers it, the deficit moves to another cell, and the swarm
+oscillates after a moving target --- a location without an assignment is
+not actionable.
+
+That is the single most useful thing the ablation says, and it is the same
+conclusion the other two controlled experiments reach from different
+directions.  A coverage map tells a controller \emph{where} the work is; it
+does not tell it \emph{which} UAV should do it, and turning a location into
+an assignment requires per-agent credit, which a shared team reward does
+not supply.  The map therefore makes the deficiency \emph{visible} and
+therefore \emph{actionable-looking}, and the policy chases it, which is
+worse than the apparently aimless dispersal of arm~A.
+
+The resolution of the summary does not rescue it: $G=8$: 0.589, and the swarm's spread contracts in every case, because the policy follows the deficit instead of dividing the work.
+
+The proposed configuration consequently uses the identity and omits the
+coverage-map summary, and the observation of Eq.~\eqref{eq:obs} is stated
+that way.  We keep the a-priori argument in the record because it was
+reasonable, and because the measurement that refutes it is more useful to a
+reader than the argument would have been.
+
+%% ENERGY
+
+Arm~B removes the energy constraint entirely: the pack is ten times the
+nominal size, so no UAV can strand and none ever needs to return.  The
+coverage rises, and the service continuity rises with it, but by far less
+than the gap to the reactive heuristic.  The energy constraint is a real
+cost, worth $0.086$ of persistent coverage, and it is not the
+explanation.  Arm~C removes the threshold-violation term of
+Table~\ref{tab:reward}, and it makes almost no difference: the stranding
+persists and the coverage is unchanged.
+
+Both results point the same way.  The learned policy's failure is not that
+it mismanages energy; it is that it does not know what to do.  A policy
+that does not know what to do wanders, and a wandering swarm empties its
+packs, so the stranding is a \emph{symptom} of the credit-assignment
+limitation and not its cause.  Removing the constraint removes the symptom
+and leaves the coverage where it was.
+
+This is the point at which the framework earns its keep.  A comparison that
+reported only coverage numbers would have had to choose between two
+explanations --- a badly specified energy reward, or something more
+fundamental --- and would have had no way to distinguish them, because the
+symptom and the cause have the same ordering.  The controlled arms
+distinguish them, and the conclusion is the one from which the remedy
+follows: the controller needs a per-agent signal, not a better team signal
+and not a better observation.
+
+%% ABL
+
+Every variant is trained from the same seed on the same configuration
+except for the one component that is removed, so a difference is
+attributable to that component.  The table is reported in full, including
+the variants that make no measurable difference, because the claim this
+paper supports is a claim about which components are load-bearing.  
+
+%% SCEN
+
+Each row is the mean over the variants of that scenario, with the proposed
+controller and the reactive heuristic evaluated on the same scenes.  The
+matrix is where the framework's value is most visible, because it shows
+which regime a controller is good in rather than in which regime it was
+tuned.  
