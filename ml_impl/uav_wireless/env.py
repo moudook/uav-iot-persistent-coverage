@@ -86,6 +86,12 @@ class SimConfig:
     # projection off, the learned policy deploys (coverage 0.898) and the
     # swarm is disconnected 39% of the time.
     use_joint_projection: bool = True
+    # The mask's energy rule.  True (current): a UAV may not depart unless it
+    # retains, after the move, the energy to reach a charging pad plus the
+    # reserve margin.  False (previous): a departure is admitted whenever
+    # E_i - P_move*dt > 0, which allows a UAV to fly until its pack is
+    # empty away from a pad; an exhausted UAV then leaves the active set.
+    strict_energy_mask: bool = True
     mask_horizon: int = 3         # H-step connectivity lookahead in the mask
     # Initial deployment.  False: a centred ring that already covers most of
     # the field (little headroom).  True: a connected cluster in one corner
@@ -566,9 +572,12 @@ class UAVIoTEnv:
             # certainly; the test is therefore one-sided in its favour.
             if ok:
                 e_after = self.E[i] - c.P_move * c.dt
-                pad_new = float(pad_energies[a_dir + 1])
-                reserve = c.E_reserve
-                if e_after < pad_new + reserve and pad_new >= pad_now:
+                if c.strict_energy_mask:
+                    pad_new = float(pad_energies[a_dir + 1])
+                    reserve = c.E_reserve
+                    if e_after < pad_new + reserve and pad_new >= pad_now:
+                        ok = False
+                elif e_after <= 0:
                     ok = False
             # connectivity preservation: block moves that would break the
             # graph NOW *or* leave it fragile. A one-step check alone lets

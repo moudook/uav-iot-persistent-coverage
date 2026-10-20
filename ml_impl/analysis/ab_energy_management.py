@@ -63,6 +63,8 @@ def main():
         ("A: the proposed configuration", dict(lam_B=2.0)),
         ("B: + a pack that cannot run out", dict(lam_B=2.0, B_max=300_000.0)),
         ("C: without the threshold term", dict(lam_B=0.0)),
+        ("D: with the previous energy rule", dict(lam_B=2.0,
+                                                 strict_energy_mask=False)),
     ]
 
     print("=" * 96)

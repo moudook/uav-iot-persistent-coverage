@@ -1462,6 +1462,24 @@ class TestJointProjection:
         assert e.action_mask(0)[A_NX], (
             "a UAV with a full pack was not allowed to depart")
 
+    def test_the_previous_energy_rule_is_available_and_weaker(self):
+        """The switch that reproduces the previous rule must exist, and the
+        previous rule must be the weaker of the two."""
+        from uav_wireless.env import A_NX
+        c = SimConfig(N=2, K=1, M=6, episode_len=50, seed=0,
+                      E_reserve=2000.0, B_max=30_000.0, n_pads=1)
+        e = UAVIoTEnv(c)
+        e.reset()
+        e.p[0] = e.pads[0] + np.array([-8.0, 0.0])
+        # just above the return threshold, so that the new rule blocks the
+        # move away from the pad and the old one does not
+        e.E[0] = e._pad_energy_from(0, e.p[0]) + c.E_reserve - 50.0
+        strict = e.action_mask(0)[A_NX]
+        c.strict_energy_mask = False
+        loose = e.action_mask(0)[A_NX]
+        assert not strict, "the strict rule admitted a departure it should not"
+        assert loose, "the previous rule is not the weaker of the two"
+
 
 # ======================================================================
 # Graph traversal equivalence
