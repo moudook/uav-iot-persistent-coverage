@@ -252,8 +252,28 @@ python tests/run_tests.py         # 100 tests
    analysis/ab_map_resolution.json.
 2. `python analysis/assemble_results.py` -- regenerates the tables, fills
    the prose tokens, replaces the Results section wholesale and compiles.
+   It ABORTS if any token is unfilled, so a missing artefact is a hard
+   error and never a broken paper.
 3. Check: 0 LaTeX errors, 0 overfull boxes, 0 undefined references.
-4. Commit.
+   (The assembler counts LaTeX errors as well as undefined references, so
+   the near-miss table's duplicated closing, which the earlier build hid,
+   cannot come back.)
+4. `python analysis/claim_audit.py` -- must be 0 FAILED, and the item count
+   in the paper must match.
+5. `python tests/run_tests.py` -- 104 tests.
+6. Commit.
+
+## The FINAL CHECKLIST (do these before declaring the work done)
+- [ ] The paper's numbers all come from the artefacts, and the prose tokens
+      are filled by the script rather than typed.
+- [ ] The claim audit passes with 0 failures and its count matches the paper.
+- [ ] No LaTeX errors, no overfull boxes, no undefined references.
+- [ ] The README, the state file and the paper agree on the configuration.
+- [ ] `git status` is clean and everything is committed (never pushed).
+- [ ] The third mathematical audit has been run and its findings addressed.
+- [ ] The scenario matrix, the ablation and the learned baselines are all
+      present, or the paper says plainly that they are not.
+
 
 
 ## Paper state
