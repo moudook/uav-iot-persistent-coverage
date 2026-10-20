@@ -159,10 +159,21 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
     torch.manual_seed(seed)
     env = UAVIoTEnv(cfg)
     if device is None:
-        # the policy network and the critic are small, and the simulator is a
+        # The policy network and the critic are small, and the simulator is a
         # sequential Python loop, so the GPU is used for the network and the
-        # PPO update while the control loop stays on the host
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        # PPO update while the control loop stays on the host.  The device is
+        # only chosen if the GPU actually has room for it: a CUDA allocation
+        # that fails because the HOST is out of memory aborts the run, and
+        # the network is small enough that the CPU is within noise of the
+        # GPU at this scale anyway.
+        device = "cpu"
+        if torch.cuda.is_available():
+            try:
+                free, _total = torch.cuda.mem_get_info()
+                if free > 1_500_000_000:      # 1.5 GB
+                    device = "cuda"
+            except Exception:
+                device = "cpu"
     agent = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim, state_dim=env.state_dim,
                   per_agent_adv_norm=per_agent_adv_norm, ent_coef=ent_coef,
                   value_norm=value_norm, device=device)
