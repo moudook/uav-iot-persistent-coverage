@@ -233,7 +233,7 @@
     "id": "R1",
     "claim": "the evaluation of a sampled policy is a function of (policy, scene) and does not depend on the ambient state of the global RNG",
     "status": "PASS",
-    "measured": "CK=1.0 and Energy=3574.0 and Distance=182.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3574.0 and Distance=182.0 and CovIntegral=0.0",
+    "measured": "CK=1.0 and Energy=3619.0 and Distance=191.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3619.0 and Distance=191.0 and CovIntegral=0.0",
     "expected": "identical",
     "note": "the policy samples, so the sampling stream is seeded from the evaluation seed; every controller therefore sees the same stream on the same scene"
   },
@@ -244,13 +244,5 @@
     "measured": "CK = 0.648 with AG = 1.000, SC = 0.000, and the teleporting oracle reaches CK = 0.990 on the same scenes",
     "expected": "CK >> 0 and SC = 0",
     "note": "the twenty sensors are coverable, so the coverage shortfall is the controller's; the certificate, and not either metric, is what says the REGION is not coverable at N = 5"
-  },
-  {
-    "id": "T1",
-    "claim": "a training run is reproducible from its seed: the seed is set before the networks are constructed, so the initialisation is seeded too",
-    "status": "PASS",
-    "measured": "max |difference| over the trained parameters = 0",
-    "expected": "0 (bitwise identical)",
-    "note": "the seed is set at the start of train_mappo, before the actor and the critic are built, so the initial weights do not depend on the ambient state of the global RNG"
   }
 ]

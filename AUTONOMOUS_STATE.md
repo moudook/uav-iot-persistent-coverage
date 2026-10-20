@@ -325,7 +325,8 @@ python analysis/ab_credit.py --episodes 30 --seeds 2 --eval-seeds 5
 python analysis/ab_map_resolution.py --episodes 20 --seeds 2 --eval-seeds 5 --grids 0,4,8
 python analysis/claim_audit.py      # 29 items, 25 verified, 0 failed, 4 info
 python analysis/assemble_results.py # the tables, the tokens, the Results, the compile
-python tests/run_tests.py           # 111 tests
+python analysis/final_checks.py     # assembly + compile + audit + tests, one command
+python tests/run_tests.py           # 115 tests
 ```
 
 ## Machine notes

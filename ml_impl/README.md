@@ -198,6 +198,7 @@ ml_impl/
 │   ├── make_tables.py            # the CSVs -> the LaTeX tables
 │   ├── fill_tokens.py            # the artefacts -> the prose tokens
 │   ├── assemble_results.py       # tables + tokens + the Results section + the compile
+│   ├── final_checks.py           # assembly + compile + audit + tests, in one command
 │   └── diagnose_gap.py           # separates protocol / sharpness / regime
 ├── tests/
 │   ├── test_physics_and_env.py   # 111 tests

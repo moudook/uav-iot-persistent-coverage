@@ -36,6 +36,22 @@ scene-to-scene variation does not enter this interval, because every
 controller is evaluated on the same scenes and it therefore cancels in the
 difference.
 
+The connectivity invariant deserves a sentence, because the reported
+availability is below $1.000$ and the filter is claimed to guarantee
+connectivity.  The guarantee is about \emph{actions}: the mask evaluates
+the prospective graph for every candidate action, and the joint projection
+restores the previous configuration when a set of individually admissible
+actions would jointly disconnect the swarm.  The step-by-step accounting
+in the artefact tests that claim over the whole evaluation matrix, and it
+holds: of the $1355$ steps at which the graph is disconnected,
+$0$ are attributable to a policy action --- every one of them is attributable to the recovery mechanism and none to a policy action, so the filter's guarantee holds over the actions and the availability below 1.000 is the price of the recovery.
+The recovery mechanism is the other source: when a UAV's pack empties away
+from a pad it is removed from the active set, and the reserve UAV re-seats
+it at a charging pad; if that pad is out of communication range of the
+swarm, the graph is disconnected until the recovered UAV flies back.  The
+availability below $1.000$ is that mechanism's signature, and it is the
+price of the recovery rather than a failure of the filter.
+
 The mission-relevant quantity is the joint invariant, and it separates
 the two controllers far more sharply than the coverage does.  The
 reactive heuristic satisfies the coverage requirement and the connectivity requirement simultaneously in $0.751$ of the
@@ -48,11 +64,11 @@ controllers most sharply, even though we criticise it for a different
 reason elsewhere.
 
 It is worth separating the two sources of variation in the headline
-number, because they behave differently.  Across the @@VAR_N_SEEDS@@
-training runs of the learned controller the coverage varies by $@@VAR_SEED@@$
-(the standard error of the mean is $@@VAR_SEED_SE@@$); across the
-@@VAR_N_SCENES@@ evaluation scenes it varies by $@@VAR_SCENE@@$ (the
-standard error of the mean over the scenes is $@@VAR_SCENE_SE@@$).  The
+number, because they behave differently.  Across the 3
+training runs of the learned controller the coverage varies by $0.050$
+(the standard error of the mean is $0.029$); across the
+5 evaluation scenes it varies by $0.106$ (the
+standard error of the mean over the scenes is $0.047$).  The
 scene component is common to every controller in the comparison, because
 they are all evaluated on the same scenes, and it therefore cancels in
 every difference this paper reports; the seed component does not, and it
@@ -80,7 +96,7 @@ $0.797$ over its 25 episodes, and its mean over
 the first five episodes ($0.663$) is the same as its mean over
 the last five ($0.665$): the curve has flattened.  The best
 single episode, $0.797$, is on a training scene, and the same
-policy scores $@@CURVE_EVAL@@$ on unseen scenes, so the training-scene
+policy scores $0.713$ on unseen scenes, so the training-scene
 figure is not an estimate of the deployed performance.  The budget is
 therefore bounded rather than eliminated: at this configuration the curve
 is flat over the budget we can afford, and we do not claim that a larger
@@ -225,6 +241,17 @@ episode, because the UAVs now come home instead of dying in the field.  The
 coverage is unchanged to within the spread, and that is the honest
 conclusion: the defect was real, the repair was correct, and neither the
 defect nor the repair explains the gap to the reactive heuristic.
+
+It is worth being explicit about what that null is and is not about, since
+a null result is easy to misread.  It is \emph{not} a statement that the
+energy constraint is inactive: the two rules differ by $6.4$
+stranded UAVs per episode and by roughly $513$ return-to-charge
+transitions, so the test is doing substantial work and the swarm's energy
+behaviour differs markedly between them.  It is a statement about the
+effect of that work on the \emph{coverage}, and the effect is small.  A
+null in an arm of this width is also a statement about the resolution of
+the arm and not about the component, and we report that resolution with
+the interval.
 
 That is the sequence the framework is for.  A coverage comparison on its
 own would have reported that the learned controller mismanages energy, and
