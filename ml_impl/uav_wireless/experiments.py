@@ -314,8 +314,47 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
     }
     if only:
         variants = {k: v for k, v in variants.items() if k in only}
+    existing = []
+    if append and os.path.exists(out_csv):
+        with open(out_csv, newline="", encoding="utf-8") as f:
+            existing = list(csv.DictReader(f))
+    # RESUME.  A row that was already measured under THIS protocol is
+    # reused rather than trained again: the ablation takes hours, and an
+    # interrupted run should not throw away the training it has done.  The
+    # protocol is part of the row, so a row measured under a different
+    # budget or a different number of seeds is never reused.
+    stem = os.path.splitext(os.path.basename(out_csv))[0]
+    done = {}
+    jl = os.path.join(analysis, f"{stem}_rows.jsonl")
+    if os.path.exists(jl):
+        for line in open(jl, encoding="utf-8"):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                d = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if (d.get("out_csv") == os.path.basename(out_csv)
+                    and bool(d.get("stress")) == bool(stress)
+                    and int(d.get("episodes", -1)) == int(episodes)
+                    and int(d.get("eval_seeds", -1)) == int(eval_seeds)
+                    and int(d.get("seeds", -1)) == int(seeds)
+                    and d.get("model") in variants):
+                done[d["model"]] = d
     rows = []
     for name, kw in variants.items():
+        if name in done:
+            d = done[name]
+            row = {k: v for k, v in d.items()
+                   if k not in ("out_csv", "stress", "episodes", "eval_seeds",
+                                "seeds", "model", "per_seed_ck")}
+            row["model"] = name
+            rows.append(row)
+            print(f"  {name:18s} reused from a previous run "
+                  f"(CK={row.get('CK', float('nan')):.3f})", flush=True)
+            _write_ablation_csv(out_csv, existing + rows)
+            continue
         per_seed = []
         for s in range(seeds):
             c = copy.deepcopy(base)
@@ -368,26 +407,21 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
         stem = os.path.splitext(os.path.basename(out_csv))[0]
         with open(os.path.join(analysis, f"{stem}_rows.jsonl"), "a",
                   encoding="utf-8") as f:
-            f.write(json.dumps(dict(out_csv=os.path.basename(out_csv),
-                                    stress=stress, per_seed_CK=[
-                                        p["CK"] for p in per_seed],
-                                    **rows[-1])) + "\n")
+            # the payload is built by UPDATE, not by unpacking, so that a
+            # column of the row and a field of the protocol can never
+            # collide
+            payload = dict(rows[-1])
+            payload.update(out_csv=os.path.basename(out_csv),
+                           stress=stress, eval_seeds=int(eval_seeds),
+                           seeds=int(seeds),
+                           per_seed_ck=[float(p["CK"]) for p in per_seed])
+            f.write(json.dumps(payload) + "\n")
+        # and the CSV is rewritten after every row, so that the artefact the
+        # paper is built from is never behind the training
+        _write_ablation_csv(out_csv, existing + rows)
 
-    existing = []
-    if append and os.path.exists(out_csv):
-        with open(out_csv, newline="", encoding="utf-8") as f:
-            existing = list(csv.DictReader(f))
     allrows = existing + rows
-    fields = []
-    for r in allrows:
-        for k in r:
-            if k not in fields:
-                fields.append(k)
-    with open(out_csv, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=fields)
-        w.writeheader()
-        for r in allrows:
-            w.writerow({k: r.get(k, "") for k in fields})
+    _write_ablation_csv(out_csv, allrows)
     # the protocol is written next to the table, so that any row added later
     # (the extra "no-map" variant) is measured under the same budget
     with open(os.path.join(analysis, "ablation_protocol.json"), "w",
@@ -397,6 +431,23 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
                        seeds=int(seeds)), f, indent=2)
     print(f"Saved -> {out_csv}")
     return rows
+
+
+def _write_ablation_csv(out_csv, rows):
+    """Write the ablation CSV, preserving the column order of the rows."""
+    import csv
+    if not rows:
+        return
+    fields = []
+    for r in rows:
+        for k in r:
+            if k not in fields:
+                fields.append(k)
+    with open(out_csv, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fields)
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k, "") for k in fields})
 
 
 def c_episode(cfg):
