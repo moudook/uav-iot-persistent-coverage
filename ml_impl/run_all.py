@@ -294,8 +294,12 @@ def main():
 
     if args.stage in ("scen", "all"):
         print("[6/6] scenario matrix ...", flush=True)
+        # the scenario policies are trained at the BASE comparison's budget,
+        # so that the scenario table and the main table describe the same
+        # learner and a reader is not comparing an 8-episode policy with a
+        # 25-episode one
         run_scenarios(base_config(), "results_scenarios.csv",
-                      episodes=8)
+                      episodes=episodes)
         print()
 
     print("=" * 78)

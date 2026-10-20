@@ -350,7 +350,11 @@ not claim to have implemented or evaluated them here.
 
 Each row is the mean over the variants of that scenario, with the proposed
 controller and the reactive heuristic evaluated on the same scenes.  The
-matrix is where the framework's value is most visible, because it shows
+scenario policies are trained at the base comparison's budget, and one
+policy is trained per distinct $(N, M, \text{pads})$ combination, because
+the networks' input sizes depend on it; the scenarios that vary only the
+geometry of the problem transfer within their combination.  The matrix is
+where the framework's value is most visible, because it shows
 which regime a controller is good in rather than in which regime it was
 tuned.  Counting the scenario variants in which the learned controller is
 ahead, behind or level with the heuristic gives @@SCEN_WINS@@ ahead,
