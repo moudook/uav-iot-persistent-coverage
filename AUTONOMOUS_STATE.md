@@ -164,11 +164,39 @@ python run_all.py                 # the whole matrix (~5 h)
 python run_all.py --stage obs     # observation A/B/C
 python run_all.py --stage base    # base comparison
 python run_all.py --stage abl     # ablations
+python run_all.py --stage learned # the two learned baselines
+python run_all.py --stage energy  # the energy-management A/B/C
 python run_all.py --stage scen    # scenario matrix
 python analysis/claim_audit.py    # every checkable claim
 python analysis/energy_regime.py  # the energy-regime sweep
-python tests/run_tests.py         # 88 tests
+python analysis/ab_credit.py      # the credit-assignment A/B
+python analysis/make_tables.py    # regenerate the results tables
+python analysis/fill_tokens.py    # fill the prose tokens from the artefacts
+python analysis/assemble_results.py   # assemble + compile the Results section
+python tests/run_tests.py         # 100 tests
 ```
+
+## RUNNING JOBS (20 Oct, 12:55)
+- `base_stage.log`    -- base comparison, 5 training seeds x 30 episodes
+- `abl_stage.log`     -- the component ablation (queued behind the base stage)
+- `learned_stage.log` -- the two learned baselines (queued)
+- `scen_stage.log`    -- the scenario matrix (queued)
+- `ab_credit.log`     -- the credit-assignment A/B (running in parallel)
+- **STILL TO RUN:** the energy-management A/B/C stage -- the label scheme
+  changed, so the old artefact cannot be quoted.  3 arms x 1 seed x 30
+  episodes, about 25 minutes.
+
+## Assembling the paper
+1. Wait for every artefact: results_main.csv, results_ablation.csv,
+   results_ablation_stress.csv, results_learned_baselines.csv,
+   results_scenarios.csv, analysis/ab_observation.json,
+   analysis/ab_energy_management.json, analysis/ab_credit.json,
+   analysis/ab_map_resolution.json.
+2. `python analysis/assemble_results.py` -- regenerates the tables, fills
+   the prose tokens, replaces the Results section wholesale and compiles.
+3. Check: 0 LaTeX errors, 0 overfull boxes, 0 undefined references.
+4. Commit.
+
 
 ## Paper state
 - 14 pages, compiles clean, 0 undefined refs.
