@@ -15,6 +15,16 @@ the uncovered sensors, reaches $@@REACT_CK@@$ with full connectivity and a
 service continuity of $@@REACT_SC@@$, and it is the strongest controller in
 the comparison.
 
+The learned controller does not reach the heuristic.  The gap is $@@GAP@@$ of
+persistent coverage; the 95\% interval on it, from the learned
+controller's spread over its @@GAP_N@@ training runs, is $@@GAP_CI@@$.  The
+scene-to-scene variation does not enter this interval, because every
+controller is evaluated on the same scenes and it therefore cancels in the
+difference --- to the extent that the difficulty of a scene enters every
+controller additively and with the same size, which we state as an
+assumption and whose per-scene scores are in the artefact, so that it is
+checkable rather than merely asserted.
+
 It is also the controller with the most information, and the comparison
 should be read with that in mind.  The reactive heuristic is given the
 \emph{exact} set of under-covered sensors, which corresponds to an unbounded
@@ -29,12 +39,7 @@ is no assignment, so UAVs that want the same sensor contend for it --- is
 reported as \emph{Reactive (local assignment)} in the table above.  It
 reaches $@@REACTL_CK@@$ with connectivity availability $@@REACTL_AG@@$ and
 a service continuity of $@@REACTL_SC@@$, against the privileged version's
-$@@REACT_CK@@$, $@@REACT_AG@@$ and $@@REACT_SC@@$.  @@REACTL_VERDICT@@.  The gap is $@@GAP@@$ of persistent
-coverage; the 95\% interval on it, from the learned controller's
-training-seed spread over @@GAP_N@@ training runs, is $@@GAP_CI@@$.  The
-scene-to-scene variation does not enter this interval, because every
-controller is evaluated on the same scenes and it therefore cancels in the
-difference.
+$@@REACT_CK@@$, $@@REACT_AG@@$ and $@@REACT_SC@@$.  @@REACTL_VERDICT@@.
 
 The connectivity invariant deserves a sentence, because the reported
 availability is below $1.000$ and the filter is claimed to guarantee
