@@ -157,26 +157,57 @@ deterministic), so their rows above stand. The learned rows are being
 re-measured and will move by the size of the uncontrolled term, which is
 why they are not quotable until the re-measurement lands.
 
-### THE RE-MEASURED BASE TABLE (20 Oct 23:20, the seeded protocol)
+### THE RE-MEASURED BASE TABLE (20 Oct 23:45, the seeded protocol)
 | Controller | CK | AG | SC | CovDef |
 |---|---|---|---|---|
 | Fixed formation | 0.372 | 1.000 | 0.000 | 0.628 |
 | Greedy recharge | 0.786 | 0.964 | 0.066 | 0.214 |
-| **Reactive heuristic** | **0.953** | 1.000 | **0.751** | 0.047 |
+| Reactive heuristic | 0.953 | 1.000 | 0.751 | 0.047 |
+| **Reactive (local assignment)** | **0.972** | 1.000 | **0.777** | 0.028 |
 | Independent DQN | 0.396 | 0.990 | 0.000 | 0.604 |
 | Masked PPO, local critic | 0.632 | 0.991 | 0.004 | 0.368 |
 | **MAPPO (proposed)** | **0.689 +- 0.042** | 0.967 | 0.018 | 0.311 |
 | MAPPO (argmax) | 0.411 +- 0.090 | 0.978 | 0.001 | 0.589 |
 | Oracle (ceiling) | 1.000 | | | |
 
-**The gap is 0.264, 95% interval [0.212, 0.316]** over five training
-seeds. The old single-policy figure of 0.734 is gone: the table now
+**The gap to the STRONGEST controller in the table is 0.283, 95%
+interval [0.231, 0.335]** over five training seeds. The gap is computed
+against the best rule baseline, so it is always the hardest gap the
+learner faces. The old single-policy figure of 0.734 is gone: the table
 reports the controller, not one lucky policy.
+
+**THE INFORMATION-ASYMMETRY CAVEAT IS REFUTED BY MEASUREMENT.** The
+`Reactive (local assignment)` arm is the same rule with the global
+coverage state removed (each UAV judges only the sensors within twice the
+coverage radius of its own position, and there is no assignment). It
+reaches CK 0.972 against the privileged version's 0.953: the privilege is
+not what gives the rule its edge -- the global round-robin assignment
+makes the UAVs contend for sensors -- and the gap to the learned
+controller is NOT an information artefact. The paper's limitation (iii)
+says so, and the sentence is derived from the measurement.
+
+**The observation A/B/C** (3 training seeds, 25 episodes): A (local
+only) 0.683 +- 0.037, distinct 1.46; B (+ identity) 0.560 +- 0.135,
+distinct 2.32; C (+ identity + map + bearing) 0.682 +- 0.063, distinct
+2.11, spread 14.3 m. Arm C is EXACTLY the ablation's Full row (the same
+three policies), which is the consistency check on both artefacts. The
+identity raises the distinct-action count and does NOT raise the coverage;
+the paired intervals are in the paper.
 
 **On the infeasible N=5 configuration** (`analysis/infeasible_instance.py`):
 the reactive heuristic reaches CK **0.648** with AG 1.000 and SC **0.000**,
 and the oracle reaches 0.990 on the twenty sensors. The certificate, and
 not either metric, is what says the region is not coverable at N=5.
+
+**The connectivity accounting** (`analysis/connectivity_accounting.py`):
+the joint projection holds over MOVES -- the graph is not left
+disconnected by a policy action -- and the availability below 1.000 is
+the RECOVERY mechanism's signature: a UAV whose pack empties away from a
+pad is removed from the active set and the reserve re-seats it at a
+charging pad, which can be out of communication range of the swarm. The
+accounting counts only TRANSITIONS into disconnection, because a graph
+that is already disconnected stays disconnected and its cause is in an
+earlier step.
 
 **The connectivity accounting** (`analysis/connectivity_accounting.py`):
 the joint projection holds -- the graph is not left disconnected by a move
