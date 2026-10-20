@@ -54,13 +54,14 @@ def main():
     ap.add_argument("--episodes", type=int, default=30)
     ap.add_argument("--seeds", type=int, default=2)
     ap.add_argument("--eval-seeds", type=int, default=5)
+    args = ap.parse_args()
+
     # the two arms share their training seeds, so the comparison between
     # them is paired; a paired interval needs at least three seeds
     if args.seeds < 3:
         print(f"  (raising the training seeds from {args.seeds} to 3: a "
               f"paired interval over the shared seeds needs at least three)")
         args.seeds = 3
-    args = ap.parse_args()
 
     print("=" * 88)
     print(" A/B: is the credit assignment the limitation?")

@@ -75,13 +75,14 @@ def main():
     ap.add_argument("--seeds", type=int, default=2)
     ap.add_argument("--eval-seeds", type=int, default=3)
     ap.add_argument("--grids", default="4,6,8,12")
+    args = ap.parse_args()
+
     # the grids share the training seeds with the G=0 arm, so the
     # comparisons are paired; a paired interval needs at least three seeds
     if args.seeds < 3:
         print(f"  (raising the training seeds from {args.seeds} to 3: a "
               f"paired interval over the shared seeds needs at least three)")
         args.seeds = 3
-    args = ap.parse_args()
 
     grids = [int(g) for g in args.grids.split(",")]
     base = base_config()
