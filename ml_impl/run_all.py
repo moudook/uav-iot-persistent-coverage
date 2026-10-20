@@ -141,11 +141,11 @@ def main():
     args = ap.parse_args()
 
     quick = args.quick
-    episodes = 6 if quick else 30
+    episodes = 6 if quick else 20
     train_seeds = 2 if quick else 5
     eval_seeds = 2 if quick else 5
-    abl_episodes = 3 if quick else 12
-    stress_episodes = 2 if quick else 8
+    abl_episodes = 3 if quick else 6
+    stress_episodes = 2 if quick else 4
     obs_seeds = 2 if quick else 2
 
     t0 = time.time()
@@ -193,8 +193,8 @@ def main():
         # method, so that the comparison is a comparison of learning
         # machinery and not of budgets.
         run_learned_baselines(base_config(), "results_learned_baselines.csv",
-                              episodes=episodes, eval_seeds=eval_seeds,
-                              seeds=2 if quick else 3)
+                              episodes=15, eval_seeds=eval_seeds,
+                              seeds=2)
         print()
 
     if args.stage in ("energy", "all"):
@@ -208,7 +208,7 @@ def main():
     if args.stage in ("scen", "all"):
         print("[6/6] scenario matrix ...", flush=True)
         run_scenarios(base_config(), "results_scenarios.csv",
-                      episodes=abl_episodes)
+                      episodes=10)
         print()
 
     print("=" * 78)

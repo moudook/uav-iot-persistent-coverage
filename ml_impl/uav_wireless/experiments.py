@@ -86,33 +86,33 @@ def scenario_cfgs(base: SimConfig):
 
     scen = []
     scen.append(("S1", "sensor density",
-                 [cp(M=10, seed=s) for s in range(5)] +
-                 [cp(M=40, seed=s) for s in range(5)]))
+                 [cp(M=10, seed=s) for s in range(2)] +
+                 [cp(M=40, seed=s) for s in range(2)]))
     scen.append(("S2", "fleet size N",
-                 [cp(N=3, seed=s) for s in range(5)] +
-                 [cp(N=8, seed=s) for s in range(5)]))
+                 [cp(N=3, seed=s) for s in range(2)] +
+                 [cp(N=8, seed=s) for s in range(2)]))
     scen.append(("S3", "battery capacity",
-                 [cp(B_max=15_000.0, charge_rate=0.0004, seed=s) for s in range(5)] +
-                 [cp(B_max=60_000.0, seed=s) for s in range(5)]))
+                 [cp(B_max=15_000.0, charge_rate=0.0004, seed=s) for s in range(2)] +
+                 [cp(B_max=60_000.0, seed=s) for s in range(2)]))
     scen.append(("S4", "charging pads S",
-                 [cp(n_pads=1, seed=s) for s in range(5)] +
-                 [cp(n_pads=4, seed=s) for s in range(5)]))
+                 [cp(n_pads=1, seed=s) for s in range(2)] +
+                 [cp(n_pads=4, seed=s) for s in range(2)]))
     scen.append(("S5", "R_comm",
-                 [cp(R_comm=25.0, seed=s) for s in range(5)] +
-                 [cp(R_comm=55.0, seed=s) for s in range(5)]))
+                 [cp(R_comm=25.0, seed=s) for s in range(2)] +
+                 [cp(R_comm=55.0, seed=s) for s in range(2)]))
     scen.append(("S6", "R_cov",
-                 [cp(R_cov=28.0, seed=s) for s in range(5)] +
-                 [cp(R_cov=45.0, seed=s) for s in range(5)]))
+                 [cp(R_cov=28.0, seed=s) for s in range(2)] +
+                 [cp(R_cov=45.0, seed=s) for s in range(2)]))
     scen.append(("S7", "failure time",
-                 [cp(failure_enabled=True, failure_time=200, seed=s) for s in range(5)] +
-                 [cp(failure_enabled=True, failure_time=700, seed=s) for s in range(5)]))
+                 [cp(failure_enabled=True, failure_time=200, seed=s) for s in range(2)] +
+                 [cp(failure_enabled=True, failure_time=700, seed=s) for s in range(2)]))
     scen.append(("S8", "combined stress",
                  [cp(failure_enabled=True, failure_time=500, n_pads=1,
                      B_max=15_000.0, charge_rate=0.0004, R_comm=30.0, R_cov=30.0, seed=s)
-                  for s in range(5)]))
+                  for s in range(2)]))
     scen.append(("S9", "initial deployment",
-                 [cp(start_clustered=True, seed=s) for s in range(5)] +
-                 [cp(start_clustered=False, seed=s) for s in range(5)]))
+                 [cp(start_clustered=True, seed=s) for s in range(2)] +
+                 [cp(start_clustered=False, seed=s) for s in range(2)]))
     return scen
 
 

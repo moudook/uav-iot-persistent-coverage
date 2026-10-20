@@ -155,12 +155,17 @@ def agent_obs_dim(agent):
 # ----------------------------------------------------------------------
 def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
                verbose=True, per_agent_adv_norm=False, ent_coef=0.01,
-               value_norm=True):
+               value_norm=True, device=None):
     torch.manual_seed(seed)
     env = UAVIoTEnv(cfg)
+    if device is None:
+        # the policy network and the critic are small, and the simulator is a
+        # sequential Python loop, so the GPU is used for the network and the
+        # PPO update while the control loop stays on the host
+        device = "cuda" if torch.cuda.is_available() else "cpu"
     agent = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim, state_dim=env.state_dim,
                   per_agent_adv_norm=per_agent_adv_norm, ent_coef=ent_coef,
-                  value_norm=value_norm)
+                  value_norm=value_norm, device=device)
     hist = []
     for ep in range(episodes):
         B, summ = collect_rollout(env, agent, n_steps)

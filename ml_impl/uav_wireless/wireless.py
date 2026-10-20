@@ -285,6 +285,35 @@ class WirelessModel:
         inter = ordered[:, 1:cch + 1].sum(axis=1, keepdims=True)
         return rx / (inter + self.noise_w)
 
+    def backhaul_snr_rows(self, uav_xy, uav_idx, k, positions):
+        """SNR rows of the links incident to index k, for SEVERAL positions.
+
+        `positions` is an array of shape (P, 2); the result is (P, N).  This
+        is the batched form of `backhaul_snr_row` and is what the action
+        mask uses: the four candidate moves of one UAV are evaluated in a
+        single call instead of four.
+
+        The shadowing table is symmetric by construction -- one physical
+        link, one channel, `shadow_uu_db = z + z.T` -- so the incident row
+        is symmetric too, and splicing it into the base matrix reproduces
+        the full recomputation exactly.
+        """
+        uav_xy = np.asarray(uav_xy)
+        pos = np.atleast_2d(np.asarray(positions, dtype=float))
+        idx = np.asarray(uav_idx, dtype=int)
+        P = len(pos)
+        # (P, N, 2)
+        diff = pos[:, None, :] - uav_xy[None, :, :]
+        d3 = np.sqrt(np.sum(diff ** 2, axis=-1) + self.z0 ** 2)
+        los = los_probability(d3, self.z0)
+        shadow = None
+        if self.shadow_uu_db is not None:
+            shadow = self.shadow_uu_db[np.ix_(idx, idx)][k]      # (N,)
+        rx = self.received_w(d3, los, shadow, False)
+        snr = rx / self.noise_w
+        snr[:, k] = 0.0
+        return snr
+
     def backhaul_snr_row(self, uav_xy, uav_idx, k, p_k):
         """SNR of the links incident to index k when k is at position p_k.
 

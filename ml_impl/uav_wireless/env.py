@@ -427,6 +427,20 @@ class UAVIoTEnv:
         t = float(np.min(d)) / self.cfg.v_max
         return t * (self.cfg.P_move + self.cfg.P_elec) * 1.15
 
+    def _pad_energies(self, positions):
+        """The energy to reach the nearest pad from each of several points.
+
+        The mask asks this for four candidate positions per agent, so the
+        distance to every pad is computed once for the whole batch instead
+        of once per candidate.
+        """
+        if len(self.pads) == 0:
+            return np.zeros(len(positions), dtype=float)
+        pos = np.atleast_2d(np.asarray(positions, dtype=float))
+        d = np.linalg.norm(self.pads[None, :, :] - pos[:, None, :], axis=-1)
+        t = d.min(axis=1) / self.cfg.v_max
+        return t * (self.cfg.P_move + self.cfg.P_elec) * 1.15
+
     def pad_energy(self, i):
         """E^pad_i: energy to reach the nearest feasible pad. Eq. (16)."""
         if len(self.pads) == 0:
@@ -507,8 +521,25 @@ class UAVIoTEnv:
             return m
         others = act[act != i]
         step = c.v_max * c.dt
-        for a_dir, a in enumerate([A_PX, A_NX, A_PY, A_NY], start=1):
-            p_new = np.clip(self.p[i] + ACTION_VECTORS[a] * step, 0, c.side)
+        dirs = [A_PX, A_NX, A_PY, A_NY]
+        cands = np.clip(self.p[i] + np.array([ACTION_VECTORS[a] for a in dirs])
+                         * step, 0, c.side)
+        # The prospective graph for ALL FOUR candidate moves is computed in one
+        # vectorised call.  The previous version computed the whole NxN physics
+        # separately for each of the four candidates, so the base matrix was
+        # rebuilt 32 times per step; the only thing that differs between the
+        # candidates is the row and column of the moving UAV, and all four
+        # rows are now evaluated together.
+        adj_c = self._candidate_adjacencies(i, cands, base=base) \
+            if c.use_action_mask else None
+        # the energy to reach the nearest pad, from the current position and
+        # from each of the four candidates, computed in one batch
+        pad_energies = self._pad_energies(
+            np.vstack([self.p[i][None, :], cands]))
+        pad_now = float(pad_energies[0])
+
+        for a_dir, a in enumerate(dirs):
+            p_new = cands[a_dir]
             ok = True
             # workspace: reject moves that would leave the region
             if np.any(p_new < 0) or np.any(p_new > c.side):
@@ -526,17 +557,16 @@ class UAVIoTEnv:
             # a flat battery, so a UAV could fly until its pack was empty
             # away from a pad -- and an exhausted UAV is removed from the
             # active set, which takes its share of the coverage and of the
-            # communication graph with it.  That single weak test is the
-            # mechanism by which the learned controller stranded six of its
-            # eight UAVs per episode.
+            # graph with it.  That single weak test is the mechanism by which
+            # the learned controller stranded six of its eight UAVs per
+            # episode.
             #
             # A UAV that is ALREADY below the threshold is allowed to move
             # towards a pad, since blocking it there would strand it
             # certainly; the test is therefore one-sided in its favour.
             if ok:
                 e_after = self.E[i] - c.P_move * c.dt
-                pad_now = self._pad_energy_from(i, self.p[i])
-                pad_new = self._pad_energy_from(i, p_new)
+                pad_new = float(pad_energies[a_dir + 1])
                 reserve = c.E_reserve
                 if e_after < pad_new + reserve and pad_new >= pad_now:
                     ok = False
@@ -545,10 +575,10 @@ class UAVIoTEnv:
             # the swarm walk itself into a partition, which is exactly what
             # the first experiment run showed (AG collapsed 1.0 -> 0.2).
             if ok and c.use_action_mask:
-                adj_c = self._candidate_adjacency(i, p_new, base=base)
-                if not self._h_step_safe(i, p_new, c.mask_horizon, adj=adj_c):
+                if not self._h_step_safe(i, p_new, c.mask_horizon,
+                                         adj=adj_c[a_dir]):
                     ok = False
-                elif self._is_articulation_move(i, p_new, adj=adj_c):
+                elif self._is_articulation_move(i, p_new, adj=adj_c[a_dir]):
                     ok = False
             m[a] = ok
 
@@ -593,6 +623,46 @@ class UAVIoTEnv:
         base = self._base_graph(act)
         return [self.action_mask(i, base=base) for i in range(self.cfg.N)]
 
+    def _candidate_adjacencies(self, i, cands, base=None):
+        """The prospective communication graph for SEVERAL candidate moves.
+
+        Only the edges incident to UAV i change when it moves, so the base
+        SNR matrix is spliced with a recomputed row rather than recomputed
+        in full.  All the candidates are evaluated in one vectorised call,
+        because they differ only in that row.
+
+        Returns an array of shape (P, N, N) of adjacency matrices.
+        """
+        act = self._active_idx()
+        n = len(act)
+        if n == 0:
+            return np.zeros((len(cands), 0, 0), dtype=bool)
+        pos_i = list(act).index(i)
+        p_act = self.p[act]
+        if base is None:
+            base = self._base_graph(act)
+        d, snr = base
+        cands = np.atleast_2d(np.asarray(cands, dtype=float))
+        P = len(cands)
+
+        # the SNR row of the moving UAV at each candidate position, in one call
+        rows = self.radio.backhaul_snr_rows(p_act, act, pos_i, cands)   # (P,N)
+        d_new = np.linalg.norm(p_act[None, :, :] - cands[:, None, :],
+                               axis=-1)                                  # (P,N)
+
+        d2 = np.repeat(d[None, :, :], P, axis=0)
+        d2[:, pos_i, :] = d_new
+        d2[:, :, pos_i] = d_new
+        snr2 = np.repeat(snr[None, :, :], P, axis=0)
+        snr2[:, pos_i, :] = rows
+        snr2[:, :, pos_i] = rows
+        rate = self.radio.link_rate_mbps(self.radio.snr_db(snr2),
+                                         backhaul=True)
+        adj = (d2 <= self.cfg.R_comm) & (rate >= self.radio.rate_min_mbps)
+        idx = np.arange(n)
+        adj[:, idx, idx] = False
+        return adj
+
     def _candidate_adjacency(self, i, p_new, base=None):
         """Adjacency of the swarm with UAV i hypothetically moved to p_new.
 
@@ -600,35 +670,9 @@ class UAVIoTEnv:
         the prospective graph, and both were recomputing it from scratch, so
         the physics was evaluated twice per candidate action.  The graph is
         returned once and shared; the result is identical.
-
-        Only the edges incident to UAV i change, so the base SNR matrix is
-        spliced with a single recomputed row rather than recomputed in
-        full.  The shadowing table is symmetric by construction, so the
-        spliced row is symmetric and the splice reproduces the full
-        recomputation exactly; a test asserts that equivalence.
         """
-        act = self._active_idx()
-        if len(act) == 0:
-            return np.zeros((0, 0), dtype=bool)
-        pos_i = list(act).index(i)
-        p_act = self.p[act]
-        if base is None:
-            base = self._base_graph(act)
-        d, snr = base
-        row = self.radio.backhaul_snr_row(p_act, act, pos_i, p_new)
-        d_new = np.linalg.norm(p_act - p_new, axis=1)
-
-        d2 = d.copy()
-        d2[pos_i, :] = d_new
-        d2[:, pos_i] = d_new
-        snr2 = snr.copy()
-        snr2[pos_i, :] = row
-        snr2[:, pos_i] = row
-        rate = self.radio.link_rate_mbps(self.radio.snr_db(snr2),
-                                         backhaul=True)
-        adj = (d2 <= self.cfg.R_comm) & (rate >= self.radio.rate_min_mbps)
-        np.fill_diagonal(adj, False)
-        return adj
+        return self._candidate_adjacencies(i, np.atleast_2d(p_new),
+                                            base=base)[0]
 
     def _project_connected(self, old_p, moved):
         """Revert the fewest moves needed to keep the swarm connected.
@@ -678,9 +722,10 @@ class UAVIoTEnv:
             return True
         if adj is None:
             adj = self._candidate_adjacency(i, p_new)
-        if not self.is_connected(adj):
-            return False
-        # BFS hop-distance from UAV i; every node must be within `horizon` hops
+        # The breadth-first search below already establishes whether every
+        # node is reachable from the mover, which is a STRONGER condition
+        # than connectivity, so the separate connectivity test was a
+        # redundant traversal of the graph on every candidate action.
         n = len(adj)
         pos_i = list(act).index(i)
         dist = np.full(n, -1, dtype=int)
