@@ -588,6 +588,55 @@ class UAVIoTEnv:
         m[A_CHARGE] = bool(near and needs)
         return m
 
+    @staticmethod
+    def _adj_bits(adj):
+        """The rows of an adjacency matrix as integer bitmasks.
+
+        A traversal of an 8-node graph is then a handful of integer
+        operations instead of a Python loop over the adjacency, and the
+        mask is computed once per candidate action rather than being walked
+        element by element.
+        """
+        n = adj.shape[0]
+        out = []
+        for i in range(n):
+            m = 0
+            row = adj[i]
+            for j in range(n):
+                if row[j]:
+                    m |= 1 << j
+            out.append(m)
+        return out
+
+    @staticmethod
+    def _bfs_mask(bits, start, limit=None):
+        """The set of nodes reachable from `start`, as a bitmask.
+
+        `limit` caps the number of hops.  Returns the reached mask and the
+        number of hops actually used.
+        """
+        n = len(bits)
+        full = (1 << n) - 1
+        reach = 1 << start
+        frontier = reach
+        hops = 0
+        while frontier:
+            nxt = 0
+            f = frontier
+            while f:
+                low = f & -f
+                nxt |= bits[low.bit_length() - 1]
+                f ^= low
+            nxt &= ~reach
+            if not nxt:
+                break
+            reach |= nxt
+            frontier = nxt
+            hops += 1
+            if limit is not None and hops >= limit:
+                break
+        return reach & full, hops
+
     def _is_articulation_move(self, i, p_new, adj=None):
         """True if moving to p_new makes UAV i a cut vertex of the graph.
 
@@ -597,13 +646,27 @@ class UAVIoTEnv:
         re-spread instead of tunnelling.
         """
         act = self._active_idx()
-        if len(act) <= 3:
+        n = len(act)
+        if n <= 3:
             return False
         if adj is None:
             adj = self._candidate_adjacency(i, p_new)
         pos_i = list(act).index(i)
-        ap = self.articulation_points(adj)
-        return bool(pos_i < len(ap) and ap[pos_i])
+        # A UAV is a cut vertex of the prospective graph exactly when
+        # deleting it disconnects the rest.  One bitmask traversal of the
+        # reduced graph decides it, instead of a full Tarjan pass.  The
+        # reduced adjacency must NOT be able to route through the removed
+        # UAV, so its row and column are cleared first.
+        bits = self._adj_bits(adj)
+        drop = 1 << pos_i
+        for u in range(n):
+            if bits[u] & drop:
+                bits[u] &= ~drop
+        bits[pos_i] = 0
+        start = 0 if pos_i != 0 else 1
+        reach, _ = self._bfs_mask(bits, start)
+        target = ((1 << n) - 1) & ~drop
+        return reach != target
 
     def _base_graph(self, act):
         """The distance and SNR matrices of the swarm in its current state.
@@ -728,18 +791,12 @@ class UAVIoTEnv:
         # redundant traversal of the graph on every candidate action.
         n = len(adj)
         pos_i = list(act).index(i)
-        dist = np.full(n, -1, dtype=int)
-        dist[pos_i] = 0
-        queue = [pos_i]
-        while queue:
-            u = queue.pop(0)
-            if dist[u] >= horizon:
-                continue
-            for v in range(n):
-                if adj[u, v] and dist[v] < 0:
-                    dist[v] = dist[u] + 1
-                    queue.append(v)
-        return bool((dist >= 0).all())
+        # the traversal is capped at `horizon` hops, exactly as the original
+        # breadth-first search was: it expanded only the nodes at distance
+        # less than the horizon, so a node further away was never reached and
+        # the check failed
+        reach, _ = self._bfs_mask(self._adj_bits(adj), pos_i, limit=horizon)
+        return reach == (1 << n) - 1
 
     def _would_disconnect(self, i, p_new):
         """True if moving UAV i to p_new partitions the swarm graph."""

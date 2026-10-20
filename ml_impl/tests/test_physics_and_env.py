@@ -1464,6 +1464,93 @@ class TestJointProjection:
 
 
 # ======================================================================
+# Graph traversal equivalence
+# ======================================================================
+class TestGraphTraversalEquivalence:
+    """The fast traversals must agree EXACTLY with the reference ones.
+
+    The action mask's H-step check and its articulation check are on the
+    hot path of the simulator, and they were replaced with integer
+    bitmask traversals.  A fast traversal that disagrees with the
+    reference is a silent change in the safety filter, so the two are
+    compared over random graphs.
+
+    The references below are the original implementations: a
+    breadth-first search that expands only the nodes at distance less than
+    the horizon, and a test of whether deleting a node disconnects the
+    graph.
+    """
+
+    @staticmethod
+    def _ref_hstep(adj, pos, horizon):
+        dist = np.full(len(adj), -1, dtype=int)
+        dist[pos] = 0
+        queue = [pos]
+        while queue:
+            u = queue.pop(0)
+            if dist[u] >= horizon:
+                continue
+            for v in range(len(adj)):
+                if adj[u, v] and dist[v] < 0:
+                    dist[v] = dist[u] + 1
+                    queue.append(v)
+        return bool((dist >= 0).all())
+
+    @staticmethod
+    def _ref_cut(adj, pos):
+        n = len(adj)
+        if n <= 3:
+            return False
+        red = adj.copy()
+        red[pos, :] = False
+        red[:, pos] = False
+        start = 0 if pos != 0 else 1
+        seen = {start}
+        queue = [start]
+        while queue:
+            u = queue.pop(0)
+            for v in range(n):
+                if red[u, v] and v not in seen:
+                    seen.add(v)
+                    queue.append(v)
+        return len(seen) != n - 1
+
+    def test_the_bitmask_traversals_agree_with_the_references(self):
+        from uav_wireless.env import UAVIoTEnv
+        e = UAVIoTEnv(SimConfig(N=8, K=1, M=6, seed=0))
+        rng = np.random.default_rng(0)
+        mismatches = 0
+        for _ in range(300):
+            n = int(rng.integers(4, 9))
+            adj = rng.random((n, n)) < 0.35
+            adj = np.triu(adj, 1)
+            adj = adj | adj.T
+            bits = e._adj_bits(adj)
+
+            # the H-step check
+            for horizon in (1, 2, 3, 4):
+                reach, _ = e._bfs_mask(bits, 0, limit=horizon)
+                if (reach == (1 << n) - 1) != self._ref_hstep(adj, 0, horizon):
+                    mismatches += 1
+
+            # the articulation check: node 0 removed
+            drop = 1 << 0
+            b2 = list(bits)
+            for u in range(n):
+                if b2[u] & drop:
+                    b2[u] &= ~drop
+            b2[0] = 0
+            start = 1
+            reach, _ = e._bfs_mask(b2, start)
+            target = ((1 << n) - 1) & ~drop
+            if (reach != target) != self._ref_cut(adj, 0):
+                mismatches += 1
+        assert mismatches == 0, (
+            f"{mismatches} disagreements between the bitmask traversals and "
+            f"the reference implementations")
+
+
+# ======================================================================
 # Value normalisation
 # ======================================================================
 class TestValueNormalisation:
