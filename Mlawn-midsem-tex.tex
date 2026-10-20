@@ -983,7 +983,7 @@ Stability & Mean and standard deviation across independent random seeds; trainin
 \end{table}
 
 \subsection{Evaluation Scenarios}
-The first experiment varies sensor density while keeping the fleet fixed. The second varies fleet size to examine scalability. The third varies battery capacity and charge rate. The fourth varies the number of charging pads. The fifth varies $R_{\mathrm{comm}}$ and $R_{\mathrm{cov}}$ to create well-connected, marginally connected, and difficult coverage geometries. The sixth injects single-UAV failures at early, middle, and late mission times and at both central and peripheral locations.
+Nine scenarios vary the dominant environmental factors independently before they are combined: sensor density, fleet size, battery capacity, the number of charging pads, $R_{\mathrm{comm}}$, $R_{\mathrm{cov}}$, the time of a single-UAV failure, a combined-stress configuration in which energy scarcity, pad contention, weak connectivity and a failure occur together, and the initial deployment.  Each scenario has two variants, and every variant is run.
 
 For each scenario, the same random seeds and initial conditions are used for all comparison models, and the mean and sample standard deviation are reported over five independent seeds. The principal conclusions are based on the task-specific metrics in Table~\ref{tab:metrics}, not on the raw reward curves.
 
