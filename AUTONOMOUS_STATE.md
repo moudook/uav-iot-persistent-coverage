@@ -70,16 +70,29 @@ the paper's Results, Conclusion and Abstract around the new numbers.
 | Reactive heuristic, clustered, 2000 steps | CK 0.947, AG 1.000, SC 0.751, CI 0.053 |
 | Greedy, clustered | CK 0.770, AG 1.000, SC 0.062, CI 0.230 |
 | Fixed, clustered | CK 0.372, AG 1.000, SC 0.000, CI 0.628 |
-| Observation A local only | CK 0.658+-0.018, AG 0.979, SC 0.033, distinct(argmax) 1.47/8, spread 7.8 m |
-| Observation B + identity | CK 0.507+-0.115, AG 0.977, SC 0.020, distinct(argmax) 2.43/8, spread 12.1 m |
-| Observation C + identity + map | CK ~0.64 (2 seeds so far), distinct(argmax) 2.98/8 |
+| Observation A (local only) | CK 0.581+-0.025, AG 0.980, SC 0.010, distinct(argmax) 1.80/8, spread 14.7 m |
+| Observation B (+ identity) | CK 0.690+-0.018, AG 0.985, SC 0.057, distinct 2.10/8, spread 11.5 m |
+| Observation C (+ identity + 4x4 map) | CK 0.604+-0.023, AG 0.993, SC 0.011, distinct 2.06/8, spread 8.0 m |
+| Map resolution (G=8) | CK 0.589+-0.090, spread 7.8 m -- the map does not help at any resolution |
 | Connectivity in the deployed regime (audit C6) | mean node degree 4.01 of 7; graph complete in only 12% of steps |
 | Energy regime (Reactive, 2000 steps) | 283 return transitions, 0.7 stranded UAVs, 8.3% of the swarm returning |
+| Energy A/B/C (40 ep) | A proposed 0.579 / B no constraint 0.652 / C no threshold term 0.565; stranded 7.1 / 0.0 / 6.9 |
 | Claim audit | 22 items: 18 verified, 0 failed, 4 informational |
 | Model equivalence | max 0.012 dB vs INET BreakpointPathLoss |
 | INET runtime probe | minSnir tracks TX exactly (27.0 dB per 27.0 dB) but NOT distance (0.0000 dB spread over 10-80 m) |
 | Dormancy probe | 0.000 dormant, 0.000 dead, 15-31% gradient-silent |
-| Tests | 92 passing |
+| Tests | 97 passing |
+| Paper | 18 pages, 0 LaTeX errors, 0 overfull boxes, 0 undefined refs (except the pending Results section) |
+
+## THE CANONICAL CONFIGURATION
+`uav_wireless/experiments.py :: base_config()`
+- N=8, K=2, R_cov=35 m, R_comm=40 m, M=20, side=80 m, z0=50 m
+- episode_len=2000 steps (400 s), B_max=30 kJ, charge_rate=0.0002, E_reserve=2000 J
+- lam_B=2.0 (the energy-threshold violation term)
+- start_clustered=True
+- **use_agent_id=True, map_grid=0, use_pad_bearing=True**  <- the map is OFF,
+  because it was measured to be harmful at every resolution tested
+
 
 ## THE CENTRAL FINDING (settled 20 Oct)
 **The learned controller does not reach the reactive heuristic, and the
@@ -87,33 +100,34 @@ framework's controlled arms identify why.** The limiting factor is the
 credit assignment of a parameter-shared actor trained on a team reward.
 Three alternative explanations were tested and rejected:
 
-1. **The observation content.** A/B/C over three observations (local only /
-   + agent identity / + identity + coverage map) under identical seeds and
-   budget. At 20 episodes the identity looked harmful; at 30 episodes it
-   helps (CK 0.581 -> 0.672), and the coverage-map summary adds more. So
-   the observation matters, but it is not what closes the gap to the
-   heuristic (0.947).
-2. **The energy model.** The learned policy stranded ALL EIGHT UAVs per
-   episode while the reactive heuristic stranded 0.7 -- which looked like a
-   catastrophic energy-management failure. Arm B of
-   `analysis/ab_energy_management.py` removes the constraint entirely (a
-   ten-times-larger pack): coverage rises by only ~0.09 and the stranding
-   goes to zero. Arm C removes the threshold-violation term: the stranding
-   persists and the coverage is unchanged. **The stranding is a SYMPTOM of
-   the credit-assignment limitation (a policy that does not know what to do
-   wanders, and a wandering swarm empties its packs), not its cause.**
-3. **The training budget.** `analysis/convergence.py` shows the policy still
-   improving; the 40-episode run reached CK 0.898 at episode 40 but with
-   AG 0.611 (it deploys and breaks connectivity), and the joint projection
-   plus the corrected energy model keep AG at 0.98-1.00. The budget is
-   bounded but not eliminated as an explanation, and the paper says so.
+1. **The observation content -- REJECTED as the binding factor, but it
+   matters.** A/B/C over three observations (local only / + agent identity /
+   + identity + coverage map), identical seeds and budget: 0.581 / 0.690 /
+   0.604. The identity is worth **+0.109** and raises the distinct-action
+   count; the coverage-map summary **hurts** (-0.086) and the swarm stops
+   dispersing (spread 11.5 m -> 8.0 m) because the policy follows the
+   moving deficit. A finer map (G=8) is worse still (0.589, spread 7.8 m).
+   **The canonical configuration therefore OMITS the map.** The mechanism:
+   a coverage map says *where* the work is, not *which* UAV should do it,
+   and turning a location into an assignment needs per-agent credit.
+2. **The energy model -- REJECTED.** The learned policy stranded ALL EIGHT
+   UAVs per episode while the reactive heuristic stranded 0.7, which looked
+   catastrophic. Arm B of `analysis/ab_energy_management.py` removes the
+   constraint entirely (a ten-times-larger pack): coverage rises by only
+   ~0.09, far short of the gap. Arm C removes the threshold-violation term:
+   the stranding persists and the coverage is unchanged. **The stranding is
+   a SYMPTOM of the credit-assignment limitation, not its cause.**
+3. **The training budget -- bounded, not eliminated.** `analysis/convergence.py`
+   shows the policy still improving; the 40-episode run reached CK 0.898 at
+   episode 40 but with AG 0.611 (it deploys and breaks connectivity), and
+   the joint projection plus the corrected energy model keep AG at 0.98-1.00.
+   The paper says so.
 
 **The remedy the diagnosis implies** is a per-agent signal rather than a
-better team signal.  The controlled test of that remedy is already in the
-matrix: the "Masked PPO with a local critic" arm, which differs from the
-proposed method only in having a per-agent actor and a per-agent local
-critic, so that the advantage is the agent's own rather than a broadcast
-team signal.
+better team signal.  The controlled test of that remedy is in the matrix: the
+"Masked PPO with a local critic" arm, which differs from the proposed method
+only in having a per-agent actor and a per-agent local critic, so that the
+advantage is the agent's own rather than a broadcast team signal.
 
 ## Implication for the paper's framing
 The contribution is the FEASIBILITY-CERTIFIED EVALUATION FRAMEWORK, and the
