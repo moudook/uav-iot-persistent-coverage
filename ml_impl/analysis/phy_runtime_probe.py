@@ -49,7 +49,12 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ML = os.path.dirname(HERE)
+PROJ = os.path.dirname(ML)
 WSL_RESULTS = "/home/gbust/omnetpp-workspace/results"
+# The tracked copies of the scalar outputs live in the repository, so the
+# probe is reproducible from a fresh clone; the WSL workspace is the
+# fallback for a machine on which the run has just been executed.
+REPO_RESULTS = os.path.join(PROJ, "Simulation", "UAV_IoT_Demo", "results")
 
 # The sweep, as run by run_phy_probe.sh.  The NED variant is used because
 # the ini path for the transmitter power was found not to reach the radio.
@@ -66,6 +71,15 @@ Z0 = 50.0
 L01 = 40.04
 ALPHA = 2.0
 NOISE_W = 10 ** (-93.99 / 10.0)
+
+
+def sweep_path(tag):
+    """Locate a sweep result, in the repository first."""
+    for cand in (os.path.join(REPO_RESULTS, f"phy_probe_tx{tag}.sca"),
+                 os.path.join(WSL_RESULTS, f"NedTx{tag}.sca")):
+        if os.path.exists(cand):
+            return cand
+    return os.path.join(REPO_RESULTS, f"phy_probe_tx{tag}.sca")
 
 
 def parse_sca(path):
@@ -110,7 +124,7 @@ def main():
           "".join(f"{DIST[n]:>8.0f}m" for n in NODES) + f"{'minSnir(dB)':>13s}")
 
     for tag, tx in SWEEP:
-        p = os.path.join(WSL_RESULTS, f"NedTx{tag}.sca")
+        p = sweep_path(tag)
         if not os.path.exists(p):
             print(f"{tx:>10.0e}  (no result file at {p})")
             continue
