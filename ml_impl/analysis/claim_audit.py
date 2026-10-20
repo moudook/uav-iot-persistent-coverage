@@ -556,6 +556,33 @@ def main():
         print("[SKIP] I1 infeasible instance: run "
               "analysis/infeasible_instance.py\n")
 
+    # --- the connectivity accounting: the filter's guarantee over actions --
+    # The paper claims that the safety filter and the joint projection keep
+    # the swarm connected across every action.  That is a claim about the
+    # simulator's behaviour, so it is measured step by step rather than
+    # asserted: the accounting counts the TRANSITIONS into a disconnected
+    # graph and attributes each of them.
+    ca_path = os.path.join(HERE, "connectivity_accounting.json")
+    if os.path.exists(ca_path):
+        ca = json.load(open(ca_path, encoding="utf-8"))
+        n = int(ca.get("disconnected_steps", 0))
+        unex = int(ca.get("unexplained", 0))
+        check("C8", "no disconnection of the communication graph is left by a "
+                    "policy action: the safety filter and the joint "
+                    "projection maintain connectivity across every action",
+              unex == 0,
+              f"{n} transitions into a disconnected graph over the whole "
+              f"evaluation matrix, of which {unex} are attributable to a "
+              f"policy action and the rest to a UAV leaving the active set",
+              "0 attributable to a policy action",
+              "the guarantee is about actions; the availability below 1.000 "
+              "is the recovery mechanism's signature, and the accounting "
+              "counts transitions, because a graph that is already "
+              "disconnected stays disconnected")
+    else:
+        print("[SKIP] C7 connectivity accounting: run "
+              "analysis/connectivity_accounting.py\n")
+
     # --- a training run is a function of its seed -------------------------
     try:
         import torch
