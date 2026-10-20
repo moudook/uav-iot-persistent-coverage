@@ -80,14 +80,14 @@ def main():
                     f"re-run run_all.py")
         return tparts[name]
 
-    section = f"""
-\\section{{Results}}
-\\label{{sec:results}}
+    section = r"""
+\section{Results}
+\label{sec:results}
 
 All experiments use the corrected, feasible configuration $N=8$, $K=2$,
-$R_{{\\mathrm{{cov}}}}=35$\\,m on an $80\\times80$\\,m field
-(Section~\\ref{{sec:feasibility}}), the clustered initial deployment and the
-2000-step episode of Section~\\ref{{sec:parameters}}.  Every controller is
+$R_{\mathrm{cov}}=35$\,m on an $80\times80$\,m field
+(Section~\ref{sec:feasibility}), the clustered initial deployment and the
+2000-step episode of Section~\ref{sec:parameters}.  Every controller is
 evaluated on the same scenes with the same seeds, and the rule baselines and
 the learned controllers are trained on the same budget.  The teleporting
 placement oracle reaches $CK=1.000$ on this configuration; it is the
@@ -104,66 +104,69 @@ why.  The limiting factor is neither the content of the observation nor the
 energy model, but the credit assignment of a parameter-shared actor trained
 on a team reward.
 
-{tab('tab:results_main')}
+__TAB_MAIN__
 
-{blocks['%% MAIN']}
+__BLOCK_MAIN__
 
-\\subsection{{What the local observation must contain}}
-\\label{{sec:results_obs}}
+\subsection{What the local observation must contain}
+\label{sec:results_obs}
 
-The observation of Eq.~\\eqref{{eq:obs}} is the interface between the
+The observation of Eq.~\eqref{eq:obs} is the interface between the
 framework's communication assumption and the shared policy, and the claim
-that parameter sharing requires the observation to identify the agent is
-testable.  Table~\\ref{{tab:results_obs}} compares three observations under
-identical seeds, budget and evaluation scenes: the observation of
-Eq.~\\eqref{{eq:obs}} as originally written; the same observation plus a
-one-hot agent identity; and that plus the broadcast coverage-map summary.
+that parameter sharing requires the observation to break the permutation
+symmetry is testable.  Table~\ref{tab:results_obs} compares three
+observations under identical seeds, budget and evaluation scenes: the
+observation of Eq.~\eqref{eq:obs} as originally written; the same
+observation without the broadcast coverage-map summary; and that without the
+agent identity either.
 
-{tab('tab:results_obs')}
+__TAB_OBS__
 
-{blocks['%% OBS']}
+__BLOCK_OBS__
 
-\\subsection{{Energy management, and the reward that was missing it}}
-\\label{{sec:results_energy}}
+\subsection{Energy management, and the reward that was missing it}
+\label{sec:results_energy}
 
 The step-level diagnostic of the learned policy produced a surprising
-number: it stranded \\emph{{all eight}} UAVs in nearly every episode, while
+number: it stranded \emph{all eight} UAVs in nearly every episode, while
 the reactive heuristic stranded $0.7$.  A stranded UAV has an empty pack
 away from a charging pad; it can no longer fly, it leaves the swarm, and it
 stops covering.  The obvious reading is that the controller has failed at
 energy management, and the obvious fix is a reward term that prices the
-consequence of an empty pack.  Table~\\ref{{tab:results_energy}} tests that
+consequence of an empty pack.  Table~\ref{tab:results_energy} tests that
 reading with two controlled arms: the same policy with a pack that cannot
 run out, and the same policy without the threshold-violation term of
-Table~\\ref{{tab:reward}}.
+Table~\ref{tab:reward}.
 
-{tab('tab:results_energy')}
+__TAB_ENERGY__
 
-{blocks['%% ENERGY']}
+__BLOCK_ENERGY__
 
-\\subsection{{Component ablation}}
-\\label{{sec:results_abl}}
+\subsection{Component ablation}
+\label{sec:results_abl}
 
-{tab('tab:results_abl')}
+__TAB_ABL__
 
-{blocks['%% ABL']}
+__BLOCK_ABL__
 
-\\subsection{{The credit assignment, and the cheapest test of it}}
-\\label{{sec:results_credit}}
+__TAB_ABL_STRESS__
 
-The diagnosis of Sections~\\ref{{sec:results_obs}} and
-\\ref{{sec:results_energy}} points at one mechanism: with a shared team
+\subsection{The credit assignment, and the cheapest test of it}
+\label{sec:results_credit}
+
+The diagnosis of Sections~\ref{sec:results_obs} and
+\ref{sec:results_energy} points at one mechanism: with a shared team
 reward every agent receives the same advantage, so the gradient cannot
 distinguish an agent whose action helped from one whose action was
 irrelevant.  The literature calls this the credit-assignment problem, and
 the remedies are known: the counterfactual advantage of COMA, the
 difference-based estimator of DAE, the per-agent value iteration of GPAE, and
-the advantage decomposition of HAPPO/HATRPO~\\cite{{foerster2018,li2022,kim2026,kuba2022}}.
+the advantage decomposition of HAPPO/HATRPO~\cite{foerster2018,li2022,kim2026,kuba2022}.
 None of them has been evaluated on a persistent-coverage task, and the
 question of whether the credit assignment is what limits a
 parameter-shared controller in that setting appears to be open.
 
-Table~\\ref{{tab:results_credit}} is the cheapest test of it that does not
+Table~\ref{tab:results_credit} is the cheapest test of it that does not
 require implementing a new algorithm, and it is worth being exact about
 what it does and does not change.  The two arms differ in the learner that
 produces the advantage.  Arm~A is the proposed method: a parameter-shared
@@ -175,36 +178,55 @@ Nothing else changes.
 
 What that does and does not change is worth stating plainly, because it
 bounds the conclusion.  With a team reward $r_t$ broadcast to every agent,
-the advantage is $r_t+\\gamma V(o')-V(o)$.  Giving each agent its own
-value function changes the \\emph{baseline} of that expression, and
-therefore the variance of the advantage; it does not change its
-\\emph{signal}, which is still the same team reward for every agent.  Arm~B
-is thus a comparison of a per-agent baseline and of parameter sharing.  It
-is not an implementation of the per-agent advantage estimators above, all
-of which change the signal by supplying a per-agent reward or a
-counterfactual baseline, and all of which are considerably more than a
-change of critic.
+the advantage is $r_t+\gamma V(o')-V(o)$.  Giving each agent its own
+value function re-centres and re-scales that expression per agent, so the
+advantage is no longer a single shared number, but it cannot decompose it,
+because the advantage's dependence on the other agents enters only through
+the aggregate reward and through the observation, which are symmetric in
+the other agents.  Redistribution of credit requires a per-agent reward, a
+joint-action critic, or a counterfactual baseline.
 
-{tab('tab:results_credit')}
+__TAB_CREDIT__
 
-{blocks['%% CREDIT']}
+__BLOCK_CREDIT__
 
-{tab('tab:results_ablstress')}
+\subsection{Scenario matrix}
+\label{sec:results_scen}
 
-\\subsection{{Scenario matrix}}
-\\label{{sec:results_scen}}
+__TAB_SCEN__
 
-{tab('tab:results_scen')}
-
-{blocks['%% SCEN']}
+__BLOCK_SCEN__
 
 """
+
+    section = (section
+               .replace("__TAB_MAIN__", tab('tab:results_main'))
+               .replace("__TAB_OBS__", tab('tab:results_obs'))
+               .replace("__TAB_ENERGY__", tab('tab:results_energy'))
+               .replace("__TAB_ABL__", tab('tab:results_abl'))
+               .replace("__TAB_ABL_STRESS__", tab('tab:results_ablstress'))
+               .replace("__TAB_CREDIT__", tab('tab:results_credit'))
+               .replace("__TAB_SCEN__", tab('tab:results_scen'))
+               .replace("__BLOCK_MAIN__", blocks['%% MAIN'])
+               .replace("__BLOCK_OBS__", blocks['%% OBS'])
+               .replace("__BLOCK_ENERGY__", blocks['%% ENERGY'])
+               .replace("__BLOCK_ABL__", blocks['%% ABL'])
+               .replace("__BLOCK_CREDIT__", blocks['%% CREDIT'])
+               .replace("__BLOCK_SCEN__", blocks['%% SCEN']))
 
     src = open(args.tex, encoding="utf-8").read()
     start = src.find("\\section{Results}")
     end = src.find("\\subsection{Claim Audit and Physical-Layer Validation}")
     if start < 0 or end < 0 or end < start:
         raise SystemExit("could not locate the Results section")
+
+    # a paper must never be assembled with an unfilled token in it
+    leftover = sorted(set(re.findall(r"@@([A-Z_0-9]+)@@", section)))
+    if leftover:
+        raise SystemExit(
+            "the prose still contains unfilled tokens: " + ", ".join(leftover)
+            + "\n  (an artefact is missing -- run the stage that produces it)")
+
     new = src[:start] + section.lstrip("\n") + src[end:]
     with open(args.tex, "w", encoding="utf-8") as f:
         f.write(new)
