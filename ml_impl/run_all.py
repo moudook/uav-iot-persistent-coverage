@@ -125,14 +125,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--stage", default="all",
-                    choices=["obs", "base", "abl", "learned", "scen", "all"])
+                    choices=["obs", "base", "abl", "learned", "energy", "scen", "all"])
     args = ap.parse_args()
 
     quick = args.quick
-    episodes = 6 if quick else 20
+    episodes = 6 if quick else 30
     train_seeds = 2 if quick else 5
     eval_seeds = 2 if quick else 5
-    abl_episodes = 3 if quick else 12
+    abl_episodes = 3 if quick else 15
+    obs_seeds = 2 if quick else 2
 
     t0 = time.time()
     print("=" * 78)
@@ -145,12 +146,12 @@ def main():
     print("=" * 78 + "\n", flush=True)
 
     if args.stage in ("obs", "all"):
-        print("[1/4] observation A/B/C ...", flush=True)
-        stage_observation(episodes, 3 if not quick else 2, eval_seeds)
+        print("[1/6] observation A/B/C ...", flush=True)
+        stage_observation(episodes, obs_seeds, eval_seeds)
         print()
 
     if args.stage in ("base", "all"):
-        print("[2/4] base comparison ...", flush=True)
+        print("[2/6] base comparison ...", flush=True)
         stage_base(episodes, train_seeds, eval_seeds)
         stage_dormancy()
         # the rule baselines on the same scenes
@@ -164,7 +165,7 @@ def main():
         print()
 
     if args.stage in ("abl", "all"):
-        print("[3/5] ablations ...", flush=True)
+        print("[3/6] ablations ...", flush=True)
         cfg = base_config()
         run_ablation(cfg, "results_ablation.csv", stress=False,
                      episodes=abl_episodes)
@@ -174,14 +175,22 @@ def main():
         print()
 
     if args.stage in ("learned", "all"):
-        print("[4/5] learned baselines (Table VI) ...", flush=True)
+        print("[4/6] learned baselines (Table VI) ...", flush=True)
         run_learned_baselines(base_config(), "results_learned_baselines.csv",
                               episodes=abl_episodes, eval_seeds=eval_seeds,
                               seeds=2 if quick else 3)
         print()
 
+    if args.stage in ("energy", "all"):
+        print("[5/6] the energy-management diagnosis ...", flush=True)
+        from analysis.ab_energy_management import main as em_main
+        sys.argv = ["ab_energy_management", "--episodes", str(episodes),
+                    "--seeds", str(obs_seeds), "--eval-seeds", str(eval_seeds)]
+        em_main()
+        print()
+
     if args.stage in ("scen", "all"):
-        print("[5/5] scenario matrix ...", flush=True)
+        print("[6/6] scenario matrix ...", flush=True)
         run_scenarios(base_config(), "results_scenarios.csv",
                       episodes=abl_episodes)
         print()
