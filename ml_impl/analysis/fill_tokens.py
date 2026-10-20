@@ -673,25 +673,27 @@ def build_tokens():
                 tok["C6_COMPLETE"] = f"{100*d['frac_complete']:.0f}"
                 tok["C6_LEAVES"] = f"{100*d['frac_leaves']:.0f}"
 
-    # the size of the test suite, counted the way the runner discovers it
+    # the size of the test suite, counted the way the runner discovers it.
+    # The test module is PARSED, not imported: importing it pulls in torch,
+    # which loads the CUDA runtime, and that is several hundred megabytes
+    # that the machine may not have while the experiments are running.
     try:
-        import importlib.util
-        import inspect
+        import ast
         tests_dir = os.path.join(ML, "tests")
         n_tests = 0
         for fname in sorted(os.listdir(tests_dir)):
             if not fname.startswith("test_") or not fname.endswith(".py"):
                 continue
-            path = os.path.join(tests_dir, fname)
-            spec = importlib.util.spec_from_file_location(
-                os.path.splitext(fname)[0], path)
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-            for cname, cls in inspect.getmembers(mod, inspect.isclass):
-                if not cname.startswith("Test") or cls.__module__ != mod.__name__:
+            tree = ast.parse(open(os.path.join(tests_dir, fname),
+                                  encoding="utf-8").read())
+            for node in tree.body:
+                if not isinstance(node, ast.ClassDef):
                     continue
-                for mname, meth in inspect.getmembers(cls, inspect.isfunction):
-                    if mname.startswith("test_"):
+                if not node.name.startswith("Test"):
+                    continue
+                for item in node.body:
+                    if (isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+                            and item.name.startswith("test_")):
                         n_tests += 1
         tok["N_TESTS"] = str(n_tests)
     except Exception as exc:  # pragma: no cover - diagnostic path

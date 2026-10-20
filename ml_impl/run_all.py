@@ -96,10 +96,14 @@ def stage_base(episodes, train_seeds, eval_seeds, resume=False):
             agent = MAPPO(n_agents=cfg.N, obs_dim=UAVIoTEnv(cfg).obs_dim,
                           state_dim=UAVIoTEnv(cfg).state_dim)
             agent.load(f"mappo_base_s{s}.pt")
-            hp = os.path.join(ANALYSIS, f"hist_base_s{s}.json")
-            if os.path.exists(hp):
-                with open(hp, encoding="utf-8") as f:
-                    hist = json.load(f)
+            # the training curve, if it was saved: the per-seed file, or
+            # for the first seed the file the training path writes
+            for hp in (os.path.join(ANALYSIS, f"hist_base_s{s}.json"),
+                       os.path.join(ANALYSIS, "hist_base.json")):
+                if os.path.exists(hp):
+                    with open(hp, encoding="utf-8") as f:
+                        hist = json.load(f)
+                    break
         else:
             agent, hist = train_mappo(c, episodes=episodes,
                                       n_steps=c.episode_len,
@@ -142,17 +146,18 @@ def stage_base(episodes, train_seeds, eval_seeds, resume=False):
                                     per_seed=[{k: x[k] for k in
                                                ("CK", "AG", "SC")}
                                               for x in evs])) + "\n")
+        best_ck = (max(h["CK"] for h in hist) if hist else float("nan"))
         print(f"  seed {s}: CK={samp['CK']:.3f}+-{samp_std['CK']:.3f} "
               f"AG={samp['AG']:.3f} SC={samp['SC']:.3f} "
               f"CI={samp['CovIntegral']:.3f} "
-              f"best_ck={max(h['CK'] for h in hist):.3f} "
+              f"best_ck={best_ck:.3f} "
               f"({time.time()-t0:.0f}s)", flush=True)
         rows.append(dict(train_seed=s, **{k: samp[k] for k in
                                           ("CK", "AG", "SC", "CovIntegral")},
                          **{f"{k}_std": samp_std[k]
                             for k in ("CK", "AG", "SC")},
-                         best_ck=float(max(h["CK"] for h in hist)),
-                         final_ck=float(hist[-1]["CK"])))
+                         best_ck=float(best_ck),
+                         final_ck=float(hist[-1]["CK"]) if hist else float("nan")))
     out = os.path.join(ANALYSIS, "base_training_seeds.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump(rows, f, indent=2)
