@@ -16,50 +16,39 @@ should be read with that in mind.  The reactive heuristic is given the
 \emph{exact} set of under-covered sensors, which corresponds to an unbounded
 broadcast of the coverage state; the learned policy receives a fixed-size
 summary of it.  Part of the gap between them is therefore a difference of
-information rather than of control, and the resolution of the broadcast is a
-parameter of the framework rather than a free choice.
+information rather than of control.
 
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
 from the proposed method in exactly one respect: each agent has its own
 actor and its own critic on its own observation, instead of a
-parameter-shared actor with a centralised critic, so the advantage it
-receives is its own rather than a broadcast team signal.  The Independent
-DQN arm is the value-based point of comparison.  Vanilla MAPPO, which
-removes the framework's observation terms, reward shaping, charging
-arbitration, reserve mechanism and action mask, shows how much of the
-learned method's behaviour survives without them.
+parameter-shared actor with a centralised critic.  The Independent DQN arm is
+the value-based point of comparison.  Vanilla MAPPO, which removes the
+framework's observation terms, reward shaping, charging arbitration,
+reserve-UAV mechanism and action mask, shows how much of the learned
+method's behaviour survives without them.
 
-Two further numbers characterise what the learned controller actually
-does, and they are as informative as the coverage figure.  It consumes
-$@@MAPPO_E@@$~J against the heuristic's $@@REACT_E@@$~J over the same
-episode --- it is the more wasteful controller --- and it strands $@@MAPPO_STR@@$
-of its eight UAVs per episode against the heuristic's $@@REACT_STR@@$.  A
-policy that does not know what to do does not merely cover less; it flies
-more, empties its packs, and loses the agents it loses.  The last row of
-Table~\ref{tab:results_main} makes the same point about the deterministic
-policy of the same learned actor: it travels $@@ARG_DIST@@$~m in the whole
-episode, that is, it does not move at all.
-
-The last row is the deterministic version of the \emph{same} learned actor,
-and it is the most diagnostic number in the table.  Over a 2000-step episode
-the argmax policy travels \textbf{0.0\,m} --- it does not move at all ---
-while the sampled policy of the same actor travels
-@@MAPPO_DISTANCE@@\,m and covers $@@MAPPO_CK@@$ of the sensor-steps.  The
-reason is the shared-actor symmetry collapse: with one actor and no agent
-identity in the observation, the argmax action is the same for every UAV,
-and the mask then rejects the resulting joint move, so the swarm stands
-still.  Eq.~\eqref{eq:policy} specifies a sampled policy, and the sampled
-policy is the one reported as the proposed method; the argmax row is
-reported because it is the cheapest possible demonstration that what the
-shared actor has learned is not a deployment but a tendency, and because a
-reader who evaluates a parameter-shared controller deterministically will
-see this number and should know what it means.
+\paragraph{On the evaluation protocol, which is not neutral.} The rule
+baselines are deterministic, so they have no sampling step; the learned
+policy is evaluated by sampling, because Eq.~\eqref{eq:policy} specifies a
+sampled policy and because the deterministic version of the same actor
+travels $@@ARG_DISTANCE@@$~m over the whole episode --- with a shared actor
+the argmax action is the same for every UAV, so the swarm stands still.  We
+report both, and the comparison is not like-for-like in either direction:
+sampling makes the learned controller take risks it would not take
+deterministically, and it is scored on the mean of a distribution of
+trajectories rather than on one of them.  The deterministic row is not a
+better controller; it is a different and degenerate one, and reporting it is
+the point.
 
 The learned controller also burns more energy than the heuristic
-($@@MAPPO_E@@$~J against $@@REACT_E@@$~J over the same episode) and strands
-more UAVs, which is the wandering signature of a policy that has not
-learned what to do: it keeps moving, and a moving swarm empties its packs.
+($@@MAPPO_E@@$~J against $@@REACT_E@@$~J over the same episode) while
+stranding fewer UAVs, which is the signature of a policy that moves
+deliberately rather than one that wanders.  Its connectivity availability is
+below $1.000$ because UAVs leave the active set when a pack empties away
+from a pad, and not because the safety filter leaks: over 2000 steps of a
+random policy the graph was disconnected on no step in which the active set
+was unchanged (Section~\ref{sec:results_abl}).
 
 %% OBS
 
