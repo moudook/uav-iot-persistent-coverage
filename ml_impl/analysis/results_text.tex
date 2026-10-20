@@ -120,7 +120,12 @@ Every variant is trained from the same seed on the same configuration
 except for the one component that is removed, so a difference is
 attributable to that component.  The table is reported in full, including
 the variants that make no measurable difference, because the claim this
-paper supports is a claim about which components are load-bearing.  @@ABL_TEXT@@
+paper supports is a claim about which components are load-bearing.  On
+this configuration @@ABL_MOVED@@, while @@ABL_STILL@@.  The separation is
+the point: the components that make the framework a
+\emph{framework}---the feasibility mask, the agent identity, the reserve and
+the charging machinery---are not interchangeable with the reward-shaping
+terms, and the honest statement of the result is which is which.
 
 %% CREDIT
 
@@ -132,4 +137,7 @@ Each row is the mean over the variants of that scenario, with the proposed
 controller and the reactive heuristic evaluated on the same scenes.  The
 matrix is where the framework's value is most visible, because it shows
 which regime a controller is good in rather than in which regime it was
-tuned.  @@SCEN_TEXT@@
+tuned.  Counting the scenario variants in which the learned controller is
+ahead, behind or level with the heuristic gives @@SCEN_WINS@@ ahead,
+@@SCEN_LOSSES@@ behind and @@SCEN_TIES@@ level; the largest deficit is
+@@SCEN_WORST@@ and the largest surplus @@SCEN_BEST@@.  @@SCEN_TEXT@@

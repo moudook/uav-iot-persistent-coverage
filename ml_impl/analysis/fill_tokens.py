@@ -144,6 +144,69 @@ def main():
         if full and van:
             d = float(full["CK"]) - float(van["CK"])
             tok["ABL_DELTA"] = f"{d:+.3f}"
+            # which components actually move the coverage?
+            moved, still = [], []
+            for name, r in by.items():
+                if name in ("Full", "VanillaMAPPO"):
+                    continue
+                try:
+                    delta = abs(float(r["CK"]) - float(full["CK"]))
+                except (TypeError, ValueError, KeyError):
+                    continue
+                (moved if delta >= 0.02 else still).append(
+                    (name, float(r["CK"]) - float(full["CK"])))
+            names = {"no-criticality": "the criticality term",
+                     "no-degraded": "the degraded-service term",
+                     "no-energy-cost": "the energy-cost term",
+                     "no-undercoverage": "the under-coverage term",
+                     "no-reserve": "the reserve UAV",
+                     "no-arbitration": "the charging arbitration",
+                     "no-mask": "the action mask",
+                     "no-agent-id": "the agent identity",
+                     "with-map": "the coverage map",
+                     "no-pad-bearing": "the pad bearing"}
+            if moved:
+                parts = []
+                for n, dlt in sorted(moved, key=lambda x: -abs(x[1])):
+                    parts.append(f"${names.get(n, n)}$ ({dlt:+.3f})")
+                tok["ABL_MOVED"] = (", ".join(parts) +
+                                    " have a measurable effect on persistent "
+                                    "coverage")
+            else:
+                tok["ABL_MOVED"] = ("no single component has a measurable "
+                                    "effect on persistent coverage")
+            if still:
+                parts = [names.get(n, n) for n, _ in still]
+                tok["ABL_STILL"] = (", ".join(parts) +
+                                     " do not, at this budget and on this "
+                                     "configuration")
+            else:
+                tok["ABL_STILL"] = ""
+    scen = load_csv("results_scenarios.csv")
+    if scen:
+        wins = losses = ties = 0
+        worst = ("", 0.0)
+        best = ("", 0.0)
+        for r in scen:
+            try:
+                d = float(r["mappo_CK"]) - float(r["react_CK"])
+            except (TypeError, ValueError, KeyError):
+                continue
+            if d > 0.02:
+                wins += 1
+            elif d < -0.02:
+                losses += 1
+            else:
+                ties += 1
+            if d < worst[1]:
+                worst = (r["scenario"], d)
+            if d > best[1]:
+                best = (r["scenario"], d)
+        tok["SCEN_WINS"] = str(wins)
+        tok["SCEN_LOSSES"] = str(losses)
+        tok["SCEN_TIES"] = str(ties)
+        tok["SCEN_WORST"] = f"{worst[0]} ({worst[1]:+.3f})"
+        tok["SCEN_BEST"] = f"{best[0]} ({best[1]:+.3f})"
     tok.setdefault("ABL_TEXT", "")
     tok.setdefault("CREDIT_TEXT", "")
     tok.setdefault("SCEN_TEXT", "")
