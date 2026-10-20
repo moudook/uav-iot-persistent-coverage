@@ -79,6 +79,12 @@ def main():
     tables = open(TABLES, encoding="utf-8").read()
     blocks = read_blocks(TEXT)
 
+    # the token table: the ONLY source of a number that comes from an
+    # experiment, for the prose blocks, for the section preamble and for
+    # the rest of the paper
+    from fill_tokens import build_tokens, fill
+    tok = build_tokens()
+
     # split the tables into named pieces
     tparts = {}
     for m in re.finditer(r"\\begin\{table\}\[t\].*?\\end\{table\}", tables,
@@ -232,6 +238,10 @@ __BLOCK_SCEN__
                .replace("__BLOCK_CREDIT__", blocks['%% CREDIT'])
                .replace("__BLOCK_SCEN__", blocks['%% SCEN']))
 
+    # the section's own tokens (the preamble quotes the reactive
+    # heuristic's coverage) are filled from the same table
+    section, leftover = fill(section, tok)
+
     src = open(args.tex, encoding="utf-8").read()
     start = src.find("\\section{Results}")
     end = src.find("\\subsection{Claim Audit and Physical-Layer Validation}")
@@ -239,7 +249,6 @@ __BLOCK_SCEN__
         raise SystemExit("could not locate the Results section")
 
     # a paper must never be assembled with an unfilled token in it
-    leftover = sorted(set(re.findall(r"@@([A-Z_0-9]+)@@", section)))
     if leftover:
         raise SystemExit(
             "the prose still contains unfilled tokens: " + ", ".join(leftover)
@@ -251,8 +260,6 @@ __BLOCK_SCEN__
     # comes from an experiment is written as a token, so the Introduction
     # and the Conclusion cannot drift away from the Results.  The tokens are
     # filled from the same artefact table the prose blocks were filled from.
-    from fill_tokens import build_tokens, fill
-    tok = build_tokens()
     new, leftover = fill(new, tok)
     if leftover:
         raise SystemExit(
@@ -281,10 +288,17 @@ __BLOCK_SCEN__
                            capture_output=True, text=True)
         log = open(os.path.join(PROJ, "Mlawn-midsem-tex.log"),
                    encoding="utf-8", errors="ignore").read()
-        undef = len(re.findall(r"undefined", log))
+        # only ACTUAL undefined references: the string "undefined" also
+        # occurs in the font warnings, and counting those would report a
+        # reference problem that does not exist
+        undef = len(re.findall(r"Reference `[^\']*' on page \d+ undefined",
+                                log))
+        undef += len(re.findall(r"there were undefined references", log))
         errors = re.findall(r"^! .*$", log, flags=re.M)
+        overfull = re.findall(r"^Overfull .*$", log, flags=re.M)
         pages = re.findall(r"Output written on .*?\((\d+) pages", log)
-        print(f"undefined references: {undef}; pages: "
+        print(f"undefined references: {undef}; overfull boxes: "
+              f"{len(overfull)}; pages: "
               f"{pages[0] if pages else '?'}")
         if errors:
             print("LATEX ERRORS:")
@@ -293,6 +307,10 @@ __BLOCK_SCEN__
             raise SystemExit("the paper does not compile cleanly")
         if undef:
             print("NOTE: undefined references remain -- check the labels")
+        if overfull:
+            print("NOTE: overfull boxes:")
+            for o in overfull[:10]:
+                print("   ", o)
     return 0
 
 

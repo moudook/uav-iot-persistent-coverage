@@ -283,7 +283,7 @@ def build_tokens():
                        "no-map": "MAP", "no-mask": "MASK"}.get(n)
                 if key:
                     tok[f"ABL_{key}_DELTA"] = f"{pmean:+.3f}"
-                    tok[f"ABL_{key}_SPREAD"] = f"{pstd:.3f}")
+                    tok[f"ABL_{key}_SPREAD"] = f"{pstd:.3f}"
         tok["ABL_YARDSTICK"] = f"{yardstick:.3f}"
         tok["ABL_SEEDS"] = str(full.get("train_seeds", "?")) if full else "?"
         tok["ABL_EPISODES"] = str(full.get("episodes", "?")) if full else "?"

@@ -71,7 +71,13 @@ def ck_cell(r, nd=3):
     s = r.get("CK_std")
     if s in (None, ""):
         return v
-    return f"{v} $\\pm$ {fmt(s, nd)}"
+    return f"{v}\\,$\\pm$\\,{fmt(s, nd)}"
+
+
+# The tables live in one column of a two-column IEEE paper, which is
+# narrow, so the column separation is tightened.  A table that does not fit
+# is an overfull box, and an overfull box in a submitted paper is a defect.
+NARROW = r"\setlength{\tabcolsep}{3pt}"
 
 
 def table_main(rows, learned=None):
@@ -93,9 +99,10 @@ def table_main(rows, learned=None):
     lines.append(r"\label{tab:results_main}")
     lines.append(r"\centering")
     lines.append(r"\scriptsize")
+    lines.append(NARROW)
     lines.append(r"\begin{tabular}{@{}lcccccc@{}}")
     lines.append(r"\toprule")
-    lines.append(r"Model & CK & AG & SC & CovIntegral & Unexec. & Energy (J) \\")
+    lines.append(r"Model & CK & AG & SC & CovDef & Unexec. & Energy \\")
     lines.append(r"\midrule")
     order = ["Fixed", "Greedy", "Reactive"]
     by_model = {r["model"]: r for r in rows}
@@ -109,9 +116,14 @@ def table_main(rows, learned=None):
             f"{fmt(r.get('UnexecutedActions'), 0)} & "
             f"{fmt(r.get('Energy'), 0)} \\\\")
     if learned:
+        # the display names are shortened to fit the column; the full names
+        # are in the prose and in the artefact
+        SHORT = {"Independent DQN (value-based)": "Independent DQN",
+                 "Masked PPO, local critic": "Masked PPO (local critic)"}
         for r in learned:
+            name = SHORT.get(r["model"], r["model"])
             lines.append(
-                f"{r['model']} & {ck_cell(r)} & {fmt(r.get('AG'))} & "
+                f"{name} & {ck_cell(r)} & {fmt(r.get('AG'))} & "
                 f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & -- & -- \\\\")
     for name, disp in (("VanillaMAPPO", r"\textbf{Vanilla MAPPO}"),
                        ("MAPPO", r"\textbf{MAPPO (proposed)}"),
@@ -159,6 +171,7 @@ def table_abl(rows, label, caption):
     lines.append(rf"\label{{{label}}}")
     lines.append(r"\centering")
     lines.append(r"\scriptsize")
+    lines.append(NARROW)
     lines.append(r"\begin{tabular}{@{}lcccccc@{}}")
     lines.append(r"\toprule")
     lines.append(r"Variant & CK & AG & SC & CovIntegral & Stranded & "
@@ -188,6 +201,15 @@ def table_abl(rows, label, caption):
 
 def table_scen(rows):
     """One row per scenario: the mean over that scenario's variants."""
+    # the research questions are plain strings in the artefact; the ones that
+    # are symbols have to be set in math mode, or the underscore is read as
+    # a subscript and the table does not compile
+    QMAP = {"R_comm": r"$R_{\mathrm{comm}}$",
+            "R_cov": r"$R_{\mathrm{cov}}$",
+            "B_max": r"$B_{\max}$",
+            "N": r"$N$",
+            "M": r"$M$",
+            "S": r"$S$"}
     by = {}
     for r in rows:
         by.setdefault(r["scenario"], []).append(r)
@@ -199,6 +221,7 @@ def table_scen(rows):
     lines.append(r"\label{tab:results_scen}")
     lines.append(r"\centering")
     lines.append(r"\scriptsize")
+    lines.append(NARROW)
     lines.append(r"\begin{tabular}{@{}llcccc@{}}")
     lines.append(r"\toprule")
     lines.append(r"& & \multicolumn{2}{c}{CK} & \multicolumn{2}{c}{SC} \\")
@@ -207,7 +230,7 @@ def table_scen(rows):
     lines.append(r"\midrule")
     for sid in sorted(by):
         rs = by[sid]
-        q = rs[0]["question"]
+        q = QMAP.get(rs[0]["question"], rs[0]["question"])
         mk = sum(float(x["mappo_CK"]) for x in rs) / len(rs)
         rk = sum(float(x["react_CK"]) for x in rs) / len(rs)
         ms = sum(float(x["mappo_SC"]) for x in rs) / len(rs)

@@ -1,3 +1,7 @@
+%% CONTRIB
+
+    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. The identity is worth $+0.131$ persistent coverage, and without it the deterministic policy selects the same action for every UAV and the swarm translates as a rigid body without dispersing. A broadcast summary of where the coverage deficit is was added a priori and measured to be \emph{harmful} at every resolution tested, which is reported rather than quietly dropped.
+
 %% MAIN
 
 The rule baselines separate sharply, and the ordering is informative.  The
@@ -163,21 +167,18 @@ neither supported nor refuted by it.
 
 %% ABL
 
-Every variant is trained from the same seed on the same configuration
-except for the one component that is removed, so a difference is
-attributable to that component.  On this configuration $the pad bearing$ (-0.288), $the agent identity$ (-0.131) have a measurable effect on persistent coverage, and the remaining variants do not.
-
-That is worth stating plainly rather than reading around: the components
-that a reader might expect to matter most here are the ones the hard
-constraints have already discharged.  The articulation-point term makes
-almost no difference because the safety filter already forbids any move
-that would create an articulation point, so on an executed trajectory the
-quantity it measures is nearly constant and the term has almost no variance
-to act on; the degraded-service term is close to inert for the same
-reason, since the filter keeps the graph connected whenever the active set
-is unchanged.  The terms that the filter cannot enforce are the ones the
-controller actually has to learn: who covers what, and how the energy is
-spent.
+Every variant is trained on the same configuration with the same budget and
+from the same set of ? training seeds, and differs from the
+full configuration in exactly one component, so a difference is
+attributable to that component.  The budget is the base comparison's
+(? episodes), so that the full configuration of this table
+is the same experiment as the proposed controller of the first table, and
+not a cheaper one.  Because the variants share the training seeds, the
+comparison is \emph{paired}: a difference is measured on the same training
+runs, so its spread is the spread of the difference rather than the spread
+of two independent measurements.  The yardstick is the spread of the
+learner itself, 0.037, which is how much the training seed
+moves the coverage of the full configuration.  On this configuration $the pad bearing$ (-0.288), $the agent identity$ (-0.131) have a measurable effect on persistent coverage, and the remaining variants do not.
 
 Two of the null results are explained rather than merely reported.  The
 articulation-point term makes no measurable difference because the safety
