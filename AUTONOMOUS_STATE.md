@@ -61,7 +61,38 @@ This is the protocol every number in the paper is produced under.
    ablation's "Full" row is the same experiment as the base comparison's
    MAPPO row and not a cheaper one.
 6. Every training run's policy is **saved** (`mappo_base_s{seed}.pt`), so
-   every number can be recomputed from a stored artefact.
+   every number can be recomputed from a stored artefact.  The base stage
+   has a `--resume` path that evaluates the stored policies instead of
+   retraining them.
+7. **The inference is a paired interval, never a threshold.** The variants
+   share their training seeds, so the difference between a variant and the
+   full configuration is measured on the same training runs, and what is
+   reported is a 95% paired t interval on the per-seed differences. A
+   threshold on the size of a difference is NOT a test: a rule that calls a
+   difference "measurable" when it exceeds the learner's own seed spread
+   has a per-arm null error rate of about a third at three training seeds,
+   and it buys no power (the measurement cannot detect a true effect of
+   the size it flags). The interval also reports the **resolution** of the
+   measurement, which is the number a reader needs.
+8. **An explanation is excluded by a BOUND, not by a null.** To exclude an
+   explanation of a gap, the arm testing it must have an upper confidence
+   limit below the gap. The token filler DERIVES this: the sentence says
+   whether the limit is below the gap, and says the opposite when it is
+   not.
+9. **The variance is decomposed.** The seed component (across training
+   runs) is the uncertainty of a controller comparison; the scene
+   component (across evaluation scenes) is common to every controller and
+   cancels in every difference. Both are reported.
+10. **The evaluation seed determines both the scene and the action
+    stream.** This is a known confound, stated as a limitation: the two
+    sources cannot be separated, though the second is common to all
+    controllers. Decoupling them would need a `SeedSequence.spawn` scheme
+    and a re-measurement; it is not done.
+11. **The learning curve is reported.** It answers the compute-asymmetry
+    objection (a hand-designed rule against a learner with a fixed
+    budget): the per-episode coverage of the first training run has a mean
+    over its first five episodes equal to its mean over its last five, so
+    the curve is flat over the budget we can afford.
 
 ## Defects found and fixed (all have tests; 111 tests pass)
 | # | Defect | Fix |
@@ -97,6 +128,9 @@ This is the protocol every number in the paper is produced under.
 | 29 | **The component ablation trained ONE seed per variant at 10 episodes**, while the base comparison trained five seeds at 25 -- so its deltas mixed the component with the budget and its spread was unmeasurable. It also disagreed with the observation arms (which said the full configuration was no better than the bare one) | `run_ablation(..., seeds=)`, budget aligned to the base comparison, paired differences, incremental writes |
 | 30 | **The main table's learned row was ONE policy while the text claimed five training seeds** | the row is the mean over the five runs with the seed-to-seed spread; every run's policy is saved |
 | 31 | The assembler's "undefined references" check matched the LaTeX FONT warnings; the scenario table's variable names were set in text mode, so the table did not compile | precise check; math mode; `tabcolsep`; `raggedbottom` |
+| 32 | **The ablation's "is this component measurable" rule was not a test.** It compared a component's difference with the learner's own seed-to-seed spread, a rule with a per-arm null error rate of about a third at three training seeds, and it bought no power | paired t intervals on the per-seed differences, plus a resolution statement; the interpretive sentences are DERIVED in the token filler, not asserted in the prose |
+| 33 | The ablation runner wrote its incremental log with `dict(**row, **protocol)`, which raised on a duplicated key and killed the stage after two training runs | the payload is built by UPDATE; the runner RESUMES (a row measured under the same protocol is reused) and the CSV is rewritten after every row |
+| 34 | The base comparison's CSV took its fieldnames from the first row, so the learned rows' extra columns raised on write | the fieldnames are the union over the rows; the base stage gained a `--resume` path that evaluates the stored policies instead of retraining them |
 
 `tests/mutation_check.py` proves the suite catches the historical bugs.
 
@@ -166,7 +200,40 @@ arms say the difference is 0.015. The prose now quotes the controlled arms.
   constrained upper bound, the internal consistency of CK and SC, the
   seed-variance weighting, and which claimed contributions the measurements
   actually support.
-- **Audit 4** (final, if time allows).
+- **Audit 4** (DONE, 20 Oct 22:10): **the statistics of the re-measurement
+  protocol itself.** Brief:
+  `C:\Users\gbust\AppData\Local\Temp\opencode\audit4_brief.txt`. It found
+  the following, and all of it is now fixed:
+  * **The "yardstick" rule was not a test.** Comparing a component's
+    difference with the learner's own seed-to-seed spread has a per-arm
+    null error rate of about a third at three training seeds, and it buys
+    no power: the measurement cannot detect a true effect of the size it
+    flags. -> replaced by paired t intervals on the per-seed differences,
+    and the paper says "no effect larger than X was DETECTED at this
+    budget and this seed count" rather than "the component is inert".
+  * **The negative conclusion's mechanistic half was overstated.** The
+    arms are null results used as evidence of absence. -> the abstract, the
+    introduction and the conclusion now state the descriptive gap with its
+    interval, and list the claims the measurements do NOT support.
+  * **The quoted uncertainty omitted the scene variance.** -> the variance
+    is now decomposed: the seed component is the uncertainty of a
+    comparison, the scene component is common to all controllers and
+    cancels in every difference.
+  * **The matched budget does not control for budget-conditionality or for
+    redundancy between components.** -> the paper says so, and says a
+    budget sweep would be needed.
+  * **"A training run is deterministic given its seed" was not
+    established.** -> now established by two tests and by audit item T1
+    (the seed is set BEFORE the networks are constructed, so the
+    initialisation is seeded too).
+  * **The deterministic-vs-sampled comparison.** The paper's argmax row
+    already settles the sampling-handicap objection, and the heuristic's
+    information advantage is now stated as a limitation.
+  * The audit's recommendations NOT taken, and why: raising the seed count
+    to 10+ (the compute does not fit the deadline, so the paper reports
+    intervals and a resolution instead of verdicts), decoupling the scene
+    and action streams (would need the whole matrix re-measured), and a
+    budget sweep (same reason).
 
 Each audit gets a SELF-CONTAINED brief: the setting, the model, the
 measured numbers, and the exact claims to check, because a fresh subagent
