@@ -323,12 +323,14 @@ spent.
 
 The per-agent arm reaches $@@CREDIT_B_CK@@$ against $@@CREDIT_A_CK@@$ for
 the shared one, a difference of $@@CREDIT_DELTA@@$ in persistent coverage.
+Arm~A is the proposed method on the first @@CREDIT_N@@ of the base
+comparison's training runs --- the same policies, not a cheaper experiment
+--- so the two rows of the first table and this table describe the same
+learner.
 The two arms share their training seeds, so the comparison is paired, and
 the 95\% interval on the paired difference is $@@CREDIT_CI@@$ over
-@@CREDIT_N@@ training runs: the cheapest modification in the direction the
-diagnosis points does not close the gap, and the interval is consistent
-with a difference of any size up to about $@@CREDIT_HALF@@$ in either
-direction.  The scope of that statement is the one set out above: arm~B
+@@CREDIT_N@@ training runs: @@CREDIT_VERDICT@@.  The scope of that
+statement is the one set out above: arm~B
 supplies each agent with its own baseline and unshares the actor, and
 neither of those changes the fact that the reward the gradient sees is the
 same team reward for every agent.

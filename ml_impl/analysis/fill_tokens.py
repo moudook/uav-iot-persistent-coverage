@@ -705,6 +705,29 @@ def build_tokens():
             tok["CREDIT_CI"] = f"[{mean-half:+.3f}, {mean+half:+.3f}]"
             tok["CREDIT_P"] = f"{p:.3f}"
             tok["CREDIT_N"] = str(n)
+            # the verdict is derived: an interval that excludes zero says
+            # something the point estimate does not
+            if mean + half < 0:
+                tok["CREDIT_VERDICT"] = (
+                    f"the per-agent arm is measurably WORSE than the shared "
+                    f"one, by {-mean:.3f} of persistent coverage, and the "
+                    f"interval excludes zero, so the cheapest modification "
+                    f"in the direction the diagnosis points does not close "
+                    f"the gap --- it opens it slightly")
+            elif mean - half > 0:
+                tok["CREDIT_VERDICT"] = (
+                    f"the per-agent arm is measurably BETTER than the shared "
+                    f"one, by {mean:.3f} of persistent coverage, and the "
+                    f"interval excludes zero, so the cheapest modification "
+                    f"in the direction the diagnosis points helps --- "
+                    f"although not by enough to close the gap")
+            else:
+                tok["CREDIT_VERDICT"] = (
+                    f"the difference is not resolved by this arm: the "
+                    f"interval is consistent with a difference of any size up "
+                    f"to about {half:.3f} in either direction, so the "
+                    f"cheapest modification in the direction the diagnosis "
+                    f"points has not been shown to close the gap")
 
     # ------------------------------------------------------------------
     # THE ARMS' VERDICT, derived.  The abstract and the introduction both
