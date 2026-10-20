@@ -57,12 +57,15 @@ This is the protocol every number in the paper is produced under.
    is being re-measured on one device**, because a variant trained on the
    GPU and its partner trained on the CPU are not a paired comparison.
    **CONFIRMED**: the same training call on the GPU returns CK 0.726530,
-   which is the observation arms' and the ablation's value to SIX DECIMALS,
-   and the CPU returns 0.761. So a training run is bitwise reproducible
-   given a fixed device, and the device was the sole cause of the
-   disagreement. (The thread count turned out not to matter at this
-   network size -- the diagnostic ran with two threads and the observation
-   arms with three and agreed exactly -- but it is pinned anyway.)
+   which is the observation arms' and the ablation's value to SIX DECIMALS.
+   The full picture is that the result depends on the (device, thread
+   count) PAIR: the GPU with three threads gives 0.7265, the CPU with one
+   thread gives 0.6819 and the CPU with two threads gives 0.761. So both
+   the device and the thread count move the result, and the base table's
+   re-run (the CPU with two threads) was the odd one out. The re-measurement
+   pins both, so every table will describe the same experiment. A training
+   run is bitwise reproducible given a fixed (device, thread count), and
+   the audit checks the seed half of that.
 1. **Training**: 25 episodes x 2000 steps per training run. The base
    comparison trains **5** runs (seeds 0-4); the component ablation and the
    observation A/B/C train **3** runs (seeds 0-2); the learned baselines
