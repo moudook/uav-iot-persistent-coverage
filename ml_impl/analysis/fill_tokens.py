@@ -651,6 +651,18 @@ def build_tokens():
             tok["CREDIT_N"] = str(n)
 
     # ------------------------------------------------------------------
+    # what the metrics do on an INFEASIBLE configuration
+    # ------------------------------------------------------------------
+    inf = load_json("infeasible_instance.json")
+    if inf:
+        m = inf.get("mean", {})
+        tok["INF_CK"] = f(m.get("CK", float("nan")))
+        tok["INF_SC"] = f(m.get("SC", float("nan")))
+        tok["INF_AG"] = f(m.get("AG", float("nan")))
+        tok["INF_ORACLE"] = f(m.get("oracle_CK", float("nan")))
+        tok["INF_N"] = str(len(inf.get("rows", [])))
+
+    # ------------------------------------------------------------------
     # the numbers the paper quotes about ITSELF
     # ------------------------------------------------------------------
     # the claim audit's own counts, so that the paper cannot claim a

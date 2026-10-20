@@ -27,6 +27,17 @@ scene-to-scene variation does not enter this interval, because every
 controller is evaluated on the same scenes and it therefore cancels in the
 difference.
 
+The mission-relevant quantity is the joint invariant, and it separates
+the two controllers far more sharply than the coverage does.  The
+reactive heuristic satisfies the coverage requirement and the connectivity requirement simultaneously in $@@REACT_SC@@$ of the
+mission, against $@@MAPPO_SC@@$ for the learned controller.  The
+coverage ratio is a weak proxy for that: a controller can hold a high
+per-sensor coverage while never covering every sensor at the same
+instant, which is what the learned controller does, and the service
+continuity metric is therefore the one that distinguishes these two
+controllers most sharply, even though we criticise it for a different
+reason elsewhere.
+
 It is worth separating the two sources of variation in the headline
 number, because they behave differently.  Across the @@VAR_N_SEEDS@@
 training runs of the learned controller the coverage varies by $@@VAR_SEED@@$
@@ -39,7 +50,17 @@ every difference this paper reports; the seed component does not, and it
 is the seed component that the training-seed spread measures.  A reader
 comparing two controllers should read the seed component as the
 uncertainty of the comparison and the scene component as a property of the
-configuration.
+configuration.  Two caveats belong with these numbers.  The spread
+quoted for a learned controller is the spread of its per-seed means,
+and each per-seed mean averages five evaluation scenes of a single
+rollout, so it contains the rollout-to-rollout variation of a policy
+that samples at every step and not only the variation between training
+runs.  And the cancellation of the scene component in a difference is an
+assumption rather than an identity: it holds if the difficulty of a
+scene enters every controller additively and with the same size, and
+it fails if a scene is hard for one controller and easy for the other.
+The per-scene scores are in the artefact, so the assumption is
+checkable rather than merely asserted.
 
 The question that this comparison invites --- whether more training would
 have closed the gap --- deserves an answer rather than an assumption,

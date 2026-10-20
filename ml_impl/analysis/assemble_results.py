@@ -115,17 +115,38 @@ evaluated on the same scenes with the same seeds, and the rule baselines and
 the learned controllers are trained on the same budget.  The teleporting
 placement oracle reaches $CK=1.000$ on this configuration; it is the
 ceiling against which every coverage number below is meant to be read, and
-it is what makes the comparison meaningful: a number without a ceiling
-cannot distinguish a weak controller from an infeasible configuration.
+it is what makes the comparison meaningful: the oracle establishes that
+the configuration is coverable, so a controller that falls short of it
+falls short as a controller and not because the instance was infeasible.
 
 Two things are true of this configuration, and we report both.  First, the
 task is not hard at the parameters the project specifies: a deterministic
 reactive heuristic that assigns UAVs to uncovered sensors reaches
 $CK=@@REACT_CK@@$ while maintaining full connectivity.  Second, the learned
-controller does not reach that figure, and the arms below identify why.
-Three candidate explanations can be tested with controlled arms --- the
-content of the observation, the energy model, and the credit assignment of
-the team reward --- and the arms are reported whichever way they come out.
+controller does not reach that figure, and the arms below bound how much
+of the gap each candidate explanation can account for.  Three candidate
+explanations can be tested with controlled arms --- the content of the
+observation, the energy model, and the credit assignment of the team
+reward --- and the arms are reported whichever way they come out, with
+the resolution at which each was measured.
+
+Before those arms, one measurement of what the framework is \emph{for},
+because it is the claim the framework makes first.  On the report's
+original configuration, $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m, which
+Section~\ref{sec:feasibility} proves infeasible for the region
+requirement, the same reactive heuristic reaches $CK=@@INF_CK@@$ with
+connectivity availability $@@INF_AG@@$ --- over the @@INF_N@@ scenes of
+that configuration --- while the service-continuity metric is
+$@@INF_SC@@$.  A reader with no achievability reference would read that
+coverage ratio as a reasonably good controller, and the joint metric as a
+catastrophic one, and neither reading would distinguish the instance from
+a feasible one.  The teleporting oracle on the same scenes reaches
+$@@INF_ORACLE@@$, so the twenty sensors themselves are coverable and the
+shortfall is a controller shortfall; it is the \emph{certificate} that
+says the region is not coverable at all, and it is the certificate that
+makes the difference between the two readings decidable.  That is what
+the framework contributes here, and it is why the results below are on a
+configuration the certificate admits.
 
 __TAB_MAIN__
 

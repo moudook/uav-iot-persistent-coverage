@@ -233,9 +233,17 @@
     "id": "R1",
     "claim": "the evaluation of a sampled policy is a function of (policy, scene) and does not depend on the ambient state of the global RNG",
     "status": "PASS",
-    "measured": "CK=1.0 and Energy=3569.0 and Distance=181.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3569.0 and Distance=181.0 and CovIntegral=0.0",
+    "measured": "CK=1.0 and Energy=3574.0 and Distance=182.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3574.0 and Distance=182.0 and CovIntegral=0.0",
     "expected": "identical",
     "note": "the policy samples, so the sampling stream is seeded from the evaluation seed; every controller therefore sees the same stream on the same scene"
+  },
+  {
+    "id": "I1",
+    "claim": "on the provably infeasible N=5 configuration the coverage ratio is NOT small, so a reader without an achievability reference cannot tell the instance from a feasible one",
+    "status": "PASS",
+    "measured": "CK = 0.648 with AG = 1.000, SC = 0.000, and the teleporting oracle reaches CK = 0.990 on the same scenes",
+    "expected": "CK >> 0 and SC = 0",
+    "note": "the twenty sensors are coverable, so the coverage shortfall is the controller's; the certificate, and not either metric, is what says the REGION is not coverable at N = 5"
   },
   {
     "id": "T1",

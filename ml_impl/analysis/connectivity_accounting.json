@@ -1,0 +1,7 @@
+{
+  "policy": "mappo",
+  "disconnected_steps": 0,
+  "after_active_set_change": 0,
+  "without_active_set_change": 0,
+  "rows": []
+}

@@ -1733,3 +1733,36 @@ class TestEvaluationReproducibility:
                 f"the trained parameter {k} changed because an evaluation "
                 f"ran in between, so the training run is not a function of "
                 f"its seed")
+
+    def test_the_joint_projection_keeps_the_swarm_connected(self):
+        """The per-agent mask is evaluated against the PRE-move state and all
+        the agents move simultaneously, so individually admissible moves can
+        jointly disconnect the swarm.  The joint projection exists for
+        exactly that case, and the invariant it maintains is that the graph
+        is connected after every step unless a UAV has LEFT the active set
+        (an empty pack away from a pad, or a failure), which is a different
+        mechanism and a different metric.
+        """
+        import numpy as np
+        from uav_wireless.env import UAVIoTEnv
+        from uav_wireless.experiments import base_config
+        cfg = base_config()
+        cfg.seed = 3
+        env = UAVIoTEnv(cfg)
+        env.reset()
+        rng = np.random.default_rng(7)
+        for _ in range(300):
+            mask = np.stack(env.action_masks())
+            acts = np.zeros(cfg.N, dtype=np.int64)
+            for i in range(cfg.N):
+                if mask[i].sum() == 0:
+                    mask[i, 0] = True
+                valid = np.nonzero(mask[i])[0]
+                acts[i] = int(valid[rng.integers(len(valid))])
+            before = len(env._active_idx())
+            env.step(acts)
+            after = len(env._active_idx())
+            _act, adj, _ = env.comm_graph()
+            assert env.is_connected(adj) or after < before, (
+                "the swarm was left disconnected by a move, with no UAV "
+                "leaving the active set: the joint projection did not hold")

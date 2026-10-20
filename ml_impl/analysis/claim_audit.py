@@ -528,6 +528,34 @@ def main():
     except Exception as exc:  # pragma: no cover - diagnostic path
         print(f"[SKIP] R1 reproducibility check: {exc}\n")
 
+    # --- what the metrics do on an INFEASIBLE configuration --------------
+    # The framework's first claim is that a coverage ratio reported without
+    # an achievability reference cannot distinguish a strong controller from
+    # an infeasible configuration.  That is a claim about what the METRICS
+    # show, so it is measured here rather than asserted.
+    inf_path = os.path.join(HERE, "infeasible_instance.json")
+    if os.path.exists(inf_path):
+        inf = json.load(open(inf_path, encoding="utf-8"))
+        m = inf.get("mean", {})
+        check("I1", "on the provably infeasible N=5 configuration the "
+                    "coverage ratio is NOT small, so a reader without an "
+                    "achievability reference cannot tell the instance from "
+                    "a feasible one",
+              float(m.get("CK", 0.0)) > 0.3
+              and float(m.get("SC", 1.0)) == 0.0,
+              f"CK = {m.get('CK', float('nan')):.3f} with AG = "
+              f"{m.get('AG', float('nan')):.3f}, SC = "
+              f"{m.get('SC', float('nan')):.3f}, and the teleporting oracle "
+              f"reaches CK = {m.get('oracle_CK', float('nan')):.3f} on the "
+              f"same scenes",
+              "CK >> 0 and SC = 0",
+              "the twenty sensors are coverable, so the coverage shortfall "
+              "is the controller's; the certificate, and not either metric, "
+              "is what says the REGION is not coverable at N = 5")
+    else:
+        print("[SKIP] I1 infeasible instance: run "
+              "analysis/infeasible_instance.py\n")
+
     # --- a training run is a function of its seed -------------------------
     try:
         import torch
