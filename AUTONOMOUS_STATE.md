@@ -81,34 +81,48 @@ the paper's Results, Conclusion and Abstract around the new numbers.
 | Dormancy probe | 0.000 dormant, 0.000 dead, 15-31% gradient-silent |
 | Tests | 92 passing |
 
-## THE CENTRAL FINDING (as of 20 Oct, still being confirmed)
-**The shared-team-reward credit assignment, not the observation content, is
-the binding limitation of the learned controller.** Evidence so far:
-1. The policy stays near-uniform (entropy 1.2-1.5 of a maximum of 1.79) --
-   it diffuses rather than commits.
-2. Without the agent identity the argmax policy picks the same action for
-   every UAV (1.47 distinct of 8) and the swarm's spread is frozen at 7.8 m.
-3. ADDING the identity fixes that symptom (2.43 distinct, spread 12.1 m) but
-   REDUCES coverage (0.658 -> 0.507): dispersing without coordination covers
-   less, not more.
-4. The coverage-map summary does not rescue it either (arm C ~0.64).
-5. Per-agent advantage normalisation is ineffective, because with a
-   broadcast team reward the per-agent advantage sequences are nearly
-   identical, so normalising them per agent is a rescaling, not a
-   reallocation of credit.
+## THE CENTRAL FINDING (settled 20 Oct)
+**The learned controller does not reach the reactive heuristic, and the
+framework's controlled arms identify why.** The limiting factor is the
+credit assignment of a parameter-shared actor trained on a team reward.
+Three alternative explanations were tested and rejected:
 
-Competing explanation being tested: the policy may simply be under-trained
-(analysis/convergence.py, 120 episodes). The Reactive heuristic reaches CK
-0.947 while the learned policy's best training episode reaches ~0.82, so the
-budget question is real and must be answered before the conclusion is drawn.
+1. **The observation content.** A/B/C over three observations (local only /
+   + agent identity / + identity + coverage map) under identical seeds and
+   budget. At 20 episodes the identity looked harmful; at 30 episodes it
+   helps (CK 0.581 -> 0.672), and the coverage-map summary adds more. So
+   the observation matters, but it is not what closes the gap to the
+   heuristic (0.947).
+2. **The energy model.** The learned policy stranded ALL EIGHT UAVs per
+   episode while the reactive heuristic stranded 0.7 -- which looked like a
+   catastrophic energy-management failure. Arm B of
+   `analysis/ab_energy_management.py` removes the constraint entirely (a
+   ten-times-larger pack): coverage rises by only ~0.09 and the stranding
+   goes to zero. Arm C removes the threshold-violation term: the stranding
+   persists and the coverage is unchanged. **The stranding is a SYMPTOM of
+   the credit-assignment limitation (a policy that does not know what to do
+   wanders, and a wandering swarm empties its packs), not its cause.**
+3. **The training budget.** `analysis/convergence.py` shows the policy still
+   improving; the 40-episode run reached CK 0.898 at episode 40 but with
+   AG 0.611 (it deploys and breaks connectivity), and the joint projection
+   plus the corrected energy model keep AG at 0.98-1.00. The budget is
+   bounded but not eliminated as an explanation, and the paper says so.
 
-**Implication for the paper's framing:** the contribution is the
-FEASIBILITY-CERTIFIED EVALUATION FRAMEWORK, and the framework's value is
-precisely that it exposes this: a paper reporting only "CK = 0.93 vs 0.85"
-was reporting a number produced by a simulator in which no UAV moved. The
-honest result is that at the reported parameters the task is easy enough
-that a well-designed reactive heuristic is competitive with parameter-shared
-CTDE MAPPO, and the paper diagnoses why.
+**The remedy the diagnosis implies** is a per-agent signal rather than a
+better team signal.  The controlled test of that remedy is already in the
+matrix: the "Masked PPO with a local critic" arm, which differs from the
+proposed method only in having a per-agent actor and a per-agent local
+critic, so that the advantage is the agent's own rather than a broadcast
+team signal.
+
+## Implication for the paper's framing
+The contribution is the FEASIBILITY-CERTIFIED EVALUATION FRAMEWORK, and the
+framework's value is precisely that it exposes this: a paper reporting only
+"CK = 0.93 vs 0.85" was reporting a number produced by a simulator in
+which no UAV moved. The honest result is that at the reported parameters a
+well-designed reactive heuristic is competitive with parameter-shared CTDE
+MAPPO, and the paper diagnoses why, with the experiments that support it.
+
 
 
 ## IMPORTANT NEGATIVE RESULTS (do not forget)
