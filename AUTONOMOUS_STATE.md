@@ -165,12 +165,12 @@ This is the protocol every number in the paper is produced under.
 ## THE NUMBERS (21 Oct, 09:40, the pinned CPU protocol)
 - The gap to the strongest rule: **0.276** (95% interval [0.242, 0.309]), against the unprivileged reactive rule at 0.972.
 - The learned controller: 0.696 +- 0.027; the argmax variant: 0.411 +- 0.075.
-- The arms' verdict, derived from the intervals and not asserted: controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.377, margin -0.101); the full observation of the proposed configuration (upper limit 0.164, margin +0.112); removing the energy constraint (upper limit 0.200, margin +0.076); removing the threshold term (upper limit 0.066, margin +0.210); the previous energy rule (upper limit -0.003, margin +0.279), against a gap of 0.276.  The arms whose upper limit reaches past the gap -- adding the agent identity -- are NOT excluded, and remain candidate explanations; the others are excluded as the whole of the explanation
-- The energy repair is NOT a null: the repair is not a null: the coverage it adds is +0.120 on the same training seeds (95\% interval [+0.003, +0.236], which excludes zero), and that is about 43\% of the gap to the reactive heuristic
+- The arms' verdict, derived from the intervals and not asserted: Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.377, margin -0.101); the full observation of the proposed configuration (upper limit 0.164, margin +0.112), against a gap of 0.276.  The arms whose upper limit reaches past the gap -- adding the agent identity -- are NOT excluded, and remain candidate explanations; the others are excluded as the whole of the explanation.
+- The energy repair is NOT a null: None
 - The training-budget sweep: 8 episodes: 0.609, 16 episodes: 0.640, 25 episodes: 0.698. the coverage moves by +0.089 over the range the sweep covers, which is about 32\% of the gap of 0.276, and the increments between successive budgets are +0.031, +0.058; but the last of them, +0.058, is only 1.2 standard errors from zero (the standard error of the difference is 0.048, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall
 - The stress table resolves nothing: every paired interval includes zero.
 - The scenario matrix: behind in 34 of 34 variants, from S8 (-0.051) to S6 (-0.388).
-- The claim audit: 33 items, 29 verified, 0 failing, 4 informational. The test suite: 115 cases.
+- The claim audit: 35 items, 31 verified, 0 failing, 4 informational. The test suite: 115 cases.
 ## THE CENTRAL FINDING (the claim, and what the arms actually establish)
 The learned controller does not reach the reactive heuristic, and the
 framework's controlled arms are what say why -- or why not.
