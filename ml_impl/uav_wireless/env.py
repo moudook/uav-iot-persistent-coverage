@@ -1312,6 +1312,16 @@ class UAVIoTEnv:
             min_batt=float("inf"), steps=0, denied=0, reserve_activations=0,
             return_events=0, stranded=0, returning=0.0,
             projection_revisions=0, unexecuted_actions=0,
+            # The metrics the table promises and the summary did not
+            # carry: the recovery time, the service lost while the swarm
+            # was degraded or recovering, the safety counters, and the
+            # charging contention.  They are additive and touch neither
+            # the dynamics nor the reward.
+            rec_delay_sum=0.0, rec_delay_n=0, rec_delay_max=0.0,
+            rec_delay_p95=0.0, outage_severity=0.0, outage_steps=0,
+            safety_collisions=0, safety_out_of_bounds=0,
+            safety_violations=0,
+            charge_wait_sum=0.0, charge_wait_n=0, charge_wait_max=0.0,
             # Non-degenerate metrics (Deep Research recommendation):
             # time-averaged coverage deficit and worst-case refresh streak.
             cov_integral=0.0, max_under_streak=0,

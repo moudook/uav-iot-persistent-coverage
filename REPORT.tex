@@ -1,0 +1,242 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath,amssymb,booktabs,tabularx,longtable,array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{parskip}
+\setlength{\parindent}{0pt}
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\begin{document}
+\begin{center}
+{\LARGE\bfseries Persistent UAV-IoT Coverage: Project Report}\par
+\vspace{4pt}
+{\large The research log behind the paper: the protocol, the defects, the audits, the measurements, and what is still open}\par
+\vspace{8pt}
+{\small Generated from the artefacts by \code{analysis/make_report.py} --- every number below is read from the file it was measured in.}
+\end{center}
+
+\section{The contract and the current state}
+The work runs to 26 October 2026. The deliverable is a paper whose every number can be traced to the artefact it was measured in, and whose comparative claims are derived in code rather than asserted, so that the paper says the right thing whichever way a measurement comes out. This report is the log of that work: the protocol, the defects that were found and fixed, the audits that were run and what they changed, the measurements, and the questions that are still open.
+
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Gap to the strongest rule & $\textbf{0.276}$ (95\% interval [0.242, 0.309]), against the unprivileged reactive rule at 0.972. \\
+The learned controller & $\textbf{0.696}$ $\pm$ 0.027 over 5 training seeds. \\
+Claim audit & 35 items: 31 verified, 0 failed, 4 recorded for transparency. \\
+Test suite & 115 cases, all passing. \\
+Device & every artefact records the device it was measured on; the device and the thread count are part of the protocol. \\
+\bottomrule
+\end{tabularx}
+
+\section{The measurement protocol}
+Every number in the paper and in this report is produced under one protocol:
+\begin{enumerate}
+\item \textbf{Training}: 25 episodes of 2000 control steps per training run. The base comparison trains five runs; the component ablation and the arms train three.
+\item \textbf{Evaluation}: five scenes per policy, and the number of evaluation scenes is part of the protocol --- a run with three is a different measurement, because a per-seed row is the mean over the scenes.
+\item \textbf{The device and the thread count} are part of the protocol. The floating-point kernels differ between the CPU and the GPU and the order of the reductions differs with the thread count, so two runs of the same configuration that land on different devices are not the same experiment. The device is pinned, the thread count is pinned in code, and every artefact records the device.
+\item \textbf{The evaluation is seeded} from the evaluation seed alone, so every controller is measured on the same random stream on the same scene --- common random numbers --- and a comparison between controllers is a comparison between policies rather than between the luck of the draw.
+\item \textbf{The ablations are paired}: the variants share the training seeds, so a difference is measured on the same training runs and reported as a confidence interval on the paired difference.
+\item \textbf{Inference is by interval, never by threshold}. An explanation is excluded only if the arm that tests it has an upper confidence limit below the gap; a null result is a statement about the resolution of that arm, and the resolution is reported with it.
+\end{enumerate}
+
+\section{What the measurements say}
+\begin{tabularx}{\textwidth}{@{}l c c c c@{}}
+\toprule
+Controller & CK & AG & SC & Cov. deficit \\
+\midrule
+  Fixed & 0.372 & 1.000 & 0.000 & 0.628 \\
+  Greedy & 0.786 & 0.964 & 0.066 & 0.214 \\
+  Reactive & 0.953 & 1.000 & 0.751 & 0.047 \\
+  Reactive (local assignment) & 0.972 & 1.000 & 0.777 & 0.028 \\
+  MAPPO (proposed) & 0.696 $\pm$ 0.027 & 0.985 & 0.015 & 0.304 \\
+  MAPPO (argmax) & 0.411 $\pm$ 0.075 & 0.988 & 0.000 & 0.589 \\
+  Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 \\
+\bottomrule
+\end{tabularx}
+
+The arms' verdict, derived from the intervals: Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.377, margin -0.101); the full observation of the proposed configuration (upper limit 0.164, margin +0.112); removing the energy constraint (upper limit 0.200, margin +0.076); removing the threshold term (upper limit 0.066, margin +0.210); the previous energy rule (upper limit -0.003, margin +0.279), against a gap of 0.276.  The arms whose upper limit reaches past the gap -- adding the agent identity -- are NOT excluded, and remain candidate explanations; the others are excluded as the whole of the explanation.
+
+The training-budget sweep: 8 episodes: 0.609, 16 episodes: 0.640, 25 episodes: 0.698. the coverage moves by +0.089 over the range the sweep covers, which is about 32\textbackslash\{\}\% of the gap of 0.276, and the increments between successive budgets are +0.031, +0.058; but the last of them, +0.058, is only 1.2 standard errors from zero (the standard error of the difference is 0.048, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall.
+
+\section{The defects that were found and fixed}
+Every one of these was a defect in the work, not in the writing. The list is the reason the claim audit exists.
+
+\small
+\begin{longtable}{@{}p{0.5cm}p{6.4cm}p{7.6cm}@{}}
+\toprule
+\textbf{\#} & \textbf{Defect} & \textbf{Fix} \\
+\midrule
+\endfirsthead
+\multicolumn{3}{@{}l}{\footnotesize\itshape the defect log, continued}\\
+\toprule
+\textbf{\#} & \textbf{Defect} & \textbf{Fix} \\
+\midrule
+\endhead
+1 & Simulator was static -- no UAV ever moved & \texttt{13cb839} \\
+2 & Baselines accepted \texttt{seed} and ignored it & \texttt{\_seeded()}; \texttt{d113e5c} \\
+3 & Time limit reported as termination -> GAE bootstrapped 0 & \texttt{d113e5c} \\
+4 & Centred-ring start pre-solved the task & \texttt{957ee1c} \\
+5 & \texttt{run\_scenarios} passed \texttt{seed=0} over the config's own seed & \texttt{957ee1c} \\
+6 & Reward eq (23) negated only U\_t & \texttt{reward\_from\_terms} \\
+7 & Initial placement disconnected on 11/20 seeds & \texttt{\_connected\_initial\_positions} \\
+8 & Backhaul modelled as co-channel interference & SNR-based backhaul \\
+9 & \texttt{snr\_to\_rate} off-by-one + floor made the PHY gate vacuous & fixed \\
+10 & Path-loss exponent additive -> LoS/NLoS erased & \texttt{pl\_d0 + 10n log10(d/d0)} \\
+11 & Noise units: dBm treated as watts (30 dB error) & divide by 1000 \\
+12 & Shadowing from the global RNG -> non-reciprocal & seeded per-episode table \\
+13 & \texttt{local\_obs} neighbour stride 2 -> slots overlapped & concatenation + assertion \\
+14 & \texttt{STATE\_DIM = 80} hardcoded (valid only for N=5) & \texttt{state\_dim(cfg)} \\
+15 & GAE bootstrap at truncation used 0 instead of V(s\_{T+1}) & fixed \\
+16 & Observation carried no agent identity & \texttt{use\_agent\_id}; \texttt{44206f5} \\
+17 & Observation could not express a return (no direction to a pad) & \texttt{use\_pad\_bearing}; \texttt{de3e1e6} \\
+18 & No indication of where the coverage deficit is & \texttt{map\_grid}; \texttt{44206f5} \\
+19 & The energy state machine did not exist & env makes the transition; \texttt{de3e1e6} \\
+20 & A UAV with an empty pack still counted as serving & out of service; \texttt{de3e1e6} \\
+21 & Charging was uneconomic (billed the hover power) & rotors idle on the pad \\
+22 & The battery never bound at 400 steps & episode 2000 steps \\
+23 & The returns were formed from an untruncated advantage array & truncate before forming returns \\
+24 & Two graph computations per candidate action (13.7 ms/step) & shared prospective graph \\
+25 & MAPPO's value normalisation missing although asserted & \texttt{c4a71f6} \\
+26 & The comparison table named MARL baselines never evaluated & \texttt{baselines\_rl.py}; "Evaluated" column \\
+27 & The scenario matrix crashed on N=3: the one-hot identity has length N and the global state carries the sensor positions and the pad occupancy, so the networks' input sizes depend on the configuration & one policy per distinct \texttt{(N, M, pads)} \\
+28 & THE EVALUATION OF A SAMPLED POLICY WAS AN UNCONTROLLED RANDOM DRAW. Eq. (13) specifies that the deployed policy samples, and \texttt{mappo.py} drew from the global torch RNG, which \texttt{eval\_agent} never seeded. The same policy file evaluated three times gave CK 0.734, 0.701 and 0.671, with the same standard deviation to four decimals. The paper's numbers could not be reproduced from the stored artefact, and controller-to-controller comparisons carried an unquantified sampling component & \texttt{uav\_wireless/seeding.py}; 5 new tests; audit item R1 \\
+29 & The component ablation trained ONE seed per variant at 10 episodes, while the base comparison trained five seeds at 25 -- so its deltas mixed the component with the budget and its spread was unmeasurable. It also disagreed with the observation arms (which said the full configuration was no better than the bare one) & \texttt{run\_ablation(..., seeds=)}, budget aligned to the base comparison, paired differences, incremental writes \\
+30 & The main table's learned row was ONE policy while the text claimed five training seeds & the row is the mean over the five runs with the seed-to-seed spread; every run's policy is saved \\
+31 & The assembler's "undefined references" check matched the LaTeX FONT warnings; the scenario table's variable names were set in text mode, so the table did not compile & precise check; math mode; \texttt{tabcolsep}; \texttt{raggedbottom} \\
+32 & The ablation's "is this component measurable" rule was not a test. It compared a component's difference with the learner's own seed-to-seed spread, a rule with a per-arm null error rate of about a third at three training seeds, and it bought no power & paired t intervals on the per-seed differences, plus a resolution statement; the interpretive sentences are DERIVED in the token filler, not asserted in the prose \\
+33 & The ablation runner wrote its incremental log with \texttt{dict(row, protocol)}, which raised on a duplicated key and killed the stage after two training runs & the payload is built by UPDATE; the runner RESUMES (a row measured under the same protocol is reused) and the CSV is rewritten after every row \\
+34 & The base comparison's CSV took its fieldnames from the first row, so the learned rows' extra columns raised on write & the fieldnames are the union over the rows; the base stage gained a \texttt{--resume} path that evaluates the stored policies instead of retraining them \\
+35 & The ablation's "is this component measurable" rule was not a test (audit 4) & paired t intervals on the per-seed differences, and a resolution statement; the interpretive sentences are derived in the token filler \\
+36 & The paper's central exclusion argument was overstated (audit 3) & the abstract, the introduction and the conclusion now state the descriptive gap, the interval, the resolution, and the causes the arms do NOT exclude \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{The audits, and what they changed}
+\noindent\textbf{} Audit 1 (done): the seven load-bearing claims. Found 4 wrong as
+stated; all corrected.
+\noindent\textbf{} Audit 2 (done): the reward terms, the mask and the joint projection,
+the H-step lookahead, the energy budget, the value normalisation, the
+metrics, the oracle normalisation, the evaluation protocol. 25 items,
+21 verified, 0 failed, 4 informational.
+\noindent\textbf{} Audit 3 (DONE, 20 Oct 23:15): the model and the results' claims.
+Brief: \textbackslash{}\allowbreak{}exttt{C:\textbackslash{}\allowbreak{}sers\textbackslash{}\allowbreak{}bust\textbackslash{}\allowbreak{}ppData\textbackslash{}\allowbreak{}ocal\textbackslash{}\allowbreak{}emp\textbackslash{}\allowbreak{}pencode\textbackslash{}\allowbreak{}udit3\_brief.txt\textbackslash{}\allowbreak{}exttt{
+(9 items). It found, and these are now fixed:
+* The central exclusion argument was OVERSTATED. "What remains is
+credit assignment" is not supported by three non-detections at three
+training seeds: a non-detection is a statement about the arm's
+resolution, and a sufficiency test cannot eliminate a cause that is
+necessary but not sufficient. The abstract, the introduction and the
+conclusion now say the residual is CONSISTENT WITH the credit
+assignment and with several other causes the arms do not test, and
+that the paper does not claim to have excluded them.
+* The "loses on its own objective therefore the learning pipeline is at
+fault" inference was a false dichotomy -> fixed.
+* The constrained ceiling IS 1.000, because the oracle's
+construction is itself admissible under the safety filter, so the
+paper's claim that an informative constrained ceiling was missed was
+false -> fixed.
+* The hop rule constrains the MOVER's eccentricity, not the graph's
+diameter, and can freeze an agent in a dispersed graph -> stated.
+* The service-continuity gap separates the two controllers far more
+sharply than the coverage gap -> now reported beside it.
+* The spread quoted for a learned controller contains the
+rollout-to-rollout variation, and the cancellation of the scene
+component in a difference is an ASSUMPTION -> both stated.
+* The framework's contribution needed a measurement. On the report's
+own infeasible N=5 configuration the reactive heuristic still reaches
+CK 0.648 with full connectivity while the joint metric is 0.000 and
+the oracle reaches 0.990: neither metric alone distinguishes the
+instance from a feasible one, and it is the certificate that makes
+the reading decidable. Measured by
+\textbackslash{}\allowbreak{}exttt{analysis/infeasible\_instance.py\textbackslash{}\allowbreak{}exttt{, audit item I1.
+* The rule's privileged access was an untested alternative
+explanation. Now measured: \textbackslash{}\allowbreak{}exttt{analysis/infeasible\_instance.py\textbackslash{}\allowbreak{}exttt{ aside,
+the arm \textbackslash{}\allowbreak{}exttt{Reactive (local assignment)\textbackslash{}\allowbreak{}exttt{ in \textbackslash{}\allowbreak{}exttt{train.py\textbackslash{}\allowbreak{}exttt{ runs the same rule
+without the global coverage state, and the verdict is derived from
+the measurement in the token filler.
+\noindent\textbf{} Audit 4 (DONE, 20 Oct 22:10): the statistics of the re-measurement
+protocol itself. Brief:
+\textbackslash{}\allowbreak{}exttt{C:\textbackslash{}\allowbreak{}sers\textbackslash{}\allowbreak{}bust\textbackslash{}\allowbreak{}ppData\textbackslash{}\allowbreak{}ocal\textbackslash{}\allowbreak{}emp\textbackslash{}\allowbreak{}pencode\textbackslash{}\allowbreak{}udit4\_brief.txt\textbackslash{}\allowbreak{}exttt{. It found
+the following, and all of it is now fixed:
+* The "yardstick" rule was not a test. Comparing a component's
+difference with the learner's own seed-to-seed spread has a per-arm
+null error rate of about a third at three training seeds, and it buys
+no power: the measurement cannot detect a true effect of the size it
+flags. -> replaced by paired t intervals on the per-seed differences,
+and the paper says "no effect larger than X was DETECTED at this
+budget and this seed count" rather than "the component is inert".
+* The negative conclusion's mechanistic half was overstated. The
+arms are null results used as evidence of absence. -> the abstract, the
+introduction and the conclusion now state the descriptive gap with its
+interval, and list the claims the measurements do NOT support.
+* The quoted uncertainty omitted the scene variance. -> the variance
+is now decomposed: the seed component is the uncertainty of a
+comparison, the scene component is common to all controllers and
+cancels in every difference.
+* The matched budget does not control for budget-conditionality or for
+redundancy between components. -> the paper says so, and says a
+budget sweep would be needed.
+* "A training run is deterministic given its seed" was not
+established. -> now established by two tests and by audit item T1
+(the seed is set BEFORE the networks are constructed, so the
+initialisation is seeded too).
+* The deterministic-vs-sampled comparison. The paper's argmax row
+already settles the sampling-handicap objection, and the heuristic's
+information advantage is now stated as a limitation.
+* The audit's recommendations NOT taken, and why: raising the seed count
+to 10+ (the compute does not fit the deadline, so the paper reports
+intervals and a resolution instead of verdicts), decoupling the scene
+and action streams (would need the whole matrix re-measured), and a
+budget sweep (same reason).
+Each audit gets a SELF-CONTAINED brief: the setting, the model, the
+measured numbers, and the exact claims to check, because a fresh subagent
+has no context. It is instructed to work purely mathematically (no web, no
+code, no repository) and to be adversarial rather than agreeable.
+
+\section{Negative results, kept on the record}
+\noindent - The first OMNeT++ validation counted MAC frames and reported links
+\noindent closing at 50 km. The control (TX crushed 60 dB) returned the same count.
+\noindent A physical-layer claim without a negative control is not a
+\noindent measurement. The paper claims only model equivalence (0.012 dB).
+\noindent - The research found NO 2023-2026 paper that certifies a persistent-coverage
+\noindent instance INFEASIBLE, and NO paper that names the all-constraints-simultaneous
+\noindent metric as degenerate. Both are the paper's novelty claim.
+\noindent - Closest prior work: "Feasibility Ceilings Before Learning"
+\noindent (arXiv:2610.20823, Oct 2026).
+\noindent - The Reactive heuristic is a strong baseline (CK 0.953). It is NOT
+\noindent legitimate to hide it: it is reported in every table.
+\noindent - The reward's articulation-point term (lam\_C) penalises the very spreading
+\noindent behaviour coverage requires. The ablation measures it.
+
+\section{The artefacts}
+Every number above is read from one of these files, and the paper is generated from the same ones.
+
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+  \code{results\_main.csv} & the main table: every controller, five training seeds for the learned one \\
+  \code{results\_ablation.csv} & the component ablation, twelve variants \\
+  \code{results\_ablation\_stress.csv} & the ablation on the combined-stress scenario \\
+  \code{results\_scenarios.csv} & the nine scenarios and their variants \\
+  \code{analysis/ab\_observation.json} & the observation arms \\
+  \code{analysis/ab\_energy\_management.json} & the energy arms \\
+  \code{analysis/ab\_credit.json} & the credit-assignment arm \\
+  \code{analysis/ab\_budget.json} & the training-budget sweep \\
+  \code{analysis/ab\_map\_resolution.json} & the map-resolution sweep \\
+  \code{analysis/claim\_audit.json} & the claim audit, item by item \\
+  \code{analysis/connectivity\_accounting.json} & the connectivity accounting \\
+  \code{analysis/corner\_transfer.json} & the corner certificate's transfer \\
+\bottomrule
+\end{tabularx}
+
+\section{Reproducing this report}
+\begin{verbatim}
+cd ml_impl
+python analysis/make_report.py     # this report
+python analysis/assemble_results.py # the paper
+python analysis/final_checks.py    # the gate
+python analysis/claim_audit.py     # the audit
+python tests/run_tests.py -q        # the tests
+\end{verbatim}
+
+\end{document}
