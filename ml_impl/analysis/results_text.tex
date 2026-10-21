@@ -104,11 +104,18 @@ single episode, $@@CURVE_BEST@@$, is on a training scene, and the same
 policy scores $@@CURVE_EVAL@@$ on unseen scenes, so the training-scene
 figure is not an estimate of the deployed performance.  The budget is
 therefore bounded rather than eliminated: at this configuration the curve
-is flat over the budget we can afford, and we do not claim that a larger
-budget would not change the picture.  The sweep behind that statement
-trains independent runs at each of three budgets rather than reading one
+on the training scene is flat over the budget we can afford, and we do not
+claim that a larger budget would not change the picture.  The sweep behind
+that statement trains independent runs at each of three budgets rather
+than reading one
 run's curve at different points, so it compares budgets and does not
-restate the curve: @@BUDGET_SWEEP@@, and @@BUDGET_VERDICT@@.
+restate the curve: @@BUDGET_SWEEP@@, and @@BUDGET_VERDICT@@.  The two
+measurements differ in what they can support, and the difference is worth
+stating rather than smoothing over: the curve flattens on the scene the
+policy trains on, while across separate runs the coverage on unseen
+scenes is still rising at the longest budget the sweep covers.  A
+flattening training curve is therefore not evidence that the budget has
+stopped mattering, and we do not use it as such; @@BUDGET_CAVEAT@@.
 
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
@@ -318,8 +325,11 @@ tests.  The intervals do \emph{not} show that a component is unnecessary.
 A component can be redundant with another, in which case removing either
 one alone costs nothing while removing both costs a great deal; and a
 component that matters only at a larger budget is invisible at this one.
-Establishing budget-independence would need a budget sweep, which we do
-not run, and we therefore do not claim it.
+The budget sweep above speaks to the second case for the full
+configuration, and it does not settle it: @@BUDGET_VERDICT@@.  The arms
+here are each measured at the single budget the base comparison uses, so
+for the individual components we do not claim budget-independence, and
+@@BUDGET_CAVEAT@@.
 
 Two of the null results are explained rather than merely reported.  The
 articulation-point term makes no measurable difference because the safety

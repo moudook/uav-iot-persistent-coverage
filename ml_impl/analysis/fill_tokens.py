@@ -41,6 +41,14 @@ def load_json(name):
     return json.load(open(p, encoding="utf-8"))
 
 
+def load_json_ml(name):
+    """A JSON artefact that lives in ml_impl/ rather than analysis/."""
+    p = os.path.join(ML, name)
+    if not os.path.exists(p):
+        return []
+    return json.load(open(p, encoding="utf-8"))
+
+
 def f(x, nd=3):
     return f"{float(x):.{nd}f}"
 
@@ -1101,11 +1109,61 @@ def build_tokens():
         tok["BUDGET_SPREAD"] = f"{spread:+.3f}"
         tok["BUDGET_MIN"] = f"{min(float(r['CK']) for r in rows):.3f}"
         tok["BUDGET_MAX"] = f"{max(float(r['CK']) for r in rows):.3f}"
-        tok["BUDGET_VERDICT"] = (
-            f"the coverage moves by {spread:+.3f} between the shortest and "
-            f"the longest budget, against a seed-to-seed spread of about "
-            f"{max(float(r.get('CK_std', 0.0)) for r in rows):.3f}, so the "
-            f"shortfall is not made of the training budget at this scale")
+        tok["BUDGET_RANGE"] = (f"{int(rows[0]['episodes'])} to "
+                               f"{int(rows[-1]['episodes'])}")
+        tok["BUDGET_N"] = str(len(rows))
+        # the increments, so that "is it still rising?" is answered by the
+        # measurement and not by an assertion
+        incs = []
+        for a, b in zip(rows, rows[1:]):
+            incs.append(float(b["CK"]) - float(a["CK"]))
+        tok["BUDGET_INCREMENTS"] = ", ".join(f"{d:+.3f}" for d in incs)
+        tok["BUDGET_LAST_DELTA"] = f"{incs[-1]:+.3f}" if incs else "n/a"
+        tok["BUDGET_FIRST_DELTA"] = f"{incs[0]:+.3f}" if incs else "n/a"
+        max_std = max(float(r.get("CK_std", 0.0)) for r in rows)
+        tok["BUDGET_MAX_STD"] = f"{max_std:.3f}"
+        # the movement as a fraction of the gap it would have to explain
+        if "GAP" in tok:
+            gap = float(tok["GAP"])
+            frac = abs(spread) / gap if gap else float("nan")
+            tok["BUDGET_FRAC"] = f"{100 * frac:.0f}"
+            tok["BUDGET_GAP"] = f"{gap:.3f}"
+        # IS the evaluated coverage still rising at the longest budget?
+        # This is the question the sweep exists to answer, and the answer
+        # has to be read off the increments, not asserted.
+        rising = bool(incs) and incs[-1] > 0
+        tok["BUDGET_STILL_RISING"] = "yes" if rising else "no"
+        if rising:
+            # The curve on the TRAINING scene has flattened, but across
+            # separate runs the EVALUATED coverage is still rising at the
+            # longest budget.  Both are measurements.  The honest statement
+            # is therefore that the budget is not excluded, that the sweep
+            # bounds what the budget buys over the range it covers, and that
+            # nothing is extrapolated beyond it.
+            tok["BUDGET_VERDICT"] = (
+                f"the coverage moves by {spread:+.3f} over the range the "
+                f"sweep covers, which is about {tok.get('BUDGET_FRAC', 'n/a')}"
+                f"\\% of the gap of {tok.get('BUDGET_GAP', 'n/a')}, and the "
+                f"increments between successive budgets are "
+                f"{tok['BUDGET_INCREMENTS']}, so the evaluated coverage is "
+                f"still rising at the longest budget we ran: the budget is "
+                f"therefore not excluded as a partial cause of the shortfall"
+            )
+            tok["BUDGET_CAVEAT"] = (
+                "we do not extrapolate the sweep past the budgets it "
+                "covers, and we do not claim that a larger budget would "
+                "close the gap")
+        else:
+            tok["BUDGET_VERDICT"] = (
+                f"the coverage moves by {spread:+.3f} over the range the "
+                f"sweep covers, against a seed-to-seed spread of about "
+                f"{max_std:.3f}, and the increments between successive "
+                f"budgets are {tok['BUDGET_INCREMENTS']}, so the coverage "
+                f"has stopped rising over the range we can afford: the "
+                f"shortfall is not made of the training budget at this scale")
+            tok["BUDGET_CAVEAT"] = (
+                "we do not extrapolate the sweep past the budgets it "
+                "covers")
 
     # ------------------------------------------------------------------
     # the episode length, in both units, so that the two "400"s of the
@@ -1148,6 +1206,43 @@ def build_tokens():
             tok["DUTY_CYCLE"] = f"{duty:.0f}"
         except (TypeError, ValueError, ZeroDivisionError):
             pass
+
+    # ------------------------------------------------------------------
+    # the feasibility numbers: the packing survey over random sensor draws,
+    # and the geometry of the corner certificate's transfer to a sensor set
+    # ------------------------------------------------------------------
+    feas = load_json_ml("results_feasibility.json")
+    if feas:
+        ps = feas.get("packing_survey") or {}
+        if ps:
+            tok["PACK_SEEDS"] = str(ps["seeds"])
+            tok["PACK_MEAN"] = f(ps["packing_size_mean"], 2)
+            tok["PACK_MIN"] = str(ps["packing_size_min"])
+            tok["PACK_MAX"] = str(ps["packing_size_max"])
+            tok["PACK_N_MEAN"] = f(ps["N_required_mean"], 2)
+            tok["PACK_N_MIN"] = str(ps["N_required_min"])
+            tok["PACK_N_MAX"] = str(ps["N_required_max"])
+            tok["PACK_EXCLUDED"] = str(ps["seeds_excluded"])
+            tok["PACK_EXCL_PCT"] = f"{100 * ps['seeds_excluded_fraction']:.0f}"
+
+    # the PHY equivalence's own number: the worst |delta| in dB between the
+    # Python log-distance model and the INET breakpoint path-loss model
+    phy = load_json("phy_equivalence.json")
+    if phy:
+        tok["PHY_DELTA"] = f(phy.get("worst_delta_db", 0.0), 3)
+        tok["PHY_ROWS"] = str(len(phy.get("rows", [])))
+
+    ct = load_json("corner_transfer.json")
+    if ct:
+        # the cap radius: the largest radius at which one sensor per corner
+        # still gives pairwise disjoint coverage discs
+        tok["CAP_R"] = f(ct["cap_radius_max"], 2)
+        # the probability that a uniform draw hits all four caps, in the
+        # LaTeX form for a small number: 9.339e-06 -> $9.3\times10^{-6}$
+        mant, expo = f"{ct['probability_all_caps_hit']:.1e}".split("e")
+        tok["CAP_P"] = f"{mant}\\times 10^{{{int(expo)}}}"
+        tok["CAP_PCT"] = f"{100 * ct['cap_area_fraction']:.2f}"
+        tok["CAP_TWO_R"] = f(ct["two_R_cov"], 0)
 
     # ------------------------------------------------------------------
     # the numbers the paper quotes about ITSELF

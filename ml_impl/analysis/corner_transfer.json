@@ -1,0 +1,19 @@
+{
+ "side": 80.0,
+ "R_cov": 35.0,
+ "M": 20,
+ "two_R_cov": 70.0,
+ "cap_radius_max": 5.0,
+ "cap_radius_used": 4.999999,
+ "cap_area_fraction": 0.0030679603485867747,
+ "probability_all_caps_hit": 9.339022641330352e-06,
+ "monte_carlo": {
+  "trials": 200000,
+  "hits": 2,
+  "estimate": 1e-05
+ },
+ "grid_min_separation_closed": 70.0,
+ "analytic_min_separation": 70.0,
+ "grid_min_separation_open": 71.0,
+ "note": "the corner certificate transfers to the sensor requirement only if the sensor set contains four sensors whose coverage discs are pairwise disjoint; with one sensor near each corner that means a cap radius below cap_radius_max, and a uniform draw does that with the probability above"
+}

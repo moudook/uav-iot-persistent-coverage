@@ -69,11 +69,11 @@ controllers most sharply, even though we criticise it for a different
 reason elsewhere.
 
 It is worth separating the two sources of variation in the headline
-number, because they behave differently.  Across the 5
-training runs of the learned controller the coverage varies by $0.059$
-(the standard error of the mean is $0.026$); across the
-5 evaluation scenes it varies by $0.079$ (the
-standard error of the mean over the scenes is $0.035$).  The
+number, because they behave differently.  Across the @@VAR_N_SEEDS@@
+training runs of the learned controller the coverage varies by $@@VAR_SEED@@$
+(the standard error of the mean is $@@VAR_SEED_SE@@$); across the
+@@VAR_N_SCENES@@ evaluation scenes it varies by $@@VAR_SCENE@@$ (the
+standard error of the mean over the scenes is $@@VAR_SCENE_SE@@$).  The
 scene component is common to every controller in the comparison, because
 they are all evaluated on the same scenes, and it therefore cancels in
 every difference this paper reports; the seed component does not, and it
@@ -96,19 +96,26 @@ The question that this comparison invites --- whether more training would
 have closed the gap --- deserves an answer rather than an assumption,
 because a hand-designed rule embeds a human's solution while the learner
 receives a fixed budget.  The first training run's per-episode coverage,
-measured on the training scene, runs from $0.453$ to
-$0.849$ over its 25 episodes, and its mean over
-the first five episodes ($0.643$) is the same as its mean over
-the last five ($0.687$): the curve has flattened.  The best
-single episode, $0.849$, is on a training scene, and the same
-policy scores $0.761$ on unseen scenes, so the training-scene
+measured on the training scene, runs from $0.606$ to
+$0.801$ over its 25 episodes, and its mean over
+the first five episodes ($0.667$) is the same as its mean over
+the last five ($0.671$): the curve has flattened.  The best
+single episode, $0.801$, is on a training scene, and the same
+policy scores $0.744$ on unseen scenes, so the training-scene
 figure is not an estimate of the deployed performance.  The budget is
 therefore bounded rather than eliminated: at this configuration the curve
-is flat over the budget we can afford, and we do not claim that a larger
-budget would not change the picture.  The sweep behind that statement
-trains independent runs at each of three budgets rather than reading one
+on the training scene is flat over the budget we can afford, and we do not
+claim that a larger budget would not change the picture.  The sweep behind
+that statement trains independent runs at each of three budgets rather
+than reading one
 run's curve at different points, so it compares budgets and does not
-restate the curve: 8 episodes: 0.609, 16 episodes: 0.640, and the coverage moves by +0.031 between the shortest and the longest budget, against a seed-to-seed spread of about 0.099, so the shortfall is not made of the training budget at this scale.
+restate the curve: 8 episodes: 0.609, 16 episodes: 0.640, 25 episodes: 0.698, and the coverage moves by +0.090 over the range the sweep covers, which is about 33\% of the gap of 0.271, and the increments between successive budgets are +0.031, +0.058, so the evaluated coverage is still rising at the longest budget we ran: the budget is therefore not excluded as a partial cause of the shortfall.  The two
+measurements differ in what they can support, and the difference is worth
+stating rather than smoothing over: the curve flattens on the scene the
+policy trains on, while across separate runs the coverage on unseen
+scenes is still rising at the longest budget the sweep covers.  A
+flattening training curve is therefore not evidence that the budget has
+stopped mattering, and we do not use it as such; we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap.
 
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
@@ -228,7 +235,7 @@ the credit to act on it chases.
 
 The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.123, 95\% interval [-0.477, +0.231], an upper limit below the gap of 0.271); $the full observation of the proposed configuration$ (-0.001, 95\% interval [-0.251, +0.249], an upper limit below the gap of 0.271).  Each upper limit is below the gap of 0.271 to the reactive heuristic, so the content of the observation is not what accounts for the gap; what the observation terms buy is the ability to specialise at all, and the arms here do not separate the coverage they produce.
 
-The resolution of the summary makes no difference to the coverage: $G=0$: 0.645, $G=4$: 0.669, and the largest of the differences is 0.025, inside the seed-to-seed spread of the learner (0.058).  What the summary does change is the swarm's behaviour: the spread falls from 8.1 m without it to 9.4 m with it, because a policy that follows the deficit keeps the swarm together instead of dispersing it.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
+The resolution of the summary makes no difference to the coverage: $G=0$: 0.645, $G=4$: 0.669, $G=8$: 0.645, and the largest of the differences is 0.025, inside the seed-to-seed spread of the learner (0.058).  What the summary does change is the swarm's behaviour: the spread falls from 8.1 m without it to 9.4 m and 8.4 m with it, because a policy that follows the deficit keeps the swarm together instead of dispersing it.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
 The ablation of the next section prices the observation terms individually  The reason is easy to see in
 retrospect.  Without a direction to the charger a UAV cannot come home, so
@@ -304,12 +311,12 @@ training seeds it would flag roughly one null component in three, while
 still being unable to detect a true effect of the size it flags.  The
 paired interval does not have that failure mode, and it also reports the
 resolution of the measurement, which is the number a reader actually
-needs.  no single component changes the persistent coverage by more than the seed-to-seed spread of the learner itself, and the table is reported in full because that is the result.
+needs.  Every component's 95\% confidence interval for the paired difference includes zero, and the smallest difference this protocol could resolve is $0.111$ of persistent coverage.
 
 What the intervals do and do not say is worth stating precisely, because a
 null result of this width is a statement about the resolution of the
 measurement and not about the component.  The measurement resolves no
-effect smaller than about $n/a$ of persistent coverage, at
+effect smaller than about $0.111$ of persistent coverage, at
 this training budget and with this number of training seeds.  The
 intervals are per-arm and are not adjusted for the number of arms, so a
 reader who wants a family-wise statement should treat the set of arms as
@@ -318,8 +325,11 @@ tests.  The intervals do \emph{not} show that a component is unnecessary.
 A component can be redundant with another, in which case removing either
 one alone costs nothing while removing both costs a great deal; and a
 component that matters only at a larger budget is invisible at this one.
-Establishing budget-independence would need a budget sweep, which we do
-not run, and we therefore do not claim it.
+The budget sweep above speaks to the second case for the full
+configuration, and it does not settle it: the coverage moves by +0.090 over the range the sweep covers, which is about 33\% of the gap of 0.271, and the increments between successive budgets are +0.031, +0.058, so the evaluated coverage is still rising at the longest budget we ran: the budget is therefore not excluded as a partial cause of the shortfall.  The arms
+here are each measured at the single budget the base comparison uses, so
+for the individual components we do not claim budget-independence, and
+we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap.
 
 Two of the null results are explained rather than merely reported.  The
 articulation-point term makes no measurable difference because the safety
@@ -340,15 +350,15 @@ The ordering of the components is not the same here as in the nominal regime, an
 
 %% CREDIT
 
-The per-agent arm reaches $@@CREDIT_B_CK@@$ against $@@CREDIT_A_CK@@$ for
-the shared one, a difference of $@@CREDIT_DELTA@@$ in persistent coverage.
-Arm~A is the proposed method on the first @@CREDIT_N@@ of the base
+The per-agent arm reaches $0.632$ against $0.698$ for
+the shared one, a difference of $-0.066$ in persistent coverage.
+Arm~A is the proposed method on the first 3 of the base
 comparison's training runs --- the same policies, not a cheaper experiment
 --- so the two rows of the first table and this table describe the same
 learner.
 The two arms share their training seeds, so the comparison is paired, and
-the 95\% interval on the paired difference is $@@CREDIT_CI@@$ over
-@@CREDIT_N@@ training runs: @@CREDIT_VERDICT@@.  The scope of that
+the 95\% interval on the paired difference is $[-0.222, +0.090]$ over
+3 training runs: the difference is not resolved by this arm: the interval is consistent with a difference of any size up to about 0.156 in either direction, so the cheapest modification in the direction the diagnosis points has not been shown to close the gap.  The scope of that
 statement is the one set out above: arm~B
 supplies each agent with its own baseline and unshares the actor, and
 neither of those changes the fact that the reward the gradient sees is the
