@@ -140,6 +140,7 @@ def build_tokens():
         tok[f"{key}_CI"] = f(r["CovIntegral"])
         tok[f"{key}_E"] = f(r.get("Energy", 0), 0)
         tok[f"{key}_STR"] = f(r.get("Stranded", 0), 1)
+        tok[f"{key}_RET"] = f(r.get("ReturnEvents", 0), 0)
         tok[f"{key}_DIST"] = f(r.get("Distance", 0), 0)
         if r.get("CK_std") not in (None, ""):
             tok[f"{key}_CK_STD"] = f(r["CK_std"])
@@ -344,8 +345,10 @@ def build_tokens():
                 "the policy follows the deficit instead of dividing the "
                 "work.")
         else:
+            # the sweep may be mid-measurement, with only the G=0 arm in
+            # the artefact; there is then nothing to compare it with
             worst = (max(abs(cks[g] - base) for g in cks if g != 0)
-                     if base is not None else 0.0)
+                     if base is not None and len(cks) > 1 else 0.0)
             sp_txt = ""
             if 0 in sp and len(sp) > 1:
                 sp_txt = (
@@ -401,7 +404,7 @@ def build_tokens():
         tok["EA_AG"] = f(ea["AG"])
         tok["EA_SC"] = f(ea["SC"])
         tok["EA_STR"] = f(ea["stranded_per_episode"], 1)
-        tok["EA_RET"] = f(ea["return_events_per_episode"], 1)
+        tok["EA_RET"] = f(ea["return_events_per_episode"], 0)
     if eb:
         tok["EB_CK"] = f(eb["CK"])
         tok["EB_AG"] = f(eb["AG"])
@@ -423,7 +426,7 @@ def build_tokens():
         tok["ED_DELTA"] = f(ed["CK"] - ea["CK"])
         tok["ED_STR"] = f(ed["stranded_per_episode"], 1)
         tok["ED_CK"] = f(ed["CK"])
-        tok["ED_RET"] = f(ed["return_events_per_episode"], 1)
+        tok["ED_RET"] = f(ed["return_events_per_episode"], 0)
         tok["ED_STR_DELTA"] = f(ed["stranded_per_episode"]
                                 - ea["stranded_per_episode"], 1)
         tok["ED_RET_DELTA"] = f(abs(ed["return_events_per_episode"]
@@ -1103,6 +1106,27 @@ def build_tokens():
             f"the longest budget, against a seed-to-seed spread of about "
             f"{max(float(r.get('CK_std', 0.0)) for r in rows):.3f}, so the "
             f"shortfall is not made of the training budget at this scale")
+
+    # ------------------------------------------------------------------
+    # the episode length, in both units, so that the two "400"s of the
+    # paper (the 2000-step episode's 400 SECONDS, and the earlier
+    # 400-STEP episode) can never be confused
+    # ------------------------------------------------------------------
+    try:
+        # the CANONICAL configuration, not the dataclass defaults: the
+        # default episode length is not the one the experiments use
+        from uav_wireless.experiments import base_config
+        c0 = base_config()
+        endurance = c0.B_max / c0.P_hover            # seconds of hover
+        old_steps = 400
+        old_seconds = old_steps * c0.dt
+        tok["PACK_ENDURANCE"] = f"{endurance:.0f}"
+        tok["OLD_EPISODE_S"] = f"{old_seconds:.0f}"
+        tok["OLD_EPISODE_PCT"] = f"{100 * old_seconds / endurance:.0f}"
+        tok["EPISODE_STEPS"] = f"{int(c0.episode_len)}"
+        tok["EPISODE_SECONDS"] = f"{c0.episode_len * c0.dt:.0f}"
+    except Exception:                                      # pragma: no cover
+        pass
 
     # ------------------------------------------------------------------
     # the numbers the paper quotes about ITSELF

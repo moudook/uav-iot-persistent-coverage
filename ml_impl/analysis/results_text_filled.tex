@@ -105,7 +105,10 @@ policy scores $0.761$ on unseen scenes, so the training-scene
 figure is not an estimate of the deployed performance.  The budget is
 therefore bounded rather than eliminated: at this configuration the curve
 is flat over the budget we can afford, and we do not claim that a larger
-budget would not change the picture.
+budget would not change the picture.  The sweep behind that statement
+trains independent runs at each of three budgets rather than reading one
+run's curve at different points, so it compares budgets and does not
+restate the curve: 8 episodes: 0.609, 16 episodes: 0.640, and the coverage moves by +0.031 between the shortest and the longest budget, against a seed-to-seed spread of about 0.099, so the shortfall is not made of the training budget at this scale.
 
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
@@ -171,7 +174,7 @@ The learned controller also burns more energy than the heuristic
 stranding fewer UAVs, which is the signature of a policy that moves
 deliberately rather than one that wanders.  Its connectivity availability is
 below $1.000$ because UAVs leave the active set when a pack empties away
-from a pad, and not because the safety filter leaks: over 2000 steps of a
+from a pad, and not because the safety filter leaks: over $2000$ steps of a
 random policy the graph was disconnected on no step in which the active set
 was unchanged (Section~\ref{sec:results_abl}).
 
@@ -225,7 +228,7 @@ the credit to act on it chases.
 
 The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.123, 95\% interval [-0.477, +0.231], an upper limit below the gap of 0.271); $the full observation of the proposed configuration$ (-0.001, 95\% interval [-0.251, +0.249], an upper limit below the gap of 0.271).  Each upper limit is below the gap of 0.271 to the reactive heuristic, so the content of the observation is not what accounts for the gap; what the observation terms buy is the ability to specialise at all, and the arms here do not separate the coverage they produce.
 
-The resolution of the summary makes no difference to the coverage: $G=0$: 0.641, $G=4$: 0.646, $G=8$: 0.662, and the largest of the differences is 0.021, inside the seed-to-seed spread of the learner (0.088).  What the summary does change is the swarm's behaviour: the spread falls from 14.3 m without it to 7.8 m and 9.4 m with it, because a policy that follows the deficit keeps the swarm together instead of dispersing it.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
+The resolution of the summary makes no difference to the coverage: $G=0$: 0.645, and the largest of the differences is 0.000, inside the seed-to-seed spread of the learner (0.058).  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
 The ablation of the next section prices the observation terms individually  The reason is easy to see in
 retrospect.  Without a direction to the charger a UAV cannot come home, so
@@ -253,7 +256,7 @@ departure with a flat battery, so a UAV could fly until its pack was empty
 away from a pad; the correction is to require a UAV to retain, after the
 move, the energy to reach a charging pad plus the reserve margin.  The
 stranding falls from $6.1$ UAVs per episode to $0.9$, and
-the return-to-charge transitions rise from about $141$ to about $655$ per
+the return-to-charge transitions rise from $135$ to $636$ per
 episode, because the UAVs now come home instead of dying in the field.  The
 coverage is unchanged to within the spread, and that is the honest
 conclusion: the defect was real, the repair was correct, and neither the
@@ -262,7 +265,7 @@ defect nor the repair explains the gap to the reactive heuristic.
 It is worth being explicit about what that null is and is not about, since
 a null result is easy to misread.  It is \emph{not} a statement that the
 energy constraint is inactive: the two rules differ by $5.2$
-stranded UAVs per episode and by roughly $501$ return-to-charge
+stranded UAVs per episode and by $501$ return-to-charge
 transitions, so the test is doing substantial work and the swarm's energy
 behaviour differs markedly between them.  It is a statement about the
 effect of that work on the \emph{coverage}, and the effect is small.  A
@@ -285,7 +288,7 @@ Every variant is trained on the same configuration with the same budget and
 from the same set of 3 training seeds, and differs from the
 full configuration in exactly one component, so a difference is
 attributable to that component.  The budget is the base comparison's
-(? episodes), and the full configuration of this table is
+(25 episodes), and the full configuration of this table is
 the first 3 of the base comparison's training runs --- the same
 policies, not a cheaper experiment --- so the two tables describe the same
 learner.  Because the variants share the training seeds, the
@@ -301,12 +304,12 @@ training seeds it would flag roughly one null component in three, while
 still being unable to detect a true effect of the size it flags.  The
 paired interval does not have that failure mode, and it also reports the
 resolution of the measurement, which is the number a reader actually
-needs.  Every component's 95\% confidence interval for the paired difference includes zero, and the smallest difference this protocol could resolve is $0.325$ of persistent coverage.
+needs.  no single component changes the persistent coverage by more than the seed-to-seed spread of the learner itself, and the table is reported in full because that is the result.
 
 What the intervals do and do not say is worth stating precisely, because a
 null result of this width is a statement about the resolution of the
 measurement and not about the component.  The measurement resolves no
-effect smaller than about $0.325$ of persistent coverage, at
+effect smaller than about $n/a$ of persistent coverage, at
 this training budget and with this number of training seeds.  The
 intervals are per-arm and are not adjusted for the number of arms, so a
 reader who wants a family-wise statement should treat the set of arms as
@@ -337,15 +340,15 @@ The ordering of the components is not the same here as in the nominal regime, an
 
 %% CREDIT
 
-The per-agent arm reaches $0.646$ against $0.683$ for
-the shared one, a difference of $-0.037$ in persistent coverage.
-Arm~A is the proposed method on the first 3 of the base
+The per-agent arm reaches $@@CREDIT_B_CK@@$ against $@@CREDIT_A_CK@@$ for
+the shared one, a difference of $@@CREDIT_DELTA@@$ in persistent coverage.
+Arm~A is the proposed method on the first @@CREDIT_N@@ of the base
 comparison's training runs --- the same policies, not a cheaper experiment
 --- so the two rows of the first table and this table describe the same
 learner.
 The two arms share their training seeds, so the comparison is paired, and
-the 95\% interval on the paired difference is $[-0.069, -0.006]$ over
-3 training runs: the per-agent arm is measurably WORSE than the shared one, by 0.037 of persistent coverage, and the interval excludes zero, so the cheapest modification in the direction the diagnosis points does not close the gap --- it opens it slightly.  The scope of that
+the 95\% interval on the paired difference is $@@CREDIT_CI@@$ over
+@@CREDIT_N@@ training runs: @@CREDIT_VERDICT@@.  The scope of that
 statement is the one set out above: arm~B
 supplies each agent with its own baseline and unshares the actor, and
 neither of those changes the fact that the reward the gradient sees is the

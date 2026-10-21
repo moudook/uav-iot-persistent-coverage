@@ -174,7 +174,7 @@ The learned controller also burns more energy than the heuristic
 stranding fewer UAVs, which is the signature of a policy that moves
 deliberately rather than one that wanders.  Its connectivity availability is
 below $1.000$ because UAVs leave the active set when a pack empties away
-from a pad, and not because the safety filter leaks: over 2000 steps of a
+from a pad, and not because the safety filter leaks: over $@@EPISODE_STEPS@@$ steps of a
 random policy the graph was disconnected on no step in which the active set
 was unchanged (Section~\ref{sec:results_abl}).
 
@@ -256,7 +256,7 @@ departure with a flat battery, so a UAV could fly until its pack was empty
 away from a pad; the correction is to require a UAV to retain, after the
 move, the energy to reach a charging pad plus the reserve margin.  The
 stranding falls from $@@ED_STR@@$ UAVs per episode to $@@EA_STR@@$, and
-the return-to-charge transitions rise from about $141$ to about $655$ per
+the return-to-charge transitions rise from $@@ED_RET@@$ to $@@EA_RET@@$ per
 episode, because the UAVs now come home instead of dying in the field.  The
 coverage is unchanged to within the spread, and that is the honest
 conclusion: the defect was real, the repair was correct, and neither the
@@ -265,7 +265,7 @@ defect nor the repair explains the gap to the reactive heuristic.
 It is worth being explicit about what that null is and is not about, since
 a null result is easy to misread.  It is \emph{not} a statement that the
 energy constraint is inactive: the two rules differ by $@@ED_STR_DELTA@@$
-stranded UAVs per episode and by roughly $@@ED_RET_DELTA@@$ return-to-charge
+stranded UAVs per episode and by $@@ED_RET_DELTA@@$ return-to-charge
 transitions, so the test is doing substantial work and the swarm's energy
 behaviour differs markedly between them.  It is a statement about the
 effect of that work on the \emph{coverage}, and the effect is small.  A
