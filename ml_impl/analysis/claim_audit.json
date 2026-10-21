@@ -48,6 +48,22 @@
     "note": "the corner certificate is a statement about the REGION and does not transfer to a random sensor draw; the report says so."
   },
   {
+    "id": "C2d",
+    "claim": "the corner-cap radius at which one sensor per corner still gives pairwise disjoint coverage discs is (side - 2 R_cov)/2, and the grid check confirms the bound is tight",
+    "status": "PASS",
+    "measured": "the cap radius is 5.0000 m and the formula gives 5.0000 m; at that radius the closest two points in different caps are 70.0000 m apart, and 2 R_cov = 70.0 m, so the bound is tight",
+    "expected": "the cap radius equals (side - 2 R_cov)/2 and the grid minimum separation equals 2 R_cov",
+    "note": "the corner certificate transfers to a sensor set only through a sufficient condition, and the paper says so."
+  },
+  {
+    "id": "C2e",
+    "claim": "the probability that a uniform draw of M sensors lands one in each of the four corner caps is the order the report quotes",
+    "status": "PASS",
+    "measured": "the probability is 9.339e-06 for 20 uniform sensors over a cap of radius 5.00 m (0.3068% of the square)",
+    "expected": "below 1e-4",
+    "note": "a random sensor draw essentially never meets the corner condition, which is why the region certificate does not transfer."
+  },
+  {
     "id": "C7a",
     "claim": "the achievability construction is admissible under the simulator's own safety filter (so the ceiling is reachable)",
     "status": "PASS",
@@ -233,7 +249,7 @@
     "id": "R1",
     "claim": "the evaluation of a sampled policy is a function of (policy, scene) and does not depend on the ambient state of the global RNG; the sampling stream is seeded from the evaluation seed alone, so every controller is measured on the same stream on the same scene",
     "status": "PASS",
-    "measured": "CK=1.0 and Energy=3569.0 and Distance=181.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3569.0 and Distance=181.0 and CovIntegral=0.0",
+    "measured": "CK=1.0 and Energy=3619.0 and Distance=191.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3619.0 and Distance=191.0 and CovIntegral=0.0",
     "expected": "identical",
     "note": "the policy samples, so the sampling stream is seeded from the evaluation seed; every controller therefore sees the same stream on the same scene"
   },

@@ -159,6 +159,49 @@ def main():
           "the corner certificate is a statement about the REGION and does "
           "not transfer to a random sensor draw; the report says so.")
 
+    # --- C2d: the corner certificate's transfer to a sensor set ---------
+    # The report states the cap radius at which one sensor per corner
+    # still gives pairwise disjoint coverage discs, and the probability
+    # that a uniform draw lands one in each cap.  Both are recomputed
+    # here, from the configuration, rather than quoted.
+    ct_path = os.path.join(HERE, "corner_transfer.json")
+    if os.path.exists(ct_path):
+        from uav_wireless.experiments import base_config
+        cfg = base_config()
+        with open(ct_path, encoding="utf-8") as f:
+            ct = json.load(f)
+        r_star = float(ct["cap_radius_max"])
+        bound = (cfg.side - 2.0 * cfg.R_cov) / 2.0
+        grid = float(ct["grid_min_separation_closed"])
+        prob = float(ct["probability_all_caps_hit"])
+        analytic = float(ct["analytic_min_separation"])
+        check("C2d", "the corner-cap radius at which one sensor per corner "
+                     "still gives pairwise disjoint coverage discs is "
+                     "(side - 2 R_cov)/2, and the grid check confirms the "
+                     "bound is tight",
+              abs(r_star - bound) < 1e-6 and abs(grid - analytic) < 1e-3,
+              f"the cap radius is {r_star:.4f} m and the formula gives "
+              f"{bound:.4f} m; at that radius the closest two points in "
+              f"different caps are {grid:.4f} m apart, and 2 R_cov = "
+              f"{2*cfg.R_cov:.1f} m, so the bound is tight",
+              f"the cap radius equals (side - 2 R_cov)/2 and the grid "
+              f"minimum separation equals 2 R_cov",
+              "the corner certificate transfers to a sensor set only "
+              "through a sufficient condition, and the paper says so.")
+        check("C2e", "the probability that a uniform draw of M sensors "
+                     "lands one in each of the four corner caps is the "
+                     "order the report quotes",
+              0.0 < prob < 1e-4,
+              f"the probability is {prob:.3e} for {ct['M']} uniform sensors "
+              f"over a cap of radius {r_star:.2f} m "
+              f"({100*float(ct['cap_area_fraction']):.4f}% of the square)",
+              "below 1e-4",
+              "a random sensor draw essentially never meets the corner "
+              "condition, which is why the region certificate does not "
+              "transfer.")
+    else:
+        print("[SKIP] the corner transfer: run analysis/corner_transfer.py\n")
+
     # --- C7: the safety filter and the achievability construction ------
     from analysis.mask_admissibility import (graph_properties,
                                              check_constructions,
