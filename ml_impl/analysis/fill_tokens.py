@@ -202,7 +202,20 @@ def build_tokens():
         tok[f"{key}_STR"] = f(r.get("Stranded", 0), 1)
         tok[f"{key}_RET"] = f(r.get("ReturnEvents", 0), 0)
         tok[f"{key}_DIST"] = f(r.get("Distance", 0), 0)
-        if r.get("CK_std") not in (None, ""):
+        # the spread is the SAMPLE standard deviation of the per-seed
+        # values, so that the prose, the table and every interval quote
+        # the SAME number
+        per = []
+        for x in str(r.get("per_seed_CK", "")).split(";"):
+            if x.strip():
+                try:
+                    per.append(float(x))
+                except ValueError:
+                    per = []
+                    break
+        if len(per) > 1:
+            tok[f"{key}_CK_STD"] = f"{sample_std(per):.3f}"
+        elif r.get("CK_std") not in (None, ""):
             tok[f"{key}_CK_STD"] = f(r["CK_std"])
 
     # The seed-to-seed SPREAD of the learned controller, recomputed from
@@ -234,7 +247,14 @@ def build_tokens():
         tok[f"{key}_AG"] = f(r["AG"])
         tok[f"{key}_SC"] = f(r["SC"])
         tok[f"{key}_CI"] = f(r["CovIntegral"])
-        if r.get("CK_std") not in (None, ""):
+        # the spread is the SAMPLE standard deviation of the per-seed
+        # values, the same number the table prints and the same number
+        # every interval in the paper is built from
+        per = [float(x) for x in str(r.get("per_seed_CK", "")).split(";")
+               if x.strip()]
+        if len(per) > 1:
+            tok[f"{key}_CK_STD"] = f"{sample_std(per):.3f}"
+        elif r.get("CK_std") not in (None, ""):
             tok[f"{key}_CK_STD"] = f(r["CK_std"])
     # the difference between the proposed method and the local-critic arm,
     # which the credit section tests on paired seeds
