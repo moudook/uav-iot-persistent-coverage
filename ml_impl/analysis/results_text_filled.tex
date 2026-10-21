@@ -203,8 +203,8 @@ written.
 
 Arm~A has the property that the shared-actor symmetry collapse predicts.
 The deterministic policy nearly collapses to a single action --- the
-``Distinct'' column counts $1.95$ distinct actions out of eight --- and
-the swarm's spread is $9.9$~m, which is the radius of the initial
+``Distinct'' column counts $1.76$ distinct actions out of eight --- and
+the swarm's spread is $10.7$~m, which is the radius of the initial
 cluster rather than the extent of a deployment.  This is the failure that
 Foerster et al.'s condition~(ii) is about: with an observation that does not
 break the permutation symmetry, a parameter-shared network is a single
@@ -215,21 +215,21 @@ that exposes it is a count of distinct actions, which costs nothing and
 which the raw coverage number does not make visible.
 
 Arm~B adds the one-hot identity, and the condition does what it says about
-specialisation: the number of distinct actions rises from $1.95$ to
-$2.25$ out of eight, and the swarm disperses rather than standing
+specialisation: the number of distinct actions rises from $1.76$ to
+$2.19$ out of eight, and the swarm disperses rather than standing
 still.  Its effect on the coverage, paired over the shared training seeds,
-is $-0.121$ with a 95\% interval of $[-0.619, +0.377]$, so we do
+is $+0.015$ with a 95\% interval of $[-0.130, +0.161]$, so we do
 not claim that the identity buys coverage at this budget: what it buys is
 the \emph{ability} to specialise, which the distinct-action count measures
 directly and which the coverage does not.
 
 Arm~C adds the broadcast coverage-map summary and the pad bearing, and it
 is the configuration the paper proposes.  The spread rises to
-$12.5$~m --- the swarm moves further --- while the distinct-action
-count falls to $1.71$, so the policy moves more but decides more
+$10.8$~m --- the swarm moves further --- while the distinct-action
+count falls to $1.83$, so the policy moves more but decides more
 uniformly.  That is the signature of a policy that is following the map
 rather than dividing the work, and the paired effect on the coverage is
-$+0.009$ (95\% interval $[-0.147, +0.164]$).
+$+0.023$ (95\% interval $[-0.015, +0.062]$).
 
 So the observation terms change what the policy \emph{does} --- how far it
 travels, and whether it can specialise at all --- much more clearly than
@@ -242,7 +242,7 @@ credit, which a shared team reward does not supply.  The map makes the
 deficiency visible, and therefore actionable-looking, and a policy without
 the credit to act on it chases.
 
-The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.121, 95\% interval [-0.619, +0.377], whose upper limit is NOT below the gap of 0.309 and which therefore cannot be excluded); $the full observation of the proposed configuration$ (+0.009, 95\% interval [-0.147, +0.164], an upper limit below the gap of 0.309).  At least one upper limit reaches past the gap of 0.309 to the unprivileged reactive rule, so the content of the observation is not excluded by these arms; what the observation terms buy is the ability to specialise at all, and the identity raises the number of distinct actions a policy takes from 1.95 to 2.25 out of eight, which is the specialisation the arms measure.
+The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (+0.015, 95\% interval [-0.130, +0.161], an upper limit below the gap of 0.309); $the full observation of the proposed configuration$ (+0.023, 95\% interval [-0.015, +0.062], an upper limit below the gap of 0.309).  Each upper limit is below the gap of 0.309 to the unprivileged reactive rule, so the content of the observation is not what accounts for the gap; what the observation terms buy is the ability to specialise at all, and the identity raises the number of distinct actions a policy takes from 1.76 to 2.19 out of eight, which is the specialisation the arms measure.
 
 The resolution of the summary makes no difference to the coverage: $G=0$: 0.645, $G=4$: 0.669, $G=8$: 0.645, and the largest of the differences is 0.025, inside the seed-to-seed spread of the learner (0.058).  What the summary does change is the swarm's behaviour: the spread grows, from 8.1 m without it to 9.4 m and 8.4 m with it, because a policy that follows the deficit spreads the swarm out instead of keeping it together.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
@@ -294,7 +294,7 @@ difference of this width is also a statement about the resolution of the
 arm and not about the component, and we report that resolution with the
 interval.
 
-The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, but the arms have not yet been measured with enough shared training seeds for an interval to be computable, and no bound is claimed for them here.
+The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.309 to the reactive heuristic: $removing the energy constraint$ (+0.023, 95\% interval [-0.035, +0.081], an upper limit below the gap of 0.309); $removing the threshold term$ (-0.001, 95\% interval [-0.029, +0.028], an upper limit below the gap of 0.309).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.
 
 That is the sequence the framework is for.  A coverage comparison on its
 own would have reported that the learned controller mismanages energy, and
@@ -390,11 +390,10 @@ advantage estimator, so the question on a persistent-coverage task is
 genuinely open.  And it narrows the search: a reader who wants to close
 the gap now knows that the answer is not ``use a local critic''.
 
-We therefore report the result as it stands: the credit assignment remains
-the best-supported explanation for the gap between the learned controller
-and the reactive heuristic, the two alternatives that the framework's other
-controlled arms rule out are ruled out, and the cheapest available remedy
-for the credit assignment does not close it.  The remedies that change the
+We therefore report the result as it stands: @@CREDIT_RESIDUAL@@, the two
+alternatives that the framework's other controlled arms rule out are ruled
+out, and the cheapest available remedy for the credit assignment does not
+close it.  The remedies that change the
 signal --- a difference reward, a counterfactual baseline, a per-agent
 value iteration --- are implementations of different algorithms, and we do
 not claim to have implemented or evaluated them here.

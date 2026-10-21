@@ -1085,6 +1085,45 @@ def build_tokens():
                     f"interval is {tok['CREDIT_CI']}, and {tail}, so the "
                     f"cheapest modification in the direction the diagnosis "
                     f"points has not been shown to close the gap")
+        # The inference the abstract carries, derived from this arm: the
+        # sentence that says what the residual is consistent with has to
+        # follow from the measurement, and it is the one place where a
+        # hand-written sentence would be a claim instead of a report.
+        if mean + half < 0:
+            tok["CREDIT_RESIDUAL_SHORT"] = (
+                f"The credit assignment of a shared team reward is the "
+                f"explanation the residual is consistent with, and the "
+                f"cheapest test of it points that way: a per-agent local "
+                f"critic is measurably worse, by {abs(mean):.3f}")
+            tok["CREDIT_RESIDUAL"] = (
+                f"The residual is consistent with the credit assignment of a "
+                f"shared team reward: the cheapest test of that diagnosis, a "
+                f"per-agent local critic, is measurably WORSE, by "
+                f"{abs(mean):.3f} of persistent coverage (95\\% interval "
+                f"{tok['CREDIT_CI']})")
+        elif mean - half > 0:
+            tok["CREDIT_RESIDUAL_SHORT"] = (
+                f"The credit assignment of a shared team reward is the "
+                f"explanation the residual is consistent with, but the "
+                f"cheapest test of it points the other way: a per-agent "
+                f"local critic is measurably better, by {mean:.3f}")
+            tok["CREDIT_RESIDUAL"] = (
+                f"The residual is consistent with the credit assignment of a "
+                f"shared team reward, and the cheapest test of that "
+                f"diagnosis, a per-agent local critic, is measurably BETTER, "
+                f"by {mean:.3f} of persistent coverage (95\\% interval "
+                f"{tok['CREDIT_CI']})")
+        else:
+            tok["CREDIT_RESIDUAL_SHORT"] = (
+                f"The credit assignment of a shared team reward is the "
+                f"explanation the residual is consistent with, and the "
+                f"cheapest test of it does not resolve it")
+            tok["CREDIT_RESIDUAL"] = (
+                f"The residual is consistent with the credit assignment of a "
+                f"shared team reward, and the cheapest test of that "
+                f"diagnosis does not resolve it: the per-agent local "
+                f"critic's difference is {mean:+.3f} of persistent coverage "
+                f"(95\\% interval {tok['CREDIT_CI']}), which includes zero")
 
     # ------------------------------------------------------------------
     # THE ARMS' VERDICT, derived.  The abstract and the introduction both

@@ -114,20 +114,20 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokArgRet}{159}
 \newcommand{\tokArgSc}{0.000}
 \newcommand{\tokArgStr}{3.0}
-\newcommand{\tokArmsMargin}{n/a}
-\newcommand{\tokArmsMarginMax}{n/a}
-\newcommand{\tokArmsSummarySentence}{Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.377, margin -0.068); the full observation of the proposed configuration (upper limit 0.164, margin +0.145), against a gap of 0.309.  The arms whose upper limit reaches past the gap -- adding the agent identity -- are NOT excluded, and remain candidate explanations; the others are excluded as the whole of the explanation.  Every interval is paired over the same training seeds, against the local-only arm A of the observation experiment.}
-\newcommand{\tokArmsVerdict}{controlled arms bound how much of the gap the alternative explanations can account for: the interval of the arm testing the content of the observation does not exclude the whole gap, so the content of the observation is not excluded by it}
+\newcommand{\tokArmsMargin}{0.148}
+\newcommand{\tokArmsMarginMax}{0.228}
+\newcommand{\tokArmsSummarySentence}{Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.161, margin +0.148); the full observation of the proposed configuration (upper limit 0.062, margin +0.247); removing the energy constraint (upper limit 0.081, margin +0.228); removing the threshold term (upper limit 0.028, margin +0.281), against a gap of 0.309.  Every arm's upper limit is below the gap, so none of them can be the whole of the explanation, by margins that are small but positive.  Every interval is paired over the same training seeds, against the local-only arm A of the observation experiment and the proposed configuration of the energy experiment.}
+\newcommand{\tokArmsVerdict}{controlled arms bound how much of the gap the alternative explanations can account for: the content of the observation and the energy model are tested with a single-factor intervention whose upper confidence limit lies below the gap, by margins of 0.148 to 0.228 against a gap of 0.309}
 \newcommand{\tokAuditFail}{0}
 \newcommand{\tokAuditInfo}{4}
 \newcommand{\tokAuditItems}{37}
 \newcommand{\tokAuditPass}{33}
-\newcommand{\tokAAg}{0.975}
-\newcommand{\tokACk}{0.690}
-\newcommand{\tokACkStd}{0.032}
-\newcommand{\tokADist}{1.95}
-\newcommand{\tokASc}{0.029}
-\newcommand{\tokASpread}{9.9}
+\newcommand{\tokAAg}{0.981}
+\newcommand{\tokACk}{0.639}
+\newcommand{\tokACkStd}{0.064}
+\newcommand{\tokADist}{1.76}
+\newcommand{\tokASc}{0.011}
+\newcommand{\tokASpread}{10.7}
 \newcommand{\tokBestRuleCk}{0.972}
 \newcommand{\tokBestRuleName}{the unprivileged reactive rule}
 \newcommand{\tokBudgetCaveat}{we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap}
@@ -161,15 +161,15 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokBudgetT}{2.83}
 \newcommand{\tokBudgetTrendClause}{the sweep's last increment IS resolved against zero, so the coverage is still rising at the longest budget we ran}
 \newcommand{\tokBudgetVerdict}{the coverage moves by +0.067 over the range the sweep covers, which is about 22\% of the gap of 0.309, and the increments between successive budgets are +0.026, +0.041; the last of them, +0.041, is 2.8 standard errors from zero (the standard error of the difference is 0.014, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers}
-\newcommand{\tokBAg}{0.991}
-\newcommand{\tokBCk}{0.569}
-\newcommand{\tokBCkStd}{0.134}
-\newcommand{\tokBDelta}{-0.121}
-\newcommand{\tokBDist}{2.25}
-\newcommand{\tokBMinusA}{-0.121}
-\newcommand{\tokBSc}{0.010}
-\newcommand{\tokBShare}{-39\%}
-\newcommand{\tokBSpread}{8.4}
+\newcommand{\tokBAg}{0.982}
+\newcommand{\tokBCk}{0.654}
+\newcommand{\tokBCkStd}{0.109}
+\newcommand{\tokBDelta}{+0.015}
+\newcommand{\tokBDist}{2.19}
+\newcommand{\tokBMinusA}{+0.015}
+\newcommand{\tokBSc}{0.015}
+\newcommand{\tokBShare}{5\%}
+\newcommand{\tokBSpread}{10.0}
 \newcommand{\tokCsixComplete}{12}
 \newcommand{\tokCsixDegree}{3.63}
 \newcommand{\tokCsixLeaves}{23}
@@ -194,13 +194,13 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokCurveLast}{0.671}
 \newcommand{\tokCurveMax}{0.801}
 \newcommand{\tokCurveMin}{0.606}
-\newcommand{\tokCAg}{0.991}
-\newcommand{\tokCCk}{0.698}
-\newcommand{\tokCCkStd}{0.032}
-\newcommand{\tokCDelta}{+0.009}
-\newcommand{\tokCDist}{1.71}
-\newcommand{\tokCSc}{0.016}
-\newcommand{\tokCSpread}{12.5}
+\newcommand{\tokCAg}{0.984}
+\newcommand{\tokCCk}{0.662}
+\newcommand{\tokCCkStd}{0.055}
+\newcommand{\tokCDelta}{+0.023}
+\newcommand{\tokCDist}{1.83}
+\newcommand{\tokCSc}{0.010}
+\newcommand{\tokCSpread}{10.8}
 \newcommand{\tokDormDormantMax}{0.000}
 \newcommand{\tokDormLzeroSome}{0}
 \newcommand{\tokDormLzeroTzerozerooneDead}{0.000}
@@ -236,7 +236,28 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokEaRet}{624}
 \newcommand{\tokEaSc}{0.010}
 \newcommand{\tokEaStr}{0.9}
-\newcommand{\tokEnergySummary}{The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, but the arms have not yet been measured with enough shared training seeds for an interval to be computable, and no bound is claimed for them here.}
+\newcommand{\tokEbAg}{1.000}
+\newcommand{\tokEbCi}{[-0.035, +0.081]}
+\newcommand{\tokEbCk}{0.685}
+\newcommand{\tokEbHalf}{0.058}
+\newcommand{\tokEbN}{8}
+\newcommand{\tokEbP}{0.380}
+\newcommand{\tokEbPaired}{+0.023}
+\newcommand{\tokEbRet}{0.0}
+\newcommand{\tokEbSc}{0.016}
+\newcommand{\tokEcAg}{0.969}
+\newcommand{\tokEcCi}{[-0.029, +0.028]}
+\newcommand{\tokEcCk}{0.662}
+\newcommand{\tokEcDelta}{-0.001}
+\newcommand{\tokEcHalf}{0.029}
+\newcommand{\tokEcN}{8}
+\newcommand{\tokEcP}{0.960}
+\newcommand{\tokEcPaired}{-0.001}
+\newcommand{\tokEcRet}{632.5}
+\newcommand{\tokEcSc}{0.016}
+\newcommand{\tokEcStr}{0.7}
+\newcommand{\tokEnergyDelta}{0.023}
+\newcommand{\tokEnergySummary}{The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.309 to the reactive heuristic: $removing the energy constraint$ (+0.023, 95\% interval [-0.035, +0.081], an upper limit below the gap of 0.309); $removing the threshold term$ (-0.001, 95\% interval [-0.029, +0.028], an upper limit below the gap of 0.309).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.}
 \newcommand{\tokEpisodeSeconds}{400}
 \newcommand{\tokEpisodeSteps}{2000}
 \newcommand{\tokFixedAg}{1.000}
@@ -288,17 +309,17 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokMapVerdict}{A broadcast summary of where the coverage deficit is was added a priori and measured to make no difference to the coverage at any resolution tested, while it does change what the policy does; it is reported rather than quietly dropped.}
 \newcommand{\tokMoveDrawW}{80.5}
 \newcommand{\tokNTests}{126}
-\newcommand{\tokObsBCi}{[-0.619, +0.377]}
-\newcommand{\tokObsBHalf}{0.498}
-\newcommand{\tokObsBN}{3}
-\newcommand{\tokObsBP}{0.405}
-\newcommand{\tokObsBPaired}{-0.121}
-\newcommand{\tokObsCCi}{[-0.147, +0.164]}
-\newcommand{\tokObsCHalf}{0.155}
-\newcommand{\tokObsCN}{3}
-\newcommand{\tokObsCP}{0.835}
-\newcommand{\tokObsCPaired}{+0.009}
-\newcommand{\tokObsSummary}{The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.121, 95\% interval [-0.619, +0.377], whose upper limit is NOT below the gap of 0.309 and which therefore cannot be excluded); $the full observation of the proposed configuration$ (+0.009, 95\% interval [-0.147, +0.164], an upper limit below the gap of 0.309).  At least one upper limit reaches past the gap of 0.309 to the unprivileged reactive rule, so the content of the observation is not excluded by these arms; what the observation terms buy is the ability to specialise at all, and the identity raises the number of distinct actions a policy takes from 1.95 to 2.25 out of eight, which is the specialisation the arms measure.}
+\newcommand{\tokObsBCi}{[-0.130, +0.161]}
+\newcommand{\tokObsBHalf}{0.145}
+\newcommand{\tokObsBN}{8}
+\newcommand{\tokObsBP}{0.808}
+\newcommand{\tokObsBPaired}{+0.015}
+\newcommand{\tokObsCCi}{[-0.015, +0.062]}
+\newcommand{\tokObsCHalf}{0.038}
+\newcommand{\tokObsCN}{8}
+\newcommand{\tokObsCP}{0.192}
+\newcommand{\tokObsCPaired}{+0.023}
+\newcommand{\tokObsSummary}{The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (+0.015, 95\% interval [-0.130, +0.161], an upper limit below the gap of 0.309); $the full observation of the proposed configuration$ (+0.023, 95\% interval [-0.015, +0.062], an upper limit below the gap of 0.309).  Each upper limit is below the gap of 0.309 to the unprivileged reactive rule, so the content of the observation is not what accounts for the gap; what the observation terms buy is the ability to specialise at all, and the identity raises the number of distinct actions a policy takes from 1.76 to 2.19 out of eight, which is the specialisation the arms measure.}
 \newcommand{\tokOldEpisodePct}{13}
 \newcommand{\tokOldEpisodeS}{80}
 \newcommand{\tokPackEndurance}{600}
@@ -363,6 +384,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokCreditCi}{\mbox{\textbf{[pending: CREDIT\_CI]}}}
 \newcommand{\tokCreditDelta}{\mbox{\textbf{[pending: CREDIT\_DELTA]}}}
 \newcommand{\tokCreditN}{\mbox{\textbf{[pending: CREDIT\_N]}}}
+\newcommand{\tokCreditResidual}{\mbox{\textbf{[pending: CREDIT\_RESIDUAL]}}}
 \newcommand{\tokCreditVerdict}{\mbox{\textbf{[pending: CREDIT\_VERDICT]}}}
 \newcommand{\tokEdRet}{\mbox{\textbf{[pending: ED\_RET]}}}
 \newcommand{\tokEdRetDelta}{\mbox{\textbf{[pending: ED\_RET\_DELTA]}}}
@@ -380,27 +402,8 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokCreditOfGap}{\mbox{\textbf{[pending: tokCreditOfGap]}}}
 \newcommand{\tokCreditP}{\mbox{\textbf{[pending: tokCreditP]}}}
 \newcommand{\tokCreditPaired}{\mbox{\textbf{[pending: tokCreditPaired]}}}
+\newcommand{\tokCreditResidualShort}{\mbox{\textbf{[pending: tokCreditResidualShort]}}}
 \newcommand{\tokCreditText}{\mbox{\textbf{[pending: tokCreditText]}}}
-\newcommand{\tokEbAg}{\mbox{\textbf{[pending: tokEbAg]}}}
-\newcommand{\tokEbCi}{\mbox{\textbf{[pending: tokEbCi]}}}
-\newcommand{\tokEbCk}{\mbox{\textbf{[pending: tokEbCk]}}}
-\newcommand{\tokEbHalf}{\mbox{\textbf{[pending: tokEbHalf]}}}
-\newcommand{\tokEbN}{\mbox{\textbf{[pending: tokEbN]}}}
-\newcommand{\tokEbP}{\mbox{\textbf{[pending: tokEbP]}}}
-\newcommand{\tokEbPaired}{\mbox{\textbf{[pending: tokEbPaired]}}}
-\newcommand{\tokEbRet}{\mbox{\textbf{[pending: tokEbRet]}}}
-\newcommand{\tokEbSc}{\mbox{\textbf{[pending: tokEbSc]}}}
-\newcommand{\tokEcAg}{\mbox{\textbf{[pending: tokEcAg]}}}
-\newcommand{\tokEcCi}{\mbox{\textbf{[pending: tokEcCi]}}}
-\newcommand{\tokEcCk}{\mbox{\textbf{[pending: tokEcCk]}}}
-\newcommand{\tokEcDelta}{\mbox{\textbf{[pending: tokEcDelta]}}}
-\newcommand{\tokEcHalf}{\mbox{\textbf{[pending: tokEcHalf]}}}
-\newcommand{\tokEcN}{\mbox{\textbf{[pending: tokEcN]}}}
-\newcommand{\tokEcP}{\mbox{\textbf{[pending: tokEcP]}}}
-\newcommand{\tokEcPaired}{\mbox{\textbf{[pending: tokEcPaired]}}}
-\newcommand{\tokEcRet}{\mbox{\textbf{[pending: tokEcRet]}}}
-\newcommand{\tokEcSc}{\mbox{\textbf{[pending: tokEcSc]}}}
-\newcommand{\tokEcStr}{\mbox{\textbf{[pending: tokEcStr]}}}
 \newcommand{\tokEdCi}{\mbox{\textbf{[pending: tokEdCi]}}}
 \newcommand{\tokEdCk}{\mbox{\textbf{[pending: tokEdCk]}}}
 \newcommand{\tokEdDelta}{\mbox{\textbf{[pending: tokEdDelta]}}}
@@ -411,7 +414,6 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokEdP}{\mbox{\textbf{[pending: tokEdP]}}}
 \newcommand{\tokEdPaired}{\mbox{\textbf{[pending: tokEdPaired]}}}
 \newcommand{\tokEdShare}{\mbox{\textbf{[pending: tokEdShare]}}}
-\newcommand{\tokEnergyDelta}{\mbox{\textbf{[pending: tokEnergyDelta]}}}
 %% END TOKEN MACROS
 
 \begin{document}
@@ -421,7 +423,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \begin{abstract}
 UAV swarms can provide temporary wireless coverage for Internet-of-Things deployments where fixed infrastructure is unavailable, damaged or insufficient, but persistent operation couples coverage, inter-UAV connectivity, battery depletion, charging contention and UAV failures. This paper formulates the problem of maintaining at least $K$ UAVs over every ground sensor while preserving a connected swarm, and models it as a cooperative Decentralized Partially Observable Markov Decision Process (Dec-POMDP). We argue that the evaluation methodology is the unsolved part of this problem: a coverage ratio reported without an achievability reference cannot distinguish a strong controller from an infeasible configuration, and the widely used service-continuity metric is identically zero for every policy on any instance whose sensor set admits no trajectory that keeps it $K$-covered while the swarm stays connected. We therefore introduce a \emph{feasibility-certified evaluation framework} that derives a rigorous lower bound on the fleet size needed for $K$-coverage of a bounded region, supplies a teleporting placement oracle as an achievability ceiling, and replaces the degenerate joint-constraint metric with non-degenerate time-averaged and refresh-time metrics. Applied to a published configuration, the bound shows that configuration to be provably infeasible for the region requirement and for a measured minority of random sensor layouts, and the conventional area-surplus criterion certifies nothing.
 
-On the corrected configuration the framework is paired with a centralized-training decentralized-execution MAPPO controller with parameter-shared actors, a hard connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration and PHY-derived links. A hand-designed reactive rule outperforms the learned controller by $\tokGap$ of persistent coverage (95\% interval $\tokGapCi$). \tokArmsSummarySentence\ The residual is consistent with the credit assignment of a shared team reward, and also with causes the arms do not test --- the possibility that the rule was tuned against the evaluation scenes, the limit of a decentralised policy class --- and we do not claim to have excluded them. Every quantitative claim about the physical model, the feasibility certificate, the evaluation protocol, the connectivity accounting and the reproducibility of a training run is recomputed by an automated claim audit (\tokAuditItems items, \tokAuditFail failing), every number in the results is generated from the artefact it is measured in, and the path-loss function of the physical-layer model is shown to match that of an independent standards-faithful simulator to within $\tokPhyDelta$~dB, with a transmit-power negative control that shows why only the algebraic equivalence is claimed.
+On the corrected configuration the framework is paired with a centralized-training decentralized-execution MAPPO controller with parameter-shared actors, a hard connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration and PHY-derived links. A hand-designed reactive rule outperforms the learned controller by $\tokGap$ of persistent coverage (95\% interval $\tokGapCi$). \tokArmsSummarySentence\ \tokCreditResidual\ The residual is also consistent with causes the arms do not test --- the possibility that the rule was tuned against the evaluation scenes, the limit of a decentralised policy class --- and we do not claim to have excluded them. Every quantitative claim about the physical model, the feasibility certificate, the evaluation protocol, the connectivity accounting and the reproducibility of a training run is recomputed by an automated claim audit (\tokAuditItems items, \tokAuditFail failing), every number in the results is generated from the artefact it is measured in, and the path-loss function of the physical-layer model is shown to match that of an independent standards-faithful simulator to within $\tokPhyDelta$~dB, with a transmit-power negative control that shows why only the algebraic equivalence is claimed.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -443,7 +445,7 @@ The research question addressed in this work is: \emph{Can a decentralized MAPPO
 
 The central invention of this work is a \emph{feasibility-certified evaluation framework} for persistent $K$-coverage UAV networks.  Instead of reporting coverage numbers with no achievability reference---which is what the existing literature does, and which is meaningless when the configuration is infeasible---the framework (i) derives a rigorous lower bound on the number of UAVs required for $K$-coverage of a bounded region, (ii) uses a teleporting placement oracle as an achievability ceiling against which any policy is normalised, and (iii) replaces the degenerate ``all constraints satisfied simultaneously'' service-continuity metric with non-degenerate time-averaged and refresh-time metrics.  The framework is the difference between a number and a measurement.
 
-The framework earns its keep in a second way that is easy to overlook, and which this paper demonstrates rather than asserts.  A framework that says whether a coverage number is meaningful also says \emph{why} a controller produces the number it does, because the same reference points --- the ceiling, the non-degenerate metrics, and the controlled ablations --- apply to the controller and not only to the configuration.  Applied to a controlled experimental setup, the framework shows that a hand-designed reactive rule outperforms parameter-shared CTDE MAPPO on this task, and it bounds the reason with controlled arms.  \tokArmsSummarySentence\ \ The credit assignment of a shared team reward is the explanation the residual is consistent with --- not the one the measurements single out.  Reporting that result, with the experiments that support it and the resolution at which each arm was measured, is more useful to a reader than a favourable number whose provenance has not been examined.
+The framework earns its keep in a second way that is easy to overlook, and which this paper demonstrates rather than asserts.  A framework that says whether a coverage number is meaningful also says \emph{why} a controller produces the number it does, because the same reference points --- the ceiling, the non-degenerate metrics, and the controlled ablations --- apply to the controller and not only to the configuration.  Applied to a controlled experimental setup, the framework shows that a hand-designed reactive rule outperforms parameter-shared CTDE MAPPO on this task, and it bounds the reason with controlled arms.  \tokArmsSummarySentence\ \ The credit assignment of a shared team reward is the explanation the residual is consistent with --- \tokCreditResidualShort\,.  Reporting that result, with the experiments that support it and the resolution at which each arm was measured, is more useful to a reader than a favourable number whose provenance has not been examined.
 
 The contributions are:
 \begin{enumerate}
@@ -1923,9 +1925,9 @@ pad, which is the configuration the paper proposes.
 \toprule
 Observation & CK & AG & SC & Distinct & Spread (m) \\
 \midrule
-A local only & 0.690\,$\pm$\,0.032 & 0.975 & 0.029 & 1.95 / 8 & 9.9 \\
-B + identity & 0.569\,$\pm$\,0.134 & 0.991 & 0.010 & 2.25 / 8 & 8.4 \\
-C + identity + map & 0.698\,$\pm$\,0.032 & 0.991 & 0.016 & 1.71 / 8 & 12.5 \\
+A local only & 0.639\,$\pm$\,0.064 & 0.981 & 0.011 & 1.76 / 8 & 10.7 \\
+B + identity & 0.654\,$\pm$\,0.109 & 0.982 & 0.015 & 2.19 / 8 & 10.0 \\
+C + identity + map & 0.662\,$\pm$\,0.055 & 0.984 & 0.010 & 1.83 / 8 & 10.8 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1937,8 +1939,8 @@ written.
 
 Arm~A has the property that the shared-actor symmetry collapse predicts.
 The deterministic policy nearly collapses to a single action --- the
-``Distinct'' column counts $1.95$ distinct actions out of eight --- and
-the swarm's spread is $9.9$~m, which is the radius of the initial
+``Distinct'' column counts $1.76$ distinct actions out of eight --- and
+the swarm's spread is $10.7$~m, which is the radius of the initial
 cluster rather than the extent of a deployment.  This is the failure that
 Foerster et al.'s condition~(ii) is about: with an observation that does not
 break the permutation symmetry, a parameter-shared network is a single
@@ -1949,21 +1951,21 @@ that exposes it is a count of distinct actions, which costs nothing and
 which the raw coverage number does not make visible.
 
 Arm~B adds the one-hot identity, and the condition does what it says about
-specialisation: the number of distinct actions rises from $1.95$ to
-$2.25$ out of eight, and the swarm disperses rather than standing
+specialisation: the number of distinct actions rises from $1.76$ to
+$2.19$ out of eight, and the swarm disperses rather than standing
 still.  Its effect on the coverage, paired over the shared training seeds,
-is $-0.121$ with a 95\% interval of $[-0.619, +0.377]$, so we do
+is $+0.015$ with a 95\% interval of $[-0.130, +0.161]$, so we do
 not claim that the identity buys coverage at this budget: what it buys is
 the \emph{ability} to specialise, which the distinct-action count measures
 directly and which the coverage does not.
 
 Arm~C adds the broadcast coverage-map summary and the pad bearing, and it
 is the configuration the paper proposes.  The spread rises to
-$12.5$~m --- the swarm moves further --- while the distinct-action
-count falls to $1.71$, so the policy moves more but decides more
+$10.8$~m --- the swarm moves further --- while the distinct-action
+count falls to $1.83$, so the policy moves more but decides more
 uniformly.  That is the signature of a policy that is following the map
 rather than dividing the work, and the paired effect on the coverage is
-$+0.009$ (95\% interval $[-0.147, +0.164]$).
+$+0.023$ (95\% interval $[-0.015, +0.062]$).
 
 So the observation terms change what the policy \emph{does} --- how far it
 travels, and whether it can specialise at all --- much more clearly than
@@ -1976,7 +1978,7 @@ credit, which a shared team reward does not supply.  The map makes the
 deficiency visible, and therefore actionable-looking, and a policy without
 the credit to act on it chases.
 
-The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (-0.121, 95\% interval [-0.619, +0.377], whose upper limit is NOT below the gap of 0.309 and which therefore cannot be excluded); $the full observation of the proposed configuration$ (+0.009, 95\% interval [-0.147, +0.164], an upper limit below the gap of 0.309).  At least one upper limit reaches past the gap of 0.309 to the unprivileged reactive rule, so the content of the observation is not excluded by these arms; what the observation terms buy is the ability to specialise at all, and the identity raises the number of distinct actions a policy takes from 1.95 to 2.25 out of eight, which is the specialisation the arms measure.
+The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (+0.015, 95\% interval [-0.130, +0.161], an upper limit below the gap of 0.309); $the full observation of the proposed configuration$ (+0.023, 95\% interval [-0.015, +0.062], an upper limit below the gap of 0.309).  Each upper limit is below the gap of 0.309 to the unprivileged reactive rule, so the content of the observation is not what accounts for the gap; what the observation terms buy is the ability to specialise at all, and the identity raises the number of distinct actions a policy takes from 1.76 to 2.19 out of eight, which is the specialisation the arms measure.
 
 The resolution of the summary makes no difference to the coverage: $G=0$: 0.645, $G=4$: 0.669, $G=8$: 0.645, and the largest of the differences is 0.025, inside the seed-to-seed spread of the learner (0.058).  What the summary does change is the swarm's behaviour: the spread grows, from 8.1 m without it to 9.4 m and 8.4 m with it, because a policy that follows the deficit spreads the swarm out instead of keeping it together.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
@@ -2010,6 +2012,8 @@ of the safety filter.
 Variant & CK & AG & SC & Stranded & Returns \\
 \midrule
 A & 0.662 & 0.984 & 0.010 & 0.9 & 623.7 \\
+B & 0.685 & 1.000 & 0.016 & 0.0 & 0.0 \\
+C & 0.662 & 0.969 & 0.016 & 0.7 & 632.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2055,7 +2059,7 @@ difference of this width is also a statement about the resolution of the
 arm and not about the component, and we report that resolution with the
 interval.
 
-The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, but the arms have not yet been measured with enough shared training seeds for an interval to be computable, and no bound is claimed for them here.
+The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.309 to the reactive heuristic: $removing the energy constraint$ (+0.023, 95\% interval [-0.035, +0.081], an upper limit below the gap of 0.309); $removing the threshold term$ (-0.001, 95\% interval [-0.029, +0.028], an upper limit below the gap of 0.309).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.
 
 That is the sequence the framework is for.  A coverage comparison on its
 own would have reported that the learned controller mismanages energy, and
@@ -2249,11 +2253,10 @@ advantage estimator, so the question on a persistent-coverage task is
 genuinely open.  And it narrows the search: a reader who wants to close
 the gap now knows that the answer is not ``use a local critic''.
 
-We therefore report the result as it stands: the credit assignment remains
-the best-supported explanation for the gap between the learned controller
-and the reactive heuristic, the two alternatives that the framework's other
-controlled arms rule out are ruled out, and the cheapest available remedy
-for the credit assignment does not close it.  The remedies that change the
+We therefore report the result as it stands: \textbf{[pending: CREDIT\_RESIDUAL]}, the two
+alternatives that the framework's other controlled arms rule out are ruled
+out, and the cheapest available remedy for the credit assignment does not
+close it.  The remedies that change the
 signal --- a difference reward, a counterfactual baseline, a per-agent
 value iteration --- are implementations of different algorithms, and we do
 not claim to have implemented or evaluated them here.
@@ -2485,7 +2488,7 @@ This paper defines a persistent and fault-tolerant UAV-IoT coverage problem in w
 
 \emph{Feasibility certificate.} The original $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m configuration is provably infeasible for $K$-covering the region: the four corner $K$-coverage discs are pairwise disjoint, so the general packing bound $N\ge K\,P(\Omega,R_{\mathrm{cov}})$ gives $N\ge 4K=8$, and the bound is tight at these parameters. For the sensor requirement the corner argument does not transfer, and the packing bound applied to the realised sensor set excludes $N=5$ for a measured 13\% of random draws; we report that rather than the convenient unconditional claim. All trained results use the corrected, feasible configuration $N=8$, $K=2$, $R_{\mathrm{cov}}=35$\,m, for which the same construction shows that every sensor is $K$-covered for every layout. The conventional area-surplus criterion, which exceeds one for the very same configuration, does not certify feasibility, and the two facts are consistent because an area is not a covering.
 
-\emph{What the framework exposes.} The framework is not only a certificate; it is an instrument that can tell a reader why a controller behaves as it does, and on this configuration it says something uncomfortable. A hand-designed reactive rule outperforms parameter-shared CTDE MAPPO: the gap is $\tokGap$ of persistent coverage, with a 95\% interval of $\tokGapCi$, and the learned controller is below it under either deployment mode (sampled $\tokMappoCk$, argmax $\tokArgCk$). Three candidate explanations --- the content of the observation, the energy model, and the size of the training budget --- were each tested with a single-factor intervention paired with the proposed configuration.  \tokArmsSummarySentence\ What remains is a residual that is \emph{consistent with} the credit assignment of a shared team reward, and with causes that these arms do not test: the possibility that the hand-written rule was tuned against the evaluation scenes, the limit of a decentralised policy class, and the state-dependent corrections that the safety filter and the joint projection impose on the executed trajectory.  Its privileged access to the coverage state is not among them: that is measured in the first table, and it is not the explanation. A non-detection in an arm of a given width is a statement about the resolution of that arm and not about the component, so we report the resolution of every arm, and we do not claim that the remaining components are unnecessary, that they would remain so at a larger training budget, or that the credit assignment is the whole of the explanation. We identify the remedy the residual suggests --- a per-agent signal rather than a better team signal --- and we do not claim to have implemented or evaluated it.
+\emph{What the framework exposes.} The framework is not only a certificate; it is an instrument that can tell a reader why a controller behaves as it does, and on this configuration it says something uncomfortable. A hand-designed reactive rule outperforms parameter-shared CTDE MAPPO: the gap is $\tokGap$ of persistent coverage, with a 95\% interval of $\tokGapCi$, and the learned controller is below it under either deployment mode (sampled $\tokMappoCk$, argmax $\tokArgCk$). Three candidate explanations --- the content of the observation, the energy model, and the size of the training budget --- were each tested with a single-factor intervention paired with the proposed configuration.  \tokArmsSummarySentence\ What remains is a residual that is \emph{consistent with} the credit assignment of a shared team reward (\tokCreditResidualShort), and with causes that these arms do not test: the possibility that the hand-written rule was tuned against the evaluation scenes, the limit of a decentralised policy class, and the state-dependent corrections that the safety filter and the joint projection impose on the executed trajectory.  Its privileged access to the coverage state is not among them: that is measured in the first table, and it is not the explanation. A non-detection in an arm of a given width is a statement about the resolution of that arm and not about the component, so we report the resolution of every arm, and we do not claim that the remaining components are unnecessary, that they would remain so at a larger training budget, or that the credit assignment is the whole of the explanation. We identify the remedy the residual suggests --- a per-agent signal rather than a better team signal --- and we do not claim to have implemented or evaluated it.
 
 \emph{Scope of the physical-layer claim.} The Python reference PHY and INET's \texttt{BreakpointPathLoss} are the same function, to $\tokPhyDelta$~dB over $\tokPhyRows$ (distance, exponent) points. We deliberately do \emph{not} claim a runtime cross-validation, and the reason is measured rather than asserted: a transmit-power sweep shows that the available per-receiver SNR statistic tracks the transmit power exactly but is independent of the receiver's distance, so it cannot support a path-loss cross-validation. A physical-layer claim that has not been subjected to a negative control is not a measurement, and this is the one we would most like a reader to carry away.
 
