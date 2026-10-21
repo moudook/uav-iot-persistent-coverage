@@ -710,10 +710,11 @@ def build_tokens():
             tok["ABL_BEST_OBS"] = obs_terms[n]
             tok["ABL_BEST_OBS_DELTA"] = f"{-pmean:+.3f}"
             resolved = (pmean + pstd) < 0 or (pmean - pstd) > 0
-            tok["ABL_BEST_OBS_SENTENCE"] = (
-                f"the ablation of the next section prices it: it is worth "
-                f"{-pmean:.3f} of persistent coverage, paired over the "
-                f"shared training seeds"
+            tok["ABL_BEST_OBS_TEXT"] = (
+                f"The observation term with the largest effect on the "
+                f"coverage is {obs_terms[n]}, and the ablation of the next "
+                f"section prices it: it is worth {-pmean:.3f} of persistent "
+                f"coverage, paired over the shared training seeds"
                 + (", and it is the largest single observation effect in "
                    "this work." if resolved else
                    ", and it is the largest of the three, though the "
@@ -721,8 +722,8 @@ def build_tokens():
         else:
             tok["ABL_BEST_OBS"] = "the observation terms"
             tok["ABL_BEST_OBS_DELTA"] = "n/a"
-            tok["ABL_BEST_OBS_SENTENCE"] = (
-                "the ablation of the next section prices the observation "
+            tok["ABL_BEST_OBS_TEXT"] = (
+                "The ablation of the next section prices the observation "
                 "terms individually")
         # the fall-back for the components that matter: if the per-seed
         # values are not in the artefact, the unpaired difference is used and

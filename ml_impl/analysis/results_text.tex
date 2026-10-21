@@ -13,7 +13,7 @@ threshold and otherwise holds station, reaches $@@GREEDY_CK@@$ by trading
 coverage for energy.  The Reactive heuristic, which moves the swarm towards
 the uncovered sensors, reaches $@@REACT_CK@@$ with full connectivity and a
 service continuity of $@@REACT_SC@@$, and it is the strongest of the three
-rules.
+classic rules.
 
 The learned controller does not reach the heuristic.  The strongest
 controller in the table is @@BEST_RULE_NAME@@, at $@@BEST_RULE_CK@@$, and
@@ -26,18 +26,18 @@ of a scene enters every controller additively and with the same size,
 which we state as an assumption and whose per-scene scores are in the
 artefact, so that it is checkable rather than merely asserted.
 
-It is also the controller with the most information, and the comparison
-should be read with that in mind.  The reactive heuristic is given the
-\emph{exact} set of under-covered sensors, which corresponds to an unbounded
-broadcast of the coverage state; the learned policy receives a fixed-size
-summary of it.  Part of the gap between them is therefore a difference of
-information rather than of control.  That is a caveat that is easy to
-assert and easy to get wrong, so we measured it rather than leaving it as
-one: a second version of the same rule, with the motion and recharge logic
-unchanged but the global coverage state removed --- each UAV judges only
-the sensors within twice the coverage radius of its own position, and there
-is no assignment, so UAVs that want the same sensor contend for it --- is
-reported as \emph{Reactive (local assignment)} in the table above.  It
+The privileged reactive heuristic is also the controller with the most
+information, and the comparison should be read with that in mind.  It is
+given the \emph{exact} set of under-covered sensors, which corresponds to an
+unbounded broadcast of the coverage state; the learned policy receives a
+fixed-size summary of it.  Part of the gap between them is therefore a
+difference of information rather than of control.  That is a caveat that is
+easy to assert and easy to get wrong, so we measured it rather than leaving
+it as one: a second version of the same rule, with the motion and recharge
+logic unchanged but the global coverage state removed --- each UAV judges
+only the sensors within twice the coverage radius of its own position, and
+there is no assignment, so UAVs that want the same sensor contend for it
+--- is reported as \emph{Reactive (local assignment)} in the table above.  It
 reaches $@@REACTL_CK@@$ with connectivity availability $@@REACTL_AG@@$ and
 a service continuity of $@@REACTL_SC@@$, against the privileged version's
 $@@REACT_CK@@$, $@@REACT_AG@@$ and $@@REACT_SC@@$.  @@REACTL_VERDICT@@.
@@ -227,9 +227,7 @@ the credit to act on it chases.
 
 @@MAP_RESOLUTION@@
 
-The observation term that has the largest effect on the coverage is not
-one of these two but the third, the bearing to the charging pad, and
-@@ABL_BEST_OBS_SENTENCE@@  The reason is easy to see in
+@@ABL_BEST_OBS_TEXT@@  The reason is easy to see in
 retrospect.  Without a direction to the charger a UAV cannot come home, so
 the swarm drains its packs in the field; and a swarm that has drained its
 packs is not a swarm that can be asked to cover anything.

@@ -13,7 +13,7 @@ threshold and otherwise holds station, reaches $0.786$ by trading
 coverage for energy.  The Reactive heuristic, which moves the swarm towards
 the uncovered sensors, reaches $0.953$ with full connectivity and a
 service continuity of $0.751$, and it is the strongest of the three
-rules.
+classic rules.
 
 The learned controller does not reach the heuristic.  The strongest
 controller in the table is the unprivileged reactive rule, at $0.972$, and
@@ -26,18 +26,18 @@ of a scene enters every controller additively and with the same size,
 which we state as an assumption and whose per-scene scores are in the
 artefact, so that it is checkable rather than merely asserted.
 
-It is also the controller with the most information, and the comparison
-should be read with that in mind.  The reactive heuristic is given the
-\emph{exact} set of under-covered sensors, which corresponds to an unbounded
-broadcast of the coverage state; the learned policy receives a fixed-size
-summary of it.  Part of the gap between them is therefore a difference of
-information rather than of control.  That is a caveat that is easy to
-assert and easy to get wrong, so we measured it rather than leaving it as
-one: a second version of the same rule, with the motion and recharge logic
-unchanged but the global coverage state removed --- each UAV judges only
-the sensors within twice the coverage radius of its own position, and there
-is no assignment, so UAVs that want the same sensor contend for it --- is
-reported as \emph{Reactive (local assignment)} in the table above.  It
+The privileged reactive heuristic is also the controller with the most
+information, and the comparison should be read with that in mind.  It is
+given the \emph{exact} set of under-covered sensors, which corresponds to an
+unbounded broadcast of the coverage state; the learned policy receives a
+fixed-size summary of it.  Part of the gap between them is therefore a
+difference of information rather than of control.  That is a caveat that is
+easy to assert and easy to get wrong, so we measured it rather than leaving
+it as one: a second version of the same rule, with the motion and recharge
+logic unchanged but the global coverage state removed --- each UAV judges
+only the sensors within twice the coverage radius of its own position, and
+there is no assignment, so UAVs that want the same sensor contend for it
+--- is reported as \emph{Reactive (local assignment)} in the table above.  It
 reaches $0.972$ with connectivity availability $1.000$ and
 a service continuity of $0.777$, against the privileged version's
 $0.953$, $1.000$ and $0.751$.  The privileged version is in fact slightly WORSE than the unprivileged one (-0.019), so the global coverage state is not what gives the rule its edge --- the global round-robin assignment makes the UAVs contend for sensors, and the local rule does better --- and the gap to the learned controller is therefore not an information artefact at all.
@@ -227,9 +227,7 @@ The arms share their training seeds, so the comparisons are paired: $adding the 
 
 The resolution of the summary makes no difference to the coverage: $G=0$: 0.641, $G=4$: 0.646, $G=8$: 0.662, and the largest of the differences is 0.021, inside the seed-to-seed spread of the learner (0.088).  What the summary does change is the swarm's behaviour: the spread falls from 14.3 m without it to 7.8 m and 9.4 m with it, because a policy that follows the deficit keeps the swarm together instead of dispersing it.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
-The observation term that has the largest effect on the coverage is not
-one of these two but the third, the bearing to the charging pad, and
-the ablation of the next section prices the observation terms individually  The reason is easy to see in
+The ablation of the next section prices the observation terms individually  The reason is easy to see in
 retrospect.  Without a direction to the charger a UAV cannot come home, so
 the swarm drains its packs in the field; and a swarm that has drained its
 packs is not a swarm that can be asked to cover anything.
@@ -287,7 +285,7 @@ Every variant is trained on the same configuration with the same budget and
 from the same set of 3 training seeds, and differs from the
 full configuration in exactly one component, so a difference is
 attributable to that component.  The budget is the base comparison's
-( episodes), and the full configuration of this table is
+(? episodes), and the full configuration of this table is
 the first 3 of the base comparison's training runs --- the same
 policies, not a cheaper experiment --- so the two tables describe the same
 learner.  Because the variants share the training seeds, the
