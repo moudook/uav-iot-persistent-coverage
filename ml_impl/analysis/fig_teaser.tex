@@ -1,17 +1,23 @@
-\usetikzlibrary{patterns}%
 \begin{tikzpicture}[font=\tiny,box/.style={draw,rounded corners=2pt,align=center,inner sep=2pt,font=\tiny},arr/.style={-{Latex[length=1.6mm]},semithick,uavblue},darr/.style={-{Latex[length=1.6mm]},semithick,dashed,uavpurple}]
-  \node[anchor=north west, inner sep=0pt, outer sep=0pt, font=\tiny] (strip) at (0,4.45) {
-    \makebox[\dimexpr\textwidth-5pt\relax][s]{
-      \tikz[baseline=-0.6ex]{\draw[pattern=north east lines, pattern color=white, fill=uavblue, draw=uavblue, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {\textbf{the learned CTDE MAPPO}} \hfill \tikz[baseline=-0.6ex]{\filldraw[fill=gray!55, draw=gray!70, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {\textbf{the hand-designed rule}} \hfill \tikz[baseline=-0.6ex]{\draw[black, dashed, line width=1.1pt] (0,0) -- (0.52,0);}\ {the gap} \hfill \tikz[baseline=-0.6ex]{\filldraw[fill=gray!20, draw=gray!50, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {the gap's 95\% CI} \hfill \tikz[baseline=-0.6ex]{\draw[uavgreen, line width=2.4pt, line cap=round] (0,0) -- (0.52,0); \filldraw[fill=white, draw=black, line width=0.5pt] (0.26,0) circle (0.055);}\ {95\% CI, paired mean} \hfill \tikz[baseline=-0.6ex]{\filldraw[fill=uavred!8, draw=uavred!40, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {the two criteria disagree}
+  \node[anchor=north west, inner sep=0pt, outer sep=0pt, font=\tiny] (strip) at (10.5pt,4.75) {
+    \makebox[\dimexpr\textwidth-21pt\relax][s]{
+      \hspace*{6pt}\tikz[baseline=-0.6ex]{  \begin{scope}
+    \clip (0.000,0.000) rectangle (0.520,0.150);
+    \fill[uavblue] (0.000,0.000) rectangle (0.520,0.150);
+    \foreach \t in {0.000,0.135,0.270,0.405,0.540}{
+      \draw[white, line width=0.35pt] (\t,0.000) -- (\t+0.150,0.150);
+    }
+  \end{scope}
+  \draw[uavblue, line width=0.4pt] (0.000,0.000) rectangle (0.520,0.150);}\ {\textbf{the learned CTDE MAPPO}} \hfill \tikz[baseline=-0.6ex]{\filldraw[fill=gray!55, draw=gray!70, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {\textbf{the hand-designed rule}} \hfill \tikz[baseline=-0.6ex]{\draw[black, dashed, line width=1.1pt] (0,0) -- (0.52,0);}\ {the gap} \hfill \tikz[baseline=-0.6ex]{\filldraw[fill=gray!20, draw=gray!50, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {the gap's 95\% CI} \hfill \tikz[baseline=-0.6ex]{\draw[uavgreen, line width=2.4pt, line cap=round] (0,0) -- (0.52,0); \filldraw[fill=white, draw=black, line width=0.5pt] (0.26,0) circle (0.055);}\ {95\% CI, paired mean} \hfill \tikz[baseline=-0.6ex]{\filldraw[fill=uavred!8, draw=uavred!40, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {the two criteria disagree}\hspace*{6pt}
     }};
   \begin{scope}[on background layer]
     \draw[fill=white, draw=gray!55, line width=0.5pt, rounded corners=1.5pt]
       ([xshift=-2.5pt,yshift=-2pt]strip.south west) rectangle ([xshift=2.5pt,yshift=2pt]strip.north east);
   \end{scope}
-  \node[anchor=south, font=\small\bfseries] at (3.38,3.78) {(Feasibility certificate)};
-  \node[anchor=south, font=\small\bfseries] at (8.43,3.78) {(Controller and its references)};
-  \node[anchor=south, font=\small\bfseries] at (15.28,3.78) {(Arms against the gap)};
-\begin{axis}[at={(1.10cm,0cm)}, anchor=south west,
+  \node[anchor=south, font=\small\bfseries] at (3.38,3.90) {(Feasibility certificate)};
+  \node[anchor=south, font=\small\bfseries] at (8.43,3.90) {(Controller and its references)};
+  \node[anchor=south, font=\small\bfseries] at (15.28,3.90) {(Arms against the gap)};
+\begin{axis}[at={(1.47cm,0cm)}, anchor=south west,
   scale only axis, width=4.55cm, height=3.60cm,
   xmin=2.80, xmax=9.30, ymin=0.00, ymax=3.05,
   xtick={3,4,5,6,7,8,9}, ytick={0,1,2,3},
@@ -28,7 +34,7 @@
   \node[anchor=north west, font=\tiny, align=left] at (axis cs:5.08,1.443) {published\\$\sigma=1.503$};
   \node[anchor=south east, font=\tiny] at (axis cs:7.92,2.465) {corrected $N=8$};
   \node[rotate=90, anchor=south, font=\tiny, text=uavred] at (axis cs:8,1.05) {$N\geq 4K=8$};
-  \node[anchor=south west, font=\tiny] at (axis cs:2.86,1.03) {$\sigma=1$};
+  \node[anchor=south west, font=\tiny] at (axis cs:2.98,1.25) {$\sigma=1$};
   \node[anchor=south west, font=\tiny] at (axis cs:3.43,2.99) {the two criteria disagree};
   \node[anchor=north west, font=\tiny, align=left] at (axis cs:2.86,0.52) {sensor set: $N\geq 4.27$ on average\\$N=5$ excluded in 13\% of 30 draws};
 \end{axis}
@@ -42,7 +48,15 @@
   \draw[darr] (crit.north) -- (1.55,3.03);
   \node[box, fill=uavred!8, draw=uavred, minimum width=2.70cm, minimum height=0.62cm, inner sep=1pt] (hard) at (3.40,2.45) {hard layer (not learned)\\connectivity mask $H{=}3$\\reserve UAV\\charging arbitration};
   \draw[arr] (hard.north west) -- (2.60,3.03);
-  \filldraw[pattern=north east lines, pattern color=white, fill=uavblue, draw=uavblue, line width=0.4pt] (0.05,1.00) rectangle (2.83,1.16);
+  \node[anchor=north west, font=\tiny] at (0.05,2.02) {corrected: $N=8$, $K=2$, $R_{\mathrm{cov}}=35$\,m};
+  \begin{scope}
+    \clip (0.050,1.000) rectangle (2.830,1.160);
+    \fill[uavblue] (0.050,1.000) rectangle (2.830,1.160);
+    \foreach \t in {0.000,0.144,0.288,0.432,0.576,0.720,0.864,1.008,1.152,1.296,1.440,1.584,1.728,1.872,2.016,2.160,2.304,2.448,2.592,2.736,2.880}{
+      \draw[white, line width=0.35pt] (\t,1.000) -- (\t+0.160,1.160);
+    }
+  \end{scope}
+  \draw[uavblue, line width=0.4pt] (0.050,1.000) rectangle (2.830,1.160);
   \node[anchor=south west, font=\tiny] at (0.05,1.19) {CTDE MAPPO};
   \node[anchor=west, font=\tiny] at (2.89,1.08) {0.662};
   \filldraw[fill=gray!55, draw=gray!70, line width=0.4pt] (0.05,0.36) rectangle (4.13,0.52);
@@ -53,7 +67,7 @@
   \draw[black, dashed, line width=1.0pt] (4.25,0.25) -- (4.25,1.45);
   \node[anchor=south east, font=\tiny] at (4.20,1.30) {teleporting oracle 1.000};
 \end{scope}
-\begin{axis}[at={(12.84cm,0cm)}, anchor=south west,
+\begin{axis}[at={(13.21cm,0cm)}, anchor=south west,
   scale only axis, width=4.95cm, height=3.60cm,
   xmin=-0.200, xmax=0.419, ymin=0.35, ymax=6.65,
   xtick={-0.2,-0.1,0,0.1,0.2,0.3,0.4},
@@ -82,5 +96,5 @@
   \node[anchor=north, font=\tiny] at (axis cs:0.309,6.59) {the gap 0.309};
 \end{axis}
   \pgfresetboundingbox
-  \path[use as bounding box] (0,-0.85) rectangle (\textwidth,4.92);
+  \path[use as bounding box] (0,-1.15) rectangle (\textwidth,4.90);
 \end{tikzpicture}%

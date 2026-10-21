@@ -77,8 +77,13 @@ X_B = LEFT + LAB_A + W_A + GAP
 X_C = X_B + W_B + GAP + LAB_C - AXIS_SHIFT_C
 CONTENT_W = X_C + W_C + AXIS_SHIFT_C
 
-TITLE_Y = 3.78                   # the panel titles
-STRIP_Y = 4.45                   # the legend strip
+TITLE_Y = 3.90                   # the panel titles
+STRIP_Y = 4.75                   # the legend strip
+# The legend strip is inset from the picture's bounding box, so that its
+# frame, its swatches and its last label all sit inside the canvas with a
+# margin: the frame is drawn 2.5pt outside the node's box, so the node
+# goes STRIP_INSET from the left edge and the box is shortened to match.
+STRIP_INSET = 10.5               # pt, from the picture's left edge
 
 BLUE, CYAN, GREEN = "uavblue", "uavcyan", "uavgreen"
 ORANGE, RED, PURPLE = "uavorange", "uavred", "uavpurple"
@@ -162,8 +167,13 @@ def hatched(x0, y0, x1, y1, color=BLUE, indent="  "):
              f"({x1:.3f},{y1:.3f});")
     o.append(f"{indent}  \\foreach \\t in {{"
              + ",".join(f"{i * step:.3f}" for i in range(n)) + "}{")
+    # The hatch is drawn inside a scope whose origin is the box's own
+    # left edge, so the coordinates are relative to it.  A macro named
+    # \x0 would not work: TeX ends a control word at the first
+    # non-letter, so "\x0" is the control sequence "\x" followed by the
+    # digit 0, and the macro is undefined.
     o.append(f"{indent}    \\draw[white, line width=0.35pt] "
-             f"(\\x0+\\t,{y0:.3f}) -- (\\x0+\\t+{h:.3f},{y1:.3f});")
+             f"(\\t,{y0:.3f}) -- (\\t+{h:.3f},{y1:.3f});")
     o.append(f"{indent}  }}")
     o.append(f"{indent}\\end{{scope}}")
     o.append(f"{indent}\\draw[{color}, line width=0.4pt] ({x0:.3f},{y0:.3f}) "
@@ -241,6 +251,17 @@ def gather():
         raise SystemExit("the achievability ceiling is missing from "
                          "results_main.csv; the teaser was not drawn")
     d["ck_oracle"] = float(orow["CK"])
+    # the CORRECTED configuration, from the artefact that measured it
+    alt = load_json("alt_deployment.json")
+    rep = None
+    for r in (alt or []):
+        if r.get("arm") == "reported":
+            rep = r
+    if rep is None:
+        raise SystemExit("the corrected deployment is missing from "
+                         "alt_deployment.json; the teaser was not drawn")
+    d["n_corrected"] = int(rep["N"])
+    d["r_corrected"] = float(rep["R_cov"])
     # the metrics on the infeasible instance
     d["inf_ck"] = num(tok, "INF_CK")
     d["inf_sc"] = num(tok, "INF_SC")
@@ -329,8 +350,11 @@ def panel_a(d):
     o.append(f"  \\node[rotate=90, anchor=south, font=\\tiny, text={RED}] at "
              f"(axis cs:{d['N_bound']},1.05) "
              f"{{$N\\geq 4K={d['N_bound']}$}};")
+    # the area criterion's own threshold: the label sits just above the
+    # dashed line and clear of the axis, because the curve leaves no room
+    # below the line at the left-hand end
     o.append(f"  \\node[anchor=south west, font=\\tiny] at "
-             f"(axis cs:{xmin + 0.06:.2f},1.03) {{$\\sigma=1$}};")
+             f"(axis cs:{xmin + 0.18:.2f},1.25) {{$\\sigma=1$}};")
     o.append(f"  \\node[anchor=south west, font=\\tiny] at "
              f"(axis cs:{d['N_area'] + 0.10:.2f},{ymax - 0.06:.2f}) "
              f"{{the two criteria disagree}};")
@@ -385,10 +409,13 @@ def panel_b(d):
              r"charging arbitration};")
     o.append(r"  \draw[arr] (hard.north west) -- (2.60,3.03);")
 
+    # ---- the corrected configuration this is all measured on ---------
+    o.append(rf"  \node[anchor=north west, font=\tiny] at (0.05,2.02) "
+             rf"{{corrected: $N={d['n_corrected']}$, $K={d['K']}$, "
+             rf"$R_{{\mathrm{{cov}}}}={d['r_corrected']:.0f}$\,m}};")
+
     # ---- the reference set ------------------------------------------
-    o.append(rf"  \filldraw[pattern=north east lines, pattern color=white, "
-             rf"fill={BLUE}, draw={BLUE}, line width=0.4pt] "
-             rf"({x0:.2f},1.00) rectangle ({x_ours:.2f},1.16);")
+    o.append(hatched(x0, 1.00, x_ours, 1.16, BLUE))
     o.append(rf"  \node[anchor=south west, font=\tiny] at ({x0:.2f},1.19) "
              rf"{{CTDE MAPPO}};")
     o.append(rf"  \node[anchor=west, font=\tiny] at ({x_ours + 0.06:.2f},1.08) "
@@ -491,9 +518,9 @@ def panel_c(d):
 def legend_strip(d):
     """The horizontal boxed legend across the top of the figure."""
     items = [
-        (rf"\tikz[baseline=-0.6ex]{{\draw[pattern=north east lines, "
-         rf"pattern color=white, fill={BLUE}, draw={BLUE}, line width=0.4pt] "
-         rf"(0,0) rectangle (0.52,0.15);}}", r"\textbf{the learned CTDE MAPPO}"),
+        (r"\tikz[baseline=-0.6ex]{"
+         + hatched(0, 0, 0.52, 0.15, BLUE, indent="  ") + "}",
+         r"\textbf{the learned CTDE MAPPO}"),
         (rf"\tikz[baseline=-0.6ex]{{\filldraw[fill=gray!55, draw=gray!70, "
          rf"line width=0.4pt] (0,0) rectangle (0.52,0.15);}}",
          r"\textbf{the hand-designed rule}"),
@@ -510,11 +537,20 @@ def legend_strip(d):
          rf"line width=0.4pt] (0,0) rectangle (0.52,0.15);}}",
          "the two criteria disagree"),
     ]
-    body = " \\hfill ".join(f"{sw}\\ {{{lab}}}" for sw, lab in items)
+    body = r"\hspace*{6pt}" + " \\hfill ".join(f"{sw}\\ {{{lab}}}" for sw, lab in items) + r"\hspace*{6pt}"
     o = []
+    # The strip is INSET from the picture's bounding box: the frame is
+    # drawn 2.5pt outside the node's box on each side, so the node is
+    # placed STRIP_INSET from the left edge and its makebox is shortened
+    # by twice that, which leaves the whole legend -- frame, swatches and
+    # the last label -- inside the canvas with a margin on both sides.
+    # The items themselves are padded by 6pt, so the last label does not
+    # end against the frame.
     o.append(r"  \node[anchor=north west, inner sep=0pt, outer sep=0pt, "
-             r"font=\tiny] (strip) at (0," + f"{STRIP_Y:.2f}) {{")
-    o.append(r"    \makebox[\dimexpr\textwidth-5pt\relax][s]{")
+             r"font=\tiny] (strip) at (" + f"{STRIP_INSET:.1f}pt,"
+             + f"{STRIP_Y:.2f}) {{")
+    o.append(r"    \makebox[\dimexpr\textwidth-"
+             + f"{2 * STRIP_INSET:.0f}pt" + r"\relax][s]{")
     o.append("      " + body)
     o.append(r"    }};")
     o.append(r"  \begin{scope}[on background layer]")
@@ -544,7 +580,6 @@ def titles():
 # ----------------------------------------------------------------------
 def fragment(tok, d):
     o = []
-    o.append(r"\usetikzlibrary{patterns}%")
     o.append(r"\begin{tikzpicture}["
              r"font=\tiny,"
              r"box/.style={draw,rounded corners=2pt,align=center,"
@@ -562,8 +597,8 @@ def fragment(tok, d):
     # the strip's frame is \\textwidth wide and the panels are measured to
     # fit inside it.
     o.append(r"  \pgfresetboundingbox")
-    o.append(r"  \path[use as bounding box] (0,-0.85) rectangle "
-             r"(\textwidth,4.92);")
+    o.append(r"  \path[use as bounding box] (0,-1.15) rectangle "
+             r"(\textwidth,4.90);")
     # the trailing % keeps the newline after the picture from adding a
     # space to the box, which would make the figure wider than the text
     o.append(r"\end{tikzpicture}%")

@@ -71,13 +71,17 @@ def read_text(path):
 
 
 def esc(s):
-    """LaTeX-escape a string that came from an artefact."""
+    """LaTeX-escape a string that came from an artefact.
+
+    The token table writes LaTeX-escaped punctuation -- a verdict says
+    "22\\% of the gap" -- and escaping the backslash OF that escape would
+    print the escape itself ("22\\%").  The punctuation is un-escaped
+    first, then escaped once.
+    """
     s = str(s)
-    for a, b in (("\\", r"\textbackslash{}"), ("&", r"\&"), ("%", r"\%"),
-                 ("$", r"\$"), ("#", r"\#"), ("_", r"\_"), ("{", r"\{"),
-                 ("}", r"\}"), ("~", r"\textasciitilde{}"), ("^", r"\textasciicircum{}")):
-        s = s.replace(a, b)
-    return s
+    for a in ("\\%", "\\_", "\\&", "\\$", "\\#"):
+        s = s.replace(a, a[1])
+    return _esc_text(s)
 
 
 # ------------------------------------------------------------------
@@ -100,6 +104,7 @@ def _esc_text(s):
     return "".join({"_": r"\_", "&": r"\&", "%": r"\%", "#": r"\#",
                     "$": r"\$", "^": r"\textasciicircum{}",
                     "~": r"\textasciitilde{}",
+                    "{": r"\{", "}": r"\}",
                     "\\": r"\textbackslash{}\allowbreak{}"}.get(c, c)
                    for c in s)
 
@@ -324,9 +329,10 @@ def masthead(subtitle, meta, date):
         r"\vspace{12pt}",
         r"\noindent{\color{uavgrid}\rule{\linewidth}{0.6pt}}",
         r"\vspace{5pt}",
-        r"{\footnotesize\sffamily\color{uavmuted}" + meta
-        + r"\hfill " + date + r"\par}",
+        r"{\footnotesize\sffamily\color{uavmuted}" + meta + r"\par}",
         r"\vspace{1pt}",
+        r"{\footnotesize\sffamily\color{uavmuted}\hfill " + date + r"\par}",
+        r"\vspace{3pt}",
         r"\noindent{\color{uavblue}\rule{\linewidth}{1.2pt}}",
         r"\vspace{4pt}",
     ]
@@ -581,8 +587,16 @@ def main():
     A(r"Every number above is read from one of these files, and the paper "
       r"is generated from the same ones.")
     A("")
-    A(r"\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X@{}}")
+    # a longtable, so the list can break across the page: as one
+    # unbreakable tabularx it jumped to the next page whole and left half
+    # of the previous one empty
+    A(r"\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}")
+    A(r"\begin{longtable}{@{}>{\raggedright\arraybackslash\footnotesize}"
+      r"p{7.4cm}>{\raggedright\arraybackslash}p{8.35cm}@{}}")
     A(r"\uavtoprule")
+    A(r"\endfirsthead")
+    A(r"\uavtoprule")
+    A(r"\endhead")
     artefacts = (
         ("results_main.csv", "the main table: every controller, five "
                              "training seeds for the learned one"),
@@ -613,11 +627,12 @@ def main():
         A(f"  \\code{{{esc(name)}}} & {esc(what)} \\\\")
         k += 1
     A(r"\uavbottomrule")
-    A(r"\end{tabularx}")
+    A(r"\end{longtable}")
     A("")
 
     A(r"\section{Reproducing this report}")
     A(r"\noindent{\color{uavgrid}\rule{\linewidth}{0.5pt}}")
+    A(r"\vspace{-8pt}")
     A(r"\begin{verbatim}")
     A("cd ml_impl")
     A("python analysis/make_report.py     # this report")
@@ -626,6 +641,7 @@ def main():
     A("python analysis/claim_audit.py     # the audit")
     A("python tests/run_tests.py -q        # the tests")
     A(r"\end{verbatim}")
+    A(r"\vspace{-6pt}")
     A(r"\noindent{\color{uavgrid}\rule{\linewidth}{0.5pt}}")
     A("")
     A(r"\end{document}")

@@ -46,8 +46,10 @@ Persistent UAV-IoT Coverage: Project Report\par}
 \vspace{12pt}
 \noindent{\color{uavgrid}\rule{\linewidth}{0.6pt}}
 \vspace{5pt}
-{\footnotesize\sffamily\color{uavmuted}Generated from the artefacts by \code{analysis/make_report.py} --- every number below is read from the file it was measured in.\hfill \today\par}
+{\footnotesize\sffamily\color{uavmuted}Generated from the artefacts by \code{analysis/make_report.py} --- every number below is read from the file it was measured in.\par}
 \vspace{1pt}
+{\footnotesize\sffamily\color{uavmuted}\hfill \today\par}
+\vspace{3pt}
 \noindent{\color{uavblue}\rule{\linewidth}{1.2pt}}
 \vspace{4pt}
 
@@ -109,7 +111,7 @@ Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 \\
 
 The arms' verdict, derived from the intervals: Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.161, margin +0.148); the full observation of the proposed configuration (upper limit 0.062, margin +0.247); removing the energy constraint (upper limit 0.081, margin +0.228); removing the threshold term (upper limit 0.028, margin +0.281); the previous energy rule (upper limit -0.038, margin +0.347), against a gap of 0.309.  Every arm's upper limit is below the gap, so none of them can be the whole of the explanation, by margins that are small but positive.  Every interval is paired over the same training seeds, against the local-only arm A of the observation experiment and the proposed configuration of the energy experiment.
 
-The training-budget sweep: 8 episodes: 0.595, 16 episodes: 0.621, 25 episodes: 0.662. the coverage moves by +0.067 over the range the sweep covers, which is about 22\textbackslash\{\}\% of the gap of 0.309, and the increments between successive budgets are +0.026, +0.041; the last of them, +0.041, is 2.8 standard errors from zero (the standard error of the difference is 0.014, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers.
+The training-budget sweep: 8 episodes: 0.595, 16 episodes: 0.621, 25 episodes: 0.662. the coverage moves by +0.067 over the range the sweep covers, which is about 22\% of the gap of 0.309, and the increments between successive budgets are +0.026, +0.041; the last of them, +0.041, is 2.8 standard errors from zero (the standard error of the difference is 0.014, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers.
 
 \begin{figure}[t]
 \centering
@@ -158,7 +160,7 @@ Every one of these was a defect in the work, not in the writing. The list is the
 \textcolor{uavmuted}{13} & \texttt{local\_obs} neighbour stride 2 -> slots overlapped & concatenation + assertion \\
 \rowcolor{uavzebra}
 \textcolor{uavmuted}{14} & \texttt{STATE\_DIM = 80} hardcoded (valid only for N=5) & \texttt{state\_dim(cfg)} \\
-\textcolor{uavmuted}{15} & GAE bootstrap at truncation used 0 instead of V(s\_{T+1}) & fixed \\
+\textcolor{uavmuted}{15} & GAE bootstrap at truncation used 0 instead of V(s\_\{T+1\}) & fixed \\
 \rowcolor{uavzebra}
 \textcolor{uavmuted}{16} & \textbf{Observation carried no agent identity} & \texttt{use\_agent\_id}; \texttt{44206f5} \\
 \textcolor{uavmuted}{17} & \textbf{Observation could not express a return} (no direction to a pad) & \texttt{use\_pad\_bearing}; \texttt{de3e1e6} \\
@@ -259,8 +261,12 @@ Every one of these was a defect in the work, not in the writing. The list is the
 \section{The artefacts}
 Every number above is read from one of these files, and the paper is generated from the same ones.
 
-\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}
+\begin{longtable}{@{}>{\raggedright\arraybackslash\footnotesize}p{7.4cm}>{\raggedright\arraybackslash}p{8.35cm}@{}}
 \uavtoprule
+\endfirsthead
+\uavtoprule
+\endhead
   \code{results\_main.csv} & the main table: every controller, five training seeds for the learned one \\
 \rowcolor{uavzebra}
   \code{results\_ablation.csv} & the component ablation, twelve variants \\
@@ -281,10 +287,11 @@ Every number above is read from one of these files, and the paper is generated f
   \code{analysis/corner\_transfer.json} & the corner certificate's transfer \\
   \code{analysis/alt\_deployment.json} & the alternative corrected deployment \\
 \uavbottomrule
-\end{tabularx}
+\end{longtable}
 
 \section{Reproducing this report}
 \noindent{\color{uavgrid}\rule{\linewidth}{0.5pt}}
+\vspace{-8pt}
 \begin{verbatim}
 cd ml_impl
 python analysis/make_report.py     # this report
@@ -293,6 +300,7 @@ python analysis/final_checks.py    # the gate
 python analysis/claim_audit.py     # the audit
 python tests/run_tests.py -q        # the tests
 \end{verbatim}
+\vspace{-6pt}
 \noindent{\color{uavgrid}\rule{\linewidth}{0.5pt}}
 
 \end{document}
