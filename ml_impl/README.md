@@ -14,7 +14,7 @@ recomputed by an automated audit.
 
 ```powershell
 cd Project1\ml_impl
-python tests\run_tests.py        # 111 tests
+python tests\run_tests.py        # the test suite
 python analysis\claim_audit.py   # every checkable claim in the paper
 python run_all.py                # the whole experiment matrix (~13 h)
 python run_all.py --stage obs    # just the observation A/B/C
@@ -122,7 +122,7 @@ identical seeds, budget and evaluation seeds.
 
 ---
 
-## Defects found and fixed (all with tests; 111 tests pass)
+## Defects found and fixed (all with tests)
 
 The most important ones, in order of severity:
 
@@ -220,7 +220,7 @@ ml_impl/
 │   ├── final_checks.py           # assembly + compile + audit + tests, in one command
 │   └── diagnose_gap.py           # separates protocol / sharpness / regime
 ├── tests/
-│   ├── test_physics_and_env.py   # 111 tests
+│   ├── test_physics_and_env.py   # the test suite
 │   └── mutation_check.py         # proves the suite catches the historical bugs
 └── results_*.csv, analysis/*.json  # the artefacts the paper quotes
 ```

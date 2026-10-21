@@ -120,7 +120,7 @@ This is the protocol every number in the paper is produced under.
     over its first five episodes equal to its mean over its last five, so
     the curve is flat over the budget we can afford.
 
-## Defects found and fixed (all have tests; 111 tests pass)
+## Defects found and fixed (all have tests)
 | # | Defect | Fix |
 |---|---|---|
 | 1 | **Simulator was static -- no UAV ever moved** | `13cb839` |
@@ -405,7 +405,7 @@ was the missing flag.  **Always pass the whole protocol.**
    assembler reports all three.
 3. `python analysis/claim_audit.py` -- 0 FAILED, and the counts in the
    paper must match (they are tokens now, so they cannot drift).
-4. `python tests/run_tests.py` -- 111 tests.
+4. `python tests/run_tests.py` -- the test suite.
 5. Commit. **Never push.**
 
 ## The FINAL CHECKLIST (before declaring the work done)
