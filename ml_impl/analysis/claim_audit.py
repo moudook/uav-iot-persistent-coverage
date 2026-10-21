@@ -583,6 +583,38 @@ def main():
         print("[SKIP] C7 connectivity accounting: run "
               "analysis/connectivity_accounting.py\n")
 
+    # --- the corrected N=5 deployment -------------------------------------
+    # The paper offers N = 5, K = 2, R_cov = 45 m as an alternative feasible
+    # corrected deployment.  The claim is that the region can be K-covered
+    # with five discs of that radius, and it is checked with a witness: four
+    # discs at the midpoints of the square's sides and one at the centre.
+    # Every point of the square must be within the radius of at least two of
+    # them, so the threshold is the worst second-nearest distance.
+    try:
+        side = SIDE
+        centres = [(side / 2, 0.0), (side / 2, side), (0.0, side / 2),
+                   (side, side / 2), (side / 2, side / 2)]
+        grid = np.linspace(0.0, side, 161)          # 0.5 m
+        X, Y = np.meshgrid(grid, grid, indexing="ij")
+        pts = np.stack([X.ravel(), Y.ravel()], axis=1)
+        d = np.linalg.norm(pts[:, None, :] - np.asarray(centres)[None, :, :],
+                           axis=-1)
+        d.sort(axis=1)
+        worst2 = float(d[:, 1].max())              # second-nearest
+        check("C9", "the alternative corrected deployment N=5, K=2, "
+                    "R_cov=45 m really does K-cover the region: four discs "
+                    "at the side midpoints and one at the centre cover "
+                    "every point of the square at least twice",
+              worst2 <= 45.0,
+              f"the worst second-nearest distance over the square is "
+              f"{worst2:.2f} m, against the 45 m radius offered",
+              "<= 45.00 m",
+              "the paper's threshold for this deployment is the radius the "
+              "construction needs; the construction is the witness that the "
+              "deployment is feasible")
+    except Exception as exc:                        # pragma: no cover
+        print(f"[SKIP] C9 alternative deployment: {exc}\n")
+
     # --- a training run is a function of its seed -------------------------
     try:
         import torch

@@ -990,6 +990,25 @@ def build_tokens():
                 f"which we report rather than explain away")
 
     # ------------------------------------------------------------------
+    # the alternative corrected deployment (N = 5, K = 2, R_cov = 45 m)
+    # ------------------------------------------------------------------
+    # the threshold is what the witness construction needs: four discs at
+    # the side midpoints and one at the centre, over the square's grid
+    try:
+        side = 80.0
+        centres = [(side / 2, 0.0), (side / 2, side), (0.0, side / 2),
+                   (side, side / 2), (side / 2, side / 2)]
+        grid = np.linspace(0.0, side, 161)
+        X, Y = np.meshgrid(grid, grid, indexing="ij")
+        pts = np.stack([X.ravel(), Y.ravel()], axis=1)
+        d = np.linalg.norm(pts[:, None, :] - np.asarray(centres)[None, :, :],
+                           axis=-1)
+        d.sort(axis=1)
+        tok["ALT_N5_R"] = f"{float(d[:, 1].max()):.2f}"
+    except Exception:                                      # pragma: no cover
+        pass
+
+    # ------------------------------------------------------------------
     # the plasticity probe of the trained actor
     # ------------------------------------------------------------------
     dor = load_json("dormancy.json")
