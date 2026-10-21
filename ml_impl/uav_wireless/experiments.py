@@ -540,7 +540,17 @@ def run_learned_baselines(base: SimConfig, out_csv="results_learned_baselines.cs
               f"AG={np.mean(ags):.3f} SC={np.mean(scs):.3f} "
               f"CI={np.mean(cis):.3f}", flush=True)
         rows.append(dict(model=name, CK=float(np.mean(cks)),
-                         CK_std=float(np.std(cks)), AG=float(np.mean(ags)),
+                         CK_std=float(np.std(cks, ddof=1)) if len(cks) > 1
+                         else 0.0,
+                         # the protocol, so that the artefact says how it
+                         # was measured: the number of training runs, the
+                         # per-seed values they came from, and the device
+                         train_seeds=int(len(cks)),
+                         per_seed_CK=";".join(f"{v:.6f}" for v in cks),
+                         device=str(getattr(agent, "device", "cpu")),
+                         episodes=int(episodes),
+                         eval_seeds=int(eval_seeds),
+                         AG=float(np.mean(ags)),
                          SC=float(np.mean(scs)),
                          CovIntegral=float(np.mean(cis))))
 
