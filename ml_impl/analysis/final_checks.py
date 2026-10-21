@@ -145,7 +145,58 @@ def main():
               "have run yet)")
 
     print("=" * 72)
-    print(" 6. the paper's numbers about itself")
+    print(" 6. the same configuration in different tables")
+    # The observation arm C, the credit arm A, the energy arm A and the
+    # ablation's full configuration are the SAME experiment: the base
+    # configuration, the same training seeds and the same budget.  If the
+    # protocol is consistent they must agree exactly, and if they do not,
+    # something in the protocol is not pinned.
+    def per_seed(path, key):
+        p = os.path.join(HERE, path)
+        if not os.path.exists(p):
+            return None
+        try:
+            rows = json.load(open(p, encoding="utf-8"))
+        except Exception:
+            return None
+        for r in rows:
+            if key in r:
+                return [round(float(x), 6) for x in (r.get("per_seed_CK")
+                                                     or [])]
+        return None
+
+    ref = None
+    ref_name = None
+    for path, key, name in (("ab_observation.json", "C + identity + map",
+                              "the observation arm C"),
+                             ("ab_credit.json", "A: shared actor",
+                              "the credit arm A"),
+                             ("ab_energy_management.json", "A: the proposed",
+                              "the energy arm A")):
+        v = per_seed(path, key)
+        if v:
+            if ref is None:
+                ref, ref_name = v, name
+            elif v[:3] != ref[:3]:
+                failures.append(
+                    f"{name} and {ref_name} are the same configuration but "
+                    f"give different numbers: {v[:3]} against {ref[:3]}")
+            else:
+                print(f"   {name} agrees with {ref_name}: {v[:3]}")
+    # and the main table's first three training runs
+    main_p = os.path.join(ML, "results_main.csv")
+    if os.path.exists(main_p) and ref:
+        with open(main_p, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r.get("model") == "MAPPO":
+                    if r.get("train_seeds") == "5":
+                        print("   the main table's controller is trained "
+                              "five times, so its first three runs are the "
+                              "reference the other tables reuse")
+                    break
+
+    print("=" * 72)
+    print(" 7. the paper's numbers about itself")
     tex = open(os.path.join(PROJ, "Mlawn-midsem-tex.tex"),
                encoding="utf-8").read()
     audit = json.load(open(os.path.join(HERE, "claim_audit.json"),
