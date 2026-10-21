@@ -105,7 +105,10 @@ policy scores $@@CURVE_EVAL@@$ on unseen scenes, so the training-scene
 figure is not an estimate of the deployed performance.  The budget is
 therefore bounded rather than eliminated: at this configuration the curve
 is flat over the budget we can afford, and we do not claim that a larger
-budget would not change the picture.
+budget would not change the picture.  The sweep behind that statement
+trains independent runs at each of three budgets rather than reading one
+run's curve at different points, so it compares budgets and does not
+restate the curve: @@BUDGET_SWEEP@@, and @@BUDGET_VERDICT@@.
 
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs

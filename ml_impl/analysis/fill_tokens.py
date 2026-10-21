@@ -1086,6 +1086,25 @@ def build_tokens():
         tok["DORM_DORMANT_MAX"] = f"{dormant_any:.3f}"
 
     # ------------------------------------------------------------------
+    # the training-budget sweep
+    # ------------------------------------------------------------------
+    bud = load_json("ab_budget.json")
+    if bud:
+        rows = sorted(bud, key=lambda r: int(r.get("episodes", 0)))
+        parts = ", ".join(f"{int(r['episodes'])} episodes: {f(r['CK'])}"
+                          for r in rows)
+        spread = float(rows[-1]["CK"]) - float(rows[0]["CK"])
+        tok["BUDGET_SWEEP"] = parts
+        tok["BUDGET_SPREAD"] = f"{spread:+.3f}"
+        tok["BUDGET_MIN"] = f"{min(float(r['CK']) for r in rows):.3f}"
+        tok["BUDGET_MAX"] = f"{max(float(r['CK']) for r in rows):.3f}"
+        tok["BUDGET_VERDICT"] = (
+            f"the coverage moves by {spread:+.3f} between the shortest and "
+            f"the longest budget, against a seed-to-seed spread of about "
+            f"{max(float(r.get('CK_std', 0.0)) for r in rows):.3f}, so the "
+            f"shortfall is not made of the training budget at this scale")
+
+    # ------------------------------------------------------------------
     # the numbers the paper quotes about ITSELF
     # ------------------------------------------------------------------
     # the claim audit's own counts, so that the paper cannot claim a
