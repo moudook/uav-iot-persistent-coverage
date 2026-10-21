@@ -56,6 +56,22 @@ protocol:
    measured on. The same seed on the GPU and on the CPU gives different
    weights (about 6e-4 apart after one episode), and it compounds through
    the updates.
+
+   **The CPU is the protocol device because the GPU is measurably slower
+   here, not because it was never tried.** `analysis/device_sensitivity.py`
+   measures all three configurations (CPU with one thread, CPU with two,
+   GPU) on the same configuration and seed, and the artefact records the
+   wall clock: the GPU takes about 1.2-1.3x the CPU's time. The reason is
+   in the profile: the simulator is a sequential Python loop and is about
+   85% of a training run, the network is about 8% of it, and on the GPU
+   even that 8% is several times slower in absolute terms, because the
+   tensors are tiny and the kernel-launch overhead dominates. There is
+   nothing for the GPU to accelerate in this workload. The speed comes
+   from running the stages in parallel across the machine's cores, and the
+   limit on that is the PAGE FILE, not the cores: six training processes
+   fit, a seventh dies with `WinError 1455` while importing torch. Each
+   entry point therefore pins the BLAS thread pools to one thread before
+   numpy loads them.
 5. **The evaluation is seeded** (`uav_wireless/seeding.py`). The deployed
    policy *samples*, and the sampling draws from the global torch RNG. If
    that RNG is not seeded, an evaluation is a fresh random draw every time

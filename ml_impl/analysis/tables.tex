@@ -1,5 +1,5 @@
 \begin{table}[t]
-\caption{Base comparison on the corrected configuration.  The learned controller is trained five times and its row is the mean over those five runs, with the $\pm$ the seed-to-seed spread; the rule baselines are deterministic, and their $\pm$ is the spread over the five evaluation scenes.  ``Unexec.'' is the number of sampled actions that the safety filter or the joint projection did not execute, which is the size of the gap between the policy gradient and the trajectory.  The two learned baselines are implementations of the method families of Table~\ref{tab:comparison}, not reproductions of the cited papers.}
+\caption{Base comparison on the corrected configuration.  The learned controller is trained 8 times and its row is the mean over those 8 runs, with the $\pm$ the seed-to-seed spread; the rule baselines are deterministic and carry no spread of their own.  ``Unexec.'' is the number of sampled actions that the safety filter or the joint projection did not execute, which is the size of the gap between the policy gradient and the trajectory.  The two learned baselines are implementations of the method families of Table~\ref{tab:comparison}, not reproductions of the cited papers.}
 \label{tab:results_main}
 \centering
 \scriptsize
@@ -14,8 +14,8 @@ Reactive & 0.953 & 1.000 & 0.751 & 0.047 & 1525.60 & 183675 \\
 Reactive (local assignment) & 0.972 & 1.000 & 0.777 & 0.028 & 1620.80 & 185613 \\
 Independent DQN & 0.396\,$\pm$\,0.141 & 0.990 & 0.000 & 0.604 & -- & -- \\
 Masked PPO (local critic) & 0.632\,$\pm$\,0.034 & 0.991 & 0.004 & 0.368 & -- & -- \\
-\textbf{MAPPO (proposed)} & 0.696\,$\pm$\,0.027 & 0.985 & 0.015 & 0.304 & 0.20 & 209710 \\
-MAPPO (argmax) & 0.411\,$\pm$\,0.075 & 0.988 & 0.000 & 0.589 & 0.32 & 196637 \\
+\textbf{MAPPO (proposed)} & 0.662\,$\pm$\,0.055 & 0.984 & 0.010 & 0.338 & 0.20 & 209863 \\
+MAPPO (argmax) & 0.389\,$\pm$\,0.073 & 0.991 & 0.000 & 0.611 & 0.25 & 202984 \\
 \midrule
 Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 & -- & 0 \\
 \bottomrule
@@ -124,10 +124,7 @@ C + identity + map & 0.698\,$\pm$\,0.032 & 0.991 & 0.016 & 1.71 / 8 & 12.5 \\
 \toprule
 Variant & CK & AG & SC & Stranded & Returns \\
 \midrule
-A & 0.698 & 0.991 & 0.016 & 1.1 & 613.0 \\
-B & 0.689 & 1.000 & 0.034 & 0.0 & 0.0 \\
-C & 0.707 & 0.976 & 0.040 & 0.9 & 622.3 \\
-D & 0.579 & 0.954 & 0.004 & 6.7 & 97.1 \\
+A & 0.662 & 0.984 & 0.010 & 0.9 & 623.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -157,8 +154,7 @@ $G=8$ & 0.645 & 0.994 & 0.001 & 8.4 \\
 \toprule
 Learner & CK & AG & SC & CovIntegral & Energy (J) \\
 \midrule
-A & 0.698\,$\pm$\,0.032 & 0.991 & 0.016 & 0.302 & -- \\
-B & 0.632\,$\pm$\,0.052 & 0.964 & 0.014 & 0.368 & -- \\
+A & 0.662\,$\pm$\,0.055 & 0.984 & 0.010 & 0.338 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,6 +1,6 @@
 %% CONTRIB
 
-    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are the two terms the controlled comparisons examine, and at three training seeds they do not settle the question about the coverage.  In the component ablation, @@ABL_ID_CLAUSE@@, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses.  @@MAP_VERDICT@@
+    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are the two terms the controlled comparisons examine, and at @@ABL_SEEDS@@ training seeds they do not settle the question about the coverage.  In the component ablation, @@ABL_ID_CLAUSE@@, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses.  @@MAP_VERDICT@@
 
 %% MAIN
 
@@ -120,13 +120,10 @@ run's curve at different points, so it compares budgets and does not
 restate the curve: @@BUDGET_SWEEP@@, and @@BUDGET_VERDICT@@.  The two
 measurements differ in what they can support, and the difference is worth
 stating rather than smoothing over: the curve flattens on the scene the
-policy trains on, while the sweep's own last increment is within the
-seed-to-seed spread of the runs it compares, so the sweep does not settle
-the question on unseen scenes either.  A flattening training curve is
+policy trains on, while @@BUDGET_TREND_CLAUSE@@.  A flattening training curve is
 therefore not evidence that the budget has stopped mattering, and we do
-not use it as such; @@BUDGET_CAVEAT@@.  Neither measurement resolves what
-the budget contributes to the gap, and the paper says that rather than
-choosing the one of the two that reads more favourably.
+not use it as such; @@BUDGET_CAVEAT@@.  The sweep is not the end of the
+question, and the arm that settles it is the paired one: @@BUDGET_PAIRED_VERDICT@@.
 
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
@@ -182,7 +179,8 @@ Reporting both rows is the point.
 One further number in the table is worth stating, because it disposes of a
 concern that the framework raises.  The safety filter and the joint
 projection together did not execute $@@MAPPO_UNEXEC@@$ of the learned
-controller's sampled actions, so the policy gradient is very nearly
+controller's sampled actions per episode --- @@MAPPO_UNEXEC_RATIO@@ --- so the
+policy gradient is very nearly
 consistent with the trajectory that was actually taken; the
 "the executed action is not the chosen action" problem, which is real in
 masked reinforcement learning, is not what limits this controller.
@@ -327,6 +325,8 @@ seed-to-seed spread, say --- has a false-positive rate that depends on
 the spread of that other number, and it buys nothing in power: at three
 training seeds it would flag roughly one null component in three, while
 still being unable to detect a true effect of the size it flags.  The
+arms below are measured at @@ABL_SEEDS@@ training seeds, and the paired
+interval is what makes the number they report mean something.  The
 paired interval does not have that failure mode, and it also reports the
 resolution of the measurement, which is the number a reader actually
 needs.  @@ABL_SUMMARY@@.
@@ -342,7 +342,8 @@ A component can be redundant with another, in which case removing either
 one alone costs nothing while removing both costs a great deal; and a
 component that matters only at a larger budget is invisible at this one.
 The budget sweep above speaks to the second case for the full
-configuration, and it does not settle it: @@BUDGET_VERDICT@@.  The arms
+configuration: @@BUDGET_VERDICT@@; and the paired arm puts a bound on it,
+@@BUDGET_PAIRED_VERDICT@@.  The arms
 here are each measured at the single budget the base comparison uses, so
 for the individual components we do not claim budget-independence, and
 @@BUDGET_CAVEAT@@.
@@ -411,5 +412,5 @@ which regime a controller is good in rather than in which regime it was
 tuned.  Counting the scenario variants in which the learned controller is
 ahead, behind or level with the stronger of the two rules gives
 @@SCEN_WINS@@ ahead,
-@@SCEN_LOSSES@@ behind and @@SCEN_TIES@@ level; the largest deficit is
-@@SCEN_WORST@@ and the largest surplus @@SCEN_BEST@@.  @@SCEN_TEXT@@
+@@SCEN_LOSSES@@ behind and @@SCEN_TIES@@ level; @@SCEN_WORST_WORD@@ is
+@@SCEN_WORST@@ and @@SCEN_BEST_WORD@@ is @@SCEN_BEST@@.  @@SCEN_TEXT@@

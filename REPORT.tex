@@ -20,10 +20,10 @@ The work runs to 26 October 2026. The deliverable is a paper whose every number 
 
 \begin{tabularx}{\textwidth}{@{}l X@{}}
 \toprule
-Gap to the strongest rule & $\textbf{0.276}$ (95\% interval [0.242, 0.309]), against the unprivileged reactive rule at 0.972. \\
-The learned controller & $\textbf{0.696}$ $\pm$ 0.027 over 5 training seeds. \\
+Gap to the strongest rule & $\textbf{0.309}$ (95\% interval [0.261, 0.358]), against the unprivileged reactive rule at 0.972. \\
+The learned controller & $\textbf{0.662}$ $\pm$ 0.055 over 8 training seeds. \\
 Claim audit & 37 items: 33 verified, 0 failed, 4 recorded for transparency. \\
-Test suite & 115 cases, all passing. \\
+Test suite & 126 cases, all passing. \\
 Device & every artefact records the device it was measured on; the device and the thread count are part of the protocol. \\
 \bottomrule
 \end{tabularx}
@@ -48,15 +48,15 @@ Controller & CK & AG & SC & Cov. deficit \\
   Greedy & 0.786 & 0.964 & 0.066 & 0.214 \\
   Reactive & 0.953 & 1.000 & 0.751 & 0.047 \\
   Reactive (local assignment) & 0.972 & 1.000 & 0.777 & 0.028 \\
-  MAPPO (proposed) & 0.696 $\pm$ 0.027 & 0.985 & 0.015 & 0.304 \\
-  MAPPO (argmax) & 0.411 $\pm$ 0.075 & 0.988 & 0.000 & 0.589 \\
+  MAPPO (proposed) & 0.662 $\pm$ 0.055 & 0.984 & 0.010 & 0.338 \\
+  MAPPO (argmax) & 0.389 $\pm$ 0.073 & 0.991 & 0.000 & 0.611 \\
   Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 \\
 \bottomrule
 \end{tabularx}
 
-The arms' verdict, derived from the intervals: Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.377, margin -0.101); the full observation of the proposed configuration (upper limit 0.164, margin +0.112); removing the energy constraint (upper limit 0.200, margin +0.076); removing the threshold term (upper limit 0.066, margin +0.210); the previous energy rule (upper limit -0.003, margin +0.279), against a gap of 0.276.  The arms whose upper limit reaches past the gap -- adding the agent identity -- are NOT excluded, and remain candidate explanations; the others are excluded as the whole of the explanation.
+The arms' verdict, derived from the intervals: Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.377, margin -0.068); the full observation of the proposed configuration (upper limit 0.164, margin +0.145), against a gap of 0.309.  The arms whose upper limit reaches past the gap -- adding the agent identity -- are NOT excluded, and remain candidate explanations; the others are excluded as the whole of the explanation.  Every interval is paired over the same training seeds, against the local-only arm A of the observation experiment.
 
-The training-budget sweep: 8 episodes: 0.595. the coverage moves by +0.000 over the range the sweep covers, which is about 0\textbackslash\{\}\% of the gap of 0.276, and the increments between successive budgets are ; but the last of them, n/a, is only nan standard errors from zero (the standard error of the difference is n/a, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall.
+The training-budget sweep: 8 episodes: 0.595, 16 episodes: 0.621, 25 episodes: 0.662. the coverage moves by +0.067 over the range the sweep covers, which is about 22\textbackslash\{\}\% of the gap of 0.309, and the increments between successive budgets are +0.026, +0.041; the last of them, +0.041, is 2.8 standard errors from zero (the standard error of the difference is 0.014, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers.
 
 \section{The defects that were found and fixed}
 Every one of these was a defect in the work, not in the writing. The list is the reason the claim audit exists.
@@ -193,22 +193,106 @@ Each audit gets a SELF-CONTAINED brief: the setting, the model, the
 measured numbers, and the exact claims to check, because a fresh subagent
 has no context. It is instructed to work purely mathematically (no web, no
 code, no repository) and to be adversarial rather than agreeable.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
 
 \section{Negative results, kept on the record}
-\noindent - The first OMNeT++ validation counted MAC frames and reported links
-\noindent closing at 50 km. The control (TX crushed 60 dB) returned the same count.
-\noindent A physical-layer claim without a negative control is not a
-\noindent measurement. The paper claims only model equivalence (0.012 dB).
-\noindent - The research found NO 2023-2026 paper that certifies a persistent-coverage
-\noindent instance INFEASIBLE, and NO paper that names the all-constraints-simultaneous
-\noindent metric as degenerate. Both are the paper's novelty claim.
-\noindent - Closest prior work: "Feasibility Ceilings Before Learning"
-\noindent (arXiv:2610.20823, Oct 2026).
-\noindent - The Reactive heuristic is a strong baseline (CK 0.953). It is NOT
-\noindent legitimate to hide it: it is reported in every table.
-\noindent - The reward's articulation-point term (lam\_C) penalises the very spreading
-\noindent behaviour coverage requires. The ablation measures it.
-
 \section{The artefacts}
 Every number above is read from one of these files, and the paper is generated from the same ones.
 

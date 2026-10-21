@@ -5,12 +5,25 @@
 > before writing anything. Never write paper sections or modify code from
 > memory alone.
 
-## Contract
-Autonomous 1-week sprint: **19 Oct 2026 -> 26 Oct 2026**.
-The user granted full autonomy: implement, test, train, write, commit
-locally, **never push**, never install packages without asking, never
-delete existing files.
+## The contract and how to read this file
+Autonomous R&D sprint: **19 Oct 2026 -> 26 Oct 2026**. The deliverable is a
+paper whose every number can be traced to the artefact it was measured in,
+and whose comparative claims are DERIVED in code rather than asserted, so
+that the paper says the right thing whichever way a measurement comes
+out. The user has authorised installing packages without asking, and
+commits locally without ever pushing.
 
+**This file is the external brain.** After any context compaction, read
+this file and `ml_impl/analysis/results_text.tex` before writing
+anything: the prose's source of truth is the template, and the numbers'
+source of truth is the artefact table. Never write a paper section or
+change code from memory alone.
+
+**The two live documents**, both regenerated from the artefacts:
+- `Mlawn-midsem-tex.pdf` -- the paper, 29 pages.
+- `REPORT.pdf` -- this tracker as a PDF, 6 pages.
+`analysis/watch_docs.py` rebuilds both whenever an artefact changes, so
+neither can be stale.
 ## THE CRITICAL FACT (historical, still the reason for the audit trail)
 **The simulator was STATIC until commit `13cb839`.** The motion step applied
 a move only when `np.all(action_mask(i))` was true, i.e. when EVERY action
@@ -37,89 +50,47 @@ around the new numbers and run the third mathematical audit.
   would make the comparison a comparison of information, not of method.
   It is reported as a negative result rather than quietly dropped.
 
-## THE MEASUREMENT PROTOCOL (canonical, 21 Oct)
-This is the protocol every number in the paper is produced under.
-
-0. **The device is a PROTOCOL CHOICE, not a resource accident**, and the
-   thread count is pinned to one. The reason is REPRODUCIBILITY: the
-   floating-point kernels differ between the CPU and the GPU, so the same
-   seed trained on the two gives different weights (about 6e-4 after one
-   episode, compounding through the updates), and the thread count changes
-   the order of the reductions and so changes them too. The device used to
-   be chosen by "is there room on the GPU right now", which made a run
-   depend on the machine's momentary load: the base table's controller came
-   out at 0.761, the energy arm at 0.746 and the observation arms' and the
-   ablation's at 0.727, and they are the SAME configuration, budget and
-   seeds. `CUDA_VISIBLE_DEVICES` does not disable CUDA on this setup, so
-   the pin has to be in the code: `train_mappo` now takes the device from
-   `UAV_DEVICE` (default CPU) and sets `torch.set_num_threads(1)`, and
-   every artefact records the device it was produced on. **The whole matrix
-   is being re-measured on one device**, because a variant trained on the
-   GPU and its partner trained on the CPU are not a paired comparison.
-   **CONFIRMED**: the same training call on the GPU returns CK 0.726530,
-   which is the observation arms' and the ablation's value to SIX DECIMALS.
-   The full picture is that the result depends on the (device, thread
-   count) PAIR: the GPU with three threads gives 0.7265, the CPU with one
-   thread gives 0.6819 and the CPU with two threads gives 0.761. So both
-   the device and the thread count move the result, and the base table's
-   re-run (the CPU with two threads) was the odd one out. The re-measurement
-   pins both, so every table will describe the same experiment. A training
-   run is bitwise reproducible given a fixed (device, thread count), and
-   the audit checks the seed half of that.
-1. **Training**: 25 episodes x 2000 steps per training run. The base
-   comparison trains **5** runs (seeds 0-4); the component ablation and the
-   observation A/B/C train **3** runs (seeds 0-2); the learned baselines
-   train 3 runs; the energy and credit arms train 3 runs; the scenario
-   matrix trains one policy per distinct `(N, M, pads)` combination.
-2. **Evaluation**: 5 scenes (seeds 0-4) per policy. A controller's row is
-   the mean over its TRAINING runs, and the reported spread is the
-   seed-to-seed spread of those runs. The rule baselines are deterministic,
-   so their spread is over the evaluation scenes.
-3. **The evaluation is seeded.** `uav_wireless/seeding.py` seeds the global
-   RNGs from the evaluation seed ALONE, so an evaluation is a function of
-   (policy, scene) and every controller sees the same sampling stream on
-   the same scene (common random numbers). This is defect 28 and it
-   invalidates every number measured before it.
-4. **The ablation is paired**: the variants share the training seeds, so a
-   difference is measured on the same training runs. The rows carry the
-   seed-to-seed spread, the table carries the paired difference.
-5. **The ablation uses the base comparison's budget** (25 episodes), so the
-   ablation's "Full" row is the same experiment as the base comparison's
-   MAPPO row and not a cheaper one.
-6. Every training run's policy is **saved** (`mappo_base_s{seed}.pt`), so
-   every number can be recomputed from a stored artefact.  The base stage
-   has a `--resume` path that evaluates the stored policies instead of
-   retraining them.
-7. **The inference is a paired interval, never a threshold.** The variants
-   share their training seeds, so the difference between a variant and the
-   full configuration is measured on the same training runs, and what is
-   reported is a 95% paired t interval on the per-seed differences. A
-   threshold on the size of a difference is NOT a test: a rule that calls a
-   difference "measurable" when it exceeds the learner's own seed spread
-   has a per-arm null error rate of about a third at three training seeds,
-   and it buys no power (the measurement cannot detect a true effect of
-   the size it flags). The interval also reports the **resolution** of the
-   measurement, which is the number a reader needs.
-8. **An explanation is excluded by a BOUND, not by a null.** To exclude an
-   explanation of a gap, the arm testing it must have an upper confidence
-   limit below the gap. The token filler DERIVES this: the sentence says
-   whether the limit is below the gap, and says the opposite when it is
-   not.
-9. **The variance is decomposed.** The seed component (across training
-   runs) is the uncertainty of a controller comparison; the scene
-   component (across evaluation scenes) is common to every controller and
-   cancels in every difference. Both are reported.
-10. **The evaluation seed determines both the scene and the action
-    stream.** This is a known confound, stated as a limitation: the two
-    sources cannot be separated, though the second is common to all
-    controllers. Decoupling them would need a `SeedSequence.spawn` scheme
-    and a re-measurement; it is not done.
-11. **The learning curve is reported.** It answers the compute-asymmetry
-    objection (a hand-designed rule against a learner with a fixed
-    budget): the per-episode coverage of the first training run has a mean
-    over its first five episodes equal to its mean over its last five, so
-    the curve is flat over the budget we can afford.
-
+## The measurement protocol (canonical, 21 Oct)
+Every number in the paper is produced under one protocol:
+1. **Training**: 25 episodes of 2000 control steps per training run, and
+   EIGHT training runs per configuration (the stress ablation uses six
+   episodes, the map sweep twenty). The seed count is a PARAMETER
+   (`run_all.py --train-seeds`, `--abl-seeds`, `--obs-seeds`), because it
+   sets the width of every interval the paper reports, and the arms are
+   compared with the base comparison's arm A, so the arms and the base
+   must be trained with the same number of seeds or the cross-table
+   identity check cannot hold. Eight, and not three, because at three
+   seeds the identity arm's interval cannot be separated from the gap.
+2. **Evaluation**: 5 scenes per policy. The number of evaluation scenes
+   is part of the protocol: a per-seed row is the mean over the scenes, so
+   a run with three is a different measurement.
+3. **Device and thread count**: the device is pinned (`UAV_DEVICE`,
+   default CPU), the thread count is pinned in `train.py`, and every
+   artefact records the device. MEASURED, not assumed: the same
+   configuration and seed give different weights on the GPU and on the
+   CPU (`analysis/device_sensitivity.py`), while one thread and two
+   threads give IDENTICAL weights for this workload. The GPU is also
+   MEASURED to be 1.2--1.3x SLOWER here: the simulator is a sequential
+   Python loop and is about 85% of a run, the network is about 8% of it,
+   and on the GPU even that 8% is several times slower, because the
+   tensors are tiny and the launch overhead dominates. There is nothing
+   for the GPU to accelerate in this workload, and the protocol device is
+   therefore the CPU -- a decision backed by the artefact, not a habit.
+4. **The evaluation is seeded** from the evaluation seed alone
+   (`uav_wireless/seeding.py`), so every controller is measured on the
+   same random stream on the same scene -- common random numbers.
+5. **The ablations are paired**: the variants share the training seeds,
+   so a difference is measured on the same runs and reported as an
+   interval, never as a threshold.
+6. **Inference is by interval.** An explanation is excluded only if the
+   arm testing it has an upper confidence limit below the gap. A null is a
+   statement about the resolution of that arm, and the resolution is
+   reported with it.
+7. **Everything is derived in code.** The hand-written prose refers to a
+   number by its MACRO (`\tokGap`), and the assembler writes the macro
+   definitions from the token table on every run. Filling a token by
+   writing its value into the source would CONSUME the token and freeze
+   the number, which is the failure this project keeps having to undo.
 ## Defects found and fixed (all have tests)
 | # | Defect | Fix |
 |---|---|---|
@@ -162,15 +133,38 @@ This is the protocol every number in the paper is produced under.
 
 `tests/mutation_check.py` proves the suite catches the historical bugs.
 
-## THE NUMBERS (21 Oct, 09:40, the pinned CPU protocol)
-- The gap to the strongest rule: **0.276** (95% interval [0.242, 0.309]), against the unprivileged reactive rule at 0.972.
-- The learned controller: 0.696 +- 0.027; the argmax variant: 0.411 +- 0.075.
-- The arms' verdict, derived from the intervals and not asserted: Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.377, margin -0.101); the full observation of the proposed configuration (upper limit 0.164, margin +0.112); removing the energy constraint (upper limit 0.200, margin +0.076); removing the threshold term (upper limit 0.066, margin +0.210); the previous energy rule (upper limit -0.003, margin +0.279), against a gap of 0.276.  The arms whose upper limit reaches past the gap -- adding the agent identity -- are NOT excluded, and remain candidate explanations; the others are excluded as the whole of the explanation.
-- The energy repair is NOT a null: The repair is not a null: the coverage it adds is +0.120 on the same training seeds (95\% interval [+0.003, +0.236], which excludes zero), and that is about 43\% of the gap to the reactive heuristic
-- The training-budget sweep: 8 episodes: 0.609, 16 episodes: 0.640, 25 episodes: 0.698. the coverage moves by +0.089 over the range the sweep covers, which is about 32\% of the gap of 0.276, and the increments between successive budgets are +0.031, +0.058; but the last of them, +0.058, is only 1.2 standard errors from zero (the standard error of the difference is 0.048, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall
-- The stress table resolves nothing: every paired interval includes zero.
-- The scenario matrix: behind in 34 of 34 variants, from S8 (-0.051) to S6 (-0.388).
-- The claim audit: 35 items, 31 verified, 0 failing, 4 informational. The test suite: 115 cases.
+| 40 | **A not-a-number reached the paper** ("nan standard errors", from an artefact that was mid-write) | the token table screens every value; an unusable value becomes a visible `[pending: ...]` marker and the assembly reports itself incomplete |
+| 41 | The Results section kept its PREVIOUS text when a token was pending, so a stale sentence (with the nan in it) survived | the section is always regenerated from the template, and a pending token is marked |
+| 42 | The budget's increments were compared UNPAIRED, and a resolved increment (+0.041, interval [+0.007, +0.075]) was called unresolved | paired over the same training seeds, which is what the design supports |
+| 43 | Two intervals were built from a POPULATION standard deviation (numpy divides by n) | `sample_std`, ddof = 1, computed from the raw per-seed rows |
+| 44 | The observation summary and the observation table quoted different intervals in the last digit | the summary rebuilds the interval from the raw values, not from the rounded ones |
+| 45 | The observation summary said "the gap to the reactive heuristic" -- the privileged rule -- when the gap is to the unprivileged one | the rule's name is a token, so the sentence cannot name the wrong rule |
+| 46 | The credit verdict described "a difference of any size up to 0.156 in either direction" for an interval of [-0.222, +0.090] | the verdict names the best case the interval allows and compares it with the gap |
+| 47 | The base table's caption said the controller was trained five times, and promised the rule rows a $\pm$ the table does not print | the caption is read from the data |
+| 48 | The abstract claimed the audit recomputes "every quantitative claim about the model" | the claim is narrowed to what the audit actually checks |
+| 49 | The arms' sentence did not name the reference arm, so a reader could not tell what the intervals are intervals OF | the sentence names it |
+| 50 | The budget's exclusion was stated without its scope | the scope (the 8--25 episode range) is in the sentence, and the paper says that budgets beyond it are not addressed |
+| 51 | The identity arm's share of the gap was computed against a denominator that appears nowhere in the paper | it is a fraction of the paper's own gap |
+## What the measurements say (21 Oct, the CPU protocol)
+- The gap to the strongest rule: **0.309** (95% interval
+  [0.261, 0.358]), against the unprivileged reactive rule at
+  0.972.
+- The learned controller: 0.662 $\pm$ 0.058;
+  the argmax variant: 0.389 $\pm$ 0.073.
+- The arms' verdict, derived from the intervals: Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.377, margin -0.068); the full observation of the proposed configuration (upper limit 0.164, margin +0.145), against a gap of 0.309.  The arms whose upper limit reaches past the gap -- adding the agent identity -- are NOT excluded, and remain candidate explanations; the others are excluded as the whole of the explanation.  Every interval is paired over the same training seeds, against the local-only arm A of the observation experiment.
+- The energy repair: (in flight)
+- The training-budget sweep: 8 episodes: 0.595, 16 episodes: 0.621, 25 episodes: 0.662. the coverage moves by +0.067 over the range the sweep covers, which is about 22\% of the gap of 0.309, and the increments between successive budgets are +0.026, +0.041; the last of them, +0.041, is 2.8 standard errors from zero (the standard error of the difference is 0.014, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers
+- The alternative corrected deployment (N = 5, R_cov = 45 m), MEASURED:
+  (in flight).
+- The scenario matrix: behind in 34 of the variants,
+  from S8 (-0.051) to S6 (-0.388).
+- The claim audit: 37 items, 33
+  verified, 0 failing, 4
+  recorded for transparency. The test suite: 126 cases.
+- The device sensitivity, MEASURED: the GPU and the CPU give different
+  weights for the same seed and configuration; one thread and two threads
+  give identical weights. The device is therefore part of the protocol and
+  is recorded with every artefact.
 ## THE CENTRAL FINDING (the claim, and what the arms actually establish)
 The learned controller does not reach the reactive heuristic, and the
 framework's controlled arms are what say why -- or why not.
@@ -277,6 +271,135 @@ measured numbers, and the exact claims to check, because a fresh subagent
 has no context. It is instructed to work purely mathematically (no web, no
 code, no repository) and to be adversarial rather than agreeable.
 
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+- **Audit 7** (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+  checked against the raw per-seed rows, with every interval recomputed
+  by hand. Ten findings, all applied: the budget's paired increment, two
+  population standard deviations, a rounding disagreement between a
+  summary and its table, the wrong rule named in a sentence, an
+  asymmetric interval described as symmetric, a caption that said five
+  where the table said eight, an audit claim in the abstract that was
+  broader than the audit, an arms' sentence that did not name its
+  reference arm, an exclusion stated without its scope, and a share
+  whose denominator appears nowhere in the paper.
 ## THE CITATIONS, CHECKED AGAINST THE SOURCES (21 Oct)
 Every number the paper attributes to a cited work has been checked
 against the source, and the checks are in the paper's own record:
@@ -307,21 +430,35 @@ against the source, and the checks are in the paper's own record:
 - The novelty claim survives the search: no work in the searched corpus
   couples all five elements, and the near-misses are named.
 
-## IMPORTANT NEGATIVE RESULTS (do not forget)
-- The first OMNeT++ validation counted MAC frames and reported links
-  closing at 50 km. The control (TX crushed 60 dB) returned the same count.
-  **A physical-layer claim without a negative control is not a
-  measurement.** The paper claims only model equivalence (0.012 dB).
-- The research found NO 2023-2026 paper that certifies a persistent-coverage
-  instance INFEASIBLE, and NO paper that names the all-constraints-simultaneous
-  metric as degenerate. Both are the paper's novelty claim.
-- Closest prior work: "Feasibility Ceilings Before Learning"
-  (arXiv:2610.20823, Oct 2026).
-- The Reactive heuristic is a strong baseline (CK 0.953). It is NOT
-  legitimate to hide it: it is reported in every table.
-- The reward's articulation-point term (lam_C) penalises the very spreading
-  behaviour coverage requires. The ablation measures it.
-
+## Negative results, kept on the record
+- The **runtime instrument cannot support a path-loss cross-validation**:
+  a transmit-power sweep shows the available per-receiver SNR statistic
+  tracks the transmit power exactly but is independent of the receiver's
+  distance. The equivalence is therefore established from INET's source,
+  not from a running simulation. This is a negative control that the
+  paper reports on itself.
+- **Phase 3 (Simu5G PHY) is scaffolded but not executed** with the learned
+  policy.
+- **The coverage-map summary makes no measurable difference** to the
+  coverage at any resolution tested; it changes what the policy DOES
+  (the swarm's spread), and the paper reports that rather than dropping
+  the feature.
+- **The thread count does not change the training run** on this workload.
+- **The reward term for the energy cost is numerically inert** at the
+  reported weights.
+- **The credit-assignment arm does not resolve the credit assignment**:
+  the cheapest modification in the direction the diagnosis points moves
+  the wrong way, and the paper says so rather than claiming the
+  diagnosis.
+- **The GPU does not accelerate this workload.** Measured, in
+  `analysis/device_sensitivity.json`: the GPU takes about 1.2--1.3x the
+  CPU's wall clock for the same training run. The profile says why: the
+  simulator is a sequential Python loop and is about 85% of a run, the
+  network is about 8% of it, and on the GPU even that 8% is several times
+  slower in absolute terms (tiny tensors, launch overhead). The
+  measurement is in the artefact, and the earlier claim that the choice
+  "costs about one percent" was false and has been removed from the code
+  and from this file.
 ## Commands
 ```
 cd Project1/ml_impl
@@ -340,61 +477,68 @@ python analysis/final_checks.py     # assembly + compile + audit + tests, one co
 python tests/run_tests.py           # 115 tests
 ```
 
-## Machine notes
-- **The training device is a protocol choice, pinned to the CPU**, and the
-  thread count is pinned to one. Reproducibility, not speed: the kernels
-  differ between the CPU and the GPU, and the order of the reductions
-  depends on the thread count, so a run is reproducible only on a fixed
-  (device, thread count) pair. `CUDA_VISIBLE_DEVICES` does NOT disable
-  CUDA on this setup -- it was tried and it changes nothing -- so the pin
-  is in the code (`UAV_DEVICE`, default CPU, plus
-  `torch.set_num_threads(1)`), and every artefact records its device.
-- **The host memory is the binding constraint, not the cores.** Four
-  experiment processes plus an interactive command exhausted the paging
-  file; the machine then thrashed for hours and the jobs died with their
-  work half done. The symptom is an `OSError: [WinError 1455]` from
-  importing torch, which looks like a code failure and is not one. The
-  queue now runs three stages at a time and waits for 2.6 GB of free
-  memory before starting one.
-- **Every long stage is resumable** and writes its artefact as it goes:
-  the component ablation, the energy arms, the credit arms and the map
-  sweep. A row is reused only if the budget, the seed count, the
-  evaluation-scene count AND the device match; a row from the first
-  re-measurement (which ran on the GPU, before the pin) is never reused.
+## Machine notes (measured, 21 Oct)
+- **The binding constraint is the PAGE FILE, not the cores.** Six
+  single-threaded training processes fit; a seventh dies with
+  `OSError: [WinError 1455]` while importing torch, which looks like a
+  code failure and is not one. The cause is the BLAS thread pool: each
+  process starts a pool sized for the whole machine. Every entry point
+  now pins `OPENBLAS_NUM_THREADS` and its siblings to one thread before
+  numpy loads them, and the runs are launched as a pool of six.
+- **The machine has twelve logical cores and each run uses one**, so the
+  matrix is run in parallel: the component ablation is split into two
+  parts (`analysis/ablation_part.py`, merged by
+  `analysis/merge_ablation.py`) and the rest runs in `analysis/run_queue.py`.
+- **The GPU is idle because there is nothing for it to do here**: the
+  simulator is 85% of a run. Measured per device: the CPU with one
+  thread 8.3 ms/step, the CPU with two 8.4 ms/step, the GPU 10.7 ms/step.
+- **Every long stage is resumable**, and the resume keys include the
+  device, the budget, the seed count and the evaluation-scene count. The
+  budget sweep and the alternative deployment additionally cache every
+  finished (budget, seed) and (arm, seed) separately, so a restart
+  costs the seed in flight and nothing more.
+- **No sleep-based watchers.** The background jobs notify on completion;
+  a watcher that sleeps and then prints a log tail is a process that
+  costs memory and tells us nothing the notification does not. The PDFs
+  are rebuilt by `analysis/watch_docs.py` when it is run, not by a
+  resident process.
 - `analysis/final_checks.py` compares the same configuration across the
   tables -- the observation arm C, the credit arm A, the energy arm A and
-  the ablation's full configuration are one experiment -- and fails if they
-  disagree. That check is what caught the device problem.
-- **No sleep-based watchers.** The background jobs notify on completion; a
-  watcher that sleeps and then prints a log tail is a process that costs
-  memory and tells us nothing the notification does not.
-- The user asked: **no new processes after a set of jobs finishes** --
-  report and let them reboot.
-
-## RUNNING JOBS (21 Oct, 09:40)
-- `run_all.py --stage abl` (the log is `abl_stage_cpu.log`) -- the component
-  ablation, 12 variants x 3 seeds x 25 episodes, re-measured on the CPU.
-  **THE CRITICAL PATH**: at variant 11 of 12 at 09:05, so ~10:15.
-- `analysis/ab_observation.py --episodes 25 --seeds 3 --eval-seeds 5` -- the
-  observation arms, re-run so that the artefact records the device it was
-  measured on. ~11:00.
-- `analysis/ab_energy_management.py --episodes 25 --seeds 3 --eval-seeds 5`
-  -- the four energy arms, same reason. ~11:00.
-- DONE on the CPU: the base comparison (5 training seeds), the credit A/B,
-  the map-resolution sweep, the training-budget sweep, the scenario matrix,
-  the stress ablation.
-- The paper is assembled and compiles: 0 errors, 0 visible overfull boxes,
-  0 undefined references, 29 pages.
-
-### THE PROTOCOL HAS MORE THAN ONE NUMBER IN IT
-The number of EVALUATION SEEDS is part of the protocol, and a run with
-three instead of five is a different measurement: the per-seed rows are
-the mean over the evaluation scenes, so they change.  A re-run that
-omitted `--eval-seeds 5` looked like a reproducibility violation -- the
-energy arm disagreed with the ablation's full configuration -- and the
-probes (`analysis/repro_probe.py`, `analysis/train_repro_probe.py`) showed
-that both the training and the evaluation are deterministic.  The cause
-was the missing flag.  **Always pass the whole protocol.**
+  the ablation's full configuration are one experiment -- and fails if
+  they disagree, or if the artefacts were produced on more than one
+  device.
+## What is running, and what is next
+RUNNING
+- `run_all.py --stage abl --abl-seeds 8` -- the component ablation at eight
+  training seeds, twelve variants.  This is the critical path: the paired
+  intervals of the component table are the paper's weakest evidence, and
+  at three seeds every one of them includes zero.
+- `analysis/ab_energy_management.py --episodes 25 --seeds 8 --eval-seeds 5`
+  -- the four energy arms.
+- `analysis/ab_budget.py --seeds 8 --eval-seeds 5` -- the training-budget
+  sweep, resuming from the finished eight-episode budget through a
+  per-seed cache.
+- `run_all.py --stage base --train-seeds 8 --resume` -- the base
+  comparison; seeds 0--4 are re-evaluated from their stored policies and
+  seeds 5--7 are trained.
+NEXT, AS SLOTS FREE
+- `analysis/ab_credit.py --episodes 25 --seeds 8 --eval-seeds 5` -- the
+  credit-assignment arms.
+- `analysis/ab_observation.py --episodes 25 --seeds 8 --eval-seeds 5` --
+  the observation arms.
+- `analysis/alt_deployment.py --seeds 8 --episodes 25 --eval-seeds 5` --
+  the alternative corrected deployment.  Its reported arm is READ from
+  the base comparison's per-seed rows rather than trained twice: it is
+  the same experiment, and measuring it once is what keeps the two
+  tables of the paper consistent.
+- `analysis/device_sensitivity.py --episodes 25` -- the three device
+  configurations at the full protocol.
+THEN
+- One final assembly, the full gate (`analysis/final_checks.py`), and one
+  more audit of the finished paper; both PDFs rebuilt by the watcher.
+- Undecided and awaiting the user: **the target venue**, and therefore
+  whether the paper is cut to conference length, journal length, or left
+  as a preprint.
 ## Assembling the paper
 1. `python analysis/assemble_results.py` -- regenerates the tables, fills
    the tokens, replaces the Results section wholesale, replaces the
@@ -417,15 +561,22 @@ was the missing flag.  **Always pass the whole protocol.**
 - [x] Four mathematical audits and two prose audits have been run and their findings addressed (MiniMax M3.1, Beam Free, DeepSeek V4.1).
 - [ ] `git status` is clean and everything is committed (never pushed).
 
-## Paper state
-- 29 pages, compiles clean (0 errors, 0 visible overfull boxes, 0 undefined references).
-- The Results section, the tables and the Introduction's contribution
-  bullet are generated from the artefacts.
-- Hand-written and therefore needing a check against the new numbers: the
-  abstract, the Introduction's framing paragraphs, the Conclusion, the
-  limitations list, and the observation A/B/C narrative in
-  `analysis/results_text.tex`.
-
+## The paper
+- 29 pages, IEEEtran conference format. Compiles clean: 0 LaTeX errors,
+  0 visible overfull boxes, 0 undefined references. The one overfull box
+  is the `balance` package's column split on the bibliography's last
+  page, 6.7 pt into a 19 mm margin, and it is invisible.
+- **Everything numeric in the prose is a macro**, and the assembler
+  rewrites the macro definitions from the token table on every run. The
+  hand-written prose cannot drift from the measurement.
+- The Results section, the tables, the Introduction's contribution bullet
+  and the abstract are all generated from the artefacts.
+- `analysis/final_checks.py` is the gate: eight checks, and it exits
+  non-zero if any of them fails.
+- **The length is still undecided.** At 29 pages this is a preprint or a
+  journal submission with overlength charges, not a conference paper
+  (6-8 pages). The user has been asked twice which venue is intended and
+  has not answered; the full paper stands until they do.
 ## DeepSeek research protocol (2-tab limit, STRICT)
 - Batch 1: Tab 1 (K-coverage literature gap) + Tab 2 (MAPPO correctness) -- DONE.
 - Batch 2: Tab 3 (non-degenerate coverage metrics) -- DONE.

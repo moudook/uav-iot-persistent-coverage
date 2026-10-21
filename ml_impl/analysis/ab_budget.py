@@ -21,6 +21,14 @@ import json
 import os
 import sys
 
+# The BLAS thread pools are pinned to one thread BEFORE numpy loads
+# them: each process otherwise starts a pool sized for the whole
+# machine, and a handful of processes exhaust the paging file.
+import os as _os
+for _v in ("OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+           "OMP_NUM_THREADS", "NUMEXPR_NUM_THREADS",
+           "VECLIB_MAXIMUM_THREADS"):
+    _os.environ.setdefault(_v, "1")
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -48,10 +56,46 @@ def main():
     print("=" * 78)
 
     out_path = os.path.join(HERE, "ab_budget.json")
+    cache_path = os.path.join(HERE, "ab_budget_cache.json")
+    device = str(os.environ.get("UAV_DEVICE", "cpu"))
+    # The training is the expensive part, and the server can restart in the
+    # middle of a sweep.  Every finished (budget, seed) is therefore
+    # cached with the PROTOCOL it was measured under, and a cached value
+    # is reused only when the protocol matches exactly -- a row measured
+    # at a different seed count, on a different device, or on a different
+    # number of evaluation scenes is a different measurement.
+    proto = dict(seeds=int(args.seeds), eval_seeds=int(args.eval_seeds),
+                 device=device)
+    cache = {}
+    if os.path.exists(cache_path):
+        try:
+            blob = json.load(open(cache_path, encoding="utf-8"))
+            if blob.get("protocol") == proto:
+                cache = blob.get("rows", {})
+            else:
+                print("  the cache was measured under a different protocol "
+                      "and is ignored")
+        except Exception:
+            cache = {}
+    if cache:
+        print(f"  resuming from the cache: {len(cache)} finished "
+              f"(budget, seed) pairs")
+
+    def save_cache():
+        with open(cache_path, "w", encoding="utf-8") as f:
+            json.dump(dict(protocol=proto, rows=cache), f, indent=2)
+
     rows = []
     for b in budgets:
         cks = []
         for s in range(args.seeds):
+            key = f"{b}:{s}"
+            if key in cache:
+                ck = float(cache[key])
+                cks.append(ck)
+                print(f"  budget {b:3d}  seed {s}: CK={ck:.3f} (cached)",
+                      flush=True)
+                continue
             c = base_config(seed=s)
             agent, hist = train_mappo(c, episodes=b, n_steps=c.episode_len,
                                       seed=s, verbose=False)
@@ -59,13 +103,15 @@ def main():
                    for e in range(args.eval_seeds)]
             ck = float(np.mean([e["CK"] for e in evs]))
             cks.append(ck)
+            cache[key] = ck
+            save_cache()
             print(f"  budget {b:3d}  seed {s}: CK={ck:.3f} "
                   f"(last training episode "
                   f"{hist[-1].get('CK', float('nan')):.3f})", flush=True)
         row = dict(episodes=b, CK=float(np.mean(cks)),
                    CK_std=float(np.std(cks)), per_seed_CK=cks,
                    seeds=int(args.seeds), eval_seeds=int(args.eval_seeds),
-                   device=str(os.environ.get("UAV_DEVICE", "cpu")))
+                   device=device)
         rows.append(row)
         print(f"  budget {b:3d}  MEAN  CK={row['CK']:.3f} +- "
               f"{row['CK_std']:.3f}", flush=True)

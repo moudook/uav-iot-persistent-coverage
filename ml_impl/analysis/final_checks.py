@@ -207,22 +207,34 @@ def main():
         if v:
             if ref is None:
                 ref, ref_name = v, name
-            elif v[:3] != ref[:3]:
+            elif v != ref:
+                # the WHOLE list, not its first three entries: the arms
+                # are measured at the same number of training seeds as
+                # the base comparison, and a table that was measured at
+                # a different width is a different measurement
                 failures.append(
                     f"{name} and {ref_name} are the same configuration but "
-                    f"give different numbers: {v[:3]} against {ref[:3]}")
+                    f"give different numbers: {v} against {ref}")
             else:
-                print(f"   {name} agrees with {ref_name}: {v[:3]}")
-    # and the main table's first three training runs
+                print(f"   {name} agrees with {ref_name} on all "
+                      f"{len(v)} training seeds")
+    # and the main table's training runs
     main_p = os.path.join(ML, "results_main.csv")
     if os.path.exists(main_p) and ref:
         with open(main_p, newline="", encoding="utf-8") as f:
             for r in csv.DictReader(f):
                 if r.get("model") == "MAPPO":
-                    if r.get("train_seeds") == "5":
-                        print("   the main table's controller is trained "
-                              "five times, so its first three runs are the "
-                              "reference the other tables reuse")
+                    n = r.get("train_seeds", "?")
+                    print(f"   the main table's controller is trained {n} "
+                          f"times, so its runs are the reference the other "
+                          f"tables reuse")
+                    if str(n).isdigit() and int(n) != len(ref):
+                        failures.append(
+                            f"the main table's controller is trained {n} "
+                            f"times but the arms carry {len(ref)} training "
+                            f"seeds: the arms are compared with the base "
+                            f"comparison's arm A, so the widths have to "
+                            f"match")
                     break
 
     print("=" * 72)

@@ -172,10 +172,14 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
     value "auto" restores the old load-dependent behaviour, and "cuda"
     asks for the GPU explicitly.
 
-    The choice costs about one percent of the wall clock at this scale:
-    the simulator is a sequential Python loop and dominates the step
-    (11.1 ms/step on the CPU against 11.2 ms/step on the GPU), so the
-    network is never the bottleneck.
+    The choice is not a matter of taste: it is measured, and the
+    measurement is in analysis/device_sensitivity.json.  On this workload
+    the GPU is 28% SLOWER than the CPU (10.7 ms/step against 8.3 ms/step at
+    one thread), because the simulator is a sequential Python loop that is
+    85% of the run, while the network is 8% of it -- and on the GPU even
+    that 8% is nearly four times slower in absolute terms, since the
+    kernels are tiny and the launch overhead dominates.  There is nothing
+    for the GPU to accelerate here.
     """
     torch.manual_seed(seed)
     # The thread count changes the order of the floating-point reductions,

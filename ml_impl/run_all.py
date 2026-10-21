@@ -35,6 +35,14 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# The BLAS thread pools are pinned to one thread BEFORE numpy loads
+# them: each process otherwise starts a pool sized for the whole
+# machine, and a handful of processes exhaust the paging file.
+import os as _os
+for _v in ("OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+           "OMP_NUM_THREADS", "NUMEXPR_NUM_THREADS",
+           "VECLIB_MAXIMUM_THREADS"):
+    _os.environ.setdefault(_v, "1")
 import numpy as np
 import torch
 
@@ -55,10 +63,12 @@ ANALYSIS = os.path.join(HERE, "analysis")
 # it was trained on.  Every table in the paper quotes the same
 # configuration, and a reader who checks the ablation's full row against
 # the main table's controller must find the same number, which requires
-# every stage to train on the same device.  The speed cost is about one
-# percent: the simulator is a sequential Python loop and dominates the step
-# (11.1 ms/step on the CPU against 11.2 ms/step on the GPU), so the
-# network is never the bottleneck.
+# every stage to train on the same device.  The choice is measured, not
+# assumed: the GPU is 28% SLOWER for this workload (10.7 ms/step against
+# 8.3 ms/step on the CPU at one thread), because the simulator is a
+# sequential Python loop and is 85% of the run, while the network is 8%
+# of it and is itself slower on the GPU.  The speed comes from running
+# the stages in parallel across the machine's cores, not from the GPU.
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 

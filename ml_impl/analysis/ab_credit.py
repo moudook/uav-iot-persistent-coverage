@@ -40,6 +40,14 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# The BLAS thread pools are pinned to one thread BEFORE numpy loads
+# them: each process otherwise starts a pool sized for the whole
+# machine, and a handful of processes exhaust the paging file.
+import os as _os
+for _v in ("OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+           "OMP_NUM_THREADS", "NUMEXPR_NUM_THREADS",
+           "VECLIB_MAXIMUM_THREADS"):
+    _os.environ.setdefault(_v, "1")
 import numpy as np
 
 from uav_wireless.experiments import base_config, eval_agent

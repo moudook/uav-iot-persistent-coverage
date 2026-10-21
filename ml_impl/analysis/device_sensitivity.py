@@ -30,6 +30,14 @@ import os
 import sys
 import time
 
+# The BLAS thread pools are pinned to one thread BEFORE numpy loads
+# them: each process otherwise starts a pool sized for the whole
+# machine, and a handful of processes exhaust the paging file.
+import os as _os
+for _v in ("OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+           "OMP_NUM_THREADS", "NUMEXPR_NUM_THREADS",
+           "VECLIB_MAXIMUM_THREADS"):
+    _os.environ.setdefault(_v, "1")
 import numpy as np
 import torch
 
@@ -72,10 +80,17 @@ def main():
                          "One configuration per process is how the three are "
                          "run in parallel, and the GPU is a configuration in "
                          "its own right.")
+    ap.add_argument("--merge", action="store_true",
+                    help="read the per-configuration files and write the "
+                         "combined artefact")
     a = ap.parse_args()
 
     configs = {"cpu1": ("cpu", 1), "cpu2": ("cpu", 2),
                "cuda": ("cuda", 1)}
+
+    if a.merge:
+        return merge(a)
+
     if a.config == "all":
         todo = list(configs.values())
     else:
@@ -90,6 +105,25 @@ def main():
         print(f"  {device} with {threads} thread(s): CK={r['CK']:.6f} "
               f"({r['seconds']:.0f}s)", flush=True)
         runs.append(r)
+
+    if a.config != "all":
+        # one configuration per process: the run itself is written first,
+        # with its weights, so that the merge can compare the
+        # configurations with each other
+        out = a.out.replace(".json", f"_{a.config}.json")
+        payload = dict(
+            episodes=a.episodes, seed=a.seed, config=a.config,
+            runs=[dict(config=r["config"], device=r["device"],
+                       threads=r["threads"], CK=r["CK"],
+                       seconds=r["seconds"],
+                       steps=int(base_config(seed=a.seed).episode_len)
+                       * a.episodes,
+                       weights=[float(x) for x in r["weights"]])
+                  for r in runs])
+        with open(out, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+        print(f"Saved -> {out}")
+        return 0
 
     if len(runs) < 2:
         print("  not enough runs to compare")
@@ -117,6 +151,65 @@ def main():
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2)
     print(f"Saved -> {a.out}")
+    return 0
+
+
+def merge(a):
+    """Assemble the per-configuration files into the artefact.
+
+    Each configuration is measured in its own process, because the three
+    of them are the whole point: the CPU with one thread, the CPU with
+    two, and the GPU.  The files are read back here so that the artefact
+    is one document.
+    """
+    parts = []
+    for name in ("cpu1", "cpu2", "cuda"):
+        p = a.out.replace(".json", f"_{name}.json")
+        if not os.path.exists(p):
+            continue
+        blob = json.load(open(p, encoding="utf-8"))
+        for r in blob.get("runs", []):
+            parts.append(r)
+    if len(parts) < 2:
+        print("  not enough per-configuration files to merge")
+        return 1
+    ref = parts[0]
+    rows = []
+    for r in parts[1:]:
+        dw = float(np.max(np.abs(r["weights"] - ref["weights"])))
+        dck = abs(r["CK"] - ref["CK"])
+        rows.append(dict(other_device=r["device"], other_threads=r["threads"],
+                         max_abs_weight_difference=dw,
+                         coverage_difference=dck))
+    steps = int(ref.get("steps", 0)) or 1
+    timing = []
+    for r in parts:
+        timing.append(dict(config=r["config"], device=r["device"],
+                           threads=r["threads"],
+                           seconds=round(float(r["seconds"]), 1),
+                           ms_per_step=round(1000 * float(r["seconds"]) / steps,
+                                             2)))
+    gpu = next((t for t in timing if t["device"] == "cuda"), None)
+    ref_t = timing[0]
+    payload = dict(
+        episodes=a.episodes, seed=a.seed, reference="cpu with 1 thread",
+        comparisons=rows, timing=timing,
+        gpu_over_cpu_time=(round(gpu["seconds"] / ref_t["seconds"], 3)
+                           if gpu else None),
+        note=("the differences are small and they are not zero, which is "
+              "why the device and the thread count are recorded with every "
+              "artefact; the timing is the reason the protocol device is "
+              "the CPU: the workload is bound by a sequential Python "
+              "simulator, so the GPU is slower, not faster"))
+    with open(a.out, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+    print(f"Saved -> {a.out}")
+    for t in timing:
+        print(f"  {t['config']:6s} {t['seconds']:8.1f}s  "
+              f"{t['ms_per_step']:6.2f} ms/step")
+    if gpu:
+        print(f"  the GPU takes {payload['gpu_over_cpu_time']}x the time of "
+              f"the CPU for this workload")
     return 0
 
 

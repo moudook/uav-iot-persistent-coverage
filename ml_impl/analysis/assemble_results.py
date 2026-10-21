@@ -94,7 +94,11 @@ def write_token_macros(src, tok, missing):
     # control sequence is an error, and the error is much harder to
     # read than a marker.
     used = set(re.findall(r"\\(tok[A-Za-z]+)", src))
+    # the macros that are already written, from the table AND from the
+    # pending list: a macro that is in both would otherwise be defined
+    # twice, and LaTeX stops at the second definition
     defined = {macro_name(n)[1:] for n in tok}
+    defined |= {macro_name(n)[1:] for n in missing}
     for mac in sorted(used - defined):
         lines.append(f"\\newcommand{{\\{mac}}}"
                      f"{{\\mbox{{\\textbf{{[pending: {mac}]}}}}}}")
@@ -351,14 +355,21 @@ __BLOCK_SCEN__
     if start < 0 or end < 0 or end < start:
         raise SystemExit("could not locate the Results section")
 
-    # The Results section is replaced only when every token in it can be
-    # filled: a section that still contains a literal token is a draft with
-    # a hole in it, and the hole is marked.
+    # The Results section is ALWAYS replaced, and a token that cannot be
+    # filled becomes a visible marker.  The earlier design kept the
+    # previous text when a token was pending, on the grounds that a
+    # section with a hole in it is worse than a section that reads.
+    # It is worse: the text that was kept was the text of an EARLIER
+    # measurement, and once an artefact was mid-write that text carried
+    # a not-a-number and an empty list into the paper.  A section
+    # regenerated from the template can only be as wrong as the
+    # measurement is out of date, and the marker says exactly which
+    # number is waiting.
     if leftover:
-        print("WARNING: the Results section keeps its previous text because "
-              f"these tokens are not yet filled: {', '.join(leftover)}")
-    else:
-        src = src[:start] + section.lstrip("\n") + src[end:]
+        print("NOTE: the Results section is regenerated with a visible "
+              f"marker for the tokens that are not yet filled: "
+              f"{', '.join(leftover)}")
+    src = src[:start] + section.lstrip("\n") + src[end:]
 
     # The same discipline applies to the REST of the paper: a number that
     # comes from an experiment is written as a token, so the Introduction
@@ -403,8 +414,7 @@ __BLOCK_SCEN__
     with open(args.tex, "w", encoding="utf-8") as f:
         f.write(src)
     print(f"Results section replaced in {args.tex}")
-    if leftover:
-        raise SystemExit("the paper is incomplete: see the tokens above")
+    incomplete = bool(leftover)
 
     if not args.no_compile:
         for _ in range(3):
@@ -436,6 +446,11 @@ __BLOCK_SCEN__
             print("NOTE: overfull boxes:")
             for o in overfull[:10]:
                 print("   ", o)
+    if incomplete:
+        # the paper still compiles and the PDF is current, but the
+        # assembly is not a finished paper and the gate must say so
+        raise SystemExit("the paper is INCOMPLETE: the tokens listed above "
+                         "are marked in it")
     return 0
 
 

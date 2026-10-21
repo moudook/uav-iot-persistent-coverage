@@ -2,83 +2,26 @@
   {
     "arm": "A: the proposed configuration",
     "lam_B": 2.0,
-    "CK": 0.6982983333333266,
-    "CK_std": 0.032441519265014776,
-    "AG": 0.9912000000000001,
-    "SC": 0.01576666666666667,
-    "CovIntegral": 0.30170166666666554,
-    "stranded_per_episode": 1.0666666666666667,
-    "return_events_per_episode": 613.0,
+    "CK": 0.6622724999999957,
+    "CK_std": 0.05458543836271627,
+    "AG": 0.9840375,
+    "SC": 0.0103375,
+    "CovIntegral": 0.3377274999999997,
+    "stranded_per_episode": 0.9249999999999998,
+    "return_events_per_episode": 623.675,
     "per_seed_CK": [
       0.7439499999999948,
       0.6794249999999991,
-      0.671519999999986
+      0.671519999999986,
+      0.6792249999999995,
+      0.7064949999999939,
+      0.6124149999999948,
+      0.6522199999999988,
+      0.5529299999999985
     ],
     "device": "cpu",
     "episodes": 25,
-    "seeds": 3,
-    "eval_seeds": 5
-  },
-  {
-    "arm": "B: + a pack that cannot run out",
-    "lam_B": 2.0,
-    "B_max": 300000.0,
-    "CK": 0.689340000000005,
-    "CK_std": 0.03680650780319925,
-    "AG": 1.0,
-    "SC": 0.033900000000000007,
-    "CovIntegral": 0.3106599999999991,
-    "stranded_per_episode": 0.0,
-    "return_events_per_episode": 0.0,
-    "per_seed_CK": [
-      0.6376649999999999,
-      0.7205950000000128,
-      0.7097600000000024
-    ],
-    "device": "cpu",
-    "episodes": 25,
-    "seeds": 3,
-    "eval_seeds": 5
-  },
-  {
-    "arm": "C: without the threshold term",
-    "lam_B": 0.0,
-    "CK": 0.7069033333333298,
-    "CK_std": 0.037111655252168384,
-    "AG": 0.9757333333333333,
-    "SC": 0.03986666666666667,
-    "CovIntegral": 0.29309666666666795,
-    "stranded_per_episode": 0.9333333333333335,
-    "return_events_per_episode": 622.3333333333334,
-    "per_seed_CK": [
-      0.7493100000000027,
-      0.7124799999999925,
-      0.658919999999994
-    ],
-    "device": "cpu",
-    "episodes": 25,
-    "seeds": 3,
-    "eval_seeds": 5
-  },
-  {
-    "arm": "D: with the previous energy rule",
-    "lam_B": 2.0,
-    "strict_energy_mask": false,
-    "CK": 0.5787711714732025,
-    "CK_std": 0.037929109884930236,
-    "AG": 0.9535773089453222,
-    "SC": 0.0038879971464241127,
-    "CovIntegral": 0.42122882852679827,
-    "stranded_per_episode": 6.666666666666667,
-    "return_events_per_episode": 97.13333333333334,
-    "per_seed_CK": [
-      0.5959985144195993,
-      0.6141500000000051,
-      0.526165000000003
-    ],
-    "device": "cpu",
-    "episodes": 25,
-    "seeds": 3,
+    "seeds": 8,
     "eval_seeds": 5
   }
 ]

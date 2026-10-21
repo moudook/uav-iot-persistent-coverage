@@ -82,13 +82,41 @@ NARROW = r"\setlength{\tabcolsep}{3pt}"
 
 def table_main(rows, learned=None):
     lines = []
+    # The caption states the seed count and the meaning of the $\pm$, and
+    # both are read from the data: a caption that says "five times" when
+    # the table was measured eight times is a caption that lies, and a
+    # caption that promises the rules a $\pm$ the table does not print is
+    # the same kind of lie.
+    n_seeds = 0
+    if learned:
+        try:
+            n_seeds = int(learned.get("MAPPO", {}).get("train_seeds", 0) or 0)
+        except Exception:
+            n_seeds = 0
+    if not n_seeds:
+        for r in rows:
+            if r.get("model") == "MAPPO" and r.get("train_seeds"):
+                n_seeds = int(r["train_seeds"])
+    rule_models = ("Fixed", "Greedy", "Reactive", "Reactive-local", "Oracle")
+    rules_have_std = any(r.get("model") in rule_models
+                          and r.get("CK_std") not in (None, "")
+                          for r in rows)
+    if n_seeds:
+        seed_clause = (f"The learned controller is trained {n_seeds} times "
+                       f"and its row is the mean over those {n_seeds} runs, "
+                       f"with the $\\pm$ the seed-to-seed spread")
+    else:
+        seed_clause = ("The learned controller's row is the mean over its "
+                       "training runs, with the $\\pm$ the seed-to-seed spread")
+    if rules_have_std:
+        rule_clause = ("the rule baselines are deterministic, and their "
+                       "$\\pm$ is the spread over the evaluation scenes")
+    else:
+        rule_clause = ("the rule baselines are deterministic and carry no "
+                       "spread of their own")
     lines.append(r"\begin{table}[t]")
     lines.append(r"\caption{Base comparison on the corrected configuration.  "
-                 r"The learned controller is trained five times and its row "
-                 r"is the mean over those five runs, with the $\pm$ the "
-                 r"seed-to-seed spread; the rule baselines are "
-                 r"deterministic, and their $\pm$ is the spread over the "
-                 r"five evaluation scenes.  "
+                 + seed_clause + "; " + rule_clause + ".  "
                  r"``Unexec.'' is the number of sampled actions that the "
                  r"safety filter or the joint projection did not execute, "
                  r"which is the size of the gap between the policy gradient "

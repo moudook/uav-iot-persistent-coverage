@@ -17,6 +17,14 @@ import os
 import re
 import sys
 
+# The BLAS thread pools are pinned to one thread BEFORE numpy loads
+# them: each process otherwise starts a pool sized for the whole
+# machine, and a handful of processes exhaust the paging file.
+import os as _os
+for _v in ("OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+           "OMP_NUM_THREADS", "NUMEXPR_NUM_THREADS",
+           "VECLIB_MAXIMUM_THREADS"):
+    _os.environ.setdefault(_v, "1")
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -81,6 +89,20 @@ def macro_name(token: str) -> str:
         word = "".join(digits.get(c, c) for c in p)
         out.append(word[:1].upper() + word[1:].lower())
     return "\\tok" + "".join(out)
+
+
+def sample_std(values):
+    """The SAMPLE standard deviation of a set of measurements.
+
+    numpy's default divides by n, which is the POPULATION standard
+    deviation: an interval built from it is too narrow, and the paper's
+    intervals are the paper's central inference.  Every spread in the
+    token table therefore comes from here.
+    """
+    v = [float(x) for x in values]
+    if len(v) < 2:
+        return 0.0
+    return float(np.std(v, ddof=1))
 
 
 def per_seed_ck(row):
@@ -183,6 +205,26 @@ def build_tokens():
         if r.get("CK_std") not in (None, ""):
             tok[f"{key}_CK_STD"] = f(r["CK_std"])
 
+    # The seed-to-seed SPREAD of the learned controller, recomputed from
+    # the raw per-seed rows rather than read from the table's summary
+    # field.  The summary field is a POPULATION standard deviation
+    # (numpy divides by n), and an interval computed from it is too
+    # narrow: the sample standard deviation divides by n-1.  The paper's
+    # intervals are the paper's central inference, so the value they are
+    # built from is computed here, from the rows.
+    base_rows_path = os.path.join(HERE, "base_training_seeds.json")
+    base_seed_cks = []
+    if os.path.exists(base_rows_path):
+        try:
+            _bs = json.load(open(base_rows_path, encoding="utf-8"))
+            base_seed_cks = [float(b["CK"]) for b in _bs
+                             if b.get("CK") is not None]
+        except Exception:                                      # pragma: no cover
+            base_seed_cks = []
+    if len(base_seed_cks) > 1:
+        tok["MAPPO_CK_STD"] = f"{sample_std(base_seed_cks):.3f}"
+        tok["MAPPO_N_SEEDS"] = str(len(base_seed_cks))
+
     for r in load_csv("results_learned_baselines.csv"):
         key = ("IDDQN" if "DQN" in r["model"] else
                "PPOL" if "PPO" in r["model"] else None)
@@ -209,7 +251,7 @@ def build_tokens():
     if mp is not None:
         tok["MAPPO_DISTANCE"] = f"{float(mp.get('Distance', 0)):.0f}"
         tok["MAPPO_STRANDED"] = f"{float(mp.get('Stranded', 0)):.1f}"
-        tok["MAPPO_UNEXEC"] = f"{float(mp.get('UnexecutedActions', 0)):.0f}"
+        tok["MAPPO_UNEXEC"] = f"{float(mp.get('UnexecutedActions', 0)):.2f}"
         tok["PROJ_REVISIONS"] = f"{float(mp.get('ProjectionRevisions', 0)):.2f}"
         # THE GAP.  The reactive heuristic is deterministic, so it has no
         # training-seed spread; the uncertainty of the gap is therefore the
@@ -244,6 +286,13 @@ def build_tokens():
             tok["GAP"] = f"{gap:.3f}"
             s = mp.get("CK_std")
             n = int(mp.get("train_seeds", 0) or 0)
+            # The interval is built from the SAMPLE standard deviation of
+            # the per-seed rows, not from the table's summary field,
+            # which is a population standard deviation and would make
+            # every interval in the paper too narrow.
+            if base_seed_cks:
+                s = sample_std(base_seed_cks)
+                n = len(base_seed_cks)
             if s not in (None, "") and n > 1:
                 try:
                     from scipy import stats as _st
@@ -299,11 +348,18 @@ def build_tokens():
         tok["B_CK_STD"] = f(b.get("CK_std", 0.0))
         delta = b["CK"] - a["CK"]
         tok["B_MINUS_A"] = f"{delta:+.3f}"
-        react = main_rows.get("Reactive")
-        if react:
-            gap = float(react["CK"]) - a["CK"]
-            share = (delta / gap) if abs(gap) > 1e-9 else 0.0
-            tok["B_SHARE"] = f"{100*share:.0f}\\%"
+        # The share is the arm's effect as a fraction of THE GAP THE PAPER
+        # USES.  It was computed against a different denominator -- the
+        # privileged rule's margin over arm A -- which is neither the
+        # paper's gap nor a quantity a reader can find in the paper.
+        gap_ref = tok.get("GAP")
+        if gap_ref not in (None, ""):
+            try:
+                g = float(gap_ref)
+                if abs(g) > 1e-9:
+                    tok["B_SHARE"] = f"{100 * (delta / g):.0f}\\%"
+            except (TypeError, ValueError):
+                pass
     if c:
         tok["C_CK"] = f(c["CK"])
         tok["C_CK_STD"] = f(c.get("CK_std", 0.0))
@@ -316,6 +372,7 @@ def build_tokens():
         tok["C_DIST"] = f(c["distinct_actions"], 2)
         tok["C_SPREAD"] = f(c["mean_spread_m"], 1)
         # the paired intervals: the three arms share their training seeds
+        obs_raw = {}
         for key, x, y in (("OBS_B", b, a), ("OBS_C", c, a)):
             if not (x and y):
                 continue
@@ -329,14 +386,18 @@ def build_tokens():
             tok[f"{key}_CI"] = f"[{mean-half:+.3f}, {mean+half:+.3f}]"
             tok[f"{key}_P"] = f"{p:.3f}"
             tok[f"{key}_N"] = str(n)
+            # the RAW values are kept: the summary below re-derives the
+            # interval's endpoints, and doing that from the ROUNDED
+            # values makes the summary's interval differ from the table's
+            # in the last digit
+            obs_raw[key] = (mean, half)
         # the exclusion argument for the observation content
         obs_stats = []
         for key, label in (("OBS_B", "adding the agent identity"),
                            ("OBS_C", "the full observation of the proposed "
                                      "configuration")):
-            if f"{key}_PAIRED" in tok:
-                obs_stats.append((label, float(tok[f"{key}_PAIRED"]),
-                                  float(tok[f"{key}_HALF"])))
+            if key in obs_raw:
+                obs_stats.append((label, obs_raw[key][0], obs_raw[key][1]))
         if obs_stats and "GAP" in tok:
             gap = float(tok["GAP"])
             clauses = [bound_clause(lab, m, h, gap) for lab, m, h in obs_stats]
@@ -371,7 +432,7 @@ def build_tokens():
                    (".  At least one upper limit reaches past the gap of "
                     if n > 1 else
                     ".  The upper limit reaches past the gap of "))
-                + f"{gap:.3f} to the reactive heuristic, so the content "
+                + f"{gap:.3f} to {tok.get('BEST_RULE_NAME', 'the strongest rule')}, so the content "
                 + ("of the observation is not what accounts for the gap; "
                    if excluded else
                    "of the observation is not excluded by these arms; ")
@@ -601,11 +662,12 @@ def build_tokens():
         excluded = all((m + h) < gap for _, m, h in en_stats)
         if excluded:
             tok["ENERGY_SUMMARY"] = (
-                "The reading was wrong, and Table~\\ref{tab:results_energy} "
-                "says so.  The three interventions are paired with the "
-                "proposed configuration -- they share its training seeds -- "
-                "so each one is reported as an interval rather than as a "
-                "point, and each interval's upper limit is below the gap of "
+                "The energy model is not what accounts for the gap, and "
+                "Table~\\ref{tab:results_energy} says so.  The three "
+                "interventions are paired with the proposed configuration -- "
+                "they share its training seeds -- so each one is reported "
+                "as an interval rather than as a point, and each "
+                "interval's upper limit is below the gap of "
                 f"{gap:.3f} to the reactive heuristic: "
                 + "; ".join(clauses)
                 + ".  The energy model is therefore not what accounts for "
@@ -904,6 +966,16 @@ def build_tokens():
         tok["SCEN_TIES"] = str(ties)
         tok["SCEN_WORST"] = f"{worst[0]} ({worst[1]:+.3f})"
         tok["SCEN_BEST"] = f"{best[0]} ({best[1]:+.3f})"        # the closing sentence of the section, derived from the matrix
+        # The WORD that goes with the extreme is derived from its sign.
+        # "the largest surplus" applied to a negative number describes a
+        # surplus that does not exist, and a reader who checks the sign
+        # finds the prose wrong.
+        tok["SCEN_WORST_WORD"] = ("the largest deficit"
+                                  if worst[1] < 0 else
+                                  "the smallest surplus")
+        tok["SCEN_BEST_WORD"] = ("the largest surplus"
+                                if best[1] > 0 else
+                                "the smallest deficit")
         by_scen = {}
         for r in scen:
             try:
@@ -992,10 +1064,25 @@ def build_tokens():
                     f"in the direction the diagnosis points helps --- "
                     f"although not by enough to close the gap")
             else:
+                # The interval does not exclude zero, and it is NOT
+                # centred on zero: saying "consistent with a difference of
+                # any size up to X in either direction" describes a
+                # symmetric interval, and this one is not symmetric.  The
+                # honest statement names the best case the interval
+                # allows, and compares it with the gap.
+                best = mean + half
+                worst = mean - half
+                gap_txt = tok.get("GAP", "the gap")
+                if best > 0:
+                    tail = (f"its best case is {best:.3f} better, far short "
+                            f"of the gap of {gap_txt}, and its worst case is "
+                            f"{-worst:.3f} worse")
+                else:
+                    tail = (f"every difference the interval allows is "
+                            f"negative, from {worst:.3f} to {best:.3f}")
                 tok["CREDIT_VERDICT"] = (
                     f"the difference is not resolved by this arm: the "
-                    f"interval is consistent with a difference of any size up "
-                    f"to about {half:.3f} in either direction, so the "
+                    f"interval is {tok['CREDIT_CI']}, and {tail}, so the "
                     f"cheapest modification in the direction the diagnosis "
                     f"points has not been shown to close the gap")
 
@@ -1072,10 +1159,16 @@ def build_tokens():
         # conservative one, but a reader deserves to see WHICH arm is
         # wide, because one wide arm does not make the others wide
         every = []
-        for stats, group in ((obs_stats, "the content of the observation"),
-                             (en_stats, "the energy model")):
+        refs = []
+        for stats, group, ref in (
+                (obs_stats, "the content of the observation",
+                 "the local-only arm A of the observation experiment"),
+                (en_stats, "the energy model",
+                 "the proposed configuration of the energy experiment")):
             for lab, m, h in stats:
                 every.append((lab, m + h, group))
+                if ref not in refs:
+                    refs.append(ref)
         parts = []
         not_cleared = []
         for lab, up, group in every:
@@ -1100,12 +1193,21 @@ def build_tokens():
             tail = (".  Every arm's upper limit is below the gap, so none "
                     "of them can be the whole of the explanation, by "
                     "margins that are small but positive")
+        # The reference arm is named, because the arm's interval is
+        # PAIRED against it and not against the base comparison: a reader
+        # who does not know the reference cannot tell what the interval
+        # is an interval of.
+        ref_clause = ""
+        if refs:
+            ref_clause = (".  Every interval is paired over the same "
+                          "training seeds, against "
+                          + (" and ".join(refs)))
         tok["ARMS_SUMMARY_SENTENCE"] = (
             "Controlled arms bound how much of the gap each alternative "
             "explanation can account for: "
             + "; ".join(parts)
             + f", against a gap of {gap:.3f}"
-            + bud + tail + ".")
+            + bud + tail + ref_clause + ".")
     else:
         tok["ARMS_SUMMARY_SENTENCE"] = (
             "the arms that test the alternative explanations have not been "
@@ -1190,11 +1292,16 @@ def build_tokens():
         tok["CONN_UNEXPLAINED"] = str(unex)
         tok["CONN_POLICY"] = str(ca.get("policy", "?"))
         tok["CONN_ASC"] = str(left)
+        # The sentence BEFORE this clause already says how many of the
+        # disconnections follow a UAV leaving the active set, so the clause
+        # must add the cause, not repeat the count.  A repeated count
+        # reads as two facts where there is one.
         if unex == 0:
+            cause = ("each of them is a UAV whose pack emptied away from a "
+                     "charging pad" if left > 0 else
+                     "every one of them is accounted for by a teleport")
             tok["CONN_VERDICT"] = (
-                f"all {left} of them follow a UAV leaving the active "
-                "set --- its pack emptied away from a charging pad --- "
-                "and none follows a move, so the projection's "
+                f"{cause}, and none follows a move, so the projection's "
                 "guarantee is not violated by any executed move, and "
                 "the availability below 1.000 is the price of a UAV "
                 "leaving rather than a hole in the filter")
@@ -1203,6 +1310,20 @@ def build_tokens():
                 f"{unex} of them are NOT attributable to either mechanism, "
                 f"which is a residual the filter does not account for and "
                 f"which we report rather than explain away")
+        # The conclusion of the accounting, derived: a hand-written
+        # sentence that says "every disconnection follows a UAV leaving"
+        # is a CLAIM, and it is only true while the counts agree with it.
+        if unex == 0 and tel == 0 and left == n and n > 0:
+            tok["CONN_ALL_LEAVING"] = (
+                "every one of them follows a UAV leaving rather than a move")
+        elif unex == 0 and tel == 0:
+            tok["CONN_ALL_LEAVING"] = (
+                "none of them is attributable to a move")
+        else:
+            tok["CONN_ALL_LEAVING"] = (
+                f"the accounting attributes {left} to a UAV leaving, {tel} "
+                f"to a teleport and {unex} to neither, and we report the "
+                f"split rather than rounding it to a cleaner story")
 
     # ------------------------------------------------------------------
     # the alternative corrected deployment (N = 5, K = 2, R_cov = 45 m)
@@ -1391,23 +1512,57 @@ def build_tokens():
             frac = abs(spread) / gap if gap else float("nan")
             tok["BUDGET_FRAC"] = f"{100 * frac:.0f}"
             tok["BUDGET_GAP"] = f"{gap:.3f}"
-        # IS the last increment distinguishable from zero at three seeds?
-        # The comparison is the difference of two means, each the mean of
-        # three runs, so its standard error is sqrt(s1^2/n1 + s2^2/n2).  A
-        # difference smaller than two standard errors is not resolved by
-        # this protocol, and the paper must say so rather than read a trend
-        # into it.
+        tok["BUDGET_SEEDS"] = str(ns[-1] if ns else 0)
+        # IS the last increment distinguishable from zero?
+        # The sweep trains the SAME training seeds at every budget, so two
+        # budgets can be compared on the same runs, and the paired
+        # comparison is the one the design supports.  The unpaired
+        # comparison of two means throws that pairing away and is wider
+        # than it needs to be -- wide enough, in this case, to call a
+        # resolved increment unresolved.
         se = float("nan")
         t = float("nan")
+        half_last = float("nan")
+        p_last = float("nan")
+        n_pair = 0
+        try:
+            from scipy import stats as _st_b
+            crit_b = float(_st_b.t.ppf(0.975, max(n_pair - 1, 1))) \
+                if n_pair > 1 else 0.0
+        except Exception:                                      # pragma: no cover
+            crit_b = 0.0
         if len(rows) >= 2:
-            se = math.sqrt(stds[-2] ** 2 / ns[-2] + stds[-1] ** 2 / ns[-1])
-            if se > 0:
-                t = incs[-1] / se
+            pa = rows[-2].get("per_seed_CK") or []
+            pb = rows[-1].get("per_seed_CK") or []
+            if pa and pb and len(pa) == len(pb):
+                _m, _h, _p, n_pair = paired_stat(pb, pa)
+                half_last = _h
+                p_last = _p
+                if n_pair > 1:
+                    try:
+                        from scipy import stats as _st_b
+                        crit_b = float(_st_b.t.ppf(0.975, n_pair - 1))
+                    except Exception:                          # pragma: no cover
+                        crit_b = 1.96
+                se = _h / crit_b if crit_b > 0 else float("nan")
+                t = _m / se if (se == se and se > 0) else float("nan")
         tok["BUDGET_SE"] = f"{se:.3f}" if se == se else "n/a"
         tok["BUDGET_T"] = f"{t:.2f}" if t == t else "n/a"
+        tok["BUDGET_LAST_CI"] = (f"[{incs[-1]-half_last:+.3f}, "
+                                  f"{incs[-1]+half_last:+.3f}]"
+                                  if half_last == half_last else "n/a")
+        tok["BUDGET_LAST_P"] = f"{p_last:.3f}" if p_last == p_last else "n/a"
+        tok["BUDGET_PAIR_N"] = str(n_pair)
         resolved = bool(t == t and abs(t) >= 2.0)
         tok["BUDGET_LAST_RESOLVED"] = "yes" if resolved else "no"
-        if resolved:
+        if len(rows) < 2:
+            # ONE budget is not a sweep.  The increments of a sweep with a
+            # single point are an empty list, and the paper must not print
+            # an empty list or a not-a-number: the sweep has to be
+            # finished before anything is said about it.
+            tok["BUDGET_VERDICT"] = ""
+            tok["BUDGET_CAVEAT"] = ""
+        elif resolved:
             # the coverage really is still rising at the longest budget
             tok["BUDGET_VERDICT"] = (
                 f"the coverage moves by {spread:+.3f} over the range the "
@@ -1416,12 +1571,17 @@ def build_tokens():
                 f"increments between successive budgets are "
                 f"{tok['BUDGET_INCREMENTS']}; the last of them, "
                 f"{tok['BUDGET_LAST_DELTA']}, is {abs(t):.1f} standard errors "
-                f"from zero, so the evaluated coverage is still rising at "
-                f"the longest budget we ran and the budget is therefore not "
-                f"excluded as a partial cause of the shortfall")
+                f"from zero (the standard error of the difference is "
+                f"{tok['BUDGET_SE']}, paired over the same {n_pair} training "
+                f"seeds), so the coverage does keep rising with the budget "
+                f"over the range the sweep covers")
         else:
-            # the last increment is WITHIN the noise: the sweep does not
-            # resolve what the budget contributes, and the paper says so
+            # the last increment is WITHIN the noise: the sweep's own
+            # TREND does not resolve what each further step of budget
+            # buys.  It says nothing about whether the budget matters
+            # overall -- the paired comparison of the shortest and the
+            # longest budget is the arm that answers that, and it is
+            # reported separately.
             tok["BUDGET_VERDICT"] = (
                 f"the coverage moves by {spread:+.3f} over the range the "
                 f"sweep covers, which is about {tok.get('BUDGET_FRAC', 'n/a')}"
@@ -1431,12 +1591,15 @@ def build_tokens():
                 f"{tok['BUDGET_LAST_DELTA']}, is only "
                 f"{abs(t):.1f} standard errors from zero "
                 f"(the standard error of the difference is {tok['BUDGET_SE']}"
-                f", at three training seeds per budget), so the sweep does "
-                f"not resolve what the budget contributes and the budget is "
-                f"neither excluded nor shown to be a cause of the shortfall")
-        tok["BUDGET_CAVEAT"] = (
-            "we do not extrapolate the sweep past the budgets it covers, "
-            "and we do not claim that a larger budget would close the gap")
+                f", paired over the same {n_pair} training seeds), so the "
+                f"sweep's own trend does not resolve what each further step "
+                f"of budget buys")
+        if len(rows) < 2:
+            tok["BUDGET_CAVEAT"] = ""
+        else:
+            tok["BUDGET_CAVEAT"] = (
+                "we do not extrapolate the sweep past the budgets it covers, "
+                "and we do not claim that a larger budget would close the gap")
         # The budget arm's own interval: the shortest budget against the
         # longest, paired by training seed.  It is the arm the abstract
         # names, so it needs an interval of its own: the sweep's trend
@@ -1465,6 +1628,54 @@ def build_tokens():
                         + ("is below" if mean + half < gap else
                            "is above")
                         + f" the gap of {gap:.3f}")
+                    # The verdict, derived from the interval and the gap:
+                    # whether the budget's own effect is resolved at all,
+                    # and whether it is large enough to be the explanation.
+                    excludes_zero = (mean - half > 0) or (mean + half < 0)
+                    below_gap = (mean + half) < gap
+                    if excludes_zero and below_gap:
+                        tok["BUDGET_PAIRED_VERDICT"] = (
+                            f"the paired comparison over the same training "
+                            f"seeds does resolve a real gain, "
+                            f"{tok['BUDGET_PAIRED']} with a 95\\% interval of "
+                            f"{tok['BUDGET_PAIRED_CI']}, and that interval's "
+                            f"upper limit of {mean+half:.3f} is below the gap "
+                            f"of {gap:.3f}: more training does help, and over "
+                            f"the {int(rows[0]['episodes'])}--"
+                            f"{int(rows[-1]['episodes'])} episode range the "
+                            f"sweep covers the whole of its effect is too "
+                            f"small to account for the shortfall, so the "
+                            f"budget is excluded as the explanation of the "
+                            f"shortfall over that range.  Budgets beyond it "
+                            f"are not addressed by this measurement, and the "
+                            f"sweep shows no saturation within it")
+                    elif excludes_zero and not below_gap:
+                        tok["BUDGET_PAIRED_VERDICT"] = (
+                            f"the paired comparison over the same training "
+                            f"seeds does resolve a real gain, "
+                            f"{tok['BUDGET_PAIRED']} with a 95\\% interval of "
+                            f"{tok['BUDGET_PAIRED_CI']}, and that interval's "
+                            f"upper limit of {mean+half:.3f} reaches past "
+                            f"the gap of {gap:.3f}, so the budget is NOT "
+                            f"excluded by this arm")
+                    else:
+                        tok["BUDGET_PAIRED_VERDICT"] = (
+                            f"the paired comparison over the same training "
+                            f"seeds does not resolve a difference between "
+                            f"the shortest and the longest budget: "
+                            f"{tok['BUDGET_PAIRED']} with a 95\\% interval "
+                            f"of {tok['BUDGET_PAIRED_CI']}, which includes "
+                            f"zero")
+        # the sweep's own last increment: resolved or not
+        if tok.get("BUDGET_LAST_RESOLVED") == "yes":
+            tok["BUDGET_TREND_CLAUSE"] = (
+                "the sweep's last increment IS resolved against zero, so "
+                "the coverage is still rising at the longest budget we ran")
+        else:
+            tok["BUDGET_TREND_CLAUSE"] = (
+                "the sweep's own last increment is NOT resolved against "
+                "zero, so the sweep does not settle the question on unseen "
+                "scenes either")
 
     # ------------------------------------------------------------------
     # the episode length, in both units, so that the two "400"s of the
@@ -1484,6 +1695,23 @@ def build_tokens():
         tok["OLD_EPISODE_PCT"] = f"{100 * old_seconds / endurance:.0f}"
         tok["EPISODE_STEPS"] = f"{int(c0.episode_len)}"
         tok["EPISODE_SECONDS"] = f"{c0.episode_len * c0.dt:.0f}"
+        # How large the filter's intervention is, as a SHARE of the
+        # episode's sampled actions.  The table prints the count per
+        # episode; the prose needs the ratio, because "0.20 actions" reads
+        # as nothing while "one action in ten thousand" is the fact.
+        try:
+            un = float(tok.get("MAPPO_UNEXEC", "0"))
+            if un > 0:
+                r = c0.episode_len / un
+                if abs(r - round(r)) < 0.05:
+                    tok["MAPPO_UNEXEC_RATIO"] = f"one action in {int(round(r))}"
+                else:
+                    tok["MAPPO_UNEXEC_RATIO"] = (
+                        f"{100 * un / c0.episode_len:.3f}\\% of them")
+            else:
+                tok["MAPPO_UNEXEC_RATIO"] = "none of them"
+        except Exception:                                      # pragma: no cover
+            pass
         # the pack's endurance IN STEPS at the moving draw, and the duty
         # cycle the episode therefore implies
         draw = (c0.P_move + c0.P_elec + c0.P_tx)      # watts in flight
@@ -1662,6 +1890,47 @@ def build_tokens():
             # the evaluated coverage of the SAME policy, on unseen scenes
             if per_seed_scenes:
                 tok["CURVE_EVAL"] = f"{float(np.mean(per_seed_scenes[0])):.3f}"
+    return screen(tok)
+
+
+# A value that is not a number must never reach the paper.  The paper is
+# assembled from artefacts that may be MID-WRITE: an experiment that was
+# killed half way through leaves a partial artefact, and a partial
+# artefact is enough to make a token's arithmetic produce a nan or an
+# empty list.  Printing "nan standard errors" in a paper is not a
+# cosmetic defect -- it is a false statement about a measurement that was
+# never made.  So the value is screened here, and a token that fails the
+# screen is REMOVED: the paper then shows a visible [pending: ...]
+# marker, which is honest, instead of a number that is not a number.
+#
+# The screen is deliberately narrow: `nan` and `inf` as standalone words
+# (neither is ever an English word in this paper), an empty value, and
+# the literal words None/null when the value IS one of them.  A sentence
+# that legitimately contains the word "null" -- "a null is a statement
+# about the resolution of that arm" -- is not a bad value.
+_BAD_VALUE = re.compile(r"(?<![A-Za-z])(nan|inf)(?![A-Za-z])", re.I)
+
+
+def screen(tok):
+    """Remove every token whose value is not a usable measurement.
+
+    A token is dropped if its value is empty, if it contains a bare
+    `nan` or `inf`, or if the value is literally `None` or `null`.
+    Dropping it turns the paper's [pending: TOKEN] marker on, which is
+    the honest rendering of "this experiment has not produced this number
+    yet".
+    """
+    bad = []
+    for name in list(tok):
+        v = tok[name]
+        s = "" if v is None else str(v)
+        if (s.strip() == "" or _BAD_VALUE.search(s)
+                or s.strip() in ("None", "null")):
+            bad.append(name)
+            tok.pop(name)
+    if bad:
+        print(f"  [screen] {len(bad)} token(s) dropped as unusable: "
+              + ", ".join(sorted(bad)))
     return tok
 
 
