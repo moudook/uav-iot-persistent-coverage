@@ -312,6 +312,24 @@ def build_tokens():
             clauses = [bound_clause(lab, m, h, gap) for lab, m, h in obs_stats]
             excluded = all((m + h) < gap for _, m, h in obs_stats)
             n = len(obs_stats)
+            # What the observation terms buy is a claim about the arms, so
+            # it is read off the arms: the number of DISTINCT ACTIONS a
+            # policy takes is the measure of whether the agents specialise,
+            # and the sentence says what the numbers say in either
+            # direction.
+            spec = ""
+            if a and b and "A_DIST" in tok and "B_DIST" in tok:
+                d0, d1 = float(tok["A_DIST"]), float(tok["B_DIST"])
+                if d1 > d0:
+                    spec = (f"the identity raises the number of distinct "
+                            f"actions a policy takes from {d0:.2f} to "
+                            f"{d1:.2f} out of eight, which is the "
+                            f"specialisation the arms measure")
+                else:
+                    spec = (f"the identity does not raise the number of "
+                            f"distinct actions a policy takes ({d0:.2f} "
+                            f"without it, {d1:.2f} with it), so the arms do "
+                            f"not measure a specialisation effect either")
             tok["OBS_SUMMARY"] = (
                 ("The arms" if n > 1 else "The arm")
                 + " share their training seeds, so the "
@@ -327,9 +345,14 @@ def build_tokens():
                 + ("of the observation is not what accounts for the gap; "
                    if excluded else
                    "of the observation is not excluded by these arms; ")
-                + "what the observation terms buy is the ability to "
-                "specialise at all, and the arms here do not separate "
-                "the coverage they produce.")
+                + ("what the observation terms buy is the ability to "
+                   "specialise at all" if spec else
+                   "what the observation terms buy is not separated by "
+                   "these arms")
+                + (", and " + spec if spec else
+                   ", and the arms here do not separate the coverage they "
+                   "produce")
+                + ".")
 
     mr = load_json("ab_map_resolution.json")
     if mr:
@@ -345,34 +368,55 @@ def build_tokens():
         base = cks.get(0)
         resolvable = base is not None and any(
             abs(cks[g] - base) >= yard for g in cks if g != 0)
+
+        # What the summary does to the swarm's SPREAD is a measurement, and
+        # its direction has to be read off the numbers: the sentence below
+        # used to say the spread "falls" and that the summary "keeps the
+        # swarm together", which is the wrong direction when the spread
+        # grows.  The direction is now derived, and so is the explanation
+        # that goes with it.
+        def _spread_clause():
+            if 0 not in sp or len(sp) < 2:
+                return ""
+            others = [g for g in sorted(sp) if g != 0]
+            deltas = {g: sp[g] - sp[0] for g in others}
+            grew = all(d > 0 for d in deltas.values())
+            shrank = all(d < 0 for d in deltas.values())
+            if grew:
+                direction = "grows"
+                why = ("a policy that follows the deficit spreads the swarm "
+                       "out instead of keeping it together")
+            elif shrank:
+                direction = "falls"
+                why = ("a policy that follows the deficit keeps the swarm "
+                       "together instead of dispersing it")
+            else:
+                direction = "moves by no consistent amount"
+                why = "the direction is not consistent across resolutions"
+            return (
+                "  What the summary does change is the swarm's behaviour: "
+                f"the spread {direction}, from {sp[0]:.1f} m without it to "
+                + " and ".join(f"{sp[g]:.1f} m" for g in others)
+                + " with it, because " + why + ".")
+
         if resolvable:
+            sp_txt = _spread_clause()
             tok["MAP_RESOLUTION"] = (
                 "The resolution of the summary does not rescue it: " +
                 ", ".join(parts) +
-                ", and the swarm's spread contracts in every case, because "
-                "the policy follows the deficit instead of dividing the "
-                "work.")
+                ", and the resolution makes a difference where the summary "
+                "as a whole does not." + sp_txt)
         else:
             # the sweep may be mid-measurement, with only the G=0 arm in
             # the artefact; there is then nothing to compare it with
             worst = (max(abs(cks[g] - base) for g in cks if g != 0)
                      if base is not None and len(cks) > 1 else 0.0)
-            sp_txt = ""
-            if 0 in sp and len(sp) > 1:
-                sp_txt = (
-                    f"  What the summary does change is the swarm's "
-                    f"behaviour: the spread falls from {sp[0]:.1f} m without "
-                    f"it to "
-                    + " and ".join(f"{sp[g]:.1f} m" for g in sorted(sp)
-                                   if g != 0)
-                    + " with it, because a policy that follows the deficit "
-                      "keeps the swarm together instead of dispersing it.")
             tok["MAP_RESOLUTION"] = (
                 "The resolution of the summary makes no difference to the "
                 "coverage: " + ", ".join(parts)
                 + f", and the largest of the differences is {worst:.3f}, "
                 f"inside the seed-to-seed spread of the learner "
-                f"({yard:.3f})." + sp_txt
+                f"({yard:.3f})." + _spread_clause()
                 + "  The map is therefore neither what makes the controller "
                 "work nor what stops it working: it is a channel the policy "
                 "uses to move differently, and the difference it makes is "
