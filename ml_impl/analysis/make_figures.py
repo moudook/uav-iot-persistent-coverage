@@ -49,16 +49,35 @@ def histories():
 
 
 def reference():
-    """The reactive heuristic's coverage, for the reference line."""
+    """The STRONGEST rule's coverage, for the reference line.
+
+    The figure's reference has to be the rule the paper's GAP is measured
+    against -- the stronger of the two rules -- because that is the number
+    a reader compares the curve with.  The privileged heuristic is weaker
+    (it is given the exact set of under-covered sensors, but it may only
+    act locally), and a curve drawn against it would understate the
+    shortfall the paper is about.
+    """
     import csv
     p = os.path.join(ML, "results_main.csv")
     if not os.path.exists(p):
-        return None
+        return None, "the strongest rule"
+    best, name = None, "the strongest rule"
     with open(p, newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
-            if r.get("model") == "Reactive":
-                return float(r["CK"])
-    return None
+            m = r.get("model")
+            if m not in ("Reactive", "Reactive-local"):
+                continue
+            try:
+                v = float(r["CK"])
+            except (TypeError, ValueError, KeyError):
+                continue
+            if best is None or v > best:
+                best = v
+                name = ("the unprivileged reactive rule"
+                        if m == "Reactive-local" else
+                        "the privileged reactive heuristic")
+    return best, name
 
 
 def main():
@@ -66,7 +85,7 @@ def main():
     if not runs:
         print("no training history yet; the figure was not written")
         return 1
-    ref = reference()
+    ref, ref_name = reference()
     n_ep = max(x for run in runs for x, _ in run)
     lines = [
         r"\begin{tikzpicture}",
@@ -92,7 +111,7 @@ def main():
         style += " ".join("(%d,%.3f)" % (x, y) for x, y in run) + "};"
         lines.append(style)
     # a legend built by hand, so the reference line is named
-    lines.append(r"  \legend{reactive heuristic (reference)," +
+    lines.append(r"  \legend{" + ref_name + r" (reference)," +
                  ", ".join("training run %d" % (i + 1) for i in range(len(runs)))
                  + "}")
     lines.append(r"\end{axis}")

@@ -100,7 +100,9 @@ checkable rather than merely asserted.
 The question that this comparison invites --- whether more training would
 have closed the gap --- deserves an answer rather than an assumption,
 because a hand-designed rule embeds a human's solution while the learner
-receives a fixed budget.  The first training run's per-episode coverage,
+receives a fixed budget.  Figure~\ref{fig:learningcurve} plots the
+per-episode coverage of every training run on the training scene, against
+the reference rule; the first training run's per-episode coverage,
 measured on the training scene, runs from $0.606$ to
 $0.801$ over its 25 episodes, and its mean over
 the first five episodes ($0.667$) is the same as its mean over
@@ -367,15 +369,15 @@ The ordering of the components cannot be read off this table: the components who
 
 %% CREDIT
 
-The per-agent arm reaches $@@CREDIT_B_CK@@$ against $@@CREDIT_A_CK@@$ for
-the shared one, a difference of $@@CREDIT_DELTA@@$ in persistent coverage.
-Arm~A is the proposed method on the first @@CREDIT_N@@ of the base
+The per-agent arm reaches $0.641$ against $0.662$ for
+the shared one, a difference of $-0.022$ in persistent coverage.
+Arm~A is the proposed method on the first 8 of the base
 comparison's training runs --- the same policies, not a cheaper experiment
 --- so the two rows of the first table and this table describe the same
 learner.
 The two arms share their training seeds, so the comparison is paired, and
-the 95\% interval on the paired difference is $@@CREDIT_CI@@$ over
-@@CREDIT_N@@ training runs: @@CREDIT_VERDICT@@.  The scope of that
+the 95\% interval on the paired difference is $[-0.080, +0.036]$ over
+8 training runs: the difference is not resolved by this arm: the interval is [-0.080, +0.036], and its best case is 0.036 better, far short of the gap of 0.309, and its worst case is 0.080 worse, so the cheapest modification in the direction the diagnosis points has not been shown to close the gap.  The scope of that
 statement is the one set out above: arm~B
 supplies each agent with its own baseline and unshares the actor, and
 neither of those changes the fact that the reward the gradient sees is the
@@ -390,7 +392,7 @@ advantage estimator, so the question on a persistent-coverage task is
 genuinely open.  And it narrows the search: a reader who wants to close
 the gap now knows that the answer is not ``use a local critic''.
 
-We therefore report the result as it stands: @@CREDIT_RESIDUAL@@, the two
+We therefore report the result as it stands: The residual is consistent with the credit assignment of a shared team reward, and the cheapest test of that diagnosis does not resolve it: the per-agent local critic's difference is -0.022 of persistent coverage (95\% interval [-0.080, +0.036]), which includes zero, the two
 alternatives that the framework's other controlled arms rule out are ruled
 out, and the cheapest available remedy for the credit assignment does not
 close it.  The remedies that change the

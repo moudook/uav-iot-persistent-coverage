@@ -186,6 +186,20 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokConnTele}{0}
 \newcommand{\tokConnUnexplained}{0}
 \newcommand{\tokConnVerdict}{each of them is a UAV whose pack emptied away from a charging pad, and none follows a move, so the projection's guarantee is not violated by any executed move, and the availability below 1.000 is the price of a UAV leaving rather than a hole in the filter}
+\newcommand{\tokCreditACk}{0.662}
+\newcommand{\tokCreditASc}{0.010}
+\newcommand{\tokCreditBCk}{0.641}
+\newcommand{\tokCreditBSc}{0.013}
+\newcommand{\tokCreditCi}{[-0.080, +0.036]}
+\newcommand{\tokCreditDelta}{-0.022}
+\newcommand{\tokCreditHalf}{0.058}
+\newcommand{\tokCreditN}{8}
+\newcommand{\tokCreditOfGap}{7\%}
+\newcommand{\tokCreditP}{0.404}
+\newcommand{\tokCreditPaired}{-0.022}
+\newcommand{\tokCreditResidual}{The residual is consistent with the credit assignment of a shared team reward, and the cheapest test of that diagnosis does not resolve it: the per-agent local critic's difference is -0.022 of persistent coverage (95\% interval [-0.080, +0.036]), which includes zero}
+\newcommand{\tokCreditResidualShort}{The credit assignment of a shared team reward is the explanation the residual is consistent with, and the cheapest test of it does not resolve it}
+\newcommand{\tokCreditVerdict}{the difference is not resolved by this arm: the interval is [-0.080, +0.036], and its best case is 0.036 better, far short of the gap of 0.309, and its worst case is 0.080 worse, so the cheapest modification in the direction the diagnosis points has not been shown to close the gap}
 \newcommand{\tokCurveBest}{0.801}
 \newcommand{\tokCurveEpisodes}{25}
 \newcommand{\tokCurveEval}{0.744}
@@ -379,13 +393,6 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokVarSceneSe}{0.054}
 \newcommand{\tokVarSeed}{0.058}
 \newcommand{\tokVarSeedSe}{0.021}
-\newcommand{\tokCreditACk}{\mbox{\textbf{[pending: CREDIT\_A\_CK]}}}
-\newcommand{\tokCreditBCk}{\mbox{\textbf{[pending: CREDIT\_B\_CK]}}}
-\newcommand{\tokCreditCi}{\mbox{\textbf{[pending: CREDIT\_CI]}}}
-\newcommand{\tokCreditDelta}{\mbox{\textbf{[pending: CREDIT\_DELTA]}}}
-\newcommand{\tokCreditN}{\mbox{\textbf{[pending: CREDIT\_N]}}}
-\newcommand{\tokCreditResidual}{\mbox{\textbf{[pending: CREDIT\_RESIDUAL]}}}
-\newcommand{\tokCreditVerdict}{\mbox{\textbf{[pending: CREDIT\_VERDICT]}}}
 \newcommand{\tokEdRet}{\mbox{\textbf{[pending: ED\_RET]}}}
 \newcommand{\tokEdRetDelta}{\mbox{\textbf{[pending: ED\_RET\_DELTA]}}}
 \newcommand{\tokEdStr}{\mbox{\textbf{[pending: ED\_STR]}}}
@@ -396,13 +403,6 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokAltEpisodes}{\mbox{\textbf{[pending: tokAltEpisodes]}}}
 \newcommand{\tokAltSeeds}{\mbox{\textbf{[pending: tokAltSeeds]}}}
 \newcommand{\tokAltVerdict}{\mbox{\textbf{[pending: tokAltVerdict]}}}
-\newcommand{\tokCreditASc}{\mbox{\textbf{[pending: tokCreditASc]}}}
-\newcommand{\tokCreditBSc}{\mbox{\textbf{[pending: tokCreditBSc]}}}
-\newcommand{\tokCreditHalf}{\mbox{\textbf{[pending: tokCreditHalf]}}}
-\newcommand{\tokCreditOfGap}{\mbox{\textbf{[pending: tokCreditOfGap]}}}
-\newcommand{\tokCreditP}{\mbox{\textbf{[pending: tokCreditP]}}}
-\newcommand{\tokCreditPaired}{\mbox{\textbf{[pending: tokCreditPaired]}}}
-\newcommand{\tokCreditResidualShort}{\mbox{\textbf{[pending: tokCreditResidualShort]}}}
 \newcommand{\tokCreditText}{\mbox{\textbf{[pending: tokCreditText]}}}
 \newcommand{\tokEdCi}{\mbox{\textbf{[pending: tokEdCi]}}}
 \newcommand{\tokEdCk}{\mbox{\textbf{[pending: tokEdCk]}}}
@@ -542,7 +542,7 @@ Finally, graded persistent-coverage metrics do have precedent --- revisit-period
 \label{sec:system}
 
 \subsection{System Architecture}
-The system contains $N$ active UAVs, one reserve UAV, $M$ fixed IoT sensors, a ground data sink/base station, and $S$ charging pads distributed within the operating region $\Omega$. UAVs provide sensor coverage through a range-limited air-to-ground link and form a multi-hop communication network among themselves. Sensor data reaches the sink through the UAV communication graph whenever the graph is connected.
+The system contains $N$ active UAVs, one reserve UAV, $M$ fixed IoT sensors, a ground data sink/base station, and $S$ charging pads distributed within the operating region $\Omega$. UAVs provide sensor coverage through a range-limited air-to-ground link and form a multi-hop communication network among themselves. Sensor data reaches the sink through the UAV communication graph whenever the graph is connected. Figure~\ref{fig:arch} shows the architecture: the sensors, the UAVs, the range-limited communication graph, the reserve UAV's recovery role and the shared actor that is deployed locally.
 
 \begin{figure}[t]
 \centering
@@ -706,7 +706,7 @@ The instantaneous under-coverage rate is
 U_t=\frac{1}{M}\sum_{d=1}^{M}\mathbb 1[n_d(t)<K].
 \label{eq:Ut}
 \end{equation}
-The primary service condition is $n_d(t)\ge K$ for all $d$ whenever the geometry and available fleet make it feasible.
+The primary service condition is $n_d(t)\ge K$ for all $d$ whenever the geometry and available fleet make it feasible. The two requirements are not independent, and Figure~\ref{fig:coupling} shows the three dimensions in which they are coupled: the same UAV flies to cover a sensor and to keep the communication graph connected, and the two requirements compete for the same flight and energy budget.
 
 \medskip
 \noindent\textbf{Feasibility.} Persistent $K$-coverage is achievable only when the sensing radius is large enough for the available fleet. Comparing the area available for coverage with the area required gives a necessary condition: $N$ disks of radius $R_{\mathrm{cov}}$ supply $N\pi R_{\mathrm{cov}}^{2}$, while $K$-coverage of a region of area $A$ requires $KA$. Hence $R_{\mathrm{cov}} \ge \sqrt{KA/(\pi N)}$. Accounting for the $\delta = \pi/(2\sqrt{3}) \approx 0.907$ packing density of congruent disks gives the stricter form $R_{\mathrm{cov}} \ge \sqrt{KA/(\delta\pi N)}$. Substituting the parameters of Table~\ref{tab:parameters} ($A = 6400$ m$^2$, $M = 20$, $N = 5$, $K = 2$) yields $R_{\mathrm{cov}} \ge 28.5$ m by area counting and $30.0$ m after the packing correction, both satisfied by the chosen $R_{\mathrm{cov}} = 35$ m. The resulting surplus ratio $\sigma = N\pi R_{\mathrm{cov}}^{2}/(KA) = 1.50$ leaves margin for movement error and for a single-UAV failure, after which $\sigma = 1.20$ still exceeds one. The bound is necessary rather than sufficient, since it ignores coverage-disk overlap and the discreteness of the sensor layout; scenario S8 of Table~\ref{tab:scenarios} therefore sweeps $R_{\mathrm{cov}}$ directly to characterize the transition.
@@ -1000,7 +1000,7 @@ E_i^{\mathrm{req}}(t)=E_i^{\mathrm{pad}}(t)+E_i^{\mathrm{rejoin}}(t)+E^{\mathrm{
 \end{equation}
 and a return is mandatory when $E_i(t)\le E_i^{\mathrm{req}}(t)$.
 
-Two properties of this model are easy to state and easy to implement incorrectly, and both were implemented incorrectly in the first version of the simulator, so both are pinned by tests. First, the return is a \emph{physical} transition and not a decision available to the policy: the simulator makes it, so that the reward, the metrics and the charging arbitration can all see it. If the simulator does not make it, then a learned policy has no way to express the return at all, the arbitration is never entered, and the reserve mechanism has nothing to recover --- the three mechanisms this paper proposes are then present in the model and absent from the experiment. Second, a UAV that is docked and charging has its rotors idle and draws only the avionics and communications baseline; if it is billed the hover power, the pack loses more energy to the rotors than the pad puts back, no UAV can ever recover, and the charging coordination is unusable. A UAV whose pack empties away from a pad is out of service: it can no longer fly, and it must not continue to count towards coverage or towards the connectivity graph.
+Two properties of this model are easy to state and easy to implement incorrectly, and both were implemented incorrectly in the first version of the simulator, so both are pinned by tests. First, the return is a \emph{physical} transition and not a decision available to the policy: the simulator makes it, so that the reward, the metrics and the charging arbitration can all see it. If the simulator does not make it, then a learned policy has no way to express the return at all, the arbitration is never entered, and the reserve mechanism has nothing to recover --- the three mechanisms this paper proposes are then present in the model and absent from the experiment. Second, a UAV that is docked and charging has its rotors idle and draws only the avionics and communications baseline; if it is billed the hover power, the pack loses more energy to the rotors than the pad puts back, no UAV can ever recover, and the charging coordination is unusable. A UAV whose pack empties away from a pad is out of service: it can no longer fly, and it must not continue to count towards coverage or towards the connectivity graph. Figure~\ref{fig:statemachine} shows the battery and failure state machine: the transitions between flying, returning to charge, charging and failing, and the point at which the reserve UAV takes over.
 
 \begin{figure}[t]
 \centering
@@ -1257,7 +1257,7 @@ darr/.style={-{Latex[length=2mm]},semithick,dashed}
 
 \subsection{CTDE MAPPO}
 \label{sec:mappo}
-The proposed algorithm uses parameter-shared MAPPO. During training, the centralized critic observes $\mathbf s_t$ while every actor uses $\mathbf o_i(t)$. During deployment, the critic is removed and each UAV evaluates the same shared policy:
+The proposed algorithm uses parameter-shared MAPPO. During training, the centralized critic observes $\mathbf s_t$ while every actor uses $\mathbf o_i(t)$. Figure~\ref{fig:pipeline} shows the loop: the environment and the control loop, the training-only feedback to the critic, and the transfer of the learned actor to decentralized execution. During deployment, the critic is removed and each UAV evaluates the same shared policy:
 \begin{equation}
 a_i(t)\sim\pi_{\theta}\left(a_i\mid\mathbf o_i(t)\right).
 \label{eq:policy}
@@ -1430,7 +1430,7 @@ Control interval & $\Delta t$ & 0.2 s \\
 \end{table}
 
 \subsection{Implementation Plan}
-The implementation follows the three-stage validation strategy presented in the project plan. The objective is to validate the swarm-control logic before introducing detailed wireless-channel complexity.
+The implementation follows the three-stage validation strategy presented in the project plan. The objective is to validate the swarm-control logic before introducing detailed wireless-channel complexity. Figure~\ref{fig:implementation} shows the stages and what each one adds.
 
 \begin{figure}[t]
 \centering
@@ -1775,7 +1775,9 @@ checkable rather than merely asserted.
 The question that this comparison invites --- whether more training would
 have closed the gap --- deserves an answer rather than an assumption,
 because a hand-designed rule embeds a human's solution while the learner
-receives a fixed budget.  The first training run's per-episode coverage,
+receives a fixed budget.  Figure~\ref{fig:learningcurve} plots the
+per-episode coverage of every training run on the training scene, against
+the reference rule; the first training run's per-episode coverage,
 measured on the training scene, runs from $0.606$ to
 $0.801$ over its 25 episodes, and its mean over
 the first five episodes ($0.667$) is the same as its mean over
@@ -1880,7 +1882,7 @@ was unchanged (Section~\ref{sec:results_abl}).
   grid=both, grid style={gray!20}, tick label style={font=\tiny},
   label style={font=\small}, legend style={font=\tiny},
   legend cell align=left, legend columns=1]
-  \addplot[black, dashed, thick] coordinates {(1,0.953) (25,0.953)};
+  \addplot[black, dashed, thick] coordinates {(1,0.972) (25,0.972)};
   \addplot[color=blue!60!black, thick, mark=none, forget plot] coordinates {(1,0.626) (2,0.704) (3,0.633) (4,0.609) (5,0.766) (6,0.653) (7,0.606) (8,0.754) (9,0.673) (10,0.750) (11,0.770) (12,0.720) (13,0.677) (14,0.613) (15,0.795) (16,0.660) (17,0.674) (18,0.801) (19,0.763) (20,0.792) (21,0.644) (22,0.768) (23,0.614) (24,0.663) (25,0.666)};
   \addplot[color=red!60!black, thick, mark=none, forget plot] coordinates {(1,0.466) (2,0.520) (3,0.498) (4,0.667) (5,0.383) (6,0.577) (7,0.586) (8,0.226) (9,0.582) (10,0.561) (11,0.592) (12,0.513) (13,0.505) (14,0.328) (15,0.703) (16,0.385) (17,0.656) (18,0.549) (19,0.610) (20,0.596) (21,0.606) (22,0.598) (23,0.771) (24,0.793) (25,0.820)};
   \addplot[color=green!50!black, thick, mark=none, forget plot] coordinates {(1,0.634) (2,0.489) (3,0.518) (4,0.799) (5,0.624) (6,0.733) (7,0.522) (8,0.581) (9,0.585) (10,0.676) (11,0.387) (12,0.641) (13,0.763) (14,0.596) (15,0.780) (16,0.686) (17,0.797) (18,0.534) (19,0.645) (20,0.448) (21,0.634) (22,0.696) (23,0.665) (24,0.563) (25,0.704)};
@@ -1889,7 +1891,7 @@ was unchanged (Section~\ref{sec:results_abl}).
   \addplot[color=cyan!50!black, thick, mark=none, forget plot] coordinates {(1,0.378) (2,0.658) (3,0.518) (4,0.606) (5,0.479) (6,0.659) (7,0.549) (8,0.570) (9,0.700) (10,0.518) (11,0.478) (12,0.588) (13,0.586) (14,0.455) (15,0.684) (16,0.577) (17,0.540) (18,0.566) (19,0.604) (20,0.534) (21,0.679) (22,0.646) (23,0.635) (24,0.859) (25,0.726)};
   \addplot[color=blue!60!black, thick, mark=none, forget plot] coordinates {(1,0.431) (2,0.482) (3,0.649) (4,0.513) (5,0.593) (6,0.410) (7,0.589) (8,0.430) (9,0.719) (10,0.640) (11,0.533) (12,0.656) (13,0.781) (14,0.759) (15,0.800) (16,0.742) (17,0.619) (18,0.522) (19,0.633) (20,0.754) (21,0.682) (22,0.602) (23,0.691) (24,0.675) (25,0.632)};
   \addplot[color=red!60!black, thick, mark=none, forget plot] coordinates {(1,0.580) (2,0.471) (3,0.528) (4,0.547) (5,0.461) (6,0.591) (7,0.550) (8,0.502) (9,0.736) (10,0.550) (11,0.406) (12,0.721) (13,0.499) (14,0.357) (15,0.593) (16,0.543) (17,0.629) (18,0.624) (19,0.554) (20,0.490) (21,0.451) (22,0.335) (23,0.596) (24,0.675) (25,0.612)};
-  \legend{reactive heuristic (reference),training run 1, training run 2, training run 3, training run 4, training run 5, training run 6, training run 7, training run 8}
+  \legend{the unprivileged reactive rule (reference),training run 1, training run 2, training run 3, training run 4, training run 5, training run 6, training run 7, training run 8}
 \end{axis}
 \end{tikzpicture}
 \caption{The per-episode persistent coverage of
@@ -2226,19 +2228,20 @@ joint-action critic, or a counterfactual baseline.
 Learner & CK & AG & SC & CovIntegral & Energy (J) \\
 \midrule
 A & 0.662\,$\pm$\,0.055 & 0.984 & 0.010 & 0.338 & -- \\
+B & 0.641\,$\pm$\,0.060 & 0.971 & 0.013 & 0.359 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The per-agent arm reaches $\textbf{[pending: CREDIT\_B\_CK]}$ against $\textbf{[pending: CREDIT\_A\_CK]}$ for
-the shared one, a difference of $\textbf{[pending: CREDIT\_DELTA]}$ in persistent coverage.
-Arm~A is the proposed method on the first \textbf{[pending: CREDIT\_N]} of the base
+The per-agent arm reaches $0.641$ against $0.662$ for
+the shared one, a difference of $-0.022$ in persistent coverage.
+Arm~A is the proposed method on the first 8 of the base
 comparison's training runs --- the same policies, not a cheaper experiment
 --- so the two rows of the first table and this table describe the same
 learner.
 The two arms share their training seeds, so the comparison is paired, and
-the 95\% interval on the paired difference is $\textbf{[pending: CREDIT\_CI]}$ over
-\textbf{[pending: CREDIT\_N]} training runs: \textbf{[pending: CREDIT\_VERDICT]}.  The scope of that
+the 95\% interval on the paired difference is $[-0.080, +0.036]$ over
+8 training runs: the difference is not resolved by this arm: the interval is [-0.080, +0.036], and its best case is 0.036 better, far short of the gap of 0.309, and its worst case is 0.080 worse, so the cheapest modification in the direction the diagnosis points has not been shown to close the gap.  The scope of that
 statement is the one set out above: arm~B
 supplies each agent with its own baseline and unshares the actor, and
 neither of those changes the fact that the reward the gradient sees is the
@@ -2253,7 +2256,7 @@ advantage estimator, so the question on a persistent-coverage task is
 genuinely open.  And it narrows the search: a reader who wants to close
 the gap now knows that the answer is not ``use a local critic''.
 
-We therefore report the result as it stands: \textbf{[pending: CREDIT\_RESIDUAL]}, the two
+We therefore report the result as it stands: The residual is consistent with the credit assignment of a shared team reward, and the cheapest test of that diagnosis does not resolve it: the per-agent local critic's difference is -0.022 of persistent coverage (95\% interval [-0.080, +0.036]), which includes zero, the two
 alternatives that the framework's other controlled arms rule out are ruled
 out, and the cheapest available remedy for the credit assignment does not
 close it.  The remedies that change the
