@@ -166,28 +166,31 @@ Every number in the paper is produced under one protocol:
   give identical weights. The device is therefore part of the protocol and
   is recorded with every artefact.
 ## THE CENTRAL FINDING (the claim, and what the arms actually establish)
-The learned controller does not reach the reactive heuristic, and the
-framework's controlled arms are what say why -- or why not.
+The learned controller does not reach the strongest rule, and the
+framework's controlled arms are what say why -- or why not.  Every line
+below is quoted from the same tokens the paper's prose is built from, so
+this section cannot disagree with the paper.
 
-- The **energy model is excluded**: every energy arm's upper limit is
-  below the gap, and the repair of the safety filter is worth +0.120 of
-  persistent coverage, about 43% of the gap, with an interval that
-  excludes zero.
-- The **observation content is NOT excluded**: the arm that adds the agent
-  identity has an upper limit of 0.377 against a gap of 0.276, so the
-  identity remains a candidate explanation at three training seeds. The
-  arm that prices the full observation does clear the gap (0.164).
-- The **training budget is not resolved**: the sweep's last increment is
-  1.2 standard errors from zero, and the 8-versus-25-episode interval
-  straddles the gap. It is neither excluded nor implicated.
-- The **credit assignment** is the remaining candidate the framework's own
-  mechanisms suggest, and the cheapest test of it (a per-agent local
-  critic) moves in the wrong direction and leaves it unresolved.
+- The **energy model is excluded as the whole of the explanation**: the
+  arms' upper limits are below the gap of 0.309, and
+  (in flight).
+- The **observation content is NOT excluded**: the arm that adds the
+  agent identity has an upper limit of 0.377 against a gap of
+  0.309, so the identity remains a candidate explanation.  The arm
+  that prices the full observation does clear the gap (0.164).
+- The **training budget is excluded over the range the sweep covers**:
+  the paired comparison over the same training seeds does resolve a real gain, +0.067 with a 95\% interval of [+0.017, +0.118], and that interval's upper limit of 0.118 is below the gap of 0.309: more training does help, and over the 8--25 episode range the sweep covers the whole of its effect is too small to account for the shortfall, so the budget is excluded as the explanation of the shortfall over that range.  Budgets beyond it are not addressed by this measurement, and the sweep shows no saturation within it.  The sweep's own last increment is
+  +0.041 at 2.83 standard errors from zero
+  (paired over the same 8 training seeds), and the
+  sweep shows no saturation inside its range, so the claim is scoped to
+  that range and to no other.
+- The **credit assignment** is the remaining candidate the framework's
+  own mechanisms suggest: (in flight).
 
-So the residual is consistent with the credit assignment, and also with
-the observation content and the training budget; the arms bound the
-energy model and nothing else. The paper says that, and every part of it
-is derived from an interval.
+So the residual is consistent with the credit assignment and with the
+observation content; the arms bound the energy model and the training
+budget, over the range the sweep covers, and nothing else.  The paper
+says that, and every part of it is derived from an interval.
 ## The mathematical audit cadence (standing instruction, 20 Oct)
 - **Audit 1** (done): the seven load-bearing claims. Found 4 wrong as
   stated; all corrected.
@@ -400,6 +403,106 @@ code, no repository) and to be adversarial rather than agreeable.
   broader than the audit, an arms' sentence that did not name its
   reference arm, an exclusion stated without its scope, and a share
   whose denominator appears nowhere in the paper.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+- **Audit 7** (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+  checked against the raw per-seed rows, with every interval recomputed
+  by hand. Ten findings, all applied: the budget's paired increment, two
+  population standard deviations, a rounding disagreement between a
+  summary and its table, the wrong rule named in a sentence, an
+  asymmetric interval described as symmetric, a caption that said five
+  where the table said eight, an audit claim in the abstract that was
+  broader than the audit, an arms' sentence that did not name its
+  reference arm, an exclusion stated without its scope, and a share
+  whose denominator appears nowhere in the paper.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+- **Audit 7** (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+  checked against the raw per-seed rows, with every interval recomputed
+  by hand. Ten findings, all applied: the budget's paired increment, two
+  population standard deviations, a rounding disagreement between a
+  summary and its table, the wrong rule named in a sentence, an
+  asymmetric interval described as symmetric, a caption that said five
+  where the table said eight, an audit claim in the abstract that was
+  broader than the audit, an arms' sentence that did not name its
+  reference arm, an exclusion stated without its scope, and a share
+  whose denominator appears nowhere in the paper.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+- **Audit 7** (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+  checked against the raw per-seed rows, with every interval recomputed
+  by hand. Ten findings, all applied: the budget's paired increment, two
+  population standard deviations, a rounding disagreement between a
+  summary and its table, the wrong rule named in a sentence, an
+  asymmetric interval described as symmetric, a caption that said five
+  where the table said eight, an audit claim in the abstract that was
+  broader than the audit, an arms' sentence that did not name its
+  reference arm, an exclusion stated without its scope, and a share
+  whose denominator appears nowhere in the paper.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+- **Audit 7** (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+  checked against the raw per-seed rows, with every interval recomputed
+  by hand. Ten findings, all applied: the budget's paired increment, two
+  population standard deviations, a rounding disagreement between a
+  summary and its table, the wrong rule named in a sentence, an
+  asymmetric interval described as symmetric, a caption that said five
+  where the table said eight, an audit claim in the abstract that was
+  broader than the audit, an arms' sentence that did not name its
+  reference arm, an exclusion stated without its scope, and a share
+  whose denominator appears nowhere in the paper.
 ## THE CITATIONS, CHECKED AGAINST THE SOURCES (21 Oct)
 Every number the paper attributes to a cited work has been checked
 against the source, and the checks are in the paper's own record:
@@ -462,21 +565,35 @@ against the source, and the checks are in the paper's own record:
 ## Commands
 ```
 cd Project1/ml_impl
-python run_all.py --stage base      # the base comparison (5 seeds x 25 ep)
-python run_all.py --stage obs       # the observation A/B/C (3 arms x 3 seeds)
+python run_all.py --stage base      # the base comparison (8 seeds x 25 ep)
+python run_all.py --stage obs       # the observation A/B/C
 python run_all.py --stage abl       # the component ablation, feasible config
 python run_all.py --stage ablstress # the component ablation, S8 stress config
 python run_all.py --stage learned   # the two learned baselines
 python run_all.py --stage energy    # the energy-management A/B/C/D
 python run_all.py --stage scen      # the scenario matrix
-python analysis/ab_credit.py --episodes 30 --seeds 2 --eval-seeds 5
-python analysis/ab_map_resolution.py --episodes 20 --seeds 2 --eval-seeds 5 --grids 0,4,8
-python analysis/claim_audit.py      # 29 items, 25 verified, 0 failed, 4 info
+python analysis/ab_credit.py --episodes 25 --seeds 8 --eval-seeds 5
+python analysis/ab_observation.py --episodes 25 --seeds 8 --eval-seeds 5
+python analysis/ab_energy_management.py --episodes 25 --seeds 8 --eval-seeds 5
+python analysis/ab_budget.py --seeds 8 --eval-seeds 5
+python analysis/ab_map_resolution.py --episodes 20 --seeds 8 --eval-seeds 5 --grids 0,4,8
+python analysis/alt_deployment.py --seeds 8 --episodes 25 --eval-seeds 5
+python analysis/device_sensitivity.py --config cpu1 --episodes 2
+python analysis/device_sensitivity.py --merge
+python analysis/ablation_part.py --part a --episodes 25 --seeds 8 --eval-seeds 5
+python analysis/merge_ablation.py   # the parts -> results_ablation.csv
+python analysis/run_queue.py        # the tail of the matrix, in order
+python analysis/claim_audit.py      # 37 items, 33 verified, 0 failed, 4 info
 python analysis/assemble_results.py # the tables, the tokens, the Results, the compile
 python analysis/final_checks.py     # assembly + compile + audit + tests, one command
-python tests/run_tests.py           # 115 tests
+python analysis/make_report.py      # the project report's PDF
+python analysis/rewrite_state.py    # regenerate this tracker
+python tests/run_tests.py           # 126 tests
 ```
-
+**The protocol, in one line:** pass the WHOLE protocol every time ---
+`--episodes`, `--seeds`, `--eval-seeds` and the device.  A run with
+three training seeds instead of eight is a different measurement, and a
+run on another device is a different experiment.
 ## Machine notes (measured, 21 Oct)
 - **The binding constraint is the PAGE FILE, not the cores.** Six
   single-threaded training processes fit; a seventh dies with
@@ -542,41 +659,69 @@ THEN
 ## Assembling the paper
 1. `python analysis/assemble_results.py` -- regenerates the tables, fills
    the tokens, replaces the Results section wholesale, replaces the
-   marked CONTRIB region, and compiles. It **ABORTS** if any token is
-   unfilled, so a missing artefact is a hard error and never a broken
-   paper.
-2. Check: 0 LaTeX errors, 0 overfull boxes, 0 undefined references. The
-   assembler reports all three.
-3. `python analysis/claim_audit.py` -- 0 FAILED, and the counts in the
+   marked CONTRIB region, rewrites the macro block from the token table
+   and compiles.  A token that cannot be filled becomes a visible
+   `[pending: ...]` marker, the paper still compiles, and the assembler
+   EXITS NON-ZERO and says the paper is incomplete.  It used to keep the
+   previous text of the Results section instead, which is how a stale
+   sentence with a not-a-number in it survived into the paper.
+2. `python analysis/merge_ablation.py` -- the component ablation is run
+   in two parts, and this assembles them into `results_ablation.csv`.  It
+   REJECTS a merge that is missing a variant or that mixes protocols.
+3. `python analysis/final_checks.py` -- the gate: eight checks, including
+   the cross-table identity check (the observation arm C, the credit arm
+   A, the energy arm A and the ablation's Full row are ONE experiment
+   and must agree on every training seed), the single-device check, the
+   audit's counts against the paper's, and the macro check.
+4. `python analysis/claim_audit.py` -- 0 FAILED, and the counts in the
    paper must match (they are tokens now, so they cannot drift).
-4. `python tests/run_tests.py` -- the test suite.
-5. Commit. **Never push.**
-
+5. `python tests/run_tests.py` -- the test suite.
+6. `python analysis/make_report.py` -- the project report's PDF.
+7. Commit. **Never push.**
 ## The FINAL CHECKLIST (before declaring the work done)
 - [x] Every stage re-measured under the reproducible protocol.
-- [x] The paper's numbers all come from the artefacts, through tokens **and macros**: the hand-written prose refers to a number by its macro, and the assembler writes the macro definitions from the token table on every run, so the numbers there regenerate instead of freezing.
+- [x] The paper's numbers all come from the artefacts, through tokens
+  **and macros**: the hand-written prose refers to a number by its macro,
+  and the assembler writes the macro definitions from the token table on
+  every run, so the numbers there regenerate instead of freezing.
+- [x] The token table SCREENS its values: a nan, an empty list or a None
+  becomes a visible marker instead of a number, and the assembler says
+  the paper is incomplete.
 - [x] The claim audit passes with 0 failures and its count matches.
-- [x] No LaTeX errors, no undefined references; the only overfull box is 0.68pt on the bibliography's first page, which is the IEEEtran balanced-columns artefact and is invisible.
-- [ ] The abstract and the Conclusion agree with the new numbers.
-- [x] Four mathematical audits and two prose audits have been run and their findings addressed (MiniMax M3.1, Beam Free, DeepSeek V4.1).
+- [x] No LaTeX errors and no undefined references.  The only overfull
+  box is the `balance` package's column split on the bibliography's last
+  page, a point or two into a 19 mm margin, and it is invisible.
+- [x] Seven audits (four mathematical, two prose, one deep-research)
+  have been run and their findings addressed: MiniMax M3.1 (twice),
+  Beam Free Max (twice), DeepSeek V4.1 Flash, and the deep-research
+  pass.
+- [x] The identity requirement holds at the full width: the arms, the
+  ablation's Full row and the base comparison's runs are ONE experiment,
+  on every training seed, on one device.
+- [ ] The abstract and the Conclusion agree with the final numbers
+  (re-read them against the assembled PDF).
 - [ ] `git status` is clean and everything is committed (never pushed).
-
 ## The paper
 - 29 pages, IEEEtran conference format. Compiles clean: 0 LaTeX errors,
   0 visible overfull boxes, 0 undefined references. The one overfull box
   is the `balance` package's column split on the bibliography's last
-  page, 6.7 pt into a 19 mm margin, and it is invisible.
+  page, a point or two into a 19 mm margin, and it is invisible.
 - **Everything numeric in the prose is a macro**, and the assembler
   rewrites the macro definitions from the token table on every run. The
   hand-written prose cannot drift from the measurement.
 - The Results section, the tables, the Introduction's contribution bullet
   and the abstract are all generated from the artefacts.
+- **The token table screens its values.** A nan, an empty list or a None
+  becomes a visible `[pending: ...]` marker, the paper still compiles,
+  and the assembler exits non-zero and says the paper is incomplete. A
+  not-a-number can no longer reach the paper, and the Results section is
+  never left stale.
 - `analysis/final_checks.py` is the gate: eight checks, and it exits
   non-zero if any of them fails.
 - **The length is still undecided.** At 29 pages this is a preprint or a
   journal submission with overlength charges, not a conference paper
-  (6-8 pages). The user has been asked twice which venue is intended and
-  has not answered; the full paper stands until they do.
+  (6-8 pages). The user has been asked which venue is intended and has
+  not answered; the full paper stands until they do.
 ## DeepSeek research protocol (2-tab limit, STRICT)
 - Batch 1: Tab 1 (K-coverage literature gap) + Tab 2 (MAPPO correctness) -- DONE.
 - Batch 2: Tab 3 (non-degenerate coverage metrics) -- DONE.

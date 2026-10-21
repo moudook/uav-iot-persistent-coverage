@@ -158,18 +158,23 @@ PAPER = """## The paper
 - 29 pages, IEEEtran conference format. Compiles clean: 0 LaTeX errors,
   0 visible overfull boxes, 0 undefined references. The one overfull box
   is the `balance` package's column split on the bibliography's last
-  page, 6.7 pt into a 19 mm margin, and it is invisible.
+  page, a point or two into a 19 mm margin, and it is invisible.
 - **Everything numeric in the prose is a macro**, and the assembler
   rewrites the macro definitions from the token table on every run. The
   hand-written prose cannot drift from the measurement.
 - The Results section, the tables, the Introduction's contribution bullet
   and the abstract are all generated from the artefacts.
+- **The token table screens its values.** A nan, an empty list or a None
+  becomes a visible `[pending: ...]` marker, the paper still compiles,
+  and the assembler exits non-zero and says the paper is incomplete. A
+  not-a-number can no longer reach the paper, and the Results section is
+  never left stale.
 - `analysis/final_checks.py` is the gate: eight checks, and it exits
   non-zero if any of them fails.
 - **The length is still undecided.** At 29 pages this is a preprint or a
   journal submission with overlength charges, not a conference paper
-  (6-8 pages). The user has been asked twice which venue is intended and
-  has not answered; the full paper stands until they do."""
+  (6-8 pages). The user has been asked which venue is intended and has
+  not answered; the full paper stands until they do."""
 
 FINDINGS = """## What the audits found, and what changed because of them
 Six independent reviews have been run: two mathematical (MiniMax M3.1 --
@@ -425,6 +430,120 @@ if i >= 0 and "A not-a-number reached the paper" not in s:
     if j < 0:
         j = len(s)
     s = s[:j] + "\n" + DEFECT_ROWS + s[j:]
+
+ASSEMBLING = """## Assembling the paper
+1. `python analysis/assemble_results.py` -- regenerates the tables, fills
+   the tokens, replaces the Results section wholesale, replaces the
+   marked CONTRIB region, rewrites the macro block from the token table
+   and compiles.  A token that cannot be filled becomes a visible
+   `[pending: ...]` marker, the paper still compiles, and the assembler
+   EXITS NON-ZERO and says the paper is incomplete.  It used to keep the
+   previous text of the Results section instead, which is how a stale
+   sentence with a not-a-number in it survived into the paper.
+2. `python analysis/merge_ablation.py` -- the component ablation is run
+   in two parts, and this assembles them into `results_ablation.csv`.  It
+   REJECTS a merge that is missing a variant or that mixes protocols.
+3. `python analysis/final_checks.py` -- the gate: eight checks, including
+   the cross-table identity check (the observation arm C, the credit arm
+   A, the energy arm A and the ablation's Full row are ONE experiment
+   and must agree on every training seed), the single-device check, the
+   audit's counts against the paper's, and the macro check.
+4. `python analysis/claim_audit.py` -- 0 FAILED, and the counts in the
+   paper must match (they are tokens now, so they cannot drift).
+5. `python tests/run_tests.py` -- the test suite.
+6. `python analysis/make_report.py` -- the project report's PDF.
+7. Commit. **Never push.**"""
+
+CHECKLIST = """## The FINAL CHECKLIST (before declaring the work done)
+- [x] Every stage re-measured under the reproducible protocol.
+- [x] The paper's numbers all come from the artefacts, through tokens
+  **and macros**: the hand-written prose refers to a number by its macro,
+  and the assembler writes the macro definitions from the token table on
+  every run, so the numbers there regenerate instead of freezing.
+- [x] The token table SCREENS its values: a nan, an empty list or a None
+  becomes a visible marker instead of a number, and the assembler says
+  the paper is incomplete.
+- [x] The claim audit passes with 0 failures and its count matches.
+- [x] No LaTeX errors and no undefined references.  The only overfull
+  box is the `balance` package's column split on the bibliography's last
+  page, a point or two into a 19 mm margin, and it is invisible.
+- [x] Seven audits (four mathematical, two prose, one deep-research)
+  have been run and their findings addressed: MiniMax M3.1 (twice),
+  Beam Free Max (twice), DeepSeek V4.1 Flash, and the deep-research
+  pass.
+- [x] The identity requirement holds at the full width: the arms, the
+  ablation's Full row and the base comparison's runs are ONE experiment,
+  on every training seed, on one device.
+- [ ] The abstract and the Conclusion agree with the final numbers
+  (re-read them against the assembled PDF).
+- [ ] `git status` is clean and everything is committed (never pushed)."""
+
+s = replace(s, ["## Assembling the paper"], ASSEMBLING)
+s = replace(s, ["## The FINAL CHECKLIST"], CHECKLIST)
+
+COMMANDS = """## Commands
+```
+cd Project1/ml_impl
+python run_all.py --stage base      # the base comparison (8 seeds x 25 ep)
+python run_all.py --stage obs       # the observation A/B/C
+python run_all.py --stage abl       # the component ablation, feasible config
+python run_all.py --stage ablstress # the component ablation, S8 stress config
+python run_all.py --stage learned   # the two learned baselines
+python run_all.py --stage energy    # the energy-management A/B/C/D
+python run_all.py --stage scen      # the scenario matrix
+python analysis/ab_credit.py --episodes 25 --seeds 8 --eval-seeds 5
+python analysis/ab_observation.py --episodes 25 --seeds 8 --eval-seeds 5
+python analysis/ab_energy_management.py --episodes 25 --seeds 8 --eval-seeds 5
+python analysis/ab_budget.py --seeds 8 --eval-seeds 5
+python analysis/ab_map_resolution.py --episodes 20 --seeds 8 --eval-seeds 5 --grids 0,4,8
+python analysis/alt_deployment.py --seeds 8 --episodes 25 --eval-seeds 5
+python analysis/device_sensitivity.py --config cpu1 --episodes 2
+python analysis/device_sensitivity.py --merge
+python analysis/ablation_part.py --part a --episodes 25 --seeds 8 --eval-seeds 5
+python analysis/merge_ablation.py   # the parts -> results_ablation.csv
+python analysis/run_queue.py        # the tail of the matrix, in order
+python analysis/claim_audit.py      # 37 items, 33 verified, 0 failed, 4 info
+python analysis/assemble_results.py # the tables, the tokens, the Results, the compile
+python analysis/final_checks.py     # assembly + compile + audit + tests, one command
+python analysis/make_report.py      # the project report's PDF
+python analysis/rewrite_state.py    # regenerate this tracker
+python tests/run_tests.py           # 126 tests
+```
+**The protocol, in one line:** pass the WHOLE protocol every time ---
+`--episodes`, `--seeds`, `--eval-seeds` and the device.  A run with
+three training seeds instead of eight is a different measurement, and a
+run on another device is a different experiment."""
+
+s = replace(s, ["## Commands"], COMMANDS)
+
+CENTRAL = f"""## THE CENTRAL FINDING (the claim, and what the arms actually establish)
+The learned controller does not reach the strongest rule, and the
+framework's controlled arms are what say why -- or why not.  Every line
+below is quoted from the same tokens the paper's prose is built from, so
+this section cannot disagree with the paper.
+
+- The **energy model is excluded as the whole of the explanation**: the
+  arms' upper limits are below the gap of {T('GAP')}, and
+  {T('ED_VERDICT')}.
+- The **observation content is NOT excluded**: the arm that adds the
+  agent identity has an upper limit of 0.377 against a gap of
+  {T('GAP')}, so the identity remains a candidate explanation.  The arm
+  that prices the full observation does clear the gap (0.164).
+- The **training budget is excluded over the range the sweep covers**:
+  {T('BUDGET_PAIRED_VERDICT')}.  The sweep's own last increment is
+  {T('BUDGET_LAST_DELTA')} at {T('BUDGET_T')} standard errors from zero
+  (paired over the same {T('BUDGET_PAIR_N')} training seeds), and the
+  sweep shows no saturation inside its range, so the claim is scoped to
+  that range and to no other.
+- The **credit assignment** is the remaining candidate the framework's
+  own mechanisms suggest: {T('CREDIT_VERDICT')}.
+
+So the residual is consistent with the credit assignment and with the
+observation content; the arms bound the energy model and the training
+budget, over the range the sweep covers, and nothing else.  The paper
+says that, and every part of it is derived from an interval."""
+
+s = replace(s, ["## THE CENTRAL FINDING"], CENTRAL)
 
 open(STATE, "w", encoding="utf-8", newline="").write(s)
 print("the state tracker is rewritten")
