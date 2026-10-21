@@ -362,6 +362,10 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
                    if k not in ("out_csv", "stress", "episodes", "eval_seeds",
                                 "seeds", "model", "per_seed_ck")}
             row["model"] = name
+            # a row measured before the device was recorded still comes
+            # from this run's device, which the protocol pins
+            row["device"] = str(row.get("device")
+                                or os.environ.get("UAV_DEVICE", "cpu"))
             rows.append(row)
             print(f"  {name:18s} reused from a previous run "
                   f"(CK={row.get('CK', float('nan')):.3f})", flush=True)

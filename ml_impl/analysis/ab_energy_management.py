@@ -87,7 +87,33 @@ def main():
     print("=" * 96)
 
     rows = []
+    out_path = os.path.join(HERE, "ab_energy_management.json")
+    # RESUME.  The arms are written as they finish, so an interrupted run
+    # does not repeat the training it has already done, and an arm measured
+    # under a different protocol (a different budget or a different number
+    # of training seeds) is never reused.
+    done = {}
+    if os.path.exists(out_path):
+        try:
+            for r in json.load(open(out_path, encoding="utf-8")):
+                if (int(r.get("episodes", -1)) == int(args.episodes)
+                        and int(r.get("seeds", -1)) == int(args.seeds)
+                        and int(r.get("eval_seeds", -1)) == int(args.eval_seeds)):
+                    done[r["arm"]] = r
+        except Exception:
+            done = {}
+
+    def write_out():
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(rows, f, indent=2)
+
     for name, kw in arms:
+        if name in done:
+            rows.append(done[name])
+            print(f"--- {name} --- reused from a previous run "
+                  f"(CK={done[name]['CK']:.3f})", flush=True)
+            write_out()
+            continue
         print(f"\n--- {name} ---", flush=True)
         cks, ags, scs, cis, strs, rets = ([] for _ in range(6))
         for s in range(args.seeds):
@@ -98,6 +124,7 @@ def main():
                                       verbose=False)
             evs = [eval_agent(agent, c, steps=c.episode_len, seed=e)
                    for e in range(args.eval_seeds)]
+            device_used = str(agent.device)
             agg = {k: float(np.mean([x[k] for x in evs])) for k in evs[0]}
             cks.append(agg["CK"]); ags.append(agg["AG"]); scs.append(agg["SC"])
             cis.append(agg["CovIntegral"])
@@ -119,12 +146,17 @@ def main():
                          CovIntegral=float(np.mean(cis)),
                          stranded_per_episode=float(np.mean(strs)),
                          return_events_per_episode=float(np.mean(rets)),
-                         per_seed_CK=cks))
+                         per_seed_CK=cks,
+                         device=str(device_used),
+                         episodes=int(args.episodes),
+                         seeds=int(args.seeds),
+                         eval_seeds=int(args.eval_seeds)))
+        # the artefact is written after every arm, so an interrupted run
+        # keeps the arms it has already measured
+        write_out()
 
-    out = os.path.join(HERE, "ab_energy_management.json")
-    with open(out, "w", encoding="utf-8") as f:
-        json.dump(rows, f, indent=2)
-    print(f"\nSaved -> {out}")
+    write_out()
+    print(f"\nSaved -> {out_path}")
     return 0
 
 

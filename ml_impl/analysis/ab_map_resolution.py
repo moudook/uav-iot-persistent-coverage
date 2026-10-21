@@ -93,7 +93,31 @@ def main():
     print("=" * 92)
 
     rows = []
+    out_path = os.path.join(HERE, "ab_map_resolution.json")
+    # RESUME: a grid measured under the same protocol is reused, and the
+    # artefact is written after every grid
+    done = {}
+    if os.path.exists(out_path):
+        try:
+            for r in json.load(open(out_path, encoding="utf-8")):
+                if (int(r.get("episodes", -1)) == int(args.episodes)
+                        and int(r.get("seeds", -1)) == int(args.seeds)
+                        and int(r.get("eval_seeds", -1)) == int(args.eval_seeds)):
+                    done[int(r["grid"])] = r
+        except Exception:
+            done = {}
+
+    def write_out():
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(rows, f, indent=2)
+
     for G in grids:
+        if G in done:
+            rows.append(done[G])
+            print(f"--- G = {G} reused from a previous run "
+                  f"(CK={done[G]['CK']:.3f})", flush=True)
+            write_out()
+            continue
         print(f"\n--- G = {G} ({G}x{G} cells, {G*G} values) ---", flush=True)
         cks, ags, scs, cis, nds, sps, ents, bests = ([] for _ in range(8))
         for s in range(args.seeds):
@@ -104,6 +128,7 @@ def main():
                                       verbose=False)
             evs = [eval_agent(agent, c, steps=c.episode_len, seed=e)
                    for e in range(args.eval_seeds)]
+            device_used = str(getattr(agent, "device", "cpu"))
             agg = {k: float(np.mean([x[k] for x in evs])) for k in evs[0]}
             nd, sp = distinct_actions(agent, c, seed=0, deterministic=True)
             cks.append(agg["CK"]); ags.append(agg["AG"]); scs.append(agg["SC"])
@@ -129,12 +154,16 @@ def main():
                          distinct_actions=float(np.mean(nds)),
                          mean_spread_m=float(np.mean(sps)),
                          best_ck=float(np.mean(bests)),
-                         per_seed_CK=cks))
+                         per_seed_CK=cks,
+                         device=str(device_used),
+                         episodes=int(args.episodes), seeds=int(args.seeds),
+                         eval_seeds=int(args.eval_seeds)))
+        # the artefact is written after every grid, so an interrupted run
+        # keeps the grids it has already measured
+        write_out()
 
-    out = os.path.join(HERE, "ab_map_resolution.json")
-    with open(out, "w", encoding="utf-8") as f:
-        json.dump(rows, f, indent=2)
-    print(f"\nSaved -> {out}")
+    write_out()
+    print(f"\nSaved -> {out_path}")
     return 0
 
 
