@@ -22,7 +22,7 @@ The work runs to 26 October 2026. The deliverable is a paper whose every number 
 \toprule
 Gap to the strongest rule & $\textbf{0.309}$ (95\% interval [0.261, 0.358]), against the unprivileged reactive rule at 0.972. \\
 The learned controller & $\textbf{0.662}$ $\pm$ 0.055 over 8 training seeds. \\
-Claim audit & 37 items: 33 verified, 0 failed, 4 recorded for transparency. \\
+Claim audit & 38 items: 34 verified, 0 failed, 4 recorded for transparency. \\
 Test suite & 126 cases, all passing. \\
 Device & every artefact records the device it was measured on; the device and the thread count are part of the protocol. \\
 \bottomrule
@@ -54,7 +54,7 @@ Controller & CK & AG & SC & Cov. deficit \\
 \bottomrule
 \end{tabularx}
 
-The arms' verdict, derived from the intervals: Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.377, margin -0.068); the full observation of the proposed configuration (upper limit 0.164, margin +0.145), against a gap of 0.309.  The arms whose upper limit reaches past the gap -- adding the agent identity -- are NOT excluded, and remain candidate explanations; the others are excluded as the whole of the explanation.  Every interval is paired over the same training seeds, against the local-only arm A of the observation experiment.
+The arms' verdict, derived from the intervals: Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.161, margin +0.148); the full observation of the proposed configuration (upper limit 0.062, margin +0.247); removing the energy constraint (upper limit 0.081, margin +0.228); removing the threshold term (upper limit 0.028, margin +0.281); the previous energy rule (upper limit -0.038, margin +0.347), against a gap of 0.309.  Every arm's upper limit is below the gap, so none of them can be the whole of the explanation, by margins that are small but positive.  Every interval is paired over the same training seeds, against the local-only arm A of the observation experiment and the proposed configuration of the energy experiment.
 
 The training-budget sweep: 8 episodes: 0.595, 16 episodes: 0.621, 25 episodes: 0.662. the coverage moves by +0.067 over the range the sweep covers, which is about 22\textbackslash\{\}\% of the gap of 0.309, and the increments between successive budgets are +0.026, +0.041; the last of them, +0.041, is 2.8 standard errors from zero (the standard error of the difference is 0.014, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers.
 
@@ -73,23 +73,23 @@ Every one of these was a defect in the work, not in the writing. The list is the
 \midrule
 \endhead
 1 & Simulator was static -- no UAV ever moved & \texttt{13cb839} \\
-2 & Baselines accepted \texttt{seed} and ignored it & \texttt{\_seeded()}; \texttt{d113e5c} \\
+2 & Baselines accepted \texttt{seed} and ignored it & \texttt{\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_seeded()}; \texttt{d113e5c} \\
 3 & Time limit reported as termination -> GAE bootstrapped 0 & \texttt{d113e5c} \\
 4 & Centred-ring start pre-solved the task & \texttt{957ee1c} \\
-5 & \texttt{run\_scenarios} passed \texttt{seed=0} over the config's own seed & \texttt{957ee1c} \\
-6 & Reward eq (23) negated only U\_t & \texttt{reward\_from\_terms} \\
-7 & Initial placement disconnected on 11/20 seeds & \texttt{\_connected\_initial\_positions} \\
+5 & \texttt{run\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_scenarios} passed \texttt{seed=0} over the config's own seed & \texttt{957ee1c} \\
+6 & Reward eq (23) negated only U\_t & \texttt{reward\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_from\textbackslash{}\allowbreak{}textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_terms} \\
+7 & Initial placement disconnected on 11/20 seeds & \texttt{\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_connected\textbackslash{}\allowbreak{}textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_initial\textbackslash{}\allowbreak{}textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_positions} \\
 8 & Backhaul modelled as co-channel interference & SNR-based backhaul \\
-9 & \texttt{snr\_to\_rate} off-by-one + floor made the PHY gate vacuous & fixed \\
-10 & Path-loss exponent additive -> LoS/NLoS erased & \texttt{pl\_d0 + 10n log10(d/d0)} \\
+9 & \texttt{snr\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_to\textbackslash{}\allowbreak{}textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_rate} off-by-one + floor made the PHY gate vacuous & fixed \\
+10 & Path-loss exponent additive -> LoS/NLoS erased & \texttt{pl\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_d0 + 10n log10(d/d0)} \\
 11 & Noise units: dBm treated as watts (30 dB error) & divide by 1000 \\
 12 & Shadowing from the global RNG -> non-reciprocal & seeded per-episode table \\
-13 & \texttt{local\_obs} neighbour stride 2 -> slots overlapped & concatenation + assertion \\
-14 & \texttt{STATE\_DIM = 80} hardcoded (valid only for N=5) & \texttt{state\_dim(cfg)} \\
+13 & \texttt{local\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_obs} neighbour stride 2 -> slots overlapped & concatenation + assertion \\
+14 & \texttt{STATE\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_DIM = 80} hardcoded (valid only for N=5) & \texttt{state\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_dim(cfg)} \\
 15 & GAE bootstrap at truncation used 0 instead of V(s\_{T+1}) & fixed \\
-16 & Observation carried no agent identity & \texttt{use\_agent\_id}; \texttt{44206f5} \\
-17 & Observation could not express a return (no direction to a pad) & \texttt{use\_pad\_bearing}; \texttt{de3e1e6} \\
-18 & No indication of where the coverage deficit is & \texttt{map\_grid}; \texttt{44206f5} \\
+16 & Observation carried no agent identity & \texttt{use\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_agent\textbackslash{}\allowbreak{}textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_id}; \texttt{44206f5} \\
+17 & Observation could not express a return (no direction to a pad) & \texttt{use\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_pad\textbackslash{}\allowbreak{}textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_bearing}; \texttt{de3e1e6} \\
+18 & No indication of where the coverage deficit is & \texttt{map\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_grid}; \texttt{44206f5} \\
 19 & The energy state machine did not exist & env makes the transition; \texttt{de3e1e6} \\
 20 & A UAV with an empty pack still counted as serving & out of service; \texttt{de3e1e6} \\
 21 & Charging was uneconomic (billed the hover power) & rotors idle on the pad \\
@@ -97,10 +97,10 @@ Every one of these was a defect in the work, not in the writing. The list is the
 23 & The returns were formed from an untruncated advantage array & truncate before forming returns \\
 24 & Two graph computations per candidate action (13.7 ms/step) & shared prospective graph \\
 25 & MAPPO's value normalisation missing although asserted & \texttt{c4a71f6} \\
-26 & The comparison table named MARL baselines never evaluated & \texttt{baselines\_rl.py}; "Evaluated" column \\
+26 & The comparison table named MARL baselines never evaluated & \texttt{baselines\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_rl.py}; "Evaluated" column \\
 27 & The scenario matrix crashed on N=3: the one-hot identity has length N and the global state carries the sensor positions and the pad occupancy, so the networks' input sizes depend on the configuration & one policy per distinct \texttt{(N, M, pads)} \\
-28 & THE EVALUATION OF A SAMPLED POLICY WAS AN UNCONTROLLED RANDOM DRAW. Eq. (13) specifies that the deployed policy samples, and \texttt{mappo.py} drew from the global torch RNG, which \texttt{eval\_agent} never seeded. The same policy file evaluated three times gave CK 0.734, 0.701 and 0.671, with the same standard deviation to four decimals. The paper's numbers could not be reproduced from the stored artefact, and controller-to-controller comparisons carried an unquantified sampling component & \texttt{uav\_wireless/seeding.py}; 5 new tests; audit item R1 \\
-29 & The component ablation trained ONE seed per variant at 10 episodes, while the base comparison trained five seeds at 25 -- so its deltas mixed the component with the budget and its spread was unmeasurable. It also disagreed with the observation arms (which said the full configuration was no better than the bare one) & \texttt{run\_ablation(..., seeds=)}, budget aligned to the base comparison, paired differences, incremental writes \\
+28 & THE EVALUATION OF A SAMPLED POLICY WAS AN UNCONTROLLED RANDOM DRAW. Eq. (13) specifies that the deployed policy samples, and \texttt{mappo.py} drew from the global torch RNG, which \texttt{eval\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_agent} never seeded. The same policy file evaluated three times gave CK 0.734, 0.701 and 0.671, with the same standard deviation to four decimals. The paper's numbers could not be reproduced from the stored artefact, and controller-to-controller comparisons carried an unquantified sampling component & \texttt{uav\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_wireless/seeding.py}; 5 new tests; audit item R1 \\
+29 & The component ablation trained ONE seed per variant at 10 episodes, while the base comparison trained five seeds at 25 -- so its deltas mixed the component with the budget and its spread was unmeasurable. It also disagreed with the observation arms (which said the full configuration was no better than the bare one) & \texttt{run\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_ablation(..., seeds=)}, budget aligned to the base comparison, paired differences, incremental writes \\
 30 & The main table's learned row was ONE policy while the text claimed five training seeds & the row is the mean over the five runs with the seed-to-seed spread; every run's policy is saved \\
 31 & The assembler's "undefined references" check matched the LaTeX FONT warnings; the scenario table's variable names were set in text mode, so the table did not compile & precise check; math mode; \texttt{tabcolsep}; \texttt{raggedbottom} \\
 32 & The ablation's "is this component measurable" rule was not a test. It compared a component's difference with the learner's own seed-to-seed spread, a rule with a per-arm null error rate of about a third at three training seeds, and it bought no power & paired t intervals on the per-seed differences, plus a resolution statement; the interpretive sentences are DERIVED in the token filler, not asserted in the prose \\
@@ -108,6 +108,18 @@ Every one of these was a defect in the work, not in the writing. The list is the
 34 & The base comparison's CSV took its fieldnames from the first row, so the learned rows' extra columns raised on write & the fieldnames are the union over the rows; the base stage gained a \texttt{--resume} path that evaluates the stored policies instead of retraining them \\
 35 & The ablation's "is this component measurable" rule was not a test (audit 4) & paired t intervals on the per-seed differences, and a resolution statement; the interpretive sentences are derived in the token filler \\
 36 & The paper's central exclusion argument was overstated (audit 3) & the abstract, the introduction and the conclusion now state the descriptive gap, the interval, the resolution, and the causes the arms do NOT exclude \\
+40 & A not-a-number reached the paper ("nan standard errors", from an artefact that was mid-write) & the token table screens every value; an unusable value becomes a visible \texttt{[pending: ...]} marker and the assembly reports itself incomplete \\
+41 & The Results section kept its PREVIOUS text when a token was pending, so a stale sentence (with the nan in it) survived & the section is always regenerated from the template, and a pending token is marked \\
+42 & The budget's increments were compared UNPAIRED, and a resolved increment (+0.041, interval [+0.007, +0.075]) was called unresolved & paired over the same training seeds, which is what the design supports \\
+43 & Two intervals were built from a POPULATION standard deviation (numpy divides by n) & \texttt{sample\textbackslash{}\textbackslash{}\allowbreak{}allowbreak{}\_std}, ddof = 1, computed from the raw per-seed rows \\
+44 & The observation summary and the observation table quoted different intervals in the last digit & the summary rebuilds the interval from the raw values, not from the rounded ones \\
+45 & The observation summary said "the gap to the reactive heuristic" -- the privileged rule -- when the gap is to the unprivileged one & the rule's name is a token, so the sentence cannot name the wrong rule \\
+46 & The credit verdict described "a difference of any size up to 0.156 in either direction" for an interval of [-0.222, +0.090] & the verdict names the best case the interval allows and compares it with the gap \\
+47 & The base table's caption said the controller was trained five times, and promised the rule rows a \$\textbackslash{}\allowbreak{}pm\$ the table does not print & the caption is read from the data \\
+48 & The abstract claimed the audit recomputes "every quantitative claim about the model" & the claim is narrowed to what the audit actually checks \\
+49 & The arms' sentence did not name the reference arm, so a reader could not tell what the intervals are intervals OF & the sentence names it \\
+50 & The budget's exclusion was stated without its scope & the scope (the 8--25 episode range) is in the sentence, and the paper says that budgets beyond it are not addressed \\
+51 & The identity arm's share of the gap was computed against a denominator that appears nowhere in the paper & it is a fraction of the paper's own gap \\
 \bottomrule
 \end{longtable}
 \normalsize
@@ -291,6 +303,198 @@ checked against their sources, the novelty claim stress-tested, and
 the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
 74\% are confirmed; the Luna reference was wrong and is fixed; the
 novelty claim survives.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 7 (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+checked against the raw per-seed rows, with every interval recomputed
+by hand. Ten findings, all applied: the budget's paired increment, two
+population standard deviations, a rounding disagreement between a
+summary and its table, the wrong rule named in a sentence, an
+asymmetric interval described as symmetric, a caption that said five
+where the table said eight, an audit claim in the abstract that was
+broader than the audit, an arms' sentence that did not name its
+reference arm, an exclusion stated without its scope, and a share
+whose denominator appears nowhere in the paper.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 7 (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+checked against the raw per-seed rows, with every interval recomputed
+by hand. Ten findings, all applied: the budget's paired increment, two
+population standard deviations, a rounding disagreement between a
+summary and its table, the wrong rule named in a sentence, an
+asymmetric interval described as symmetric, a caption that said five
+where the table said eight, an audit claim in the abstract that was
+broader than the audit, an arms' sentence that did not name its
+reference arm, an exclusion stated without its scope, and a share
+whose denominator appears nowhere in the paper.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 7 (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+checked against the raw per-seed rows, with every interval recomputed
+by hand. Ten findings, all applied: the budget's paired increment, two
+population standard deviations, a rounding disagreement between a
+summary and its table, the wrong rule named in a sentence, an
+asymmetric interval described as symmetric, a caption that said five
+where the table said eight, an audit claim in the abstract that was
+broader than the audit, an arms' sentence that did not name its
+reference arm, an exclusion stated without its scope, and a share
+whose denominator appears nowhere in the paper.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 7 (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+checked against the raw per-seed rows, with every interval recomputed
+by hand. Ten findings, all applied: the budget's paired increment, two
+population standard deviations, a rounding disagreement between a
+summary and its table, the wrong rule named in a sentence, an
+asymmetric interval described as symmetric, a caption that said five
+where the table said eight, an audit claim in the abstract that was
+broader than the audit, an arms' sentence that did not name its
+reference arm, an exclusion stated without its scope, and a share
+whose denominator appears nowhere in the paper.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 7 (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+checked against the raw per-seed rows, with every interval recomputed
+by hand. Ten findings, all applied: the budget's paired increment, two
+population standard deviations, a rounding disagreement between a
+summary and its table, the wrong rule named in a sentence, an
+asymmetric interval described as symmetric, a caption that said five
+where the table said eight, an audit claim in the abstract that was
+broader than the audit, an arms' sentence that did not name its
+reference arm, an exclusion stated without its scope, and a share
+whose denominator appears nowhere in the paper.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 7 (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+checked against the raw per-seed rows, with every interval recomputed
+by hand. Ten findings, all applied: the budget's paired increment, two
+population standard deviations, a rounding disagreement between a
+summary and its table, the wrong rule named in a sentence, an
+asymmetric interval described as symmetric, a caption that said five
+where the table said eight, an audit claim in the abstract that was
+broader than the audit, an arms' sentence that did not name its
+reference arm, an exclusion stated without its scope, and a share
+whose denominator appears nowhere in the paper.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 7 (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+checked against the raw per-seed rows, with every interval recomputed
+by hand. Ten findings, all applied: the budget's paired increment, two
+population standard deviations, a rounding disagreement between a
+summary and its table, the wrong rule named in a sentence, an
+asymmetric interval described as symmetric, a caption that said five
+where the table said eight, an audit claim in the abstract that was
+broader than the audit, an arms' sentence that did not name its
+reference arm, an exclusion stated without its scope, and a share
+whose denominator appears nowhere in the paper.
+\noindent\textbf{} Audit 4 (MiniMax M3.1, 21 Oct) -- the corner certificate's
+geometry, the packing survey, and the budget sweep's inference. Found
+four errors, all applied.
+\noindent\textbf{} Audit 5 (Beam Free Max, 21 Oct) -- the same three, independently.
+Found the same four, plus that the corner condition is sufficient and
+not necessary. All applied.
+\noindent\textbf{} Audit 6 (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+the prose against the artefacts. All applied; the serious one was the
+energy repair reported as a null.
+\noindent\textbf{} Deep research (Beam Free Max, 21 Oct) -- the attributed numbers
+checked against their sources, the novelty claim stress-tested, and
+the IEEE page limits established. Song's 81.04\% and 67.07\% and Fan's
+74\% are confirmed; the Luna reference was wrong and is fixed; the
+novelty claim survives.
+\noindent\textbf{} Audit 7 (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+checked against the raw per-seed rows, with every interval recomputed
+by hand. Ten findings, all applied: the budget's paired increment, two
+population standard deviations, a rounding disagreement between a
+summary and its table, the wrong rule named in a sentence, an
+asymmetric interval described as symmetric, a caption that said five
+where the table said eight, an audit claim in the abstract that was
+broader than the audit, an arms' sentence that did not name its
+reference arm, an exclusion stated without its scope, and a share
+whose denominator appears nowhere in the paper.
 
 \section{Negative results, kept on the record}
 \section{The artefacts}

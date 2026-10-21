@@ -95,7 +95,8 @@ def md_table_to_latex(block):
         # and an escaped underscore is a legal break point, which
         # \detokenize is not, so a long file name can still wrap
         s = re.sub(r"`([^`]*)`",
-                   lambda m: r"\texttt{" + m.group(1).replace("_", r"\_") + "}",
+                   lambda m: r"\texttt{" + m.group(1).replace("_", r"\_")
+                   .replace("\\", r"\textbackslash{}\allowbreak{}") + "}",
                    s)
         s = s.replace("**", "")
         # anything still outside a code span is escaped
@@ -110,7 +111,8 @@ def md_table_to_latex(block):
                     continue
             c = s[i]
             out.append({"_": r"\_", "&": r"\&", "%": r"\%",
-                        "#": r"\#", "$": r"\$"}.get(c, c))
+                        "#": r"\#", "$": r"\$",
+                        "\\": r"\textbackslash{}\allowbreak{}"}.get(c, c))
             i += 1
         return "".join(out)
     # a longtable, because the defect log is longer than a page and a

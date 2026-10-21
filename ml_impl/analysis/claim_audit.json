@@ -80,6 +80,14 @@
     "note": "the thread count is pinned anyway, so that the result cannot depend on how many cores the machine happened to be using; this item records what it actually does here."
   },
   {
+    "id": "A1",
+    "claim": "the alternative corrected deployment (N = 5, R_cov = 45 m) is FEASIBLE and is measured, not only argued",
+    "status": "PASS",
+    "measured": "the learned controller reaches 0.770 on the alternative against 0.662 on the reported deployment, over 8 training seeds and 25 episodes",
+    "expected": "the coverage is substantial",
+    "note": "the certificate identified a deployment the original configuration could not use, and on this instance it is the better of the two."
+  },
+  {
     "id": "C7a",
     "claim": "the achievability construction is admissible under the simulator's own safety filter (so the ceiling is reachable)",
     "status": "PASS",
@@ -265,7 +273,7 @@
     "id": "R1",
     "claim": "the evaluation of a sampled policy is a function of (policy, scene) and does not depend on the ambient state of the global RNG; the sampling stream is seeded from the evaluation seed alone, so every controller is measured on the same stream on the same scene",
     "status": "PASS",
-    "measured": "CK=1.0 and Energy=3644.0 and Distance=196.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3644.0 and Distance=196.0 and CovIntegral=0.0",
+    "measured": "CK=1.0 and Energy=3609.0 and Distance=189.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3609.0 and Distance=189.0 and CovIntegral=0.0",
     "expected": "identical",
     "note": "the policy samples, so the sampling stream is seeded from the evaluation seed; every controller therefore sees the same stream on the same scene"
   },

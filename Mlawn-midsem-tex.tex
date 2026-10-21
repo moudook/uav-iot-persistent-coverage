@@ -103,7 +103,17 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokAblSeeds}{3}
 \newcommand{\tokAblSummary}{Every component's 95\% confidence interval for the paired difference includes zero, and the smallest difference this protocol could resolve anywhere is $0.285$ of persistent coverage, which is the WIDEST arm's resolution: the resolution is per-arm, and each arm's own interval is in the table}
 \newcommand{\tokAblYardstick}{0.058}
+\newcommand{\tokAltBetter}{yes}
+\newcommand{\tokAltComparison}{and on this instance the deployment it identifies is the better of the two}
+\newcommand{\tokAltDelta}{0.108}
+\newcommand{\tokAltEpisodes}{25}
+\newcommand{\tokAltMeasuredCk}{0.770}
+\newcommand{\tokAltMeasuredStd}{0.039}
 \newcommand{\tokAltNfiveR}{44.72}
+\newcommand{\tokAltReportedCk}{0.662}
+\newcommand{\tokAltReportedStd}{0.055}
+\newcommand{\tokAltSeeds}{8}
+\newcommand{\tokAltVerdict}{the alternative deployment is not merely feasible, it is BETTER: with five UAVs and a 45 m coverage radius the learned controller reaches 0.770 against 0.662 for the reported eight-UAV deployment, a difference of +0.108 on the same training seeds and the same evaluation scenes}
 \newcommand{\tokArgAg}{0.991}
 \newcommand{\tokArgCi}{0.611}
 \newcommand{\tokArgCk}{0.389}
@@ -116,12 +126,12 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokArgStr}{3.0}
 \newcommand{\tokArmsMargin}{0.148}
 \newcommand{\tokArmsMarginMax}{0.228}
-\newcommand{\tokArmsSummarySentence}{Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.161, margin +0.148); the full observation of the proposed configuration (upper limit 0.062, margin +0.247); removing the energy constraint (upper limit 0.081, margin +0.228); removing the threshold term (upper limit 0.028, margin +0.281), against a gap of 0.309.  Every arm's upper limit is below the gap, so none of them can be the whole of the explanation, by margins that are small but positive.  Every interval is paired over the same training seeds, against the local-only arm A of the observation experiment and the proposed configuration of the energy experiment.}
+\newcommand{\tokArmsSummarySentence}{Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.161, margin +0.148); the full observation of the proposed configuration (upper limit 0.062, margin +0.247); removing the energy constraint (upper limit 0.081, margin +0.228); removing the threshold term (upper limit 0.028, margin +0.281); the previous energy rule (upper limit -0.038, margin +0.347), against a gap of 0.309.  Every arm's upper limit is below the gap, so none of them can be the whole of the explanation, by margins that are small but positive.  Every interval is paired over the same training seeds, against the local-only arm A of the observation experiment and the proposed configuration of the energy experiment.}
 \newcommand{\tokArmsVerdict}{controlled arms bound how much of the gap the alternative explanations can account for: the content of the observation and the energy model are tested with a single-factor intervention whose upper confidence limit lies below the gap, by margins of 0.148 to 0.228 against a gap of 0.309}
 \newcommand{\tokAuditFail}{0}
 \newcommand{\tokAuditInfo}{4}
-\newcommand{\tokAuditItems}{37}
-\newcommand{\tokAuditPass}{33}
+\newcommand{\tokAuditItems}{38}
+\newcommand{\tokAuditPass}{34}
 \newcommand{\tokAAg}{0.981}
 \newcommand{\tokACk}{0.639}
 \newcommand{\tokACkStd}{0.064}
@@ -153,7 +163,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokBudgetPairedVerdict}{the paired comparison over the same training seeds does resolve a real gain, +0.067 with a 95\% interval of [+0.017, +0.118], and that interval's upper limit of 0.118 is below the gap of 0.309: more training does help, and over the 8--25 episode range the sweep covers the whole of its effect is too small to account for the shortfall, so the budget is excluded as the explanation of the shortfall over that range.  Budgets beyond it are not addressed by this measurement, and the sweep shows no saturation within it}
 \newcommand{\tokBudgetPairedVsGap}{its upper limit of 0.118 is below the gap of 0.309}
 \newcommand{\tokBudgetPairN}{8}
-\newcommand{\tokBudgetRange}{8 to 25}
+\newcommand{\tokBudgetRange}{8--25}
 \newcommand{\tokBudgetSe}{0.014}
 \newcommand{\tokBudgetSeeds}{8}
 \newcommand{\tokBudgetSpread}{+0.067}
@@ -270,8 +280,23 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokEcRet}{632.5}
 \newcommand{\tokEcSc}{0.016}
 \newcommand{\tokEcStr}{0.7}
+\newcommand{\tokEdCi}{[-0.118, -0.038]}
+\newcommand{\tokEdCk}{0.584}
+\newcommand{\tokEdDelta}{-0.078}
+\newcommand{\tokEdExcludesZero}{yes}
+\newcommand{\tokEdGapGap}{0.309}
+\newcommand{\tokEdHalf}{0.040}
+\newcommand{\tokEdN}{8}
+\newcommand{\tokEdP}{0.003}
+\newcommand{\tokEdPaired}{-0.078}
+\newcommand{\tokEdRet}{140}
+\newcommand{\tokEdRetDelta}{484}
+\newcommand{\tokEdShare}{25}
+\newcommand{\tokEdStr}{6.3}
+\newcommand{\tokEdStrDelta}{5.4}
+\newcommand{\tokEdVerdict}{The repair is not a null: the coverage it adds is +0.078 on the same training seeds (95\% interval [+0.038, +0.118], which excludes zero), and that is about 25\% of the gap to the reactive heuristic}
 \newcommand{\tokEnergyDelta}{0.023}
-\newcommand{\tokEnergySummary}{The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.309 to the reactive heuristic: $removing the energy constraint$ (+0.023, 95\% interval [-0.035, +0.081], an upper limit below the gap of 0.309); $removing the threshold term$ (-0.001, 95\% interval [-0.029, +0.028], an upper limit below the gap of 0.309).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.}
+\newcommand{\tokEnergySummary}{The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.309 to the reactive heuristic: $removing the energy constraint$ (+0.023, 95\% interval [-0.035, +0.081], an upper limit below the gap of 0.309); $removing the threshold term$ (-0.001, 95\% interval [-0.029, +0.028], an upper limit below the gap of 0.309); $the previous energy rule$ (-0.078, 95\% interval [-0.118, -0.038], an upper limit below the gap of 0.309).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.}
 \newcommand{\tokEpisodeSeconds}{400}
 \newcommand{\tokEpisodeSteps}{2000}
 \newcommand{\tokFixedAg}{1.000}
@@ -393,27 +418,8 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokVarSceneSe}{0.054}
 \newcommand{\tokVarSeed}{0.058}
 \newcommand{\tokVarSeedSe}{0.021}
-\newcommand{\tokEdRet}{\mbox{\textbf{[pending: ED\_RET]}}}
-\newcommand{\tokEdRetDelta}{\mbox{\textbf{[pending: ED\_RET\_DELTA]}}}
-\newcommand{\tokEdStr}{\mbox{\textbf{[pending: ED\_STR]}}}
-\newcommand{\tokEdStrDelta}{\mbox{\textbf{[pending: ED\_STR\_DELTA]}}}
-\newcommand{\tokEdVerdict}{\mbox{\textbf{[pending: ED\_VERDICT]}}}
 \newcommand{\tokAblText}{\mbox{\textbf{[pending: tokAblText]}}}
-\newcommand{\tokAltComparison}{\mbox{\textbf{[pending: tokAltComparison]}}}
-\newcommand{\tokAltEpisodes}{\mbox{\textbf{[pending: tokAltEpisodes]}}}
-\newcommand{\tokAltSeeds}{\mbox{\textbf{[pending: tokAltSeeds]}}}
-\newcommand{\tokAltVerdict}{\mbox{\textbf{[pending: tokAltVerdict]}}}
 \newcommand{\tokCreditText}{\mbox{\textbf{[pending: tokCreditText]}}}
-\newcommand{\tokEdCi}{\mbox{\textbf{[pending: tokEdCi]}}}
-\newcommand{\tokEdCk}{\mbox{\textbf{[pending: tokEdCk]}}}
-\newcommand{\tokEdDelta}{\mbox{\textbf{[pending: tokEdDelta]}}}
-\newcommand{\tokEdExcludesZero}{\mbox{\textbf{[pending: tokEdExcludesZero]}}}
-\newcommand{\tokEdGapGap}{\mbox{\textbf{[pending: tokEdGapGap]}}}
-\newcommand{\tokEdHalf}{\mbox{\textbf{[pending: tokEdHalf]}}}
-\newcommand{\tokEdN}{\mbox{\textbf{[pending: tokEdN]}}}
-\newcommand{\tokEdP}{\mbox{\textbf{[pending: tokEdP]}}}
-\newcommand{\tokEdPaired}{\mbox{\textbf{[pending: tokEdPaired]}}}
-\newcommand{\tokEdShare}{\mbox{\textbf{[pending: tokEdShare]}}}
 %% END TOKEN MACROS
 
 \begin{document}
@@ -458,7 +464,7 @@ The contributions are:
 %% BEGIN CONTRIB
     \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are the two terms the controlled comparisons examine, and at 3 training seeds they do not settle the question about the coverage.  In the component ablation, the identity changes persistent coverage by $+0.026$, an interval $[-0.129, +0.181]$ that includes zero, so at this budget what it demonstrably buys is the ability to specialise, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses.  A broadcast summary of where the coverage deficit is was added a priori and measured to make no difference to the coverage at any resolution tested, while it does change what the policy does; it is reported rather than quietly dropped.
 %% END CONTRIB
-    \item Corrected deployment parameters ($N=8$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$, or $N=5$, $K=2$, $R_{\mathrm{cov}}=45\,\mathrm{m}$) derived from the feasibility certificate, replacing the infeasible $N=5$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$ baseline, and both of them MEASURED under the protocol below rather than argued: $\tokAltVerdict$.
+    \item Corrected deployment parameters ($N=8$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$, or $N=5$, $K=2$, $R_{\mathrm{cov}}=45\,\mathrm{m}$) derived from the feasibility certificate, replacing the infeasible $N=5$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$ baseline, and both of them MEASURED under the protocol below rather than argued: \tokAltVerdict.
     \item An evaluation protocol that treats a physical-layer claim as requiring a negative control, and reports a measured instance in which the available instrument could not support the claim it was being used for.
     \item A focused literature synthesis showing the difference between existing coverage, connectivity, recharge-scheduling, and fault-tolerant approaches and the combined problem considered here.
 \end{enumerate}
@@ -910,8 +916,8 @@ $\tokAltNfiveR$\,m against the $45$\,m offered. The second of these is not
 an argument but a measurement: trained and evaluated under the protocol of
 Section~\ref{sec:parameters} --- $\tokAltEpisodes$ episodes and
 $\tokAltSeeds$ training seeds, the same evaluation scenes ---
-$\tokAltVerdict$. The certificate identifies a deployment the original
-configuration could not use, $\tokAltComparison$. All trained results
+\tokAltVerdict. The certificate identifies a deployment the original
+configuration could not use, \tokAltComparison. All trained results
 below use the reported eight-UAV deployment, and the comparison is
 reported here because the framework produced it.
 
@@ -2016,6 +2022,7 @@ Variant & CK & AG & SC & Stranded & Returns \\
 A & 0.662 & 0.984 & 0.010 & 0.9 & 623.7 \\
 B & 0.685 & 1.000 & 0.016 & 0.0 & 0.0 \\
 C & 0.662 & 0.969 & 0.016 & 0.7 & 632.5 \\
+D & 0.584 & 0.967 & 0.005 & 6.3 & 139.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2024,7 +2031,7 @@ The first version of this section told a different story, and the
 difference is worth recording, because it is the clearest example in this
 work of a diagnostic leading to a repair rather than to a conclusion.  The
 step-level diagnostic of the learned policy produced an alarming number:
-with the previous energy rule, the policy stranded $\textbf{[pending: ED\_STR]}$ of the
+with the previous energy rule, the policy stranded $6.3$ of the
 eight UAVs per episode, while the reactive rules stranded $0.4$.  A
 stranded UAV has an empty pack away from a charging pad; it can no longer
 fly, it leaves the swarm, and it stops covering.  The obvious reading was
@@ -2036,10 +2043,10 @@ than a property of the policy.  The mask's energy test admitted a
 departure with a flat battery, so a UAV could fly until its pack was empty
 away from a pad; the correction is to require a UAV to retain, after the
 move, the energy to reach a charging pad plus the reserve margin.  The
-stranding falls from $\textbf{[pending: ED\_STR]}$ UAVs per episode to $0.9$, and
-the return-to-charge transitions rise from $\textbf{[pending: ED\_RET]}$ to $624$ per
+stranding falls from $6.3$ UAVs per episode to $0.9$, and
+the return-to-charge transitions rise from $140$ to $624$ per
 episode, because the UAVs now come home instead of dying in the field.
-\textbf{[pending: ED\_VERDICT]}.  The defect was therefore real and the repair was
+The repair is not a null: the coverage it adds is +0.078 on the same training seeds (95\% interval [+0.038, +0.118], which excludes zero), and that is about 25\% of the gap to the reactive heuristic.  The defect was therefore real and the repair was
 correct, and the repair is already part of the proposed configuration: it
 is not a candidate explanation of the residual gap, because the gap is
 measured against a controller that has the repair in it.  What the repair
@@ -2050,8 +2057,8 @@ only the rewards.
 
 It is worth being explicit about what this arm does and does not show.
 It is \emph{not} a statement that the
-energy constraint is inactive: the two rules differ by $\textbf{[pending: ED\_STR\_DELTA]}$
-stranded UAVs per episode and by $\textbf{[pending: ED\_RET\_DELTA]}$ return-to-charge
+energy constraint is inactive: the two rules differ by $5.4$
+stranded UAVs per episode and by $484$ return-to-charge
 transitions, so the test is doing substantial work and the swarm's energy
 behaviour differs markedly between them.  Nor is it a statement that the
 energy mechanism is what the learned controller gets wrong: the
@@ -2061,7 +2068,7 @@ difference of this width is also a statement about the resolution of the
 arm and not about the component, and we report that resolution with the
 interval.
 
-The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.309 to the reactive heuristic: $removing the energy constraint$ (+0.023, 95\% interval [-0.035, +0.081], an upper limit below the gap of 0.309); $removing the threshold term$ (-0.001, 95\% interval [-0.029, +0.028], an upper limit below the gap of 0.309).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.
+The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.309 to the reactive heuristic: $removing the energy constraint$ (+0.023, 95\% interval [-0.035, +0.081], an upper limit below the gap of 0.309); $removing the threshold term$ (-0.001, 95\% interval [-0.029, +0.028], an upper limit below the gap of 0.309); $the previous energy rule$ (-0.078, 95\% interval [-0.118, -0.038], an upper limit below the gap of 0.309).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.
 
 That is the sequence the framework is for.  A coverage comparison on its
 own would have reported that the learned controller mismanages energy, and
@@ -2495,7 +2502,7 @@ This paper defines a persistent and fault-tolerant UAV-IoT coverage problem in w
 
 \emph{Scope of the physical-layer claim.} The Python reference PHY and INET's \texttt{BreakpointPathLoss} are the same function, to $\tokPhyDelta$~dB over $\tokPhyRows$ (distance, exponent) points. We deliberately do \emph{not} claim a runtime cross-validation, and the reason is measured rather than asserted: a transmit-power sweep shows that the available per-receiver SNR statistic tracks the transmit power exactly but is independent of the receiver's distance, so it cannot support a path-loss cross-validation. A physical-layer claim that has not been subjected to a negative control is not a measurement, and this is the one we would most like a reader to carry away.
 
-\emph{Honest limitations.} (i)~All results are on $\tokEpisodeSteps$-step episodes (\tokEpisodeSeconds\,s of flight); the report's 10\,000-step target may change conclusions, and in particular the credit-assignment limitation may be partly a budget artefact; the two convergence measurements bound that possibility but do not resolve it. (ii)~The single-component arms are measured with $\tokAblNSeeds$ training seeds, and that bounds what they can resolve: they resolve no effect smaller than about $\tokAblResolution$ of persistent coverage. A null result from an arm of that width says that no effect above that resolution was \emph{detected}; it does not say that the component is unnecessary. A component that is redundant with another, so that removing either alone costs nothing, is invisible to an arm of this kind, and so is a component that matters only at a larger training budget; settling either needs a budget sweep or more seeds. We run the sweep, and for the full configuration it settles the question it can reach: the budget buys $\tokBudgetSpread$ of persistent coverage over $\tokBudgetRange$ episodes, and the paired comparison over the same training seeds puts that gain at $\tokBudgetPairedCi$, an interval whose upper limit is below the gap of $\tokBudgetGap$ --- so the budget is excluded as the explanation of the shortfall, over the range the sweep covers. That is a statement about the full configuration and not about the individual components, which are each measured at the single budget the base comparison uses, and it is not a claim about budgets beyond the range the sweep covers. (iii)~The reactive heuristic is given the exact set of under-covered sensors, which corresponds to an unbounded broadcast, while the learned policy receives a fixed-size summary; part of the gap might therefore be a difference of information and not of control.  The arm reported in the first table, in which the same rule runs without the global coverage state, measures that, and the measurement does not support the caveat. (iv)~The evaluation seed determines both the scene and the action-sampling stream, so the spread reported for a controller does not separate the scene-to-scene variation from the action-sampling variation. The two are common to every controller and cancel in the comparisons this paper draws, but they both enter the absolute numbers. (v)~The comparison is not compute-matched in the sense that a hand-designed rule embeds a human's solution while the learner receives a fixed training budget, and the learned controller's margin over the other learned arms is small compared with the seed-to-seed spread, so the differences between the learned methods should be read with that spread in mind. A learning curve and a budget sweep are what would speak to the first point, and they are the two convergence measurements we report. The four candidate explanations of Section~\ref{sec:experimentaldesign} are the ones the framework's own mechanisms suggest, and they do not exhaust the possibilities; the explanation that survives them was not pre-specified, so a study that had tested a different set of arms could have reached a different conclusion. (vi)~The OMNeT++ Phase-2 scenario ran and its negative control is reported, but the runtime instrument cannot support a path-loss cross-validation, so the equivalence is established from INET's source rather than from a running simulation. (vii)~Phase-3 (Simu5G PHY) is scaffolded but not executed with the learned policy. (viii)~The joint connectivity projection leaves no hole: in a probe that drives the swarm with a $\tokConnPolicy$ policy, $\tokConnSteps$ transitions into a disconnected graph occurred, all $\tokConnAsc$ of them after a UAV left the active set, $\tokConnTele$ after a teleport and $\tokConnUnexplained$ unexplained, so $\tokConnAllLeaving$.  The probe does not drive the learned controller, so it does not establish the deployed policy's connectivity availability; the projection's own revision count on the deployed configuration is $\tokProjRevisions$ per episode. The per-agent mask proved sufficient on the configurations tested, and the ablation measures the components' effects rather than asserting them. (ix)~The degenerate service-continuity metric is retained for comparison but supplemented by the non-degenerate alternatives.
+\emph{Honest limitations.} (i)~All results are on $\tokEpisodeSteps$-step episodes (\tokEpisodeSeconds\,s of flight); the report's 10\,000-step target may change conclusions, and in particular the credit-assignment limitation may be partly a budget artefact; the two convergence measurements bound that possibility but do not resolve it. (ii)~The single-component arms are measured with $\tokAblNSeeds$ training seeds, and that bounds what they can resolve: they resolve no effect smaller than about $\tokAblResolution$ of persistent coverage. A null result from an arm of that width says that no effect above that resolution was \emph{detected}; it does not say that the component is unnecessary. A component that is redundant with another, so that removing either alone costs nothing, is invisible to an arm of this kind, and so is a component that matters only at a larger training budget; settling either needs a budget sweep or more seeds. We run the sweep, and for the full configuration it settles the question it can reach: the budget buys $\tokBudgetSpread$ of persistent coverage over $\tokBudgetRange$ episodes, and the paired comparison over the same training seeds puts that gain at $\tokBudgetPairedCi$, an interval whose upper limit is below the gap of $\tokBudgetGap$ --- so the budget is excluded as the explanation of the shortfall, over the range the sweep covers. That is a statement about the full configuration and not about the individual components, which are each measured at the single budget the base comparison uses, and it is not a claim about budgets beyond the range the sweep covers. (iii)~The reactive heuristic is given the exact set of under-covered sensors, which corresponds to an unbounded broadcast, while the learned policy receives a fixed-size summary; part of the gap might therefore be a difference of information and not of control.  The arm reported in the first table, in which the same rule runs without the global coverage state, measures that, and the measurement does not support the caveat. (iv)~The evaluation seed determines both the scene and the action-sampling stream, so the spread reported for a controller does not separate the scene-to-scene variation from the action-sampling variation. The two are common to every controller and cancel in the comparisons this paper draws, but they both enter the absolute numbers. (v)~The comparison is not compute-matched in the sense that a hand-designed rule embeds a human's solution while the learner receives a fixed training budget, and the learned controller's margin over the other learned arms is small compared with the seed-to-seed spread, so the differences between the learned methods should be read with that spread in mind. A learning curve and a budget sweep are what would speak to the first point, and they are the two convergence measurements we report. The four candidate explanations of Section~\ref{sec:experimentaldesign} are the ones the framework's own mechanisms suggest, and they do not exhaust the possibilities; the explanation that survives them was not pre-specified, so a study that had tested a different set of arms could have reached a different conclusion. (vi)~The OMNeT++ Phase-2 scenario ran and its negative control is reported, but the runtime instrument cannot support a path-loss cross-validation, so the equivalence is established from INET's source rather than from a running simulation. (vii)~Phase-3 (Simu5G PHY) is scaffolded but not executed with the learned policy. (viii)~The joint connectivity projection leaves no hole: in a probe that drives the swarm with a $\tokConnPolicy$ policy, $\tokConnSteps$ transitions into a disconnected graph occurred, all $\tokConnAsc$ of them after a UAV left the active set, $\tokConnTele$ after a teleport and $\tokConnUnexplained$ unexplained, so \tokConnAllLeaving.  The probe does not drive the learned controller, so it does not establish the deployed policy's connectivity availability; the projection's own revision count on the deployed configuration is $\tokProjRevisions$ per episode. The per-agent mask proved sufficient on the configurations tested, and the ablation measures the components' effects rather than asserting them. (ix)~The degenerate service-continuity metric is retained for comparison but supplemented by the non-degenerate alternatives.
 
 \balance
 % The bibliography's items carry a flexible separation (IEEEtran's

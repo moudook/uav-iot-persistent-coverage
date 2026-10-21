@@ -43,6 +43,20 @@ def run(cmd, cwd=ML, quiet=True):
 def main():
     failures = []
 
+    # The claim audit runs BEFORE the assembly.  The audit's item count is
+    # a number the paper quotes, and the number of items depends on the
+    # artefacts: an audit that gains an item when an experiment lands
+    # would otherwise make the paper's count stale for one cycle, and the
+    # gate would report a mismatch that is an ordering artefact rather
+    # than a defect in the paper.
+    print("=" * 72)
+    print(" 0. the claim audit (before the assembly, because the paper "
+          "quotes its count)")
+    rc_audit, out_audit = run([PY, os.path.join(HERE, "claim_audit.py")])
+    tail = [x for x in out_audit.splitlines() if "claims verified" in x]
+    if tail:
+        print("   " + tail[-1].strip())
+
     print("=" * 72)
     print(" 1. the assembly")
     rc, out = run([PY, os.path.join(HERE, "assemble_results.py")])
@@ -100,15 +114,17 @@ def main():
 
     print("=" * 72)
     print(" 3. the claim audit")
-    rc, out = run([PY, os.path.join(HERE, "claim_audit.py")])
-    m = re.search(r"(\d+) claims verified, (\d+) FAILED, (\d+) recorded", out)
+    # it has already run, before the assembly, so that the count the
+    # paper quotes is the count the audit has
+    m = re.search(r"(\d+) claims verified, (\d+) FAILED, (\d+) recorded",
+                  out_audit)
     if m:
         npass, nfail, ninfo = (int(g) for g in m.groups())
         print(f"   {npass} verified, {nfail} FAILED, {ninfo} informational")
         if nfail:
             failures.append(f"{nfail} audited claims fail")
     else:
-        print(out.strip()[-600:])
+        print(out_audit.strip()[-600:])
         failures.append("the claim audit did not report")
 
     print("=" * 72)

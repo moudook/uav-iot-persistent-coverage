@@ -1537,7 +1537,7 @@ def build_tokens():
         tok["BUDGET_SPREAD"] = f"{spread:+.3f}"
         tok["BUDGET_MIN"] = f"{min(cks):.3f}"
         tok["BUDGET_MAX"] = f"{max(cks):.3f}"
-        tok["BUDGET_RANGE"] = (f"{int(rows[0]['episodes'])} to "
+        tok["BUDGET_RANGE"] = (f"{int(rows[0]['episodes'])}--"
                                f"{int(rows[-1]['episodes'])}")
         tok["BUDGET_N"] = str(len(rows))
         tok["BUDGET_INCREMENTS"] = ", ".join(f"{d:+.3f}" for d in incs)

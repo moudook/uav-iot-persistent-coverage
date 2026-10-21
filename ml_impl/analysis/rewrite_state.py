@@ -418,7 +418,7 @@ DEFECT_ROWS = """| 40 | **A not-a-number reached the paper** ("nan standard erro
 | 44 | The observation summary and the observation table quoted different intervals in the last digit | the summary rebuilds the interval from the raw values, not from the rounded ones |
 | 45 | The observation summary said "the gap to the reactive heuristic" -- the privileged rule -- when the gap is to the unprivileged one | the rule's name is a token, so the sentence cannot name the wrong rule |
 | 46 | The credit verdict described "a difference of any size up to 0.156 in either direction" for an interval of [-0.222, +0.090] | the verdict names the best case the interval allows and compares it with the gap |
-| 47 | The base table's caption said the controller was trained five times, and promised the rule rows a $\\pm$ the table does not print | the caption is read from the data |
+| 47 | The base table's caption said the controller was trained five times, and promised the rule rows a plus-minus sign the table does not print | the caption is read from the data |
 | 48 | The abstract claimed the audit recomputes "every quantitative claim about the model" | the claim is narrowed to what the audit actually checks |
 | 49 | The arms' sentence did not name the reference arm, so a reader could not tell what the intervals are intervals OF | the sentence names it |
 | 50 | The budget's exclusion was stated without its scope | the scope (the 8--25 episode range) is in the sentence, and the paper says that budgets beyond it are not addressed |
