@@ -79,7 +79,9 @@ def main():
         r"  legend cell align=left, legend columns=1]",
     ]
     if ref is not None:
-        lines.append(r"  \addplot[black, dashed, thick, forget plot]"
+        # the reference line KEEPS its legend entry; the training runs do
+        # not, so the legend lists the reference and then one line per run
+        lines.append(r"  \addplot[black, dashed, thick]"
                      r" coordinates {(1," + f"{ref:.3f}" + ") ("
                      + str(n_ep) + "," + f"{ref:.3f}" + ")};")
     for i, run in enumerate(runs):
