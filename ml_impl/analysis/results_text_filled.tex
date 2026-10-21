@@ -1,6 +1,6 @@
 %% CONTRIB
 
-    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, @@ABL_ID_CLAUSE@@, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses. And a broadcast summary of where the coverage deficit is was added a priori and measured to make no difference to the coverage at any resolution tested, while it does change what the policy does; it is reported rather than quietly dropped.
+    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are necessary, and each is established by a controlled comparison rather than asserted. In the component ablation, @@ABL_ID_CLAUSE@@, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses.  A broadcast summary of where the coverage deficit is was added a priori and measured to make no difference to the coverage at any resolution tested, while it does change what the policy does; it is reported rather than quietly dropped.
 
 %% MAIN
 
@@ -287,7 +287,7 @@ Every variant is trained on the same configuration with the same budget and
 from the same set of 3 training seeds, and differs from the
 full configuration in exactly one component, so a difference is
 attributable to that component.  The budget is the base comparison's
-(? episodes), and the full configuration of this table is
+( episodes), and the full configuration of this table is
 the first 3 of the base comparison's training runs --- the same
 policies, not a cheaper experiment --- so the two tables describe the same
 learner.  Because the variants share the training seeds, the
@@ -379,6 +379,6 @@ where the framework's value is most visible, because it shows
 which regime a controller is good in rather than in which regime it was
 tuned.  Counting the scenario variants in which the learned controller is
 ahead, behind or level with the stronger of the two rules gives
-2 ahead,
-30 behind and 2 level; the largest deficit is
-S3 (-0.586) and the largest surplus S9 (+0.057).  At the level of scenario means the learned controller is behind the stronger rule in every scenario, although it is ahead on 2 of the 34 variants, so the ordering is a property of the regime rather than of the method, and a reader told only that a learned controller loses to a rule has been told half of it.
+0 ahead,
+34 behind and 0 level; the largest deficit is
+S6 (-0.388) and the largest surplus  (+0.000).  At the level of scenario means the learned controller is behind the stronger rule in every scenario, although it is ahead on 0 of the 34 variants, so the ordering is a property of the regime rather than of the method, and a reader told only that a learned controller loses to a rule has been told half of it.

@@ -369,11 +369,11 @@ def build_tokens():
         # the verdict for the contribution bullet
         if base is not None and not resolvable:
             tok["MAP_VERDICT"] = (
-                "a broadcast summary of where the coverage deficit is was "
+                "A broadcast summary of where the coverage deficit is was "
                 "added a priori and measured to make no difference to the "
                 "coverage at any resolution tested, while it does change "
                 "what the policy does; it is reported rather than quietly "
-                "dropped")
+                "dropped.")
             tok["MAP_MODEL_SENTENCE"] = (
                 "the summary makes no measurable difference to the coverage "
                 "at any resolution tested, so the argument for adding it is "
@@ -381,9 +381,9 @@ def build_tokens():
                 "does change is the shape of the swarm's motion")
         else:
             tok["MAP_VERDICT"] = (
-                "a broadcast summary of where the coverage deficit is was "
+                "A broadcast summary of where the coverage deficit is was "
                 "added a priori and measured, and the measurement is "
-                "reported rather than the summary being quietly dropped")
+                "reported rather than the summary being quietly dropped.")
             tok["MAP_MODEL_SENTENCE"] = (
                 "the summary measurably changes the coverage, and the "
                 "measurement is reported in Section~\\ref{sec:results_obs}")
