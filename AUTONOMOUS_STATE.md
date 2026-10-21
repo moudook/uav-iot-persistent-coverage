@@ -387,41 +387,48 @@ python tests/run_tests.py           # 115 tests
 ```
 
 ## Machine notes
-- **The training device is pinned to the CPU** (see rule 0 of the
-  protocol) for reproducibility, not for speed: the simulator dominates the
-  step, so the GPU is within noise (11.1 against 11.2 ms/step).
-- Four concurrent CPU jobs of ~1.3 GB each fit in the 15.7 GB of RAM. FIVE
-  of them exhausted the paging file once, and the symptom was an
-  `OSError: [WinError 1455]` from importing torch -- which looks like a
-  code failure and is not one. Keep the count at four.
-- A background job writes its artefact on completion, and the ablation now
-  writes each ROW as it finishes, so an interrupted run is re-run rather
-  than lost; the ablation also RESUMES, reusing a row measured under the
-  same protocol.
-- **No sleep-based watchers.** The background jobs notify on completion;
-  a watcher that sleeps and then prints a log tail is a process that costs
+- **The training device is a protocol choice, pinned to the CPU**, and the
+  thread count is pinned to one. Reproducibility, not speed: the kernels
+  differ between the CPU and the GPU, and the order of the reductions
+  depends on the thread count, so a run is reproducible only on a fixed
+  (device, thread count) pair. `CUDA_VISIBLE_DEVICES` does NOT disable
+  CUDA on this setup -- it was tried and it changes nothing -- so the pin
+  is in the code (`UAV_DEVICE`, default CPU, plus
+  `torch.set_num_threads(1)`), and every artefact records its device.
+- **The host memory is the binding constraint, not the cores.** Four
+  experiment processes plus an interactive command exhausted the paging
+  file; the machine then thrashed for hours and the jobs died with their
+  work half done. The symptom is an `OSError: [WinError 1455]` from
+  importing torch, which looks like a code failure and is not one. The
+  queue now runs three stages at a time and waits for 2.6 GB of free
+  memory before starting one.
+- **Every long stage is resumable** and writes its artefact as it goes:
+  the component ablation, the energy arms, the credit arms and the map
+  sweep. A row is reused only if the budget, the seed count, the
+  evaluation-scene count AND the device match; a row from the first
+  re-measurement (which ran on the GPU, before the pin) is never reused.
+- `analysis/final_checks.py` compares the same configuration across the
+  tables -- the observation arm C, the credit arm A, the energy arm A and
+  the ablation's full configuration are one experiment -- and fails if they
+  disagree. That check is what caught the device problem.
+- **No sleep-based watchers.** The background jobs notify on completion; a
+  watcher that sleeps and then prints a log tail is a process that costs
   memory and tells us nothing the notification does not.
 - The user asked: **no new processes after a set of jobs finishes** --
   report and let them reboot.
 
-## RUNNING JOBS (21 Oct, 00:50)
-- `run_all.py --stage abl` -- the component ablation, 12 variants x 3 seeds
-  x 25 episodes. **THE CRITICAL PATH**: lands about 06:40.
-- `run_all.py --stage base` (re-run on the CPU) -- the base comparison, 5
-  seeds x 25 episodes. Lands about 02:15.
+## RUNNING JOBS (21 Oct, 06:05)
+- `run_all.py --stage abl` (the log is `abl_stage_cpu.log`) -- the component
+  ablation, 12 variants x 3 seeds x 25 episodes, re-measured on the CPU
+  because the first re-measurement ran on the GPU. **THE CRITICAL PATH**:
+  about 4.8 h, so ~11:00.
 - `analysis/ab_energy_management.py --episodes 25 --seeds 3` -- the four
-  energy arms. Lands about 01:25.
-- `analysis/ab_map_resolution.py --episodes 20 --seeds 3 --grids 0,4,8` --
-  the map sweep. Lands about 01:05.
-- A queue behind them: the scenario matrix, then the stress ablation.
-
-### TO DO WHEN A SLOT FREES
-- **Re-run the credit A/B at 25 episodes** (`analysis/ab_credit.py
-  --episodes 25 --seeds 3 --eval-seeds 5`). It was measured at 30 episodes,
-  so its arm A is not the same policy as the main table's controller; at
-  25 episodes it is, and the paper's claim that the two tables describe
-  the same policies becomes exactly true. The 30-episode measurement is
-  committed and is superseded by this one.
+  energy arms. ~08:30.
+- `analysis/ab_credit.py --episodes 25 --seeds 3` -- the credit A/B. ~07:30.
+- The queue behind them: the map sweep, the observation arms, the base
+  comparison.
+- The scenario matrix was measured on the GPU at 02:54 and **has to be
+  re-measured on the CPU** (2.4 h) for the same reason.
 
 ## Assembling the paper
 1. `python analysis/assemble_results.py` -- regenerates the tables, fills
