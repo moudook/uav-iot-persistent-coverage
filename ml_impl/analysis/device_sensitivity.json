@@ -21,24 +21,24 @@
       "config": "cpu1",
       "device": "cpu",
       "threads": 1,
-      "seconds": 93.7,
-      "ms_per_step": 23.42
+      "seconds": 77.9,
+      "ms_per_step": 19.46
     },
     {
       "config": "cpu2",
       "device": "cpu",
       "threads": 2,
-      "seconds": 90.5,
-      "ms_per_step": 22.63
+      "seconds": 78.4,
+      "ms_per_step": 19.61
     },
     {
       "config": "cuda1",
       "device": "cuda",
       "threads": 1,
-      "seconds": 117.9,
-      "ms_per_step": 29.48
+      "seconds": 98.5,
+      "ms_per_step": 24.63
     }
   ],
-  "gpu_over_cpu_time": 1.258,
+  "gpu_over_cpu_time": 1.264,
   "note": "the differences are small and they are not zero, which is why the device and the thread count are recorded with every artefact; the timing is the reason the protocol device is the CPU: the workload is bound by a sequential Python simulator, so the GPU is slower, not faster"
 }

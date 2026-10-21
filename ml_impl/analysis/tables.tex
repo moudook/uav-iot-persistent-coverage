@@ -1,12 +1,22 @@
 \begin{table}[t]
+% the shared table style: analysis/theme_tables.tex, the file the
+% report's preamble loads; see that file's header comment
+\ifdefined\tbltheme\else
+  \IfFileExists{ml_impl/analysis/theme_tables.tex}{\input{ml_impl/analysis/theme_tables.tex}}{%
+  \IfFileExists{theme_tables.tex}{\input{theme_tables.tex}}{%
+  \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
+\fi
+
 \caption{Base comparison on the corrected configuration.  The learned controller is trained 8 times and its row is the mean over those 8 runs, with the $\pm$ the seed-to-seed spread; the rule baselines are deterministic and carry no spread of their own.  ``Unexec.'' is the number of sampled actions that the safety filter or the joint projection did not execute, which is the size of the gap between the policy gradient and the trajectory.  The two learned baselines are implementations of the method families of Table~\ref{tab:comparison}, not reproductions of the cited papers.}
 \label{tab:results_main}
 \centering
 \scriptsize
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
-Model & CK & AG & SC & CovDef & Unexec. & Energy \\
+ & \tblGroup{4}{Task metrics} & Unexec. & Energy \\
+\cmidrule(lr){2-5}
+Model & CK & AG & SC & CovDef\textsuperscript{*} &  &  \\
 \midrule
 Fixed & 0.372 & 1.000 & 0.000 & 0.628 & 257.20 & 178097 \\
 Greedy & 0.786 & 0.964 & 0.066 & 0.214 & 5039.40 & 211199 \\
@@ -14,25 +24,36 @@ Reactive & 0.953 & 1.000 & 0.751 & 0.047 & 1525.60 & 183675 \\
 Reactive (local assignment) & 0.972 & 1.000 & 0.777 & 0.028 & 1620.80 & 185613 \\
 Independent DQN & 0.396\,$\pm$\,0.141 & 0.990 & 0.000 & 0.604 & -- & -- \\
 Masked PPO (local critic) & 0.632\,$\pm$\,0.034 & 0.991 & 0.004 & 0.368 & -- & -- \\
-\textbf{MAPPO (proposed)} & 0.662\,$\pm$\,0.055 & 0.984 & 0.010 & 0.338 & 0.20 & 209863 \\
+\tblHl \textbf{MAPPO (proposed)} & \textbf{0.662\,$\pm$\,0.055} & \textbf{0.984} & \textbf{0.010} & \textbf{0.338} & \textbf{0.20} & \textbf{209863} \\
 MAPPO (argmax) & 0.389\,$\pm$\,0.073 & 0.991 & 0.000 & 0.611 & 0.25 & 202984 \\
 \midrule
 Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 & -- & 0 \\
 \bottomrule
 \end{tabular}
+\tblNote{* CovDef is the time-averaged coverage deficit.}
 \end{table}
 
 \begin{table}[t]
+% the shared table style: analysis/theme_tables.tex, the file the
+% report's preamble loads; see that file's header comment
+\ifdefined\tbltheme\else
+  \IfFileExists{ml_impl/analysis/theme_tables.tex}{\input{ml_impl/analysis/theme_tables.tex}}{%
+  \IfFileExists{theme_tables.tex}{\input{theme_tables.tex}}{%
+  \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
+\fi
+
 \caption{Component ablation on the feasible base configuration.  Every variant is trained on the same configuration with the same budget and from the same training seeds, and differs from the full configuration in exactly one component.  The $\pm$ is the seed-to-seed spread of the training runs, and $\Delta$CK is the paired difference from the full configuration, measured on the same training runs.}
 \label{tab:results_abl}
 \centering
 \scriptsize
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
-Variant & CK & AG & SC & CovDef & Stranded & $\Delta$CK \\
+ & \tblGroup{4}{Task metrics} & Stranded & $\Delta$CK \\
+\cmidrule(lr){2-5}
+Variant & CK & AG & SC & CovDef &  &  \\
 \midrule
-\textbf{Full (proposed)} & 0.662\,$\pm$\,0.055 & 0.984 & 0.010 & 0.338 & 0.8 & +0.000 \\
+\tblHl \textbf{Full (proposed)} & \textbf{0.662\,$\pm$\,0.055} & \textbf{0.984} & \textbf{0.010} & \textbf{0.338} & \textbf{0.8} & \textbf{+0.000} \\
 no-criticality term & 0.662\,$\pm$\,0.057 & 0.985 & 0.018 & 0.338 & 0.7 & -0.000 \\
 no-degraded-service term & 0.661\,$\pm$\,0.046 & 0.977 & 0.009 & 0.339 & 0.8 & +0.001 \\
 no-energy-cost term & 0.663\,$\pm$\,0.050 & 0.976 & 0.010 & 0.337 & 0.8 & -0.001 \\
@@ -43,47 +64,65 @@ no-action mask & 0.660\,$\pm$\,0.046 & 0.983 & 0.005 & 0.340 & 0.5 & +0.002 \\
 no agent identity & 0.667\,$\pm$\,0.066 & 0.975 & 0.016 & 0.333 & 1.4 & -0.005 \\
 no coverage map & 0.661\,$\pm$\,0.051 & 0.978 & 0.013 & 0.339 & 1.1 & +0.002 \\
 no pad bearing & 0.649\,$\pm$\,0.048 & 0.982 & 0.009 & 0.351 & 1.1 & +0.013 \\
-\textbf{Vanilla MAPPO} & 0.627\,$\pm$\,0.043 & 0.986 & 0.001 & 0.373 & 0.8 & +0.036 \\
+Vanilla MAPPO & 0.627\,$\pm$\,0.043 & 0.986 & 0.001 & 0.373 & 0.8 & +0.036 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[t]
+% the shared table style: analysis/theme_tables.tex, the file the
+% report's preamble loads; see that file's header comment
+\ifdefined\tbltheme\else
+  \IfFileExists{ml_impl/analysis/theme_tables.tex}{\input{ml_impl/analysis/theme_tables.tex}}{%
+  \IfFileExists{theme_tables.tex}{\input{theme_tables.tex}}{%
+  \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
+\fi
+
 \caption{Component ablation on the S8 combined-stress scenario (a failure at step 500, one charging pad, $B=15$\,kJ, $R_{\mathrm{comm}}=30$\,m, $R_{\mathrm{cov}}=30$\,m).}
 \label{tab:results_ablstress}
 \centering
 \scriptsize
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
-Variant & CK & AG & SC & CovDef & Stranded & $\Delta$CK \\
+ & \tblGroup{4}{Task metrics} & Stranded & $\Delta$CK \\
+\cmidrule(lr){2-5}
+Variant & CK & AG & SC & CovDef &  &  \\
 \midrule
-\textbf{Full (proposed)} & 0.313\,$\pm$\,0.115 & 0.816 & 0.000 & 0.687 & 4.7 & +0.000 \\
-no-criticality term & 0.310\,$\pm$\,0.102 & 0.812 & 0.000 & 0.690 & 5.0 & +0.003 \\
-no-degraded-service term & 0.295\,$\pm$\,0.088 & 0.796 & 0.000 & 0.705 & 5.3 & +0.018 \\
-no-energy-cost term & 0.313\,$\pm$\,0.115 & 0.816 & 0.000 & 0.687 & 4.7 & +0.000 \\
-no-under-coverage term & 0.323\,$\pm$\,0.120 & 0.813 & 0.000 & 0.677 & 4.7 & -0.010 \\
-no-reserve UAV & 0.500\,$\pm$\,0.021 & 0.990 & 0.000 & 0.500 & 2.1 & -0.187 \\
-no-charging arbitration & 0.294\,$\pm$\,0.091 & 0.795 & 0.000 & 0.706 & 5.3 & +0.018 \\
-no-action mask & 0.280\,$\pm$\,0.086 & 0.841 & 0.000 & 0.720 & 5.1 & +0.032 \\
-no agent identity & 0.235\,$\pm$\,0.014 & 0.757 & 0.000 & 0.765 & 6.0 & +0.078 \\
-no coverage map & 0.268\,$\pm$\,0.039 & 0.785 & 0.000 & 0.732 & 5.5 & +0.045 \\
-no pad bearing & 0.242\,$\pm$\,0.016 & 0.757 & 0.000 & 0.758 & 6.2 & +0.070 \\
-\textbf{Vanilla MAPPO} & 0.506\,$\pm$\,0.019 & 1.000 & 0.000 & 0.494 & 2.1 & -0.193 \\
+\tblHl \textbf{Full (proposed)} & \textbf{0.303\,$\pm$\,0.098} & \textbf{0.808} & \textbf{0.000} & \textbf{0.697} & \textbf{5.0} & \textbf{+0.000} \\
+no-criticality term & 0.303\,$\pm$\,0.096 & 0.808 & 0.000 & 0.697 & 5.1 & -0.000 \\
+no-degraded-service term & 0.293\,$\pm$\,0.086 & 0.800 & 0.000 & 0.707 & 5.2 & +0.010 \\
+no-energy-cost term & 0.303\,$\pm$\,0.098 & 0.808 & 0.000 & 0.697 & 5.0 & +0.000 \\
+no-under-coverage term & 0.313\,$\pm$\,0.109 & 0.806 & 0.000 & 0.687 & 5.0 & -0.010 \\
+no-reserve UAV & 0.493\,$\pm$\,0.020 & 0.981 & 0.000 & 0.507 & 2.1 & -0.190 \\
+no-charging arbitration & 0.297\,$\pm$\,0.092 & 0.800 & 0.000 & 0.703 & 5.2 & +0.006 \\
+no-action mask & 0.253\,$\pm$\,0.063 & 0.829 & 0.000 & 0.747 & 5.5 & +0.050 \\
+no agent identity & 0.299\,$\pm$\,0.081 & 0.803 & 0.000 & 0.701 & 5.0 & +0.004 \\
+no coverage map & 0.319\,$\pm$\,0.112 & 0.821 & 0.000 & 0.681 & 4.8 & -0.016 \\
+no pad bearing & 0.295\,$\pm$\,0.085 & 0.803 & 0.000 & 0.705 & 5.2 & +0.007 \\
+Vanilla MAPPO & 0.484\,$\pm$\,0.034 & 0.996 & 0.000 & 0.516 & 2.0 & -0.181 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[t]
+% the shared table style: analysis/theme_tables.tex, the file the
+% report's preamble loads; see that file's header comment
+\ifdefined\tbltheme\else
+  \IfFileExists{ml_impl/analysis/theme_tables.tex}{\input{ml_impl/analysis/theme_tables.tex}}{%
+  \IfFileExists{theme_tables.tex}{\input{theme_tables.tex}}{%
+  \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
+\fi
+
 \caption{Scenario matrix.  Each row is the mean over the variants of that scenario; \emph{M} is the proposed controller, \emph{R} the reactive heuristic and \emph{RL} the same rule without its global access to the coverage state, which is the stronger of the two rules on the base configuration.}
 \label{tab:results_scen}
 \centering
 \scriptsize
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{@{}llcccccc@{}}
 \toprule
-& & \multicolumn{3}{c}{CK} & \multicolumn{3}{c}{SC} \\
-\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+ &  & \tblGroup{3}{CK} & \tblGroup{3}{SC} \\
+\cmidrule(lr){3-5} \cmidrule(lr){6-8}
 ID & Variable & M & R & RL & M & R & RL \\
 \midrule
 S1 & sensor density & 0.648 & 0.892 & 0.965 & 0.011 & 0.263 & 0.727 \\
@@ -93,70 +132,116 @@ S4 & charging pads S & 0.707 & 0.887 & 0.932 & 0.054 & 0.333 & 0.466 \\
 S5 & $R_{\mathrm{comm}}$ & 0.718 & 0.892 & 0.888 & 0.015 & 0.478 & 0.723 \\
 S6 & $R_{\mathrm{cov}}$ & 0.706 & 0.792 & 0.891 & 0.118 & 0.483 & 0.460 \\
 S7 & failure time & 0.713 & 0.905 & 0.988 & 0.022 & 0.481 & 0.962 \\
-S8 & combined stress & 0.565 & 0.499 & 0.667 & 0.000 & 0.000 & 0.189 \\
+\tblHl \textbf{S8} & \textbf{combined stress} & \textbf{0.565} & \textbf{0.499} & \textbf{0.667} & \textbf{0.000} & \textbf{0.000} & \textbf{0.189} \\
 S9 & initial deployment & 0.730 & 0.906 & 0.994 & 0.027 & 0.491 & 0.980 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[t]
+% the shared table style: analysis/theme_tables.tex, the file the
+% report's preamble loads; see that file's header comment
+\ifdefined\tbltheme\else
+  \IfFileExists{ml_impl/analysis/theme_tables.tex}{\input{ml_impl/analysis/theme_tables.tex}}{%
+  \IfFileExists{theme_tables.tex}{\input{theme_tables.tex}}{%
+  \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
+\fi
+
 \caption{What the local observation must contain.  ``Distinct'' is the number of distinct actions the deterministic (argmax) policy selects across the eight UAVs, and ``Spread'' is the mean distance of a UAV from the swarm centroid.}
 \label{tab:results_obs}
 \centering
 \scriptsize
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
-Observation & CK & AG & SC & Distinct & Spread (m) \\
+ & \tblGroup{3}{Task metrics} & Distinct & Spread (m) \\
+\cmidrule(lr){2-4}
+Observation & CK & AG & SC &  &  \\
 \midrule
 A local only & 0.639\,$\pm$\,0.064 & 0.981 & 0.011 & 1.76 / 8 & 10.7 \\
 B + identity & 0.654\,$\pm$\,0.109 & 0.982 & 0.015 & 2.19 / 8 & 10.0 \\
-C + identity + map & 0.662\,$\pm$\,0.055 & 0.984 & 0.010 & 1.83 / 8 & 10.8 \\
+\tblHl \textbf{C + identity + map} & \textbf{0.662\,$\pm$\,0.055} & \textbf{0.984} & \textbf{0.010} & \textbf{1.83 / 8} & \textbf{10.8} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[t]
+% the shared table style: analysis/theme_tables.tex, the file the
+% report's preamble loads; see that file's header comment
+\ifdefined\tbltheme\else
+  \IfFileExists{ml_impl/analysis/theme_tables.tex}{\input{ml_impl/analysis/theme_tables.tex}}{%
+  \IfFileExists{theme_tables.tex}{\input{theme_tables.tex}}{%
+  \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
+\fi
+
 \caption{The energy-management diagnosis.  ``Stranded'' is the mean number of UAVs that run out of energy away from a pad per episode, and ``Returns'' the mean number of return-to-charge transitions.}
 \label{tab:results_energy}
 \centering
 \scriptsize
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
-Variant & CK & AG & SC & Stranded & Returns \\
+ & \tblGroup{3}{Task metrics} & Stranded & Returns \\
+\cmidrule(lr){2-4}
+Variant & CK & AG & SC &  &  \\
 \midrule
 A & 0.662 & 0.984 & 0.010 & 0.9 & 623.7 \\
-B & 0.685 & 1.000 & 0.016 & 0.0 & 0.0 \\
+\tblHl \textbf{B} & \textbf{0.685} & \textbf{1.000} & \textbf{0.016} & \textbf{0.0} & \textbf{0.0} \\
 C & 0.662 & 0.969 & 0.016 & 0.7 & 632.5 \\
 D & 0.584 & 0.967 & 0.005 & 6.3 & 139.7 \\
 \bottomrule
 \end{tabular}
+\tblNote{* A: the proposed configuration; B: + a pack that cannot run out; C: without the threshold term; D: with the previous energy rule.}
 \end{table}
 
 \begin{table}[t]
+% the shared table style: analysis/theme_tables.tex, the file the
+% report's preamble loads; see that file's header comment
+\ifdefined\tbltheme\else
+  \IfFileExists{ml_impl/analysis/theme_tables.tex}{\input{ml_impl/analysis/theme_tables.tex}}{%
+  \IfFileExists{theme_tables.tex}{\input{theme_tables.tex}}{%
+  \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
+\fi
+
 \caption{The resolution of the broadcast coverage-map summary.  A finer summary does not help: the swarm's spread contracts, because the policy follows the deficit instead of dividing the work.}
 \label{tab:results_mapres}
 \centering
 \scriptsize
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 Grid & CK & AG & SC & Spread (m) \\
 \midrule
 $G=0$ & 0.640 & 0.983 & 0.008 & 9.0 \\
+$G=4$ & 0.643 & 0.981 & 0.004 & 10.6 \\
+$G=8$ & 0.651 & 0.986 & 0.009 & 10.3 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[t]
-\caption{The cheapest test of the credit-assignment hypothesis.  The two arms differ in the learner that produces the advantage: a parameter-shared actor with a centralised critic, or a per-agent actor with a per-agent local critic.  A per-agent \\emph{baseline} changes the variance of the advantage, not its signal, which remains the shared team reward.}
+% the shared table style: analysis/theme_tables.tex, the file the
+% report's preamble loads; see that file's header comment
+\ifdefined\tbltheme\else
+  \IfFileExists{ml_impl/analysis/theme_tables.tex}{\input{ml_impl/analysis/theme_tables.tex}}{%
+  \IfFileExists{theme_tables.tex}{\input{theme_tables.tex}}{%
+  \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
+\fi
+
+\caption{The cheapest test of the credit-assignment hypothesis.  The two arms differ in the learner that produces the advantage: a parameter-shared actor with a centralised critic, or a per-agent actor with a per-agent local critic.  A per-agent \emph{baseline} changes the variance of the advantage, not its signal, which remains the shared team reward.}
 \label{tab:results_credit}
 \centering
 \scriptsize
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
-Learner & CK & AG & SC & CovIntegral & Energy (J) \\
+ & \tblGroup{4}{Task metrics} & Energy (J) \\
+\cmidrule(lr){2-5}
+Learner & CK & AG & SC & CovIntegral &  \\
 \midrule
-A & 0.662\,$\pm$\,0.055 & 0.984 & 0.010 & 0.338 & -- \\
+\tblHl \textbf{A} & \textbf{0.662\,$\pm$\,0.055} & \textbf{0.984} & \textbf{0.010} & \textbf{0.338} & \textbf{--} \\
 B & 0.641\,$\pm$\,0.060 & 0.971 & 0.013 & 0.359 & -- \\
 \bottomrule
 \end{tabular}
+\tblNote{* Energy is not recorded in this artefact.}
 \end{table}

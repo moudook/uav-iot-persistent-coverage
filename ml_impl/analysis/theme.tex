@@ -1,0 +1,185 @@
+% =====================================================================
+%  theme.tex --- the one visual language of the project
+%
+%  The palette, the axis, the legend strip, the interval bar, the
+%  hatched bar, the reference band, the panel label and the table rules.
+%  Every figure in the paper and every figure and table in the report
+%  reads from this file, so a colour or a line weight is changed in ONE
+%  place.
+%
+%  It needs only xcolor, tikz and pgfplots, which the paper and the
+%  report both already load, and it loads the TikZ `patterns' library
+%  itself, so no preamble line is strictly required.  The recommended
+%  line for the paper's preamble (after \pgfplotsset{compat=1.18}) is
+%
+%      \input{ml_impl/analysis/theme.tex}
+%
+%  The generated figure fragments bootstrap the same file if the
+%  preamble has not, so a paper that has not been edited still compiles.
+% =====================================================================
+
+% the marker that says the theme is loaded: the fragments test it, so
+% the file is never read twice (a second \pgfplotsset would be harmless,
+% a second \newcommand would not)
+\def\uavtheme{2026-10-21}
+
+% the diagonal hatch of the primary bar
+\usetikzlibrary{patterns}
+
+
+% ---------------------------------------------------------------------
+% 1. the palette
+%    uavblue is the project's primary; uavref is the reference grey the
+%    primary is always read against; uavink is every piece of type; the
+%    rest are the accents the paper's own preamble already defines.
+% ---------------------------------------------------------------------
+\providecolor{uavblue}{RGB}{37,99,235}
+\providecolor{uavcyan}{RGB}{8,145,178}
+\providecolor{uavgreen}{RGB}{22,163,74}
+\providecolor{uavorange}{RGB}{234,88,12}
+\providecolor{uavred}{RGB}{220,38,38}
+\providecolor{uavpurple}{RGB}{124,58,237}
+
+\providecolor{uavink}{RGB}{30,41,59}        % type and rules
+\providecolor{uavmuted}{RGB}{100,116,139}   % secondary type
+\providecolor{uavgrid}{RGB}{214,219,227}    % gridlines, legend frame
+\providecolor{uavref}{RGB}{179,179,179}     % the reference series
+\providecolor{uavband}{RGB}{233,236,241}    % a reference region
+\providecolor{uavzebra}{RGB}{247,248,251}   % a shaded table row
+\providecolor{uavlight}{RGB}{241,245,249}   % a table head
+\providecolor{uavwhite}{RGB}{255,255,255}
+
+
+% ---------------------------------------------------------------------
+% 2. the axis
+%    one spine on the left and one at the bottom, no frame, light dashed
+%    gridlines, small dark tick labels and a bold axis label.
+% ---------------------------------------------------------------------
+\pgfplotsset{
+  uavaxis/.style={
+      % width/height are the PLOT AREA, so the picture width is a linear
+      % function of the axis width and the fit to the column is exact
+      scale only axis,
+      axis x line=bottom,
+      axis y line=left,
+      axis line style={uavink, line width=0.6pt},
+      tick style={uavink, line width=0.6pt},
+      major tick length=2.2pt,
+      tick align=outside,
+      tick label style={font=\scriptsize, text=uavink, inner sep=1.6pt},
+      label style={font=\small\bfseries, text=uavink},
+      grid style={uavgrid, dashed, line width=0.5pt},
+      legend cell align=left,
+      clip=false,
+  },
+  % the boxed legend strip that runs across the top of a figure
+  uavlegend/.style={
+      legend style={
+          draw=uavgrid,
+          fill=uavwhite,
+          line width=0.5pt,
+          rounded corners=1pt,
+          font=\scriptsize,
+          text=uavink,
+          inner xsep=4pt,
+          inner ysep=3pt,
+          nodes={inner sep=1.5pt, text=uavink},
+          cells={anchor=west},
+          column sep=5pt,
+          row sep=1pt,
+          at={(0.5,1.045)},
+          anchor=south,
+          /tikz/every even column/.append style={column sep=7pt},
+      },
+      legend image post style={xscale=0.85},
+  },
+  % a light grey band: a reference region of the x axis
+  uavband/.style={
+      draw=none,
+      fill=uavband,
+      forget plot,
+  },
+  % a level line: the reference value the figure is read against
+  uavlevel/.style={
+      draw=uavink,
+      line width=0.9pt,
+  },
+  % the interval bar of a forest plot: thick, round caps, no end marks,
+  % a filled marker on the point estimate.  The direction keys cannot be
+  % written with "error bars/.cd" inside a style (the path would be
+  % changed for every later key of the plot), so they take the full path.
+  uavinterval/.style={
+      only marks,
+      mark=*,
+      mark size=2.4pt,
+      mark options={line width=0.5pt},
+      error bars/error bar style={line width=2.6pt, line cap=round},
+      error bars/error mark=none,
+  },
+  uavintervalx/.style={
+      uavinterval,
+      error bars/x dir=both,
+      error bars/x explicit,
+  },
+  uavintervaly/.style={
+      uavinterval,
+      error bars/y dir=both,
+      error bars/y explicit,
+  },
+  % the primary series as a bar: filled, hatched in white, blue edge
+  uavhatchbar/.style={
+      ybar,
+      bar width=0.62,
+      fill=uavblue,
+      draw=uavblue,
+      line width=0.5pt,
+      pattern=north east lines,
+      pattern color=uavwhite,
+  },
+  % the reference series as a bar: solid grey, no hatch
+  uavrefbar/.style={
+      ybar,
+      bar width=0.62,
+      fill=uavref,
+      draw=uavref!70!black,
+      line width=0.5pt,
+  },
+}
+
+\tikzset{
+  % the separator between two groups of a categorical axis.  It is used
+  % on \draw, which reads keys from the /tikz path, so it is registered
+  % with \tikzset rather than in the pgfplots-only namespace above;
+  % otherwise pgfkeys reports "/tikz/uavsep unknown" and the paper's
+  % gate fails.
+  uavsep/.style={
+      draw=uavgrid,
+      line width=0.5pt,
+      dash pattern=on 2pt off 2pt,
+  },
+}
+
+
+% ---------------------------------------------------------------------
+% 3. the panel label: "(a) By skill", bold, above its panel
+% ---------------------------------------------------------------------
+\newcommand{\uavpanel}[2]{{\normalfont\bfseries\small (#1)~#2}}
+
+
+% ---------------------------------------------------------------------
+% 4. the table
+%    booktabs rules in the theme's colours, and a tinted head row.
+%    The colouring is skipped when colortbl is not loaded, so the same
+%    macros are safe in a document that only loads plain xcolor.
+% ---------------------------------------------------------------------
+\newcommand{\uavtoprule}{%
+    \ifdefined\arrayrulecolor\arrayrulecolor{uavink}\fi
+    \specialrule{1pt}{0pt}{3pt}}
+\newcommand{\uavmidrule}{%
+    \ifdefined\arrayrulecolor\arrayrulecolor{uavgrid}\fi
+    \specialrule{0.8pt}{2pt}{3pt}}
+\newcommand{\uavbottomrule}{%
+    \ifdefined\arrayrulecolor\arrayrulecolor{uavink}\fi
+    \specialrule{1pt}{4pt}{0pt}}
+\newcommand{\uavheadrow}{\ifdefined\rowcolor\rowcolor{uavlight}\fi}
+\newcommand{\uavzebrarow}{\ifdefined\rowcolor\rowcolor{uavzebra}\fi}

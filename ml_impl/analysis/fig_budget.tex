@@ -1,20 +1,23 @@
+% the shared theme: the paper may also \input it in its preamble
+\ifdefined\uavtheme\else
+  \IfFileExists{ml_impl/analysis/theme.tex}{\input{ml_impl/analysis/theme.tex}}{%
+  \IfFileExists{theme.tex}{\input{theme.tex}}{%
+  \errmessage{the figures need ml_impl/analysis/theme.tex}}}
+\fi
 \begin{tikzpicture}
-\begin{axis}[  width=\columnwidth,height=5.6cm,
-  xmin=5.00, xmax=29.50, ymin=0.442, ymax=1.072,
-  xtick={8,16,25},
-  ytick={0.5,0.6,0.7,0.8,0.9,1},
+\begin{axis}[  width=0.85\columnwidth,height=4.9cm,
+  xmin=5.00, xmax=29.50, ymin=0.442, ymax=1.034,
+  xtick={8,16,25}, ymajorgrids,
+  ytick={0.5,0.6,0.7,0.8,0.9},
   xlabel={training episodes}, ylabel={persistent coverage},
-  grid=both, grid style={gray!20}, tick label style={font=\tiny},
-  label style={font=\small},
-  legend cell align=left, clip=false,
-  legend style={font=\tiny, at={(0.5,-0.30)}, anchor=north},
-  legend columns=1,]
-  \addplot[black, dashed, line width=1.0pt] coordinates {(5.00,0.972) (29.50,0.972)};
-  \addplot[color=uavblue, thick, mark=*, mark size=1.9pt, mark options={fill=uavblue}, error bars/.cd, y dir=both, y explicit, error bar style={line width=0.8pt, color=uavblue}, error mark options={rotate=90, mark size=3pt, line width=0.8pt, color=uavblue}] coordinates {(8,0.595) +- (0,0.0830) (16,0.621) +- (0,0.0673) (25,0.662) +- (0,0.0584)};
+  uavaxis,
+  uavlegend, legend columns=2,]
+  \addplot[draw=uavref, line width=1.3pt] coordinates {(5.00,0.972) (29.50,0.972)};
+  \addplot[color=uavblue, line width=1.1pt, mark=*, mark size=2.3pt, mark options={fill=uavblue, draw=white, line width=0.5pt}, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.8pt, color=uavblue}, error bars/error mark=|, error bars/error mark options={rotate=90, mark size=2.4pt, line width=0.8pt, color=uavblue}] coordinates {(8,0.595) +- (0,0.0830) (16,0.621) +- (0,0.0673) (25,0.662) +- (0,0.0584)};
   \legend{{the strongest rule},{the learned controller}}
-  \draw[uavred, line width=0.9pt, <->] (axis cs:26.40,0.662) -- (axis cs:26.40,0.972);
-  \node[rotate=90, anchor=south, font=\tiny, text=uavred] at (axis cs:28.10,0.662) {gap 0.309};
-  \node[anchor=south west, font=\tiny] at (axis cs:5.40,0.977) {the unprivileged reactive rule (0.972)};
-  \node[anchor=north west, font=\tiny, align=left] at (axis cs:5.40,0.927) {training over 8--25 episodes: $\Delta=+0.067$\\95\% CI [+0.017, +0.118] --- 22\% of the gap\\bars: $\pm 1$ s.d. over the 8 training seeds};
+  \draw[uavink, line width=0.8pt, <->] (axis cs:26.40,0.662) -- (axis cs:26.40,0.972);
+  \node[rotate=90, anchor=south, font=\scriptsize\bfseries, text=uavink] at (axis cs:28.10,0.662) {gap 0.309};
+  \node[anchor=south west, font=\scriptsize, text=uavmuted] at (axis cs:5.40,0.984) {the unprivileged reactive rule (0.972)};
+  \node[anchor=north west, font=\scriptsize, align=left, text=uavink, fill=uavwhite, inner sep=2pt, draw=none] at (axis cs:5.40,0.942) {training over 8--25 episodes: $\Delta=+0.067$\\95\% CI [+0.017, +0.118] --- 22\% of the gap\\bars: $\pm 1$ s.d. over the 8 training seeds};
 \end{axis}
 \end{tikzpicture}

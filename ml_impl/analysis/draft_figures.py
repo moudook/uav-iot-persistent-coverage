@@ -40,17 +40,34 @@ from fill_tokens import build_tokens, sample_std      # noqa: E402
 # the one-column width of the paper (IEEEtran conference), in TeX points
 COL_PT = 3.5 * 72.27
 
-# the house style: the pgfplots options the existing learning-curve figure
-# uses, with the paper's own colour names
-STYLE = (
-    r"  grid=both, grid style={gray!20}, tick label style={font=\tiny},"
-    "\n"
-    r"  label style={font=\small},"
-    "\n"
-    r"  legend cell align=left, clip=false,"
+# THE VISUAL LANGUAGE lives in analysis/theme.tex: the palette, the axis
+# (one spine left and bottom, dashed light gridlines, small dark tick
+# labels, a bold axis label), the boxed legend strip across the top, the
+# round-capped interval bar, the hatched primary bar, the reference band
+# and the panel label.  A figure names a style; it never names a colour or
+# a line weight of its own, so the four figures in the paper and the two in
+# the report cannot drift apart.
+#
+# theme.tex is \input by the paper's preamble when the author has added
+# the line, and it is bootstrapped by the fragment itself when they have
+# not, so the paper compiles either way.
+THEME_BOOTSTRAP = (
+    "% the shared theme: the paper may also \\input it in its preamble\n"
+    "\\ifdefined\\uavtheme\\else\n"
+    "  \\IfFileExists{ml_impl/analysis/theme.tex}"
+    "{\\input{ml_impl/analysis/theme.tex}}{%\n"
+    "  \\IfFileExists{theme.tex}{\\input{theme.tex}}{%\n"
+    "  \\errmessage{the figures need ml_impl/analysis/theme.tex}}}\n"
+    "\\fi"
 )
 UAVBLUE, UAVCYAN, UAVGREEN = "uavblue", "uavcyan", "uavgreen"
 UAVORANGE, UAVRED, UAVPURPLE = "uavorange", "uavred", "uavpurple"
+UAVREF, UAVINK, UAVMUTED = "uavref", "uavink", "uavmuted"
+UAVWHITE = "uavwhite"
+
+# the verdict of an arm, as a colour: the primary blue when the interval
+# stays below the gap, the accent orange when it does not
+BELOW_COLOUR, PAST_COLOUR = UAVBLUE, UAVORANGE
 
 
 # ----------------------------------------------------------------------
@@ -101,6 +118,12 @@ def axis(opts, body):
             + "\\end{axis}")
 
 
+def fragment(opts, body):
+    """A self-contained themed fragment: the theme, then the picture."""
+    return (THEME_BOOTSTRAP + "\n\\begin{tikzpicture}\n"
+            + axis(opts, "\n".join(body) + "\n") + "\n\\end{tikzpicture}")
+
+
 # ----------------------------------------------------------------------
 # FIGURE 1: the arms' intervals against the gap
 # ----------------------------------------------------------------------
@@ -148,88 +171,87 @@ def figure_arms(tok, wfrac=1.0):
 
     opts = [
         (r"  width=\columnwidth" if wfrac >= 0.999
-         else f"  width={wfrac:.2f}\\columnwidth") + ",height=5.7cm,",
+         else f"  width={wfrac:.2f}\\columnwidth") + ",height=4.9cm,",
         f"  xmin={xmin:.3f}, xmax={xmax:.3f}, ymin={ymin:.2f}, "
         f"ymax={ymax:.2f},",
-        "  xtick={" + ",".join(f"{t:g}" for t in nice_ticks(xmin, xmax)) + "},",
+        "  xtick={" + ",".join(f"{t:g}" for t in nice_ticks(xmin, xmax, 0.2))
+        + "}, xmajorgrids,",
         "  ytick={" + ",".join(str(n - i) for i in range(n)) + "},",
         "  yticklabels={"
         + ",".join("{" + a["short"] + "}" for a in arms) + "},",
         r"  xlabel={difference in persistent coverage},",
-        STYLE,
-        r"  legend style={font=\tiny, at={(0.5,-0.30)}, anchor=north},"
-        "\n"
-        r"  legend columns=2,",
+        r"  uavaxis,",
+        # the strip is dense (five entries): at the theme's \scriptsize it
+        # would be wider than the column, so this figure drops it to \tiny,
+        # as the paper's own figures did before
+        r"  uavlegend, legend columns=3, legend style={font=\tiny},",
     ]
     body = []
     # the gap's own 95% interval, as a band: every arm's upper limit lies
     # below the band as well as below the point estimate
     half = num(tok, "GAP_HALF")
     if half is not None:
-        body.append(f"  \\addplot[draw=none, fill=gray!20, forget plot] "
-                    f"coordinates "
+        body.append(f"  \\addplot[uavband] coordinates "
                     f"{{({gap - half:.3f},{ymin:.2f}) ({gap + half:.3f},{ymin:.2f})"
                     f" ({gap + half:.3f},{ymax:.2f}) ({gap - half:.3f},{ymax:.2f})"
                     f"}} \\closedcycle;")
-    # the gap: the quantity every arm would have to account for.  It is
-    # kept out of the legend's image list, because the legend draws its
-    # own image for it.
-    body.append(f"  \\addplot[black, dashed, line width=1.1pt, forget plot] "
-                f"coordinates "
+    # the gap: the quantity every arm would have to account for, drawn as
+    # the level line of the figure.  It is kept out of the legend's image
+    # list, because the legend draws its own image for it.
+    body.append(f"  \\addplot[uavlevel, forget plot] coordinates "
                 f"{{({gap:.3f},{ymin:.2f}) ({gap:.3f},{ymax:.2f})}};")
     for i, a in enumerate(arms):
         y = n - i
-        col = UAVGREEN if a["excluded"] else UAVRED
+        col = BELOW_COLOUR if a["excluded"] else PAST_COLOUR
         # the horizontal interval, in the pgfplots idiom for an interval
         # plot: the point is the paired mean and the error value is the
-        # half-width of the 95% interval, so the bar, its end caps and
-        # the marker all come from ONE plot command.  The error mark
-        # options override the default rotate=90, which would put the
-        # caps of a horizontal interval across the bar.
-        body.append(f"  \\addplot[color={col}, mark=*, mark size=1.7pt, "
-                    f"mark options={{fill=white,draw=black,line width=0.5pt}},"
-                    f" forget plot,"
-                    f" error bars/.cd, x dir=both, x explicit,"
-                    f" error bar style={{line width=2.4pt, color={col}}},"
-                    f" error mark=|,"
-                    f" error mark options={{mark size=3.2pt, "
-                    f"line width=0.8pt, color={col}}}] coordinates "
+        # half-width of the 95% interval, so the bar, its round caps and
+        # the marker all come from ONE plot command.  The bar style is the
+        # theme's (thick, round caps, no end marks, a filled marker).
+        # `forget plot' keeps these out of the legend, which is drawn from
+        # the \addlegendimage list below: an unlabelled plot would take the
+        # first legend entry and shift every label by one.
+        body.append(f"  \\addplot[uavintervalx, color={col}, forget plot, "
+                    f"mark options={{fill={col},draw=white,line width=0.5pt}}]"
+                    f" coordinates "
                     f"{{({a['mean']:.3f},{y}) +- ({a['half']:.3f},0)}};")
     # the separators between the groups of arms
     for boundary, after in ((OBS_COUNT, "the observation arms"),
                             (OBS_COUNT + ENERGY_COUNT, "the energy arms")):
         if boundary < n:
             ysep = n - boundary + 0.5
-            body.append(f"  \\draw[gray!50, line width=0.4pt, "
-                        f"dash pattern=on 2pt off 2pt] "
+            body.append(f"  \\draw[uavsep] "
                         f"(axis cs:{xmin:.3f},{ysep:.2f}) -- "
                         f"(axis cs:{xmax:.3f},{ysep:.2f});")
-    # the legend: the three things the picture draws
-    body.append(r"  \addlegendimage{color=" + UAVGREEN + r", line width=2.4pt}")
-    body.append(r"  \addlegendimage{color=" + UAVRED + r", line width=2.4pt}")
-    body.append(r"  \addlegendimage{only marks, mark=*, mark size=1.7pt, "
-                r"color=black, mark options={fill=white,draw=black,"
-                r"line width=0.5pt}}")
-    body.append(r"  \addlegendimage{black, dashed, line width=1.1pt}")
+    # the legend: the things the picture draws, as a strip across the top
+    body.append(r"  \addlegendimage{color=" + BELOW_COLOUR
+                + r", line width=2.6pt, line cap=round}")
+    body.append(r"  \addlegendimage{color=" + PAST_COLOUR
+                + r", line width=2.6pt, line cap=round}")
+    body.append(r"  \addlegendimage{only marks, mark=*, mark size=2.4pt, "
+                r"color=" + UAVBLUE + r", mark options={fill=" + UAVBLUE
+                + r",draw=white,line width=0.5pt}}")
+    body.append(r"  \addlegendimage{draw=" + UAVINK
+                + r", line width=0.9pt}")
     if half is not None:
-        body.append(r"  \addlegendimage{area legend, fill=gray!20, "
-                    r"draw=gray!50}")
-    body.append(r"  \legend{{95\% CI below the gap},{95\% CI past the gap},"
-                r"{paired mean},{the gap}"
-                + (r",{the gap's 95\% CI}" if half is not None else "") + "}")
+        body.append(r"  \addlegendimage{area legend, fill=uavband, "
+                    r"draw=uavband}")
+    body.append(r"  \legend{{below the gap},{past the gap},"
+                r"{paired mean},"
+                + (r"{the gap " + f"{gap:.3f}" + r"},{gap 95\% CI}"
+                   if half is not None else r"{the gap " + f"{gap:.3f}" + r"}")
+                + "}")
     # the point estimate of each arm, above its bar
     for i, a in enumerate(arms):
         y = n - i
-        body.append(f"  \\node[anchor=south, font=\\tiny] at "
-                    f"(axis cs:{a['mean']:.3f},{y + 0.17:.2f}) "
+        body.append(f"  \\node[anchor=south, font=\\scriptsize, "
+                    f"text={UAVINK}] at "
+                    f"(axis cs:{a['mean']:.3f},{y + 0.19:.2f}) "
                     f"{{${sgn(a['mean'])}$}};")
-    # the label of the gap line, above the plot
-    body.append(f"  \\node[anchor=south, font=\\tiny] at "
-                f"(axis cs:{gap:.3f},{ymax:.2f}) "
-                f"{{the gap {gap:.3f}}};")
-    frag = ("\\begin{tikzpicture}\n"
-            + axis(opts, "\n".join(body) + "\n")
-            + "\n\\end{tikzpicture}")
+    # the value of the gap is carried by the legend strip, not by a label
+    # inside the plot: the band is too narrow for type that could be read,
+    # and a label at the top of the band would sit on the first row
+    frag = fragment(opts, body)
     for a in arms:
         a["verdict"] = "excluded" if a["excluded"] else "not excluded"
         a["margin"] = gap - a["hi"]
@@ -283,48 +305,56 @@ def figure_budget(tok, wfrac=1.0):
 
     xmin, xmax = min(eps) - 3.0, max(eps) + 4.5
     ymin = min(c - s for c, s in zip(cks, sds)) - 0.07
-    ymax = rule + 0.10
+    # the top of the axis is the band the rule's name is written in, so
+    # that the label never sits on the 1.0 gridline
+    ymax = rule + 0.062
     arrow_x = max(eps) + 1.4
     lab_x = arrow_x + 1.7
+    yticks = [y for y in nice_ticks(ymin, ymax) if y <= rule - 0.025]
 
     opts = [
         (r"  width=\columnwidth" if wfrac >= 0.999
-         else f"  width={wfrac:.2f}\\columnwidth") + ",height=5.6cm,",
+         else f"  width={wfrac:.2f}\\columnwidth") + ",height=4.9cm,",
         f"  xmin={xmin:.2f}, xmax={xmax:.2f}, ymin={ymin:.3f}, "
         f"ymax={ymax:.3f},",
-        "  xtick={" + ",".join(str(e) for e in eps) + "},",
-        "  ytick={" + ",".join(f"{y:g}" for y in nice_ticks(ymin, ymax))
+        "  xtick={" + ",".join(str(e) for e in eps) + "}, ymajorgrids,",
+        "  ytick={" + ",".join(f"{y:g}" for y in yticks)
          + "},",
         r"  xlabel={training episodes}, ylabel={persistent coverage},",
-        STYLE,
-        r"  legend style={font=\tiny, at={(0.5,-0.30)}, anchor=north},"
-        "\n"
-        r"  legend columns=1,",
+        r"  uavaxis,",
+        r"  uavlegend, legend columns=2,",
     ]
     body = []
-    # the rule the gap is measured against
-    body.append(f"  \\addplot[black, dashed, line width=1.0pt] coordinates "
+    # the rule the gap is measured against: the reference level, in the
+    # reference grey, so the one series the figure is about stays blue
+    body.append(f"  \\addplot[draw={UAVREF}, line width=1.3pt] coordinates "
                 f"{{({xmin:.2f},{rule:.3f}) ({xmax:.2f},{rule:.3f})}};")
     # the sweep, with the seed-to-seed spread
     coords = " ".join(
         f"({e},{c:.3f}) +- (0,{s:.4f})" for e, c, s in zip(eps, cks, sds))
-    body.append(r"  \addplot[color=" + UAVBLUE + r", thick, mark=*, "
-                r"mark size=1.9pt, mark options={fill=" + UAVBLUE + r"},"
-                r" error bars/.cd, y dir=both, y explicit,"
-                r" error bar style={line width=0.8pt, color=" + UAVBLUE + r"},"
-                r" error mark options={rotate=90, mark size=3pt, line width=0.8pt,"
-                r" color=" + UAVBLUE + r"}] coordinates {" + coords + "};")
+    body.append(r"  \addplot[color=" + UAVBLUE + r", line width=1.1pt, mark=*,"
+                r" mark size=2.3pt, mark options={fill=" + UAVBLUE
+                + r", draw=white, line width=0.5pt},"
+                r" error bars/y dir=both, error bars/y explicit,"
+                r" error bars/error bar style={line width=0.8pt, color="
+                + UAVBLUE + r"},"
+                r" error bars/error mark=|,"
+                r" error bars/error mark options={rotate=90, mark size=2.4pt,"
+                r" line width=0.8pt, color=" + UAVBLUE + r"}]"
+                r" coordinates {" + coords + "};")
     body.append(r"  \legend{{the strongest rule},{the learned controller}}")
     # the gap that is left at the longest budget
-    body.append(f"  \\draw[{UAVRED}, line width=0.9pt, <->] "
+    body.append(f"  \\draw[{UAVINK}, line width=0.8pt, <->] "
                 f"(axis cs:{arrow_x:.2f},{cks[-1]:.3f}) -- "
                 f"(axis cs:{arrow_x:.2f},{rule:.3f});")
-    body.append(f"  \\node[rotate=90, anchor=south, font=\\tiny, "
-                f"text={UAVRED}] at (axis cs:{lab_x:.2f},{cks[-1]:.3f}) "
+    body.append(f"  \\node[rotate=90, anchor=south, font=\\scriptsize"
+                f"\\bfseries, text={UAVINK}] at "
+                f"(axis cs:{lab_x:.2f},{cks[-1]:.3f}) "
                 f"{{gap {gap:.3f}}};")
-    # the rule's name, above its line
-    body.append(f"  \\node[anchor=south west, font=\\tiny] at "
-                f"(axis cs:{xmin + 0.4:.2f},{rule + 0.005:.3f}) "
+    # the rule's name, above its line, in the band reserved for it
+    body.append(f"  \\node[anchor=south west, font=\\scriptsize, "
+                f"text={UAVMUTED}] at "
+                f"(axis cs:{xmin + 0.4:.2f},{rule + 0.012:.3f}) "
                 f"{{{rule_name} ({rule:.3f})}};")
     # the paired gain over the range the sweep covers
     txt = (f"training over {eps[0]}--{eps[-1]} episodes: "
@@ -334,13 +364,13 @@ def figure_budget(tok, wfrac=1.0):
     if frac:
         txt += f" --- {frac}\\% of the gap"
     txt += f"\\\\bars: $\\pm 1$ s.d. over the {nseed} training seeds"
-    # the annotation sits BELOW the reference line, so that the dashed
+    # the annotation sits BELOW the reference line, so that the rule's
     # line does not run through the text
-    body.append(f"  \\node[anchor=north west, font=\\tiny, align=left] at "
-                f"(axis cs:{xmin + 0.4:.2f},{rule - 0.045:.3f}) {{{txt}}};")
-    frag = ("\\begin{tikzpicture}\n"
-            + axis(opts, "\n".join(body) + "\n")
-            + "\n\\end{tikzpicture}")
+    body.append(f"  \\node[anchor=north west, font=\\scriptsize, align=left, "
+                f"text={UAVINK}, fill={UAVWHITE}, inner sep=2pt, "
+                f"draw=none] at "
+                f"(axis cs:{xmin + 0.4:.2f},{rule - 0.030:.3f}) {{{txt}}};")
+    frag = fragment(opts, body)
     return frag, dict(rows=rows, gap=gap, rule=rule, rule_name=rule_name,
                        paired=paired, ci=ci, frac=frac, nseed=nseed)
 
@@ -386,48 +416,50 @@ def figure_scen(tok, wfrac=1.0):
     n = len(pts)
     ds = [p["d"] for p in pts]
     ymin = min(min(ds) - 0.03, -0.05)
-    ymax = 0.12
+    ymax = 0.075
     xmin, xmax = 0.3, n + 0.7
 
     opts = [
         (r"  width=\columnwidth" if wfrac >= 0.999
-         else f"  width={wfrac:.2f}\\columnwidth") + ",height=5.0cm,",
+         else f"  width={wfrac:.2f}\\columnwidth") + ",height=4.6cm,",
         f"  xmin={xmin:.2f}, xmax={xmax:.2f}, ymin={ymin:.3f}, "
         f"ymax={ymax:.3f},",
         "  xtick={" + ",".join(f"{0.5 * (g[1] + g[2]):g}" for g in groups)
          + "},",
         "  xticklabels={" + ",".join(g[0] for g in groups) + "},",
         "  ytick={" + ",".join(f"{y:g}" for y in nice_ticks(ymin, ymax))
-         + "},",
+         + "}, ymajorgrids,",
         r"  xlabel={scenario (each marker is one variant)},"
         r" ylabel={persistent coverage difference},",
-        STYLE,
+        r"  uavaxis,",
     ]
     body = []
     # the separators between the scenarios
     for g in groups[:-1]:
         x = g[2] + 0.5
-        body.append(f"  \\draw[gray!45, line width=0.4pt] "
+        body.append(f"  \\draw[uavsep] "
                     f"(axis cs:{x:.2f},{ymin:.3f}) -- "
                     f"(axis cs:{x:.2f},{ymax:.3f});")
-    # the level line
-    body.append(f"  \\addplot[{UAVRED}, dashed, line width=1.0pt] coordinates "
+    # the level line: level with the stronger rule
+    body.append(f"  \\addplot[uavlevel, forget plot] coordinates "
                 f"{{({xmin:.2f},0) ({xmax:.2f},0)}};")
     # the variants
-    body.append(r"  \addplot[only marks, mark=*, mark size=1.8pt, color="
-                + UAVBLUE + ", mark options={fill=" + UAVBLUE + "}] coordinates {"
+    body.append(r"  \addplot[only marks, mark=*, mark size=2.3pt, color="
+                + UAVBLUE + ", mark options={fill=" + UAVBLUE
+                + ", draw=white, line width=0.5pt}] coordinates {"
                 + " ".join(f"({p['idx']},{p['d']:.3f})" for p in pts) + "};")
     # the two labels that carry the point of the figure: both sit in the
-    # band ABOVE the zero line, which no marker can reach
-    body.append(f"  \\node[anchor=south east, font=\\tiny, text={UAVRED}] at "
-                f"(axis cs:{xmax - 0.3:.2f},0.008) "
-                f"{{level with the stronger rule}};")
-    body.append(f"  \\node[anchor=south west, font=\\tiny, text={UAVRED}] at "
-                f"(axis cs:{xmin + 0.3:.2f},0.008) "
-                f"{{{losses} of the {n} variants behind}};")
-    frag = ("\\begin{tikzpicture}\n"
-            + axis(opts, "\n".join(body) + "\n")
-            + "\n\\end{tikzpicture}")
+    # narrow band ABOVE the level line, which no marker can reach, and
+    # they are short enough not to meet in the middle
+    body.append(f"  \\node[anchor=south east, font=\\scriptsize, "
+                f"text={UAVMUTED}] at "
+                f"(axis cs:{xmax - 0.3:.2f},0.018) "
+                f"{{level with the rule}};")
+    body.append(f"  \\node[anchor=south west, font=\\scriptsize\\bfseries, "
+                f"text={UAVINK}] at "
+                f"(axis cs:{xmin + 0.3:.2f},0.018) "
+                f"{{{losses} of {n} variants behind}};")
+    frag = fragment(opts, body)
     return frag, dict(pts=pts, groups=groups, wins=wins, losses=losses,
                        ties=ties, n=n)
 
@@ -441,12 +473,9 @@ PREAMBLE = r"""\documentclass[10pt]{article}
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
-\definecolor{uavblue}{RGB}{37,99,235}
-\definecolor{uavcyan}{RGB}{8,145,178}
-\definecolor{uavgreen}{RGB}{22,163,74}
-\definecolor{uavorange}{RGB}{234,88,12}
-\definecolor{uavred}{RGB}{220,38,38}
-\definecolor{uavpurple}{RGB}{124,58,237}
+%% the project's palette and styles: the SAME file the paper and the
+%% report input, so a preview cannot look different from the paper
+\input{theme}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 \begin{document}
@@ -552,29 +581,42 @@ def render(name, body, do_render=True):
 
 
 def fit_and_render(name, builder, do_render=True):
-    """Render, and shrink the axis until the figure fits the column.
+    """Render, and fit the axis to the column.
 
-    The axis width is fitted, not guessed: the figure is rendered, its
-    natural width is measured (the fragment is boxed, so the measurement
-    is the width the figure will have in the column), and the axis is
-    narrowed until the whole thing fits the 3.5in column.
+    The axis width is fitted, not guessed: the fragment is boxed, its
+    natural width is measured (the measurement is the width the figure
+    will have in the column), and the part of that width which does not
+    scale with the axis (the tick labels and the legend strip) is
+    removed.  The axis is then given the width that makes the whole
+    picture sit just inside the 3.5in column, so a figure fills the
+    column and is never overfull by even a point.
     """
+    target = COL_PT - 2.0
     wfrac = 1.0
     info = None
-    for attempt in range(6):
+    for _ in range(6):
         body, info = builder(wfrac)
         w = render(name, body, do_render)
         if w is None:
             return info
-        if w <= COL_PT + 0.5:
+        if w <= target and w >= target - 4.0:
             return info
-        # the part of the width that does not scale with the axis (the
-        # y tick labels, which pgfplots does not measure correctly)
-        fixed = w - COL_PT * wfrac
-        new = max(0.30, (COL_PT - fixed) / COL_PT)
-        wfrac = math.floor(new * 100) / 100.0
-        print(f"  [render] {name}: too wide by {w - COL_PT:.1f}pt; "
-              f"retrying at width={wfrac:.2f}\\columnwidth")
+        # the width that does not scale with the axis: the theme's
+        # `scale only axis' makes the relation exactly linear
+        fixed = max(0.0, w - COL_PT * wfrac)
+        if fixed >= target - 6.0:
+            # what is left is the legend strip or the tick labels: they
+            # already fill the column, and narrowing the axis further
+            # would only shrink the plot
+            if w <= COL_PT:
+                return info
+        want = min(1.0, max(0.30, (target - 1.0 - fixed) / COL_PT))
+        want = math.floor(want * 100) / 100.0
+        if abs(want - wfrac) < 0.005:
+            return info
+        print(f"  [render] {name}: {w:.1f}pt against a {COL_PT:.1f}pt "
+              f"column; retrying at width={want:.2f}\\columnwidth")
+        wfrac = want
     return info
 
 
