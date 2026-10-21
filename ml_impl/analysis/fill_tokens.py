@@ -1125,8 +1125,29 @@ def build_tokens():
         tok["OLD_EPISODE_PCT"] = f"{100 * old_seconds / endurance:.0f}"
         tok["EPISODE_STEPS"] = f"{int(c0.episode_len)}"
         tok["EPISODE_SECONDS"] = f"{c0.episode_len * c0.dt:.0f}"
+        # the pack's endurance IN STEPS at the moving draw, and the duty
+        # cycle the episode therefore implies
+        draw = (c0.P_move + c0.P_elec + c0.P_tx)      # watts in flight
+        tok["PACK_STEPS_MOVING"] = f"{c0.B_max / (draw * c0.dt):.0f}"
+        tok["PACK_SECONDS_MOVING"] = f"{c0.B_max / draw:.0f}"
+        tok["MOVE_DRAW_W"] = f"{draw:.1f}"
+        tok["RESERVE_J"] = f"{c0.E_reserve:.0f}"
+        # the duty cycle the measured charging behaviour implies: the
+        # fraction of the episode the swarm is NOT charging
+        tok["DUTY_CYCLE"] = "n/a"
     except Exception:                                      # pragma: no cover
         pass
+
+    react_row = main_rows.get("Reactive")
+    if react_row and "DUTY_CYCLE" in tok:
+        try:
+            steps = int(tok["EPISODE_STEPS"])
+            ret = float(react_row.get("ReturnEvents", 0))
+            # each return-to-charge transition is one step spent charging
+            duty = 100.0 * (1.0 - ret / steps)
+            tok["DUTY_CYCLE"] = f"{duty:.0f}"
+        except (TypeError, ValueError, ZeroDivisionError):
+            pass
 
     # ------------------------------------------------------------------
     # the numbers the paper quotes about ITSELF
@@ -1259,7 +1280,9 @@ def fill(text, tok):
             text = text.replace(f"@@{k}@@", str(v))
         if not re.search(r"@@[A-Z_0-9]+@@", text):
             break
-    missing = sorted(set(re.findall(r"@@([A-Z_0-9]+)@@", text)))
+    # a token with only its opening delimiter is just as wrong as one
+    # with both, so the check looks for the opening delimiter alone
+    missing = sorted(set(re.findall(r"@@+([A-Z_0-9]+)", text)))
     return text, missing
 
 
