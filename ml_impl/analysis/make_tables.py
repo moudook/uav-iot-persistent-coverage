@@ -23,6 +23,8 @@ import json
 import os
 import sys
 
+import numpy as np
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ML = os.path.dirname(HERE)
 OUT = os.path.join(HERE, "tables.tex")
@@ -96,8 +98,28 @@ def ck_cell(r, nd=3):
     seed-to-seed spread of CK.  The rule baselines are deterministic, so
     their rows carry the spread over the evaluation scenes instead; the
     cell says which spread it is in the caption.
+
+    Where the row carries its per-training-seed values, the spread is
+    recomputed from them as the SAMPLE standard deviation.  The artefacts
+    also carry a spread, but that one is a POPULATION standard deviation
+    (numpy divides by n), and a table that printed it would disagree with
+    the paper's own intervals: the interval is built from the sample
+    standard deviation, so the table has to print the same number the
+    interval was built from.
     """
     v = fmt(r.get("CK"), nd)
+    per = r.get("per_seed_CK")
+    if per:
+        vals = []
+        for part in str(per).split(";"):
+            try:
+                vals.append(float(part))
+            except ValueError:
+                vals = []
+                break
+        if len(vals) > 1:
+            s = float(np.std(vals, ddof=1))
+            return f"{v}\\,$\\pm$\\,{fmt(s, nd)}"
     s = r.get("CK_std")
     if s in (None, ""):
         return v

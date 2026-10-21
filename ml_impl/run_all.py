@@ -198,7 +198,11 @@ def stage_base(episodes, train_seeds, eval_seeds, resume=False):
                 if all(isinstance(r.get(k), (int, float)) and
                        not isinstance(r.get(k), bool) for r in runs)]
         a = {k: float(np.mean([r[k] for r in runs])) for k in keys}
-        a["CK_std"] = float(np.std([r["CK"] for r in runs]))
+        a["CK_std"] = float(np.std([r["CK"] for r in runs], ddof=1))
+        # the per-seed values are kept, so that the table's spread can be
+        # recomputed as the SAMPLE standard deviation, which is the number
+        # the paper's intervals are built from
+        a["per_seed_CK"] = ";".join(f"{r['CK']:.6f}" for r in runs)
         a["train_seeds"] = int(len(runs))
         a["device"] = str(runs[0].get("device", "?"))
         return a
