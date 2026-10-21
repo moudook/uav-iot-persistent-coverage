@@ -231,9 +231,9 @@
   },
   {
     "id": "R1",
-    "claim": "the evaluation of a sampled policy is a function of (policy, scene) and does not depend on the ambient state of the global RNG",
+    "claim": "the evaluation of a sampled policy is a function of (policy, scene) and does not depend on the ambient state of the global RNG; the sampling stream is seeded from the evaluation seed alone, so every controller is measured on the same stream on the same scene",
     "status": "PASS",
-    "measured": "CK=1.0 and Energy=3584.0 and Distance=184.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3584.0 and Distance=184.0 and CovIntegral=0.0",
+    "measured": "CK=1.0 and Energy=3564.0 and Distance=180.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3564.0 and Distance=180.0 and CovIntegral=0.0",
     "expected": "identical",
     "note": "the policy samples, so the sampling stream is seeded from the evaluation seed; every controller therefore sees the same stream on the same scene"
   },
@@ -263,7 +263,7 @@
   },
   {
     "id": "T1",
-    "claim": "a training run is reproducible from its seed: the seed is set before the networks are constructed, so the initialisation is seeded too",
+    "claim": "a training run is reproducible from its seed on a fixed device: the seed is set before the networks are constructed, so the initialisation is seeded too.  The device and the thread count are part of the protocol, because the floating-point kernels and the order of the reductions differ between them, and two runs of the same configuration that happen to land on different devices are not the same experiment",
     "status": "PASS",
     "measured": "max |difference| over the trained parameters = 0",
     "expected": "0 (bitwise identical)",

@@ -517,7 +517,10 @@ def main():
         f2 = tuple(round(float(a2[k]), 9) for k in keys)
         check("R1", "the evaluation of a sampled policy is a function of "
                     "(policy, scene) and does not depend on the ambient "
-                    "state of the global RNG",
+                    "state of the global RNG; the sampling stream is "
+                    "seeded from the evaluation seed alone, so every "
+                    "controller is measured on the same stream on the "
+                    "same scene",
               f1 == f2,
               " and ".join(f"{k}={v}" for k, v in zip(keys, f1))
               + "  |  " + " and ".join(f"{k}={v}" for k, v in zip(keys, f2)),
@@ -626,9 +629,15 @@ def main():
         p1 = dict(a1.actor.named_parameters())
         p2 = dict(a2.actor.named_parameters())
         worst = max(float((p1[k] - p2[k]).abs().max()) for k in p1)
-        check("T1", "a training run is reproducible from its seed: the seed "
-                    "is set before the networks are constructed, so the "
-                    "initialisation is seeded too",
+        check("T1", "a training run is reproducible from its seed on a "
+                    "fixed device: the seed is set before the networks "
+                    "are constructed, so the initialisation is seeded "
+                    "too.  The device and the thread count are part of "
+                    "the protocol, because the floating-point kernels "
+                    "and the order of the reductions differ between "
+                    "them, and two runs of the same configuration that "
+                    "happen to land on different devices are not the "
+                    "same experiment",
               worst == 0.0,
               f"max |difference| over the trained parameters = {worst:g}",
               "0 (bitwise identical)",
