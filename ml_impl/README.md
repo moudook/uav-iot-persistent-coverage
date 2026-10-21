@@ -213,10 +213,16 @@ ml_impl/
 │   ├── symmetry_check.py         # the shared-actor symmetry diagnostic
 │   ├── connectivity_accounting.py # where the connectivity availability goes
 │   ├── infeasible_instance.py    # what the metrics do on an infeasible instance
-│   ├── reproducibility_probe.py  # the evaluation is a function of (policy, scene)
+│   ├── corner_transfer.py        # how close the corner certificate comes to a sensor set
+│   ├── alt_deployment.py         # the alternative corrected deployment, measured
+│   ├── ab_budget.py              # the training-budget sweep
+│   ├── repro_probe.py            # the evaluation is a function of (policy, scene)
+│   ├── train_repro_probe.py      # a training run is a function of its seed
 │   ├── make_tables.py            # the CSVs -> the LaTeX tables
 │   ├── fill_tokens.py            # the artefacts -> the prose tokens
 │   ├── assemble_results.py       # tables + tokens + the Results section + the compile
+│   ├── make_report.py            # the artefacts -> the project report
+│   ├── watch_docs.py             # keeps the paper and the report in step
 │   ├── final_checks.py           # assembly + compile + audit + tests, in one command
 │   └── diagnose_gap.py           # separates protocol / sharpness / regime
 ├── tests/

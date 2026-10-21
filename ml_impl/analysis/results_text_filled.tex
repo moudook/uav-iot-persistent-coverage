@@ -117,7 +117,7 @@ we do not claim that a larger budget would not change the picture.  The
 sweep behind that statement trains independent runs at each of three
 budgets rather than reading one
 run's curve at different points, so it compares budgets and does not
-restate the curve: 8 episodes: 0.609, 16 episodes: 0.640, 25 episodes: 0.698, and the coverage moves by +0.089 over the range the sweep covers, which is about 32\% of the gap of 0.276, and the increments between successive budgets are +0.031, +0.058; but the last of them, +0.058, is only 1.2 standard errors from zero (the standard error of the difference is 0.048, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall.  The two
+restate the curve: 8 episodes: 0.595, and the coverage moves by +0.000 over the range the sweep covers, which is about 0\% of the gap of 0.276, and the increments between successive budgets are ; but the last of them, n/a, is only nan standard errors from zero (the standard error of the difference is n/a, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall.  The two
 measurements differ in what they can support, and the difference is worth
 stating rather than smoothing over: the curve flattens on the scene the
 policy trains on, while the sweep's own last increment is within the
@@ -342,7 +342,7 @@ A component can be redundant with another, in which case removing either
 one alone costs nothing while removing both costs a great deal; and a
 component that matters only at a larger budget is invisible at this one.
 The budget sweep above speaks to the second case for the full
-configuration, and it does not settle it: the coverage moves by +0.089 over the range the sweep covers, which is about 32\% of the gap of 0.276, and the increments between successive budgets are +0.031, +0.058; but the last of them, +0.058, is only 1.2 standard errors from zero (the standard error of the difference is 0.048, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall.  The arms
+configuration, and it does not settle it: the coverage moves by +0.000 over the range the sweep covers, which is about 0\% of the gap of 0.276, and the increments between successive budgets are ; but the last of them, n/a, is only nan standard errors from zero (the standard error of the difference is n/a, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall.  The arms
 here are each measured at the single budget the base comparison uses, so
 for the individual components we do not claim budget-independence, and
 we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap.

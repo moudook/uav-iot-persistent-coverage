@@ -132,30 +132,22 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokBestRuleCk}{0.972}
 \newcommand{\tokBestRuleName}{the unprivileged reactive rule}
 \newcommand{\tokBudgetCaveat}{we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap}
-\newcommand{\tokBudgetFirstDelta}{+0.031}
-\newcommand{\tokBudgetFrac}{32}
+\newcommand{\tokBudgetFirstDelta}{n/a}
+\newcommand{\tokBudgetFrac}{0}
 \newcommand{\tokBudgetGap}{0.276}
-\newcommand{\tokBudgetIncrements}{+0.031, +0.058}
-\newcommand{\tokBudgetLastDelta}{+0.058}
+\newcommand{\tokBudgetIncrements}{}
+\newcommand{\tokBudgetLastDelta}{n/a}
 \newcommand{\tokBudgetLastResolved}{no}
-\newcommand{\tokBudgetMax}{0.698}
-\newcommand{\tokBudgetMaxStd}{0.099}
-\newcommand{\tokBudgetMin}{0.609}
-\newcommand{\tokBudgetN}{3}
-\newcommand{\tokBudgetPaired}{+0.090}
-\newcommand{\tokBudgetPairedCi}{[-0.142, +0.321]}
-\newcommand{\tokBudgetPairedExcludesGap}{no}
-\newcommand{\tokBudgetPairedHalf}{0.232}
-\newcommand{\tokBudgetPairedN}{3}
-\newcommand{\tokBudgetPairedP}{0.238}
-\newcommand{\tokBudgetPairedUp}{0.321}
-\newcommand{\tokBudgetPairedVsGap}{its upper limit of 0.321 is above the gap of 0.276}
-\newcommand{\tokBudgetRange}{8 to 25}
-\newcommand{\tokBudgetSe}{0.048}
-\newcommand{\tokBudgetSpread}{+0.089}
-\newcommand{\tokBudgetSweep}{8 episodes: 0.609, 16 episodes: 0.640, 25 episodes: 0.698}
-\newcommand{\tokBudgetT}{1.21}
-\newcommand{\tokBudgetVerdict}{the coverage moves by +0.089 over the range the sweep covers, which is about 32\% of the gap of 0.276, and the increments between successive budgets are +0.031, +0.058; but the last of them, +0.058, is only 1.2 standard errors from zero (the standard error of the difference is 0.048, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall}
+\newcommand{\tokBudgetMax}{0.595}
+\newcommand{\tokBudgetMaxStd}{0.078}
+\newcommand{\tokBudgetMin}{0.595}
+\newcommand{\tokBudgetN}{1}
+\newcommand{\tokBudgetRange}{8 to 8}
+\newcommand{\tokBudgetSe}{n/a}
+\newcommand{\tokBudgetSpread}{+0.000}
+\newcommand{\tokBudgetSweep}{8 episodes: 0.595}
+\newcommand{\tokBudgetT}{n/a}
+\newcommand{\tokBudgetVerdict}{the coverage moves by +0.000 over the range the sweep covers, which is about 0\% of the gap of 0.276, and the increments between successive budgets are ; but the last of them, n/a, is only nan standard errors from zero (the standard error of the difference is n/a, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall}
 \newcommand{\tokBAg}{0.991}
 \newcommand{\tokBCk}{0.569}
 \newcommand{\tokBCkStd}{0.134}
@@ -401,6 +393,14 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokAltEpisodes}{\mbox{\textbf{[pending: tokAltEpisodes]}}}
 \newcommand{\tokAltSeeds}{\mbox{\textbf{[pending: tokAltSeeds]}}}
 \newcommand{\tokAltVerdict}{\mbox{\textbf{[pending: tokAltVerdict]}}}
+\newcommand{\tokBudgetPaired}{\mbox{\textbf{[pending: tokBudgetPaired]}}}
+\newcommand{\tokBudgetPairedCi}{\mbox{\textbf{[pending: tokBudgetPairedCi]}}}
+\newcommand{\tokBudgetPairedExcludesGap}{\mbox{\textbf{[pending: tokBudgetPairedExcludesGap]}}}
+\newcommand{\tokBudgetPairedHalf}{\mbox{\textbf{[pending: tokBudgetPairedHalf]}}}
+\newcommand{\tokBudgetPairedN}{\mbox{\textbf{[pending: tokBudgetPairedN]}}}
+\newcommand{\tokBudgetPairedP}{\mbox{\textbf{[pending: tokBudgetPairedP]}}}
+\newcommand{\tokBudgetPairedUp}{\mbox{\textbf{[pending: tokBudgetPairedUp]}}}
+\newcommand{\tokBudgetPairedVsGap}{\mbox{\textbf{[pending: tokBudgetPairedVsGap]}}}
 %% END TOKEN MACROS
 
 \begin{document}
@@ -445,7 +445,7 @@ The contributions are:
 %% BEGIN CONTRIB
     \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are the two terms the controlled comparisons examine, and at three training seeds they do not settle the question about the coverage.  In the component ablation, the identity changes persistent coverage by $+0.026$, an interval $[-0.129, +0.181]$ that includes zero, so at this budget what it demonstrably buys is the ability to specialise, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses.  A broadcast summary of where the coverage deficit is was added a priori and measured to make no difference to the coverage at any resolution tested, while it does change what the policy does; it is reported rather than quietly dropped.
 %% END CONTRIB
-    \item Corrected deployment parameters ($N=8$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$, or $N=5$, $K=2$, $R_{\mathrm{cov}}=45\,\mathrm{m}$) derived from the feasibility certificate, replacing the infeasible $N=5$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$ baseline.
+    \item Corrected deployment parameters ($N=8$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$, or $N=5$, $K=2$, $R_{\mathrm{cov}}=45\,\mathrm{m}$) derived from the feasibility certificate, replacing the infeasible $N=5$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$ baseline, and both of them MEASURED under the protocol below rather than argued: $\tokAltVerdict$.
     \item An evaluation protocol that treats a physical-layer claim as requiring a negative control, and reports a measured instance in which the available instrument could not support the claim it was being used for.
     \item A focused literature synthesis showing the difference between existing coverage, connectivity, recharge-scheduling, and fault-tolerant approaches and the combined problem considered here.
 \end{enumerate}
@@ -1779,7 +1779,7 @@ we do not claim that a larger budget would not change the picture.  The
 sweep behind that statement trains independent runs at each of three
 budgets rather than reading one
 run's curve at different points, so it compares budgets and does not
-restate the curve: 8 episodes: 0.609, 16 episodes: 0.640, 25 episodes: 0.698, and the coverage moves by +0.089 over the range the sweep covers, which is about 32\% of the gap of 0.276, and the increments between successive budgets are +0.031, +0.058; but the last of them, +0.058, is only 1.2 standard errors from zero (the standard error of the difference is 0.048, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall.  The two
+restate the curve: 8 episodes: 0.595, and the coverage moves by +0.000 over the range the sweep covers, which is about 0\% of the gap of 0.276, and the increments between successive budgets are ; but the last of them, n/a, is only nan standard errors from zero (the standard error of the difference is n/a, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall.  The two
 measurements differ in what they can support, and the difference is worth
 stating rather than smoothing over: the curve flattens on the scene the
 policy trains on, while the sweep's own last increment is within the
@@ -2119,7 +2119,7 @@ A component can be redundant with another, in which case removing either
 one alone costs nothing while removing both costs a great deal; and a
 component that matters only at a larger budget is invisible at this one.
 The budget sweep above speaks to the second case for the full
-configuration, and it does not settle it: the coverage moves by +0.089 over the range the sweep covers, which is about 32\% of the gap of 0.276, and the increments between successive budgets are +0.031, +0.058; but the last of them, +0.058, is only 1.2 standard errors from zero (the standard error of the difference is 0.048, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall.  The arms
+configuration, and it does not settle it: the coverage moves by +0.000 over the range the sweep covers, which is about 0\% of the gap of 0.276, and the increments between successive budgets are ; but the last of them, n/a, is only nan standard errors from zero (the standard error of the difference is n/a, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall.  The arms
 here are each measured at the single budget the base comparison uses, so
 for the individual components we do not claim budget-independence, and
 we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap.
