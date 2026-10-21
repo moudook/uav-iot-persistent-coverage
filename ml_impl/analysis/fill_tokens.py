@@ -1101,11 +1101,11 @@ def build_tokens():
                     "of them can be the whole of the explanation, by "
                     "margins that are small but positive")
         tok["ARMS_SUMMARY_SENTENCE"] = (
-            "controlled arms bound how much of the gap each alternative "
+            "Controlled arms bound how much of the gap each alternative "
             "explanation can account for: "
             + "; ".join(parts)
             + f", against a gap of {gap:.3f}"
-            + bud + tail)
+            + bud + tail + ".")
     else:
         tok["ARMS_SUMMARY_SENTENCE"] = (
             "the arms that test the alternative explanations have not been "
