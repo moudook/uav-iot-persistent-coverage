@@ -70,9 +70,9 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 % The numbers that come from an experiment.  These definitions are
 % written by analysis/assemble_results.py from the artefact table,
 % so the prose cannot drift away from the measurement.
-\newcommand{\tokAblBestObs}{the agent identity}
-\newcommand{\tokAblBestObsDelta}{-0.026}
-\newcommand{\tokAblBestObsText}{The observation term with the largest effect on the coverage is the agent identity, and the table above prices it: it is worth -0.026 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.}
+\newcommand{\tokAblBestObs}{the coverage map}
+\newcommand{\tokAblBestObsDelta}{-0.039}
+\newcommand{\tokAblBestObsText}{The observation term with the largest effect on the coverage is the coverage map, and the table above prices it: it is worth -0.039 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.}
 \newcommand{\tokAblCrit}{4.30}
 \newcommand{\tokAblEpisodes}{25}
 \newcommand{\tokAblEpisodesStress}{6}
@@ -81,12 +81,16 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokAblIdDelta}{+0.026}
 \newcommand{\tokAblIdP}{0.543}
 \newcommand{\tokAblIdSpread}{0.062}
+\newcommand{\tokAblMapCi}{[-0.115, +0.193]}
+\newcommand{\tokAblMapDelta}{+0.039}
+\newcommand{\tokAblMapP}{0.392}
+\newcommand{\tokAblMapSpread}{0.062}
 \newcommand{\tokAblMaskCi}{[-0.113, +0.134]}
 \newcommand{\tokAblMaskDelta}{+0.011}
 \newcommand{\tokAblMaskP}{0.748}
 \newcommand{\tokAblMaskSpread}{0.050}
 \newcommand{\tokAblNSeeds}{3}
-\newcommand{\tokAblPairs}{the under-coverage term +0.097\,(0.084)}
+\newcommand{\tokAblPairs}{the under-coverage term +0.097\,(0.084), the coverage map +0.039\,(0.062)}
 \newcommand{\tokAblResolution}{0.209}
 \newcommand{\tokAblResolutionMin}{0.000}
 \newcommand{\tokAblResolutionSd}{0.049}
@@ -1424,7 +1428,7 @@ lab/.style={font=\scriptsize,fill=white,inner sep=1.5pt}
 Phase 1 contains geometric UAV motion, persistent $K$-coverage, connectivity, battery dynamics, charging coordination, failure/recovery, a heuristic controller, and MAPPO. Once these components are stable, Phase 2 introduces wireless communication and network-level measurements. Phase 3 then adds PHY-aware communication. The same actor observation/action interface is retained across phases so that increasing simulator fidelity does not require redesigning the learning problem.
 
 \paragraph{Execution status.}
-Phases 1 and 2 have been executed; Phase 3 is scaffolded but not yet run with the learned policy. Phase 1 is implemented in \texttt{ml\_impl/} with a test suite of 111 cases that pins every reported equation, and the simulator has been exercised over five training seeds. Phase 2 is implemented with INET 4.6 and OMNeT++ 6.4 on WSL2 with a Simu5G 1.4.3 stack; the \texttt{UAVIoT} network configuration runs to completion and produces scalar and vector outputs, and a dedicated 802.11 physical-layer scenario was built for the validation of Section~\ref{sec:validation}. The three-stage structure is retained not as a description of a plan but as an audit trail: it records which level of fidelity each reported number was produced at, so that a reader can tell an analytic result from a simulated one and a simulated one from a measured one.
+Phases 1 and 2 have been executed; Phase 3 is scaffolded but not yet run with the learned policy. Phase 1 is implemented in \texttt{ml\_impl/} with a test suite of \tokNTests cases that pins every reported equation, and the simulator has been exercised over five training seeds. Phase 2 is implemented with INET 4.6 and OMNeT++ 6.4 on WSL2 with a Simu5G 1.4.3 stack; the \texttt{UAVIoT} network configuration runs to completion and produces scalar and vector outputs, and a dedicated 802.11 physical-layer scenario was built for the validation of Section~\ref{sec:validation}. The three-stage structure is retained not as a description of a plan but as an audit trail: it records which level of fidelity each reported number was produced at, so that a reader can tell an analytic result from a simulated one and a simulated one from a measured one.
 
 Two things are worth recording about what Phase 1 actually cost, because they bear on how the Phase-3 results should be read. First, the phase is not complete in the sense of the plan: the first implementation of the Phase-1 simulator satisfied every equation of the report and every test, and the coverage numbers it produced were meaningless, because the motion step never applied a move. The defect was found by a diagnostic --- the swarm's spread never changed --- and not by the equations, the tests or the loss curve. Second, the physical-layer scenario of Phase 2 produced frame counts that did not respond to the transmit power, and the negative control is what exposed it; the instrument was then rebuilt around a statistic that does respond, and the rebuild showed that this statistic is still not a usable instrument for the claim it was wanted for (Section~\ref{sec:validation}). Both episodes are reported here rather than in a footnote, because a reader deciding whether to trust a result from this pipeline should know that the pipeline's own diagnostics, and not its unit tests, are what caught the two most consequential errors in it.
 
@@ -1946,7 +1950,7 @@ The arms share their training seeds, so the comparisons are paired: $adding the 
 
 The resolution of the summary makes no difference to the coverage: $G=0$: 0.645, $G=4$: 0.669, $G=8$: 0.645, and the largest of the differences is 0.025, inside the seed-to-seed spread of the learner (0.058).  What the summary does change is the swarm's behaviour: the spread grows, from 8.1 m without it to 9.4 m and 8.4 m with it, because a policy that follows the deficit spreads the swarm out instead of keeping it together.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
-The observation term with the largest effect on the coverage is the agent identity, and the table above prices it: it is worth -0.026 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.  The reason is easy to see in
+The observation term with the largest effect on the coverage is the coverage map, and the table above prices it: it is worth -0.039 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.  The reason is easy to see in
 retrospect.  Without a direction to the charger a UAV cannot come home, so
 the swarm drains its packs in the field; and a swarm that has drained its
 packs is not a swarm that can be asked to cover anything.
@@ -2057,6 +2061,7 @@ no-reserve UAV & 0.698\,$\pm$\,0.032 & 0.991 & 0.016 & 0.302 & 1.0 & +0.000 \\
 no-charging arbitration & 0.694\,$\pm$\,0.056 & 0.986 & 0.028 & 0.306 & 0.7 & +0.004 \\
 no-action mask & 0.688\,$\pm$\,0.050 & 0.986 & 0.011 & 0.312 & 0.8 & +0.011 \\
 no agent identity & 0.672\,$\pm$\,0.045 & 0.965 & 0.007 & 0.328 & 1.5 & +0.026 \\
+no coverage map & 0.660\,$\pm$\,0.071 & 0.976 & 0.015 & 0.340 & 1.1 & +0.039 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2459,6 +2464,12 @@ This paper defines a persistent and fault-tolerant UAV-IoT coverage problem in w
 \begin{thebibliography}{00}
 
 \bibitem{liu2018}
+% The bibliography's items carry a flexible separation (IEEEtran's
+% \IEEEbibitemsep is "0pt plus 1pt"), and on the balanced last page the
+% flexible part stretches the column a fraction of a point past the text
+% height.  With no flexible part the columns are exactly as tall as
+% their content, and the last page is the only overfull box gone.
+\setlength{\IEEEbibitemsep}{0pt}
 C. H. Liu, Z. Chen, J. Tang, J. Xu, and C. Piao, ``Energy-efficient UAV control for effective and fair communication coverage: A deep reinforcement learning approach,'' \emph{IEEE Journal on Selected Areas in Communications}, vol. 36, no. 9, pp. 2059--2070, Sep. 2018, doi: 10.1109/JSAC.2018.2864373.
 
 \bibitem{qiu2019}

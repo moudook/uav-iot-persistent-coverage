@@ -134,12 +134,14 @@ def main():
     for name, delta in arms:
         print(f"--- {name} ---", flush=True)
         cks, ags, scs, cis, nds, sps, bests = [], [], [], [], [], [], []
+        device_used = "?"
         for s in range(args.seeds):
             t0 = time.time()
             c = SimConfig(**{**base.dict(), "seed": s, **delta})
             agent, hist = train_mappo(c, episodes=args.episodes,
                                       n_steps=c.episode_len,
                                       seed=s, verbose=False)
+            device_used = str(agent.device)
             evs = [eval_agent(agent, c, steps=c.episode_len, seed=e)
                    for e in range(args.eval_seeds)]
             agg = {k: float(np.mean([x[k] for x in evs])) for k in evs[0]}
@@ -158,6 +160,10 @@ def main():
               flush=True)
         rows.append(dict(arm=name, kind="learned",
                          **{k: delta[k] for k in delta},
+                         device=str(device_used),
+                         episodes=int(args.episodes),
+                         seeds=int(args.seeds),
+                         eval_seeds=int(args.eval_seeds),
                          CK=float(np.mean(cks)), CK_std=float(np.std(cks)),
                          AG=float(np.mean(ags)), SC=float(np.mean(scs)),
                          CovIntegral=float(np.mean(cis)),
