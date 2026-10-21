@@ -279,6 +279,11 @@ def main():
     abl_seeds = 1 if quick else 3
     stress_episodes = 2 if quick else 6
     obs_seeds = 2 if quick else 3
+    # the scenario matrix and the learned baselines are the two tables
+    # whose rows are not the base comparison's own experiment, so their
+    # seed count is their own parameter
+    scen_seeds = 1 if quick else 8
+    base_seeds = 1 if quick else 8
     if args.train_seeds:
         train_seeds = args.train_seeds
     if args.abl_seeds:
@@ -332,7 +337,7 @@ def main():
         # machinery and not of budgets.
         run_learned_baselines(base_config(), "results_learned_baselines.csv",
                               episodes=20, eval_seeds=eval_seeds,
-                              seeds=3)
+                              seeds=base_seeds)
         print()
 
     if args.stage in ("energy", "all"):
@@ -350,7 +355,7 @@ def main():
         # learner and a reader is not comparing an 8-episode policy with a
         # 25-episode one
         run_scenarios(base_config(), "results_scenarios.csv",
-                      episodes=episodes)
+                      episodes=episodes, seeds=scen_seeds)
         print()
 
     print("=" * 78)

@@ -553,7 +553,7 @@ def run_learned_baselines(base: SimConfig, out_csv="results_learned_baselines.cs
 
 
 def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
-                  episodes=12):
+                  episodes=12, seeds=1):
     """Table X: MAPPO vs the Reactive heuristic on every scenario variant.
 
     Each scenario defines two variants (e.g. sparse vs dense sensors). Both
@@ -582,19 +582,29 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
         kN, kM, kp = key
         c = copy.deepcopy(base)
         c.N, c.M, c.n_pads = kN, kM, kp
-        print(f"  training a policy for N={kN} M={kM} pads={kp} ...",
+        print(f"  training {seeds} policies for N={kN} M={kM} pads={kp} ...",
               flush=True)
-        ag, _ = train_mappo(c, episodes=episodes, n_steps=c.episode_len,
-                            seed=0, verbose=False)
-        agents[key] = ag
+        for s in range(seeds):
+            ag, _ = train_mappo(c, episodes=episodes, n_steps=c.episode_len,
+                                seed=s, verbose=False)
+            agents.setdefault(key, []).append(ag)
+            print(f"    seed {s} done", flush=True)
 
     rows = []
     print("\n=== Scenarios (MAPPO vs the rules) ===")
     for sid, question, cfgs in scenario_cfgs(base):
         for vi, c0 in enumerate(cfgs):
             c = copy.deepcopy(c0)
-            agent = agents[(c.N, c.M, c.n_pads)]
-            m = eval_agent(agent, c, steps=c.episode_len, seed=c.seed)
+            # every policy of the group is evaluated on the SAME scene
+            # (the evaluation is seeded from the scene's own seed), so the
+            # comparison between the policies is paired
+            evs = [eval_agent(ag, c, steps=c.episode_len, seed=c.seed)
+                   for ag in agents[(c.N, c.M, c.n_pads)]]
+            m = {k: float(np.mean([e[k] for e in evs])) for k in evs[0]}
+            m["CK_std"] = (float(np.std([e["CK"] for e in evs], ddof=1))
+                           if len(evs) > 1 else 0.0)
+            m["train_seeds"] = len(evs)
+            m["per_seed_CK"] = ";".join(f"{e['CK']:.6f}" for e in evs)
             r = baseline_reactive(c, steps=c.episode_len, seed=c.seed)
             # the UNPRIVILEGED rule is the stronger of the two on the base
             # configuration, and the matrix has to be read against the

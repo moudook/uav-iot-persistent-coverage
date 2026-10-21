@@ -346,28 +346,28 @@ MACHINE = """## Machine notes (measured, 21 Oct)
 
 NEXT = """## What is running, and what is next
 RUNNING
-- `analysis/ablation_part.py --part stress_b` -- the stress ablation's
-  second part; the first is done.  The stress table is what exercises
-  the reserve and the arbitration, which the feasible configuration never
-  triggers.
-- `analysis/ab_map_resolution.py --episodes 20 --seeds 8` -- the
-  coverage-map resolution sweep at eight seeds.
-- The queue continues after those: the device timings, the merge of the
-  stress table, and the scenario matrix.
+- `run_all.py --stage scen` -- the scenario matrix at EIGHT training
+  seeds.  It used to train ONE policy per (N, M, pads) combination, so
+  the paper's claim that the learned controller is behind the rule in 34
+  of the 34 variants was a statement about one run.  Now each
+  combination is trained on eight seeds, every variant is evaluated with
+  every policy of its group on the same scenes, and the row is a mean
+  over training runs.
+- `run_all.py --stage learned` -- the two learned baselines (Independent
+  DQN and the Masked PPO with a local critic) at eight seeds instead of
+  three.
 
-DONE at eight training seeds: the base comparison, the observation
-arms, the credit arms, the energy arms, the training-budget sweep, the
-alternative corrected deployment and the component ablation (both parts,
-merged).
+DONE at eight training seeds, one device (CPU): the base comparison,
+the observation arms, the credit arms, the energy arms, the training-
+budget sweep, the alternative corrected deployment, the component
+ablation, the stress ablation, the map-resolution sweep and the device
+timings.
 
 NEXT
-- The visual identity: the figures and the tables take one theme, the
-  first page gets a teaser figure, and the project report stops being a
-  wall of text.  Three agents are drafting it -- one for the figure
-  theme and the report, one for the table style, one for the teaser --
-  and the author inspects every rendered PNG before it goes into the
-  paper.
-- Then: the final assembly, the full gate, and the arXiv-ready PDF.
+- The final assembly, the full gate, and one more audit of the finished
+  paper; then the arXiv PDF.
+- The venue is an arXiv preprint, so the paper is not cut to a
+  conference's page limit."""
 NEXT, AS SLOTS FREE
 - `analysis/ab_credit.py --episodes 25 --seeds 8 --eval-seeds 5` -- the
   credit-assignment arms.

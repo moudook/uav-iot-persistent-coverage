@@ -973,6 +973,18 @@ def build_tokens():
             tok["SCEN_SPAN_MIN"] = f"{abs(max(deficits)):.3f}"
             tok["SCEN_SPAN_MAX"] = f"{abs(min(deficits)):.3f}"
         tok["SCEN_VARIANTS"] = str(len(deficits))
+        # how many policies each combination was trained with: the rows
+        # are a mean over training runs, and the prose has to say so
+        scen_seeds = set()
+        for r in scen:
+            if r.get("train_seeds"):
+                try:
+                    scen_seeds.add(int(r["train_seeds"]))
+                except (TypeError, ValueError):
+                    pass
+        tok["SCEN_TRAIN_SEEDS"] = (str(sorted(scen_seeds)[0])
+                                    if len(scen_seeds) == 1 else
+                                    "several")
         tok["SCEN_WORST"] = f"{worst[0]} ({worst[1]:+.3f})"
         tok["SCEN_BEST"] = f"{best[0]} ({best[1]:+.3f})"        # the closing sentence of the section, derived from the matrix
         # The WORD that goes with the extreme is derived from its sign.
