@@ -368,24 +368,6 @@ NEXT
   paper; then the arXiv PDF.
 - The venue is an arXiv preprint, so the paper is not cut to a
   conference's page limit."""
-NEXT, AS SLOTS FREE
-- `analysis/ab_credit.py --episodes 25 --seeds 8 --eval-seeds 5` -- the
-  credit-assignment arms.
-- `analysis/ab_observation.py --episodes 25 --seeds 8 --eval-seeds 5` --
-  the observation arms.
-- `analysis/alt_deployment.py --seeds 8 --episodes 25 --eval-seeds 5` --
-  the alternative corrected deployment.  Its reported arm is READ from
-  the base comparison's per-seed rows rather than trained twice: it is
-  the same experiment, and measuring it once is what keeps the two
-  tables of the paper consistent.
-- `analysis/device_sensitivity.py --episodes 25` -- the three device
-  configurations at the full protocol.
-THEN
-- One final assembly, the full gate (`analysis/final_checks.py`), and one
-  more audit of the finished paper; both PDFs rebuilt by the watcher.
-- Undecided and awaiting the user: **the target venue**, and therefore
-  whether the paper is cut to conference length, journal length, or left
-  as a preprint."""
 
 s = old
 s = replace(s, ["## Contract", "## The contract"], CONTRACT)
