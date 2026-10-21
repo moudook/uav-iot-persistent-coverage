@@ -605,7 +605,7 @@ def build_tokens():
                     f"[{mean-half:+.3f}, {mean+half:+.3f}], which excludes "
                     f"zero), and that is about "
                     f"{tok.get('ED_SHARE', 'n/a')}\\% of the gap to the "
-                    f"reactive heuristic")
+                    f"{tok.get('BEST_RULE_NAME', 'strongest rule')}")
             else:
                 tok["ED_VERDICT"] = (
                     f"The coverage the repair adds is {mean:+.3f} on the "
@@ -668,7 +668,8 @@ def build_tokens():
                 "they share its training seeds -- so each one is reported "
                 "as an interval rather than as a point, and each "
                 "interval's upper limit is below the gap of "
-                f"{gap:.3f} to the reactive heuristic: "
+                f"{gap:.3f} to the "
+                f"{tok.get('BEST_RULE_NAME', 'strongest rule')}: "
                 + "; ".join(clauses)
                 + ".  The energy model is therefore not what accounts for "
                 "the gap, and the paper does not claim that it is.")
@@ -965,6 +966,13 @@ def build_tokens():
         tok["SCEN_WINS"] = str(wins)
         tok["SCEN_LOSSES"] = str(losses)
         tok["SCEN_TIES"] = str(ties)
+        # the SPREAD of the deficits, as magnitudes: the figure's caption
+        # says how far behind the rule the controller is, and the values
+        # the scenario names carry are signed
+        if deficits:
+            tok["SCEN_SPAN_MIN"] = f"{abs(max(deficits)):.3f}"
+            tok["SCEN_SPAN_MAX"] = f"{abs(min(deficits)):.3f}"
+        tok["SCEN_VARIANTS"] = str(len(deficits))
         tok["SCEN_WORST"] = f"{worst[0]} ({worst[1]:+.3f})"
         tok["SCEN_BEST"] = f"{best[0]} ({best[1]:+.3f})"        # the closing sentence of the section, derived from the matrix
         # The WORD that goes with the extreme is derived from its sign.

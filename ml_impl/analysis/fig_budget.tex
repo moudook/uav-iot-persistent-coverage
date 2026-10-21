@@ -10,11 +10,11 @@
   legend style={font=\tiny, at={(0.5,-0.30)}, anchor=north},
   legend columns=1,]
   \addplot[black, dashed, line width=1.0pt] coordinates {(5.00,0.972) (29.50,0.972)};
-  \addplot[color=uavblue, thick, mark=*, mark size=1.9pt, mark options={fill=uavblue}, error bars/.cd, y dir=both, y explicit, error bar style={line width=0.8pt, color=uavblue}, error mark options={rotate=90, mark size=3pt, line width=0.8pt, color=uavblue}] coordinates {(8,0.5949518749999998) +- (0,0.0830) (16,0.6213462499999995) +- (0,0.0673) (25,0.6622724999999957) +- (0,0.0584)};
+  \addplot[color=uavblue, thick, mark=*, mark size=1.9pt, mark options={fill=uavblue}, error bars/.cd, y dir=both, y explicit, error bar style={line width=0.8pt, color=uavblue}, error mark options={rotate=90, mark size=3pt, line width=0.8pt, color=uavblue}] coordinates {(8,0.595) +- (0,0.0830) (16,0.621) +- (0,0.0673) (25,0.662) +- (0,0.0584)};
   \legend{{the strongest rule},{the learned controller}}
   \draw[uavred, line width=0.9pt, <->] (axis cs:26.40,0.662) -- (axis cs:26.40,0.972);
   \node[rotate=90, anchor=south, font=\tiny, text=uavred] at (axis cs:28.10,0.662) {gap 0.309};
   \node[anchor=south west, font=\tiny] at (axis cs:5.40,0.977) {the unprivileged reactive rule (0.972)};
-  \node[anchor=north west, font=\tiny, align=left] at (axis cs:5.40,0.958) {training over 8--25 episodes: $\Delta=+0.067$\\95\% CI [+0.017, +0.118] --- 22\% of the gap\\bars: $\pm 1$ s.d. over the 8 training seeds};
+  \node[anchor=north west, font=\tiny, align=left] at (axis cs:5.40,0.927) {training over 8--25 episodes: $\Delta=+0.067$\\95\% CI [+0.017, +0.118] --- 22\% of the gap\\bars: $\pm 1$ s.d. over the 8 training seeds};
 \end{axis}
 \end{tikzpicture}

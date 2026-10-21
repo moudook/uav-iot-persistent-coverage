@@ -127,6 +127,10 @@ therefore not evidence that the budget has stopped mattering, and we do
 not use it as such; @@BUDGET_CAVEAT@@.  The sweep is not the end of the
 question, and the arm that settles it is the paired one: @@BUDGET_PAIRED_VERDICT@@.
 
+__FIG_BUDGET__
+
+Figure~\ref{fig:budget} is the sweep: the coverage at the three budgets with the seed-to-seed spread, the strongest rule for reference, and the size of the gap between them.
+
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
 from the proposed method in exactly one respect: each agent has its own
@@ -254,6 +258,10 @@ the swarm drains its packs in the field; and a swarm that has drained its
 packs is not a swarm that can be asked to cover anything.
 
 %% ENERGY
+
+__FIG_ARMS__
+
+Figure~\ref{fig:arms} draws every controlled arm's interval against the gap it would have to explain, with the gap's own interval as a band: it is the picture of the argument the tables below make in numbers.
 
 The first version of this section told a different story, and the
 difference is worth recording, because it is the clearest example in this
@@ -401,6 +409,10 @@ value iteration --- are implementations of different algorithms, and we do
 not claim to have implemented or evaluated them here.
 
 %% SCEN
+
+__FIG_SCEN__
+
+Figure~\ref{fig:scen} is that matrix as a picture: one marker per variant, the difference between the learned controller and the stronger of the two rules.
 
 Table~\ref{tab:results_scen} is the scenario matrix: it says whether the ordering survives outside the configuration it was measured on. Each row is the mean over the variants of that scenario, with the proposed
 controller and the two rules evaluated on the same scenes.  The scenario

@@ -1,6 +1,6 @@
 %% CONTRIB
 
-    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are the two terms the controlled comparisons examine, and at 3 training seeds they do not settle the question about the coverage.  In the component ablation, the identity changes persistent coverage by $+0.026$, an interval $[-0.129, +0.181]$ that includes zero, so at this budget what it demonstrably buys is the ability to specialise, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses.  A broadcast summary of where the coverage deficit is was added a priori and measured to make no difference to the coverage at any resolution tested, while it does change what the policy does; it is reported rather than quietly dropped.
+    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are the two terms the controlled comparisons examine, and at 8 training seeds they do not settle the question about the coverage.  In the component ablation, the identity changes persistent coverage by $-0.005$, an interval $[-0.048, +0.039]$ that includes zero, so at this budget what it demonstrably buys is the ability to specialise, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses.  A broadcast summary of where the coverage deficit is was added a priori and measured to make no difference to the coverage at any resolution tested, while it does change what the policy does; it is reported rather than quietly dropped.
 
 %% MAIN
 
@@ -127,6 +127,10 @@ therefore not evidence that the budget has stopped mattering, and we do
 not use it as such; we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap.  The sweep is not the end of the
 question, and the arm that settles it is the paired one: the paired comparison over the same training seeds does resolve a real gain, +0.067 with a 95\% interval of [+0.017, +0.118], and that interval's upper limit of 0.118 is below the gap of 0.309: more training does help, and over the 8--25 episode range the sweep covers the whole of its effect is too small to account for the shortfall, so the budget is excluded as the explanation of the shortfall over that range.  Budgets beyond it are not addressed by this measurement, and the sweep shows no saturation within it.
 
+__FIG_BUDGET__
+
+Figure~\ref{fig:budget} is the sweep: the coverage at the three budgets with the seed-to-seed spread, the strongest rule for reference, and the size of the gap between them.
+
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
 from the proposed method in exactly one respect: each agent has its own
@@ -246,14 +250,18 @@ the credit to act on it chases.
 
 The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (+0.015, 95\% interval [-0.130, +0.161], an upper limit below the gap of 0.309); $the full observation of the proposed configuration$ (+0.023, 95\% interval [-0.015, +0.062], an upper limit below the gap of 0.309).  Each upper limit is below the gap of 0.309 to the unprivileged reactive rule, so the content of the observation is not what accounts for the gap; what the observation terms buy is the ability to specialise at all, and the identity raises the number of distinct actions a policy takes from 1.76 to 2.19 out of eight, which is the specialisation the arms measure.
 
-The resolution of the summary makes no difference to the coverage: $G=0$: 0.645, $G=4$: 0.669, $G=8$: 0.645, and the largest of the differences is 0.025, inside the seed-to-seed spread of the learner (0.058).  What the summary does change is the swarm's behaviour: the spread grows, from 8.1 m without it to 9.4 m and 8.4 m with it, because a policy that follows the deficit spreads the swarm out instead of keeping it together.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
+The resolution of the summary makes no difference to the coverage: $G=0$: 0.640, and the largest of the differences is 0.000, inside the seed-to-seed spread of the learner (0.052).  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
-The observation term with the largest effect on the coverage is the coverage map, and Table~\ref{tab:results_abl} prices it: it is worth -0.039 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.  The reason is easy to see in
+The observation term with the largest effect on the coverage is the pad bearing, and Table~\ref{tab:results_abl} prices it: it is worth -0.013 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.  The reason is easy to see in
 retrospect.  Without a direction to the charger a UAV cannot come home, so
 the swarm drains its packs in the field; and a swarm that has drained its
 packs is not a swarm that can be asked to cover anything.
 
 %% ENERGY
+
+__FIG_ARMS__
+
+Figure~\ref{fig:arms} draws every controlled arm's interval against the gap it would have to explain, with the gap's own interval as a band: it is the picture of the argument the tables below make in numbers.
 
 The first version of this section told a different story, and the
 difference is worth recording, because it is the clearest example in this
@@ -274,7 +282,7 @@ move, the energy to reach a charging pad plus the reserve margin.  The
 stranding falls from $6.3$ UAVs per episode to $0.9$, and
 the return-to-charge transitions rise from $140$ to $624$ per
 episode, because the UAVs now come home instead of dying in the field.
-The repair is not a null: the coverage it adds is +0.078 on the same training seeds (95\% interval [+0.038, +0.118], which excludes zero), and that is about 25\% of the gap to the reactive heuristic.  The defect was therefore real and the repair was
+The repair is not a null: the coverage it adds is +0.078 on the same training seeds (95\% interval [+0.038, +0.118], which excludes zero), and that is about 25\% of the gap to the the unprivileged reactive rule.  The defect was therefore real and the repair was
 correct, and the repair is already part of the proposed configuration: it
 is not a candidate explanation of the residual gap, because the gap is
 measured against a controller that has the repair in it.  What the repair
@@ -296,7 +304,7 @@ difference of this width is also a statement about the resolution of the
 arm and not about the component, and we report that resolution with the
 interval.
 
-The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.309 to the reactive heuristic: $removing the energy constraint$ (+0.023, 95\% interval [-0.035, +0.081], an upper limit below the gap of 0.309); $removing the threshold term$ (-0.001, 95\% interval [-0.029, +0.028], an upper limit below the gap of 0.309); $the previous energy rule$ (-0.078, 95\% interval [-0.118, -0.038], an upper limit below the gap of 0.309).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.
+The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.309 to the the unprivileged reactive rule: $removing the energy constraint$ (+0.023, 95\% interval [-0.035, +0.081], an upper limit below the gap of 0.309); $removing the threshold term$ (-0.001, 95\% interval [-0.029, +0.028], an upper limit below the gap of 0.309); $the previous energy rule$ (-0.078, 95\% interval [-0.118, -0.038], an upper limit below the gap of 0.309).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.
 
 That is the sequence the framework is for.  A coverage comparison on its
 own would have reported that the learned controller mismanages energy, and
@@ -310,11 +318,11 @@ neither supported nor refuted by it.
 %% ABL
 
 Every variant is trained on the same configuration with the same budget and
-from the same set of 3 training seeds, and differs from the
+from the same set of 8 training seeds, and differs from the
 full configuration in exactly one component, so a difference is
 attributable to that component.  The budget is the base comparison's
 (25 episodes), and the full configuration of this table is
-the first 3 of the base comparison's training runs --- the same
+the first 8 of the base comparison's training runs --- the same
 policies, not a cheaper experiment --- so the two tables describe the same
 learner.  Because the variants share the training seeds, the
 comparison is \emph{paired}: a difference is measured on the same training
@@ -327,15 +335,15 @@ seed-to-seed spread, say --- has a false-positive rate that depends on
 the spread of that other number, and it buys nothing in power: at three
 training seeds it would flag roughly one null component in three, while
 still being unable to detect a true effect of the size it flags.  The
-arms below are measured at 3 training seeds, and the paired
+arms below are measured at 8 training seeds, and the paired
 interval is what makes the number they report mean something.  The
 paired interval does not have that failure mode, and it also reports the
 resolution of the measurement, which is the number a reader actually
-needs.  Every component's 95\% confidence interval for the paired difference includes zero, and the smallest difference this protocol could resolve anywhere is $0.285$ of persistent coverage, which is the WIDEST arm's resolution: the resolution is per-arm, and each arm's own interval is in the table.
+needs.  The paired comparison, in which every variant is trained on the same training seeds as the full configuration, separates the components into two groups.  The components whose 95\% confidence interval for the paired difference excludes zero are $the under-coverage term$ (+0.094, 95\% CI [+0.039, +0.149]); every other component's interval includes zero, and the smallest difference this protocol could resolve anywhere is $0.070$ of persistent coverage, which is the WIDEST arm's resolution.
 
 What the intervals do and do not say is worth stating precisely, because a
 null result of this width is a statement about the resolution of the
-measurement and not about the component.  The widest of the arms resolves no effect smaller than about $0.285$ of persistent coverage, at this training budget and with this number of training seeds, so the resolution is per-arm and a reader who wants a particular component's resolution must read it off that component's interval.  The
+measurement and not about the component.  The widest of the arms resolves no effect smaller than about $0.070$ of persistent coverage, at this training budget and with this number of training seeds, so the resolution is per-arm and a reader who wants a particular component's resolution must read it off that component's interval.  The
 intervals are per-arm and are not adjusted for the number of arms, so a
 reader who wants a family-wise statement should treat the set of arms as
 one test with several comparisons rather than as several independent
@@ -401,6 +409,10 @@ value iteration --- are implementations of different algorithms, and we do
 not claim to have implemented or evaluated them here.
 
 %% SCEN
+
+__FIG_SCEN__
+
+Figure~\ref{fig:scen} is that matrix as a picture: one marker per variant, the difference between the learned controller and the stronger of the two rules.
 
 Table~\ref{tab:results_scen} is the scenario matrix: it says whether the ordering survives outside the configuration it was measured on. Each row is the mean over the variants of that scenario, with the proposed
 controller and the two rules evaluated on the same scenes.  The scenario

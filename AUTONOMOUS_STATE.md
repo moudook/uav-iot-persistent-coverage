@@ -152,7 +152,7 @@ Every number in the paper is produced under one protocol:
 - The learned controller: 0.662 $\pm$ 0.058;
   the argmax variant: 0.389 $\pm$ 0.073.
 - The arms' verdict, derived from the intervals: Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.161, margin +0.148); the full observation of the proposed configuration (upper limit 0.062, margin +0.247); removing the energy constraint (upper limit 0.081, margin +0.228); removing the threshold term (upper limit 0.028, margin +0.281); the previous energy rule (upper limit -0.038, margin +0.347), against a gap of 0.309.  Every arm's upper limit is below the gap, so none of them can be the whole of the explanation, by margins that are small but positive.  Every interval is paired over the same training seeds, against the local-only arm A of the observation experiment and the proposed configuration of the energy experiment.
-- The energy repair: The repair is not a null: the coverage it adds is +0.078 on the same training seeds (95\% interval [+0.038, +0.118], which excludes zero), and that is about 25\% of the gap to the reactive heuristic
+- The energy repair: The repair is not a null: the coverage it adds is +0.078 on the same training seeds (95\% interval [+0.038, +0.118], which excludes zero), and that is about 25\% of the gap to the the unprivileged reactive rule
 - The training-budget sweep: 8 episodes: 0.595, 16 episodes: 0.621, 25 episodes: 0.662. the coverage moves by +0.067 over the range the sweep covers, which is about 22\% of the gap of 0.309, and the increments between successive budgets are +0.026, +0.041; the last of them, +0.041, is 2.8 standard errors from zero (the standard error of the difference is 0.014, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers
 - The alternative corrected deployment (N = 5, R_cov = 45 m), MEASURED:
   the alternative deployment is not merely feasible, it is BETTER: with five UAVs and a 45 m coverage radius the learned controller reaches 0.770 against 0.662 for the reported eight-UAV deployment, a difference of +0.108 on the same training seeds and the same evaluation scenes.
@@ -173,7 +173,7 @@ this section cannot disagree with the paper.
 
 - The **energy model is excluded as the whole of the explanation**: the
   arms' upper limits are below the gap of 0.309, and
-  The repair is not a null: the coverage it adds is +0.078 on the same training seeds (95\% interval [+0.038, +0.118], which excludes zero), and that is about 25\% of the gap to the reactive heuristic.
+  The repair is not a null: the coverage it adds is +0.078 on the same training seeds (95\% interval [+0.038, +0.118], which excludes zero), and that is about 25\% of the gap to the the unprivileged reactive rule.
 - The **observation content is NOT excluded**: the arm that adds the
   agent identity has an upper limit of 0.377 against a gap of
   0.309, so the identity remains a candidate explanation.  The arm
@@ -378,6 +378,31 @@ code, no repository) and to be adversarial rather than agreeable.
   the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
   74% are confirmed; the Luna reference was wrong and is fixed; the
   novelty claim survives.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+- **Audit 7** (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+  checked against the raw per-seed rows, with every interval recomputed
+  by hand. Ten findings, all applied: the budget's paired increment, two
+  population standard deviations, a rounding disagreement between a
+  summary and its table, the wrong rule named in a sentence, an
+  asymmetric interval described as symmetric, a caption that said five
+  where the table said eight, an audit claim in the abstract that was
+  broader than the audit, an arms' sentence that did not name its
+  reference arm, an exclusion stated without its scope, and a share
+  whose denominator appears nowhere in the paper.
 
 - **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
   geometry, the packing survey, and the budget sweep's inference. Found

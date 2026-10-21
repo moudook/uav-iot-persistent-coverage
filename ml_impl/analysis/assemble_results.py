@@ -334,8 +334,59 @@ __BLOCK_SCEN__
         print("WARNING: the learning-curve figure was not generated")
     fig = "\n".join(fig_lines)
 
+    # ------------------------------------------------------------------
+    # the EXPLANATORY figures: the claims as pictures
+    # ------------------------------------------------------------------
+    def explanatory(name, label, caption_lines):
+        """One figure environment, from the drafted fragment."""
+        p = os.path.join(HERE, name + ".tex")
+        if not os.path.exists(p):
+            print(f"WARNING: the figure {name} was not drafted")
+            return ""
+        body = [r"\begin{figure}[t]", r"\centering", r"\small",
+                open(p, encoding="utf-8").read().strip(),
+                r"\caption{" + " ".join(caption_lines) + "}",
+                r"\label{" + label + "}", r"\end{figure}"]
+        return "\n".join(body)
+
+    fig_arms = explanatory(
+        "fig_arms", "fig:arms",
+        [r"The controlled arms against the gap.  Each bar is the 95\% "
+         r"interval of the paired difference between the tested arm and "
+         r"the arm it is paired against --- arm~A of the observation "
+         r"experiment for the two observation arms, the proposed "
+         r"configuration for the three energy arms and for the credit arm "
+         r"--- and the marker is the paired mean.  The dashed line is the "
+         r"gap of $\tokGap$ to the strongest rule, and the band its own 95\% "
+         r"interval.  Every arm's upper limit lies below the band, so no "
+         r"arm tested here can be the whole of the explanation."])
+
+    fig_budget = explanatory(
+        "fig_budget", "fig:budget",
+        [r"The training-budget sweep.  The learned controller is trained on "
+         r"the same eight seeds at 8, 16 and 25 episodes and evaluated on "
+         r"the same scenes; the bars are $\pm 1$ standard deviation over the "
+         r"training seeds.  The paired gain over the sweep's range is "
+         r"$\tokBudgetPaired$ (95\% interval $\tokBudgetPairedCi$), about "
+         r"$\tokBudgetFrac$\% of the gap, whose upper limit is below the gap "
+         r"of $\tokBudgetGap$: more training does help, and over the range "
+         r"the sweep covers the whole of its effect is too small to account "
+         r"for the shortfall."])
+
+    fig_scen = explanatory(
+        "fig_scen", "fig:scen",
+        [r"The scenario matrix.  The learned controller's persistent "
+         r"coverage minus that of the stronger of the two rules, for every "
+         r"variant of every scenario.  It is behind the stronger rule in "
+         r"$\tokScenLosses$ of the $\tokScenVariants$ variants, by between "
+         r"$\tokScenSpanMin$ and $\tokScenSpanMax$ of persistent coverage, so "
+         r"the ordering is a property of the method at this budget rather "
+         r"than of a particular regime."])
+
+    # The BLOCKS go in first: a block may itself carry a figure
+    # placeholder, and a placeholder substituted before the block is
+    # inserted never reaches the paper.
     section = (section
-               .replace("__FIG_CURVE__", fig)
                .replace("__TAB_MAIN__", tab('tab:results_main'))
                .replace("__TAB_OBS__", tab('tab:results_obs'))
                .replace("__TAB_ENERGY__", tab('tab:results_energy'))
@@ -349,7 +400,11 @@ __BLOCK_SCEN__
                .replace("__BLOCK_ABL__", blocks['%% ABL'])
                .replace("__BLOCK_ABL_STRESS__", blocks['%% ABLSTRESS'])
                .replace("__BLOCK_CREDIT__", blocks['%% CREDIT'])
-               .replace("__BLOCK_SCEN__", blocks['%% SCEN']))
+               .replace("__BLOCK_SCEN__", blocks['%% SCEN'])
+               .replace("__FIG_CURVE__", fig)
+               .replace("__FIG_ARMS__", fig_arms)
+               .replace("__FIG_BUDGET__", fig_budget)
+               .replace("__FIG_SCEN__", fig_scen))
 
     # the section's own tokens (the preamble quotes the reactive
     # heuristic's coverage) are filled from the same table

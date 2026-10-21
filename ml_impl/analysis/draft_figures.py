@@ -109,11 +109,14 @@ ARMS = [
     ("OBS_B", r"obs.\,B: identity", "adding the agent identity"),
     ("OBS_C", r"obs.\,C: full obs.", "the full observation"),
     ("EB", r"energy\,B: no constraint", "removing the energy constraint"),
-    ("EC", r"energy\,C: no threshold", "removing the threshold term"),
+    ("EC", r"energy\,C: no threshold", "without the threshold term"),
     ("ED", r"energy\,D: prev.\ rule", "the previous energy rule"),
+    ("CREDIT", r"credit: per-agent critic", "the per-agent local critic"),
 ]
-# the group boundary: the two observation arms, then the three energy arms
+# the group boundary: the two observation arms, then the three energy arms,
+# then the credit arm
 OBS_COUNT = 2
+ENERGY_COUNT = 3
 
 
 def figure_arms(tok, wfrac=1.0):
@@ -177,23 +180,30 @@ def figure_arms(tok, wfrac=1.0):
     for i, a in enumerate(arms):
         y = n - i
         col = UAVGREEN if a["excluded"] else UAVRED
-        body.append(f"  \\addplot[color={col}, line width=2.4pt, mark=none, "
-                    f"forget plot] coordinates "
-                    f"{{({a['lo']:.3f},{y}) ({a['hi']:.3f},{y})}};")
-        body.append(f"  \\addplot[only marks, mark=|, mark size=3.2pt, "
-                    f"color={col}, forget plot] coordinates "
-                    f"{{({a['lo']:.3f},{y}) ({a['hi']:.3f},{y})}};")
-        body.append(f"  \\addplot[only marks, mark=*, mark size=1.7pt, "
-                    f"color=black, mark options={{fill=white,draw=black,"
-                    f"line width=0.5pt}}, forget plot] coordinates "
-                    f"{{({a['mean']:.3f},{y})}};")
-    # the separator between the two groups of arms
-    if OBS_COUNT < n:
-        ysep = n - OBS_COUNT + 0.5
-        body.append(f"  \\draw[gray!50, line width=0.4pt, "
-                    f"dash pattern=on 2pt off 2pt] "
-                    f"(axis cs:{xmin:.3f},{ysep:.2f}) -- "
-                    f"(axis cs:{xmax:.3f},{ysep:.2f});")
+        # the horizontal interval, in the pgfplots idiom for an interval
+        # plot: the point is the paired mean and the error value is the
+        # half-width of the 95% interval, so the bar, its end caps and
+        # the marker all come from ONE plot command.  The error mark
+        # options override the default rotate=90, which would put the
+        # caps of a horizontal interval across the bar.
+        body.append(f"  \\addplot[color={col}, mark=*, mark size=1.7pt, "
+                    f"mark options={{fill=white,draw=black,line width=0.5pt}},"
+                    f" forget plot,"
+                    f" error bars/.cd, x dir=both, x explicit,"
+                    f" error bar style={{line width=2.4pt, color={col}}},"
+                    f" error mark=|,"
+                    f" error mark options={{mark size=3.2pt, "
+                    f"line width=0.8pt, color={col}}}] coordinates "
+                    f"{{({a['mean']:.3f},{y}) +- ({a['half']:.3f},0)}};")
+    # the separators between the groups of arms
+    for boundary, after in ((OBS_COUNT, "the observation arms"),
+                            (OBS_COUNT + ENERGY_COUNT, "the energy arms")):
+        if boundary < n:
+            ysep = n - boundary + 0.5
+            body.append(f"  \\draw[gray!50, line width=0.4pt, "
+                        f"dash pattern=on 2pt off 2pt] "
+                        f"(axis cs:{xmin:.3f},{ysep:.2f}) -- "
+                        f"(axis cs:{xmax:.3f},{ysep:.2f});")
     # the legend: the three things the picture draws
     body.append(r"  \addlegendimage{color=" + UAVGREEN + r", line width=2.4pt}")
     body.append(r"  \addlegendimage{color=" + UAVRED + r", line width=2.4pt}")
@@ -297,7 +307,7 @@ def figure_budget(tok, wfrac=1.0):
                 f"{{({xmin:.2f},{rule:.3f}) ({xmax:.2f},{rule:.3f})}};")
     # the sweep, with the seed-to-seed spread
     coords = " ".join(
-        f"({e},{c}) +- (0,{s:.4f})" for e, c, s in zip(eps, cks, sds))
+        f"({e},{c:.3f}) +- (0,{s:.4f})" for e, c, s in zip(eps, cks, sds))
     body.append(r"  \addplot[color=" + UAVBLUE + r", thick, mark=*, "
                 r"mark size=1.9pt, mark options={fill=" + UAVBLUE + r"},"
                 r" error bars/.cd, y dir=both, y explicit,"
@@ -324,8 +334,10 @@ def figure_budget(tok, wfrac=1.0):
     if frac:
         txt += f" --- {frac}\\% of the gap"
     txt += f"\\\\bars: $\\pm 1$ s.d. over the {nseed} training seeds"
+    # the annotation sits BELOW the reference line, so that the dashed
+    # line does not run through the text
     body.append(f"  \\node[anchor=north west, font=\\tiny, align=left] at "
-                f"(axis cs:{xmin + 0.4:.2f},{rule - 0.014:.3f}) {{{txt}}};")
+                f"(axis cs:{xmin + 0.4:.2f},{rule - 0.045:.3f}) {{{txt}}};")
     frag = ("\\begin{tikzpicture}\n"
             + axis(opts, "\n".join(body) + "\n")
             + "\n\\end{tikzpicture}")
