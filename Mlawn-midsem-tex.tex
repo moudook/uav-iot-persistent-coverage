@@ -1154,6 +1154,20 @@ Stability & Mean and standard deviation across independent random seeds; trainin
 \end{tabularx}
 \end{table}
 
+\paragraph{Which of these the paper reports.} Of the metrics above, this
+paper reports the persistent $K$-coverage, the connectivity availability
+and fragility, the service continuity, the time-averaged coverage deficit,
+the maximum refresh time, the energy, charging and movement quantities, the
+reserve activations and the stranding count, the plasticity of the shared
+actor, and the degradation of the coverage with $N$ and $M$ through the
+scenario matrix.  Three are not reported: the outage severity during a
+recovery interval, the distribution of the recovery time, and the
+inference-time scaling.  The collision and out-of-bounds counts are
+prevented by the safety filter rather than measured by it, and the
+separation constraint can be violated by up to one step of motion when the
+joint projection reverts a move while the others have moved, so we do not
+present a zero in a column we did not instrument as a measurement.
+
 \subsection{Evaluation Scenarios}
 Nine scenarios vary the dominant environmental factors independently before they are combined: sensor density, fleet size, battery capacity, the number of charging pads, $R_{\mathrm{comm}}$, $R_{\mathrm{cov}}$, the time of a single-UAV failure, a combined-stress configuration in which energy scarcity, pad contention, weak connectivity and a failure occur together, and the initial deployment.  Each scenario has two variants, and every variant is run.
 
