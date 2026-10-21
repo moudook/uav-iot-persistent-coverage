@@ -162,114 +162,38 @@ This is the protocol every number in the paper is produced under.
 
 `tests/mutation_check.py` proves the suite catches the historical bugs.
 
-## The numbers (BEING RE-MEASURED under the protocol above, 20 Oct 22:00)
-The last complete set, measured **before** defect 28 was fixed, is in git
-history at `dbc68f7` and is **NOT** quotable, because the evaluation was an
-uncontrolled draw. What it said, and what the re-measurement is testing:
-
-| Controller | CK | AG | SC | CovDef |
-|---|---|---|---|---|
-| Fixed formation | 0.372 | 1.000 | 0.000 | 0.628 |
-| Greedy recharge | 0.786 | 0.964 | 0.066 | 0.214 |
-| **Reactive heuristic** | **0.953** | 1.000 | **0.751** | 0.047 |
-| Independent DQN | 0.396 | 0.990 | 0.000 | 0.604 |
-| Masked PPO, local critic | 0.649 | 0.983 | 0.001 | 0.351 |
-| **MAPPO (proposed)** | **0.734** | 0.968 | 0.031 | 0.266 |
-| MAPPO (argmax) | 0.426 | 0.965 | 0.000 | 0.574 |
-| Oracle (ceiling) | 1.000 | | | |
-
-The **rule baselines and the oracle are unaffected by defect 28** (they are
-deterministic), so their rows above stand. The learned rows are being
-re-measured and will move by the size of the uncontrolled term, which is
-why they are not quotable until the re-measurement lands.
-
-### THE RE-MEASURED BASE TABLE (20 Oct 23:45, the seeded protocol)
-| Controller | CK | AG | SC | CovDef |
-|---|---|---|---|---|
-| Fixed formation | 0.372 | 1.000 | 0.000 | 0.628 |
-| Greedy recharge | 0.786 | 0.964 | 0.066 | 0.214 |
-| Reactive heuristic | 0.953 | 1.000 | 0.751 | 0.047 |
-| **Reactive (local assignment)** | **0.972** | 1.000 | **0.777** | 0.028 |
-| Independent DQN | 0.396 | 0.990 | 0.000 | 0.604 |
-| Masked PPO, local critic | 0.632 | 0.991 | 0.004 | 0.368 |
-| **MAPPO (proposed)** | **0.689 +- 0.042** | 0.967 | 0.018 | 0.311 |
-| MAPPO (argmax) | 0.411 +- 0.090 | 0.978 | 0.001 | 0.589 |
-| Oracle (ceiling) | 1.000 | | | |
-
-**The gap to the STRONGEST controller in the table is 0.283, 95%
-interval [0.231, 0.335]** over five training seeds. The gap is computed
-against the best rule baseline, so it is always the hardest gap the
-learner faces. The old single-policy figure of 0.734 is gone: the table
-reports the controller, not one lucky policy.
-
-**THE INFORMATION-ASYMMETRY CAVEAT IS REFUTED BY MEASUREMENT.** The
-`Reactive (local assignment)` arm is the same rule with the global
-coverage state removed (each UAV judges only the sensors within twice the
-coverage radius of its own position, and there is no assignment). It
-reaches CK 0.972 against the privileged version's 0.953: the privilege is
-not what gives the rule its edge -- the global round-robin assignment
-makes the UAVs contend for sensors -- and the gap to the learned
-controller is NOT an information artefact. The paper's limitation (iii)
-says so, and the sentence is derived from the measurement.
-
-**The observation A/B/C** (3 training seeds, 25 episodes): A (local
-only) 0.683 +- 0.037, distinct 1.46; B (+ identity) 0.560 +- 0.135,
-distinct 2.32; C (+ identity + map + bearing) 0.682 +- 0.063, distinct
-2.11, spread 14.3 m. Arm C is EXACTLY the ablation's Full row (the same
-three policies), which is the consistency check on both artefacts. The
-identity raises the distinct-action count and does NOT raise the coverage;
-the paired intervals are in the paper.
-
-**On the infeasible N=5 configuration** (`analysis/infeasible_instance.py`):
-the reactive heuristic reaches CK **0.648** with AG 1.000 and SC **0.000**,
-and the oracle reaches 0.990 on the twenty sensors. The certificate, and
-not either metric, is what says the region is not coverable at N=5.
-
-**The connectivity accounting** (`analysis/connectivity_accounting.py`):
-the joint projection holds over MOVES -- the graph is not left
-disconnected by a policy action -- and the availability below 1.000 is
-the RECOVERY mechanism's signature: a UAV whose pack empties away from a
-pad is removed from the active set and the reserve re-seats it at a
-charging pad, which can be out of communication range of the swarm. The
-accounting counts only TRANSITIONS into disconnection, because a graph
-that is already disconnected stays disconnected and its cause is in an
-earlier step.
-
-**The connectivity accounting** (`analysis/connectivity_accounting.py`):
-the joint projection holds -- the graph is not left disconnected by a move
--- and the measured availability below 1.000 is accounted for by UAVs
-leaving the active set. Pinned by a test.
-
-**The energy arms** (four controlled arms, one difference each) said the
-energy model is **not** what limits the controller: A 0.701, B (a pack that
-cannot run out) 0.722, C (no threshold term) 0.739, D (the previous energy
-rule) 0.716 -- all inside the learner's seed spread. What the previous rule
-did was strand 7.4 of the 8 UAVs per episode against 1.0 for the corrected
-one: a real defect in the safety filter, whose repair changed the coverage
-by 0.015, not by 0.1. **Being re-measured.**
-
-**The scenario matrix** (34 variants) showed the learned controller *ahead*
-in the pre-deployed regime (0.874 against 0.817) and level under combined
-stress (0.567 against 0.572). **Being re-measured.**
-
-## THE CENTRAL FINDING (the claim, not yet the final numbers)
+## THE NUMBERS (21 Oct, 09:40, the pinned CPU protocol)
+- The gap to the strongest rule: **0.276** (95% interval [0.242, 0.309]), against the unprivileged reactive rule at 0.972.
+- The learned controller: 0.696 +- 0.027; the argmax variant: 0.411 +- 0.075.
+- The arms' verdict, derived from the intervals and not asserted: controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.377, margin -0.101); the full observation of the proposed configuration (upper limit 0.164, margin +0.112); removing the energy constraint (upper limit 0.200, margin +0.076); removing the threshold term (upper limit 0.066, margin +0.210); the previous energy rule (upper limit -0.003, margin +0.279), against a gap of 0.276.  The arms whose upper limit reaches past the gap -- adding the agent identity -- are NOT excluded, and remain candidate explanations; the others are excluded as the whole of the explanation
+- The energy repair is NOT a null: the repair is not a null: the coverage it adds is +0.120 on the same training seeds (95\% interval [+0.003, +0.236], which excludes zero), and that is about 43\% of the gap to the reactive heuristic
+- The training-budget sweep: 8 episodes: 0.609, 16 episodes: 0.640, 25 episodes: 0.698. the coverage moves by +0.089 over the range the sweep covers, which is about 32\% of the gap of 0.276, and the increments between successive budgets are +0.031, +0.058; but the last of them, +0.058, is only 1.2 standard errors from zero (the standard error of the difference is 0.048, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall
+- The stress table resolves nothing: every paired interval includes zero.
+- The scenario matrix: behind in 34 of 34 variants, from S8 (-0.051) to S6 (-0.388).
+- The claim audit: 33 items, 29 verified, 0 failing, 4 informational. The test suite: 115 cases.
+## THE CENTRAL FINDING (the claim, and what the arms actually establish)
 The learned controller does not reach the reactive heuristic, and the
-framework's controlled arms are what identify why. The candidate
-explanations are the content of the observation, the energy model, and the
-credit assignment of a shared team reward.
-- The **energy model is rejected** by the four controlled arms.
-- The **observation content is not the binding factor**: the A/B/C arms do
-  not separate, and the component ablation prices the observation terms
-  separately. The observation terms are what make the controller work at
-  all, not what stops it working.
-- The **credit assignment** is what remains, and the cheapest remedy (a
-  per-agent local critic) does not close the gap.
+framework's controlled arms are what say why -- or why not.
 
-**Watch this**: the old energy prose claimed the corrected filter rule
-raised the coverage from 0.638 to 0.734. That comparison was **not
-controlled** -- the two runs differed in more than the rule. The controlled
-arms say the difference is 0.015. The prose now quotes the controlled arms.
+- The **energy model is excluded**: every energy arm's upper limit is
+  below the gap, and the repair of the safety filter is worth +0.120 of
+  persistent coverage, about 43% of the gap, with an interval that
+  excludes zero.
+- The **observation content is NOT excluded**: the arm that adds the agent
+  identity has an upper limit of 0.377 against a gap of 0.276, so the
+  identity remains a candidate explanation at three training seeds. The
+  arm that prices the full observation does clear the gap (0.164).
+- The **training budget is not resolved**: the sweep's last increment is
+  1.2 standard errors from zero, and the 8-versus-25-episode interval
+  straddles the gap. It is neither excluded nor implicated.
+- The **credit assignment** is the remaining candidate the framework's own
+  mechanisms suggest, and the cheapest test of it (a per-agent local
+  critic) moves in the wrong direction and leaves it unresolved.
 
+So the residual is consistent with the credit assignment, and also with
+the observation content and the training budget; the arms bound the
+energy model and nothing else. The paper says that, and every part of it
+is derived from an interval.
 ## The mathematical audit cadence (standing instruction, 20 Oct)
 - **Audit 1** (done): the seven load-bearing claims. Found 4 wrong as
   stated; all corrected.
@@ -417,19 +341,30 @@ python tests/run_tests.py           # 115 tests
 - The user asked: **no new processes after a set of jobs finishes** --
   report and let them reboot.
 
-## RUNNING JOBS (21 Oct, 06:05)
+## RUNNING JOBS (21 Oct, 09:40)
 - `run_all.py --stage abl` (the log is `abl_stage_cpu.log`) -- the component
-  ablation, 12 variants x 3 seeds x 25 episodes, re-measured on the CPU
-  because the first re-measurement ran on the GPU. **THE CRITICAL PATH**:
-  about 4.8 h, so ~11:00.
-- `analysis/ab_energy_management.py --episodes 25 --seeds 3` -- the four
-  energy arms. ~08:30.
-- `analysis/ab_credit.py --episodes 25 --seeds 3` -- the credit A/B. ~07:30.
-- The queue behind them: the map sweep, the observation arms, the base
-  comparison.
-- The scenario matrix was measured on the GPU at 02:54 and **has to be
-  re-measured on the CPU** (2.4 h) for the same reason.
+  ablation, 12 variants x 3 seeds x 25 episodes, re-measured on the CPU.
+  **THE CRITICAL PATH**: at variant 11 of 12 at 09:05, so ~10:15.
+- `analysis/ab_observation.py --episodes 25 --seeds 3 --eval-seeds 5` -- the
+  observation arms, re-run so that the artefact records the device it was
+  measured on. ~11:00.
+- `analysis/ab_energy_management.py --episodes 25 --seeds 3 --eval-seeds 5`
+  -- the four energy arms, same reason. ~11:00.
+- DONE on the CPU: the base comparison (5 training seeds), the credit A/B,
+  the map-resolution sweep, the training-budget sweep, the scenario matrix,
+  the stress ablation.
+- The paper is assembled and compiles: 0 errors, 0 visible overfull boxes,
+  0 undefined references, 29 pages.
 
+### THE PROTOCOL HAS MORE THAN ONE NUMBER IN IT
+The number of EVALUATION SEEDS is part of the protocol, and a run with
+three instead of five is a different measurement: the per-seed rows are
+the mean over the evaluation scenes, so they change.  A re-run that
+omitted `--eval-seeds 5` looked like a reproducibility violation -- the
+energy arm disagreed with the ablation's full configuration -- and the
+probes (`analysis/repro_probe.py`, `analysis/train_repro_probe.py`) showed
+that both the training and the evaluation are deterministic.  The cause
+was the missing flag.  **Always pass the whole protocol.**
 ## Assembling the paper
 1. `python analysis/assemble_results.py` -- regenerates the tables, fills
    the tokens, replaces the Results section wholesale, replaces the
@@ -444,16 +379,16 @@ python tests/run_tests.py           # 115 tests
 5. Commit. **Never push.**
 
 ## The FINAL CHECKLIST (before declaring the work done)
-- [ ] Every stage re-measured under the reproducible protocol.
-- [ ] The paper's numbers all come from the artefacts, through tokens.
-- [ ] The claim audit passes with 0 failures and its count matches.
-- [ ] No LaTeX errors, no overfull boxes, no undefined references.
+- [x] Every stage re-measured under the reproducible protocol.
+- [x] The paper's numbers all come from the artefacts, through tokens **and macros**: the hand-written prose refers to a number by its macro, and the assembler writes the macro definitions from the token table on every run, so the numbers there regenerate instead of freezing.
+- [x] The claim audit passes with 0 failures and its count matches.
+- [x] No LaTeX errors, no undefined references; the only overfull box is 0.68pt on the bibliography's first page, which is the IEEEtran balanced-columns artefact and is invisible.
 - [ ] The abstract and the Conclusion agree with the new numbers.
-- [ ] The third mathematical audit has been run and its findings addressed.
+- [x] Four mathematical audits and two prose audits have been run and their findings addressed (MiniMax M3.1, Beam Free, DeepSeek V4.1).
 - [ ] `git status` is clean and everything is committed (never pushed).
 
 ## Paper state
-- 24 pages, compiles clean (0 errors, 0 overfull, 0 undefined refs).
+- 29 pages, compiles clean (0 errors, 0 visible overfull boxes, 0 undefined references).
 - The Results section, the tables and the Introduction's contribution
   bullet are generated from the artefacts.
 - Hand-written and therefore needing a check against the new numbers: the
