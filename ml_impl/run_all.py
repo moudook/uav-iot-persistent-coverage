@@ -181,7 +181,12 @@ def stage_base(episodes, train_seeds, eval_seeds, resume=False):
 
     # aggregate the training runs into the rows of the main table
     def agg_over_seeds(runs):
-        keys = runs[0].keys()
+        # Only the NUMERIC fields are aggregated.  A row also carries the
+        # device it was measured on, and averaging a string is what broke
+        # the stage the first time the device was recorded in the row.
+        keys = [k for k in runs[0].keys()
+                if all(isinstance(r.get(k), (int, float)) and
+                       not isinstance(r.get(k), bool) for r in runs)]
         a = {k: float(np.mean([r[k] for r in runs])) for k in keys}
         a["CK_std"] = float(np.std([r["CK"] for r in runs]))
         a["train_seeds"] = int(len(runs))

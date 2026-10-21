@@ -368,9 +368,9 @@ def build_tokens():
                 + ((".  Each upper limit is below the gap of " if n > 1
                     else ".  The upper limit is below the gap of ")
                    if excluded else
-                   (".  The intervals are wide relative to the gap of "
+                   (".  At least one upper limit reaches past the gap of "
                     if n > 1 else
-                    ".  The interval is wide relative to the gap of "))
+                    ".  The upper limit reaches past the gap of "))
                 + f"{gap:.3f} to the reactive heuristic, so the content "
                 + ("of the observation is not what accounts for the gap; "
                    if excluded else
@@ -513,6 +513,48 @@ def build_tokens():
                                 - ea["stranded_per_episode"], 1)
         tok["ED_RET_DELTA"] = f(abs(ed["return_events_per_episode"]
                                     - ea["return_events_per_episode"]), 0)
+        # The REPAIR's effect on the coverage, with its paired interval.
+        # The prose used to call this a null ("the coverage is unchanged
+        # to within the spread"), which is a sign error: the repair moves
+        # the coverage by about a third of the gap, and the interval
+        # excludes zero.  The verdict is derived from the measurement, so
+        # it says what the measurement says.
+        pa = ea.get("per_seed_CK") or []
+        pb = ed.get("per_seed_CK") or []
+        if pa and pb and len(pa) == len(pb):
+            # the direction that matters is the REPAIR's gain: the
+            # repaired configuration minus the previous one
+            mean, half, p, n = paired_stat(ea.get("per_seed_CK") or [],
+                                          ed.get("per_seed_CK") or [])
+            tok["ED_PAIRED"] = f"{mean:+.3f}"
+            tok["ED_HALF"] = f"{half:.3f}"
+            tok["ED_CI"] = f"[{mean-half:+.3f}, {mean+half:+.3f}]"
+            tok["ED_P"] = f"{p:.3f}"
+            excludes_zero = (mean - half > 0) or (mean + half < 0)
+            tok["ED_EXCLUDES_ZERO"] = "yes" if excludes_zero else "no"
+            if "GAP" in tok:
+                gap = float(tok["GAP"])
+                share = abs(mean) / gap if gap else float("nan")
+                tok["ED_SHARE"] = f"{100*share:.0f}"
+                tok["ED_GAP_GAP"] = f"{gap:.3f}"
+            if excludes_zero:
+                tok["ED_VERDICT"] = (
+                    f"the repair is not a null: the coverage it adds is "
+                    f"{mean:+.3f} on the same training seeds (95\\% interval "
+                    f"[{mean-half:+.3f}, {mean+half:+.3f}], which excludes "
+                    f"zero), and that is about "
+                    f"{tok.get('ED_SHARE', 'n/a')}\\% of the gap to the "
+                    f"reactive heuristic")
+            else:
+                tok["ED_VERDICT"] = (
+                    f"the coverage the repair adds is {mean:+.3f} on the "
+                    f"same training seeds (95\\% interval "
+                    f"[{mean-half:+.3f}, {mean+half:+.3f}], which includes "
+                    f"zero), so the repair's effect on the coverage is not "
+                    f"resolved by this arm")
+        else:
+            tok["ED_VERDICT"] = ("the paired interval for the repair is not "
+                                 "computable from the artefact")
     # the paired intervals of the energy arms against arm A
     en_stats = []
     for key, arm, label in (("EB", "B", "removing the energy constraint"),
@@ -682,6 +724,11 @@ def build_tokens():
             delta_res = max([r["half"] for r in nulls], default=0.0)
             tok["ABL_N_SEEDS"] = str(R)
             tok["ABL_RESOLUTION"] = f"{delta_res:.3f}"
+            # the TIGHTEST arm: the resolution is per-arm, and the
+            # widest arm alone would misdescribe the others
+            _all_half = [r["half"] for r in rows_p]
+            tok["ABL_RESOLUTION_MIN"] = (f"{min(_all_half):.3f}"
+                                         if _all_half else "n/a")
             tok["ABL_RESOLUTION_SD"] = f"{delta_res / crit:.3f}" if crit else "n/a"
             tok["ABL_CRIT"] = f"{crit:.2f}"
             if sig:
@@ -698,15 +745,15 @@ def build_tokens():
                     "groups.  The components whose 95\\% confidence interval "
                     "for the paired difference excludes zero are "
                     + ", ".join(parts)
-                    + "; every other component's interval includes zero, "
-                    "and the smallest difference this protocol could "
-                    "resolve is $@@ABL_RESOLUTION@@$ of persistent coverage")
+                    + "; every other component's interval includes zero, " "and the smallest difference this protocol could resolve anywhere is " "$@@ABL_RESOLUTION@@$ of persistent coverage, which is the WIDEST " "arm's resolution")
             else:
                 tok["ABL_SUMMARY"] = (
                     "Every component's 95\\% confidence interval for the "
                     "paired difference includes zero, and the smallest "
-                    "difference this protocol could resolve is "
-                    "$@@ABL_RESOLUTION@@$ of persistent coverage")
+                    "difference this protocol could resolve anywhere is "
+                    "$@@ABL_RESOLUTION@@$ of persistent coverage, which is "
+                    "the WIDEST arm's resolution: the resolution is "
+                    "per-arm, and each arm's own interval is in the table")
             for r in rows_p:
                 key = {"no-agent-id": "ID", "no-pad-bearing": "PAD",
                        "no-map": "MAP", "no-mask": "MASK"}.get(r["name"])
@@ -797,8 +844,8 @@ def build_tokens():
             resolved = (pmean + pstd) < 0 or (pmean - pstd) > 0
             tok["ABL_BEST_OBS_TEXT"] = (
                 f"The observation term with the largest effect on the "
-                f"coverage is {obs_terms[n]}, and the ablation of the next "
-                f"section prices it: it is worth {-pmean:.3f} of persistent "
+                f"coverage is {obs_terms[n]}, and the table above prices "
+                f"it: it is worth {-pmean:.3f} of persistent "
                 f"coverage, paired over the shared training seeds"
                 + (", and it is the largest single observation effect in "
                    "this work." if resolved else
@@ -808,8 +855,8 @@ def build_tokens():
             tok["ABL_BEST_OBS"] = "the observation terms"
             tok["ABL_BEST_OBS_DELTA"] = "n/a"
             tok["ABL_BEST_OBS_TEXT"] = (
-                "The ablation of the next section prices the observation "
-                "terms individually")
+                "The observation terms are priced individually in the "
+                "table above")
         # the fall-back for the components that matter: if the per-seed
         # values are not in the artefact, the unpaired difference is used and
         # is reported as such
@@ -823,8 +870,13 @@ def build_tokens():
     scen = load_csv("results_scenarios.csv")
     if scen:
         wins = losses = ties = 0
-        worst = ("", 0.0)
-        best = ("", 0.0)
+        # The extremes are computed over the MEASURED deficits.  They used
+        # to be initialised at zero, which made the "best" variant a
+        # maximum over an empty set: the paper reported a surplus of
+        # +0.000 for a variant that is in fact behind.
+        worst = None
+        best = None
+        deficits = []
         for r in scen:
             try:
                 # the comparison is against the STRONGER of the two rules on
@@ -842,16 +894,16 @@ def build_tokens():
                 losses += 1
             else:
                 ties += 1
-            if d < worst[1]:
+            deficits.append(d)
+            if worst is None or d < worst[1]:
                 worst = (r["scenario"], d)
-            if d > best[1]:
+            if best is None or d > best[1]:
                 best = (r["scenario"], d)
         tok["SCEN_WINS"] = str(wins)
         tok["SCEN_LOSSES"] = str(losses)
         tok["SCEN_TIES"] = str(ties)
         tok["SCEN_WORST"] = f"{worst[0]} ({worst[1]:+.3f})"
-        tok["SCEN_BEST"] = f"{best[0]} ({best[1]:+.3f})"
-        # the closing sentence of the section, derived from the matrix
+        tok["SCEN_BEST"] = f"{best[0]} ({best[1]:+.3f})"        # the closing sentence of the section, derived from the matrix
         by_scen = {}
         for r in scen:
             try:
@@ -878,13 +930,23 @@ def build_tokens():
                 "is told only that a learned controller loses to a rule has "
                 "been told half of it.")
         else:
+            # Behind in EVERY scenario and EVERY variant is the strongest
+            # evidence there is about the ordering, and the old sentence
+            # drew the opposite conclusion from it ("a property of the
+            # regime rather than of the method").
+            span = ""
+            if deficits:
+                span = (f", by between {min(deficits):.3f} and "
+                        f"{max(deficits):.3f} of persistent coverage")
             tok["SCEN_TEXT"] = (
                 "At the level of scenario means the learned controller is "
-                "behind the stronger rule in every scenario, although it is "
-                f"ahead on {wins} of the {wins + losses + ties} variants, so "
-                "the ordering is a property of the regime rather than of "
-                "the method, and a reader told only that a learned "
-                "controller loses to a rule has been told half of it.")
+                "behind the stronger rule in every scenario, and behind it "
+                f"in {losses} of the {wins + losses + ties} variants"
+                + span
+                + ", so the ordering is a property of the method at this "
+                "budget rather than of a particular regime, and a reader "
+                "told only that a learned controller loses to a rule has "
+                "been told the whole of it.")
     tok.setdefault("ABL_TEXT", "")
     tok.setdefault("CREDIT_TEXT", "")
     tok.setdefault("SCEN_TEXT", "")
@@ -959,14 +1021,26 @@ def build_tokens():
         # the sentence names ONLY the arms that were actually measured, so
         # it cannot claim an arm was tested when its artefact is missing
         names_all = " and ".join(lab for lab, _ in arm_bounds)
+        # How far below the gap each arm's upper limit lies.  The old
+        # sentence said the intervals lie "far below" the gap, which is a
+        # claim about the MARGIN, and the margins are small: a reader
+        # deserves the number rather than the adjective.
+        margins = sorted(gap - up for _, up in arm_bounds
+                         if up == up and up < gap)
+        tok["ARMS_MARGIN"] = (f"{margins[0]:.3f}" if margins else "n/a")
+        tok["ARMS_MARGIN_MAX"] = (f"{margins[-1]:.3f}" if margins else "n/a")
         if not not_excluded:
             tok["ARMS_VERDICT"] = (
                 "controlled arms bound how much of the gap the alternative "
                 "explanations can account for: "
                 + names_all
                 + (" is" if len(arm_bounds) == 1 else " are")
-                + " tested with a single-factor intervention whose "
-                "interval lies far below the gap")
+                + " tested with a single-factor intervention whose upper "
+                "confidence limit lies below the gap, by "
+                + (f"a margin of {margins[0]:.3f}"
+                   if len(margins) == 1 else
+                   f"margins of {margins[0]:.3f} to {margins[-1]:.3f}")
+                + f" against a gap of {gap:.3f}")
         else:
             tok["ARMS_VERDICT"] = (
                 "controlled arms bound how much of the gap the alternative "
@@ -983,6 +1057,57 @@ def build_tokens():
                    if not_excluded else ""))
     else:
         tok["ARMS_VERDICT"] = (
+            "the arms that test the alternative explanations have not been "
+            "measured yet, so no bound is claimed for them")
+
+    # The sentence the abstract, the introduction and the conclusion share.
+    # It used to say that all three explanations were tested with an
+    # intervention "whose interval lies far below the gap", which is not
+    # what the measurements say: the budget arm's own interval straddles
+    # the gap, and the margins on the other two are small.  The sentence
+    # is now derived from the arms, so it names each arm's status.
+    if arm_bounds and "GAP" in tok:
+        gap = float(tok["GAP"])
+        # every arm, with its own upper limit: the group's verdict is the
+        # conservative one, but a reader deserves to see WHICH arm is
+        # wide, because one wide arm does not make the others wide
+        every = []
+        for stats, group in ((obs_stats, "the content of the observation"),
+                             (en_stats, "the energy model")):
+            for lab, m, h in stats:
+                every.append((lab, m + h, group))
+        parts = []
+        not_cleared = []
+        for lab, up, group in every:
+            margin = gap - up
+            if margin <= 0:
+                not_cleared.append(lab)
+            parts.append(f"{lab} (upper limit {up:.3f}, margin {margin:+.3f})")
+        bud = ""
+        if "BUDGET_PAIRED_CI" in tok and "BUDGET_PAIRED_VS_GAP" in tok:
+            bud = (f"; the training budget's own arm, from "
+                   f"{tok['BUDGET_RANGE']} episodes, has the interval "
+                   f"{tok['BUDGET_PAIRED_CI']}, whose "
+                   f"{tok['BUDGET_PAIRED_VS_GAP']}, so it is neither "
+                   f"excluded nor implicated")
+        if not_cleared:
+            tail = (".  The arms whose upper limit reaches past the gap -- "
+                    + "; ".join(not_cleared)
+                    + " -- are NOT excluded, and remain candidate "
+                      "explanations; the others are excluded as the whole "
+                      "of the explanation")
+        else:
+            tail = (".  Every arm's upper limit is below the gap, so none "
+                    "of them can be the whole of the explanation, by "
+                    "margins that are small but positive")
+        tok["ARMS_SUMMARY_SENTENCE"] = (
+            "controlled arms bound how much of the gap each alternative "
+            "explanation can account for: "
+            + "; ".join(parts)
+            + f", against a gap of {gap:.3f}"
+            + bud + tail)
+    else:
+        tok["ARMS_SUMMARY_SENTENCE"] = (
             "the arms that test the alternative explanations have not been "
             "measured yet, so no bound is claimed for them")
 
@@ -1063,12 +1188,16 @@ def build_tokens():
         tok["CONN_LEFT"] = str(left)
         tok["CONN_TELE"] = str(tel)
         tok["CONN_UNEXPLAINED"] = str(unex)
+        tok["CONN_POLICY"] = str(ca.get("policy", "?"))
+        tok["CONN_ASC"] = str(left)
         if unex == 0:
             tok["CONN_VERDICT"] = (
-                "every one of them is attributable to the recovery "
-                "mechanism and none to a policy action, so the filter's "
-                "guarantee holds over the actions and the availability below "
-                "1.000 is the price of the recovery")
+                f"all {left} of them follow a UAV leaving the active "
+                "set --- its pack emptied away from a charging pad --- "
+                "and none follows a move, so the projection's "
+                "guarantee is not violated by any executed move, and "
+                "the availability below 1.000 is the price of a UAV "
+                "leaving rather than a hole in the filter")
         else:
             tok["CONN_VERDICT"] = (
                 f"{unex} of them are NOT attributable to either mechanism, "
@@ -1105,7 +1234,18 @@ def build_tokens():
         sfull = sby.get("Full")
         if sfull:
             sfs = per_seed_ck(sfull)
-            helped, hurt = [], []
+            # The budget the stress arms were trained at, and the base
+            # comparison's: a table of arms trained at a different budget
+            # has to say so, because its Full row is not the base
+            # comparison's row.
+            tok["STRESS_EPISODES"] = str(sfull.get("episodes") or "?")
+            tok["ABL_EPISODES_STRESS"] = tok["STRESS_EPISODES"]
+            # The verdict is PAIRED, not a point-estimate threshold.  The
+            # old version called a component a liability or a help on the
+            # strength of a difference in means, which is the rule this
+            # paper rejects three paragraphs earlier: every interval
+            # here includes zero.
+            resolved, unresolved = [], []
             for r in stress:
                 if r["model"] in ("Full",):
                     continue
@@ -1116,32 +1256,39 @@ def build_tokens():
                 label = names.get(r["model"], r["model"])
                 if r["model"] == "VanillaMAPPO":
                     label = "the whole design"
-                if d <= -0.02:
-                    helped.append((label, -d))
-                elif d >= 0.02:
-                    hurt.append((label, d))
-            helped.sort(key=lambda x: -x[1])
-            hurt.sort(key=lambda x: -x[1])
+                mean, half, p, n = paired_stat(vs, sfs)
+                ex = (mean - half > 0) or (mean + half < 0)
+                entry = (label, mean, half)
+                (resolved if ex else unresolved).append(entry)
             parts = []
-            if helped:
-                parts.append("removing " + ", ".join(
-                    f"{lab} costs {v:.3f}" for lab, v in helped)
-                    + " of persistent coverage, so the component helps")
-            if hurt:
-                parts.append("removing " + ", ".join(
-                    f"{lab} GAINS {v:.3f}" for lab, v in hurt)
-                    + ", so the component is a liability there")
+            if resolved:
+                parts.append(
+                    "the components whose paired interval excludes zero are "
+                    + ", ".join(f"{lab} ({m:+.3f}, 95\\% interval "
+                                f"[{m-h:+.3f}, {m+h:+.3f}])"
+                                for lab, m, h in resolved))
+            if unresolved:
+                parts.append(
+                    ("and " if resolved else "")
+                    + "the components whose interval includes zero -- "
+                    + ", ".join(f"{lab} ({m:+.3f}, 95\\% interval "
+                                f"[{m-h:+.3f}, {m+h:+.3f}])"
+                                for lab, m, h in unresolved)
+                    + " -- are not separated by this table at all")
             if parts:
                 tok["STRESS_SUMMARY"] = (
-                    "The ordering of the components is not the same here as "
-                    "in the nominal regime, and that is a result rather than "
-                    "a nuisance: " + "; ".join(parts)
-                    + ".  The framework's recovery mechanism, which re-seats "
-                    "an exhausted UAV at a charging pad, is a liability when "
-                    "energy is scarce, because the re-seated UAV is out of "
-                    "communication range of the swarm until it flies back, "
-                    "and the swarm spends the scenario disconnected and "
-                    "gathered rather than spread.")
+                    "The ordering of the components cannot be read off this "
+                    "table: " + "; ".join(parts)
+                    + ".  The differences between the variants are of the "
+                    "same order as the width of the intervals, so the table "
+                    "reports what the stress scenario does to the swarm and "
+                    "not which component matters.  The framework's recovery "
+                    "mechanism, which re-seats an exhausted UAV at a "
+                    "charging pad, is a plausible mechanism for the "
+                    "behaviour of the stress scenario --- a re-seated UAV is "
+                    "out of communication range of the swarm until it flies "
+                    "back --- but this table does not resolve it, and we do "
+                    "not claim it.")
 
     # ------------------------------------------------------------------
     # the plasticity probe of the trained actor
@@ -1251,6 +1398,34 @@ def build_tokens():
         tok["BUDGET_CAVEAT"] = (
             "we do not extrapolate the sweep past the budgets it covers, "
             "and we do not claim that a larger budget would close the gap")
+        # The budget arm's own interval: the shortest budget against the
+        # longest, paired by training seed.  It is the arm the abstract
+        # names, so it needs an interval of its own: the sweep's trend
+        # does not give one.
+        if len(rows) >= 2:
+            pa = rows[0].get("per_seed_CK") or []
+            pb = rows[-1].get("per_seed_CK") or []
+            if pa and pb and len(pa) == len(pb):
+                # the direction that could explain the gap is MORE budget
+                # minus LESS budget, so the comparison is made in that
+                # direction: the shorter budget's rows are the second
+                # argument
+                mean, half, p, n = paired_stat(pb, pa)
+                tok["BUDGET_PAIRED"] = f"{mean:+.3f}"
+                tok["BUDGET_PAIRED_HALF"] = f"{half:.3f}"
+                tok["BUDGET_PAIRED_CI"] = f"[{mean-half:+.3f}, {mean+half:+.3f}]"
+                tok["BUDGET_PAIRED_P"] = f"{p:.3f}"
+                tok["BUDGET_PAIRED_N"] = str(n)
+                tok["BUDGET_PAIRED_EXCLUDES_GAP"] = (
+                    "yes" if (mean + half < 0) else "no")
+                if "GAP" in tok:
+                    gap = float(tok["GAP"])
+                    tok["BUDGET_PAIRED_UP"] = f"{mean + half:.3f}"
+                    tok["BUDGET_PAIRED_VS_GAP"] = (
+                        f"its upper limit of {mean+half:.3f} "
+                        + ("is below" if mean + half < gap else
+                           "is above")
+                        + f" the gap of {gap:.3f}")
 
     # ------------------------------------------------------------------
     # the episode length, in both units, so that the two "400"s of the

@@ -114,7 +114,7 @@ def table_main(rows, learned=None):
         lines.append(
             f"{disp} & {ck_cell(r)} & {fmt(r.get('AG'))} & "
             f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & "
-            f"{fmt(r.get('UnexecutedActions'), 0)} & "
+            f"{fmt(r.get('UnexecutedActions'), 2)} & "
             f"{fmt(r.get('Energy'), 0)} \\\\")
     if learned:
         # the display names are shortened to fit the column; the full names
@@ -135,7 +135,7 @@ def table_main(rows, learned=None):
         lines.append(
             f"{disp} & {ck_cell(r)} & {fmt(r.get('AG'))} & "
             f"{fmt(r.get('SC'))} & {fmt(r.get('CovIntegral'))} & "
-            f"{fmt(r.get('UnexecutedActions'), 0)} & "
+            f"{fmt(r.get('UnexecutedActions'), 2)} & "
             f"{fmt(r.get('Energy'), 0)} \\\\")
     r = by_model.get("Oracle (ceiling)")
     if r is not None:

@@ -366,9 +366,13 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
         if name in done:
             d = done[name]
             row = {k: v for k, v in d.items()
-                   if k not in ("out_csv", "stress", "episodes", "eval_seeds",
+                   if k not in ("out_csv", "stress", "eval_seeds",
                                 "seeds", "model", "per_seed_ck")}
             row["model"] = name
+            # the budget is part of the protocol and belongs in the row:
+            # it was dropped here, so a table of arms trained at a
+            # different budget from the base comparison did not say so
+            row["episodes"] = int(d.get("episodes", episodes))
             # a row measured before the device was recorded still comes
             # from this run's device, which the protocol pins
             row["device"] = str(row.get("device")
