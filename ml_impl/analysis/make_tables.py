@@ -91,6 +91,31 @@ def load_json(name):
     return json.load(open(p, encoding="utf-8"))
 
 
+def per_seed_values(per):
+    """The per-training-seed values of a row, whatever shape they are in.
+
+    The CSV artefacts hold them as a `;`-joined STRING and the JSON
+    artefacts hold them as a LIST.  A reader of this function that assumed
+    the string form would silently get nothing from a JSON row and fall
+    back to the row's stored spread -- which is a POPULATION standard
+    deviation -- so the same eight runs would be printed with two
+    different spreads in two different tables.
+    """
+    if not per:
+        return []
+    if isinstance(per, (list, tuple)):
+        parts = list(per)
+    else:
+        parts = str(per).split(";")
+    vals = []
+    for part in parts:
+        try:
+            vals.append(float(str(part).strip()))
+        except (TypeError, ValueError):
+            return []
+    return vals
+
+
 def ck_cell(r, nd=3):
     """The coverage with its spread, when the row has one.
 
@@ -108,18 +133,10 @@ def ck_cell(r, nd=3):
     interval was built from.
     """
     v = fmt(r.get("CK"), nd)
-    per = r.get("per_seed_CK")
-    if per:
-        vals = []
-        for part in str(per).split(";"):
-            try:
-                vals.append(float(part))
-            except ValueError:
-                vals = []
-                break
-        if len(vals) > 1:
-            s = float(np.std(vals, ddof=1))
-            return f"{v}\\,$\\pm$\\,{fmt(s, nd)}"
+    vals = per_seed_values(r.get("per_seed_CK"))
+    if len(vals) > 1:
+        s = float(np.std(vals, ddof=1))
+        return f"{v}\\,$\\pm$\\,{fmt(s, nd)}"
     s = r.get("CK_std")
     if s in (None, ""):
         return v
@@ -239,6 +256,21 @@ def table_main(rows, learned=None):
     else:
         rule_clause = ("the rule baselines are deterministic and carry no "
                        "spread of their own")
+    # The two learned baselines are trained at their OWN budget, and the
+    # caption has to say so: the proposed method's budget is 25 episodes
+    # and the baselines' is 20, and a comparison that does not disclose
+    # that is a comparison of two things.
+    lb_budget = ""
+    if learned:
+        for r in learned:
+            if r.get("episodes"):
+                lb_budget = (f"  The two learned baselines are trained for "
+                             f"{r['episodes']} episodes, a smaller budget "
+                             f"than the proposed method's, and the credit arm "
+                             f"of Section~\\ref{{sec:results_credit}} "
+                             f"re-measures the same local-critic learner at "
+                             f"the base budget.")
+                break
     lines.append(r"\begin{table}[t]")
     lines.append(THEME_BLOCK)
     lines.append(r"\caption{Base comparison on the corrected configuration.  "
@@ -249,7 +281,7 @@ def table_main(rows, learned=None):
                  r"and the trajectory.  The two learned baselines are "
                  r"implementations of the method families of "
                  r"Table~\ref{tab:comparison}, not reproductions of the "
-                 r"cited papers.}")
+                 r"cited papers." + lb_budget + "}")
     lines.append(r"\label{tab:results_main}")
     lines.append(r"\centering")
     lines.append(r"\scriptsize")
@@ -462,17 +494,33 @@ def main():
             "Component ablation on the feasible base configuration.  Every "
             "variant is trained on the same configuration with the same "
             "budget and from the same training seeds, and differs from the "
-            "full configuration in exactly one component.  The $\\pm$ is the "
+            "full configuration in exactly one component --- the last row "
+            "excepted, which removes the framework's mechanisms together.  "
+            "The $\\pm$ is the "
             "seed-to-seed spread of the training runs, and $\\Delta$CK is the "
             "paired difference from the full configuration, measured on the "
-            "same training runs."))
+            "same training runs: a positive number is what the component is "
+            "worth."))
     stress = load_csv("results_ablation_stress.csv")
     if stress:
+        # The stress table's budget is NOT the base budget, and the paper
+        # has to say so: the scenario is hard enough that the full
+        # configuration scores far lower here than it does in the scenario
+        # matrix, and a reader who does not know the budget would read
+        # that as a contradiction.
+        s_ep = stress[0].get("episodes") if stress else None
+        s_seeds = stress[0].get("train_seeds") if stress else None
+        budget = (f"  The variants are trained for {s_ep} episodes, a "
+                  f"quarter of the base comparison's budget, which is why "
+                  f"the full configuration scores far lower here than it "
+                  f"does in the scenario matrix"
+                  if s_ep else "")
         parts.append(table_abl(
             stress, "tab:results_ablstress",
             "Component ablation on the S8 combined-stress scenario (a failure "
             "at step 500, one charging pad, $B=15$\\,kJ, "
-            "$R_{\\mathrm{comm}}=30$\\,m, $R_{\\mathrm{cov}}=30$\\,m)."))
+            "$R_{\\mathrm{comm}}=30$\\,m, $R_{\\mathrm{cov}}=30$\\,m)."
+            + budget + "."))
     scen = load_csv("results_scenarios.csv")
     if scen:
         parts.append(table_scen(scen))

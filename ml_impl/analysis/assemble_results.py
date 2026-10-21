@@ -240,8 +240,9 @@ __BLOCK_OBS__
 \label{sec:results_energy}
 
 The step-level diagnostic of the learned policy produced a surprising
-number: it stranded \emph{all eight} UAVs in nearly every episode, while
-the reactive heuristic stranded $0.7$.  A stranded UAV has an empty pack
+number: under the previous energy rule the policy stranded $@@ED_STR@@$ of the
+eight UAVs per episode, while the reactive heuristic stranded $@@REACT_STR@@$.  A
+stranded UAV has an empty pack
 away from a charging pad; it can no longer fly, it leaves the swarm, and it
 stops covering.  The obvious reading is that the controller has failed at
 energy management, and the obvious fix is a reward term that prices the

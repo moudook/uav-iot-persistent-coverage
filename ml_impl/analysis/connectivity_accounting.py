@@ -153,8 +153,15 @@ def main():
               [(r["t"], r["n_active_before"], r["n_active_after"])
                for r in unexplained[:6]])
     out = os.path.join(HERE, "connectivity_accounting.json")
+    # The policy the ARTEFACT records has to be the policy that was
+    # actually driven.  The --full branch drives every STORED POLICY on
+    # every evaluation scene, and the file used to record the command
+    # line's unused default, so the artefact said "random" while its
+    # rows were the learned controller's.
+    ran = ("every stored policy (the learned controller)" if args.full
+           else args.policy)
     with open(out, "w", encoding="utf-8") as f:
-        json.dump(dict(policy=args.policy, full=bool(args.full),
+        json.dump(dict(policy=ran, full=bool(args.full),
                        disconnected_steps=n, after_active_set_change=by_left,
                        after_teleport=by_tel,
                        unexplained=len(unexplained), rows=rows),

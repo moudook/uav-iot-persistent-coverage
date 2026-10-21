@@ -155,7 +155,7 @@ Every number in the paper is produced under one protocol:
 - The energy repair: The repair is not a null: the coverage it adds is +0.078 on the same training seeds (95\% interval [+0.038, +0.118], which excludes zero), and that is about 25\% of the gap to the the unprivileged reactive rule
 - The training-budget sweep: 8 episodes: 0.595, 16 episodes: 0.621, 25 episodes: 0.662. the coverage moves by +0.067 over the range the sweep covers, which is about 22\% of the gap of 0.309, and the increments between successive budgets are +0.026, +0.041; the last of them, +0.041, is 2.8 standard errors from zero (the standard error of the difference is 0.014, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers
 - The alternative corrected deployment (N = 5, R_cov = 45 m), MEASURED:
-  the alternative deployment is not merely feasible, it is BETTER: with five UAVs and a 45 m coverage radius the learned controller reaches 0.770 against 0.662 for the reported eight-UAV deployment, a difference of +0.108 on the same training seeds and the same evaluation scenes.
+  the alternative deployment is feasible for the learned controller, and it does better there: with five UAVs and a 45 m coverage radius the learned controller reaches 0.770 against 0.662 for the reported eight-UAV deployment, a difference of +0.108 on the same training seeds and the same evaluation scenes.  The rule baselines were not measured at that operating point, so this establishes feasibility for the learned controller and not the superiority of the deployment.
 - The scenario matrix: behind in 34 of the variants,
   from S8 (-0.051) to S6 (-0.388).
 - The claim audit: 38 items, 34
@@ -378,6 +378,31 @@ code, no repository) and to be adversarial rather than agreeable.
   the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
   74% are confirmed; the Luna reference was wrong and is fixed; the
   novelty claim survives.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+- **Audit 7** (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+  checked against the raw per-seed rows, with every interval recomputed
+  by hand. Ten findings, all applied: the budget's paired increment, two
+  population standard deviations, a rounding disagreement between a
+  summary and its table, the wrong rule named in a sentence, an
+  asymmetric interval described as symmetric, a caption that said five
+  where the table said eight, an audit claim in the abstract that was
+  broader than the audit, an arms' sentence that did not name its
+  reference arm, an exclusion stated without its scope, and a share
+  whose denominator appears nowhere in the paper.
 
 - **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
   geometry, the packing survey, and the budget sweep's inference. Found

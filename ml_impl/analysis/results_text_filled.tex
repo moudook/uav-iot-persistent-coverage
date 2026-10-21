@@ -58,9 +58,9 @@ disconnected until the reserve UAV re-seats it at a charging pad and it
 flies back.  The availability below $1.000$ is that mechanism's signature,
 and it is the price of the recovery rather than a failure of the filter.
 The scope of the probe is narrow and we state it: it drives the swarm with
-a $random$ policy, not with the learned controller, so it
-establishes that the projection leaves no hole over the moves it took but
-it does not establish the deployed policy's connectivity availability.
+$every stored policy (the learned controller)$, so it establishes that the projection leaves no hole over
+the moves it took but it does not establish the deployed policy's
+connectivity availability.
 
 The mission-relevant quantity is the joint invariant, and it separates
 the two controllers far more sharply than the coverage does.  The
@@ -136,10 +136,13 @@ baselines locate the reason.  The Masked PPO with a local critic differs
 from the proposed method in exactly one respect: each agent has its own
 actor and its own critic on its own observation, instead of a
 parameter-shared actor with a centralised critic.  It reaches
-$0.637$ against the proposed method's $0.662$, a difference
+$0.637$ at a $20$-episode budget, against the proposed
+method's $0.662$ at the base budget, a difference
 of $-0.025$ that is small beside the seed-to-seed spread of the
-learner, and Section~\ref{sec:results_credit} tests that comparison
-properly, on paired training seeds.  The Independent DQN arm, at
+learner, and Section~\ref{sec:results_credit} re-measures that same
+local-critic learner at the base budget, where it reaches
+$0.641$, and tests the comparison properly, on paired training
+seeds.  The Independent DQN arm, at
 $0.373$, is the value-based point of comparison and shows what the
 task costs a controller that does not use the framework's mechanisms at
 all.  Vanilla MAPPO, which removes the
@@ -184,8 +187,8 @@ Reporting both rows is the point.
 
 One further number in the table is worth stating, because it disposes of a
 concern that the framework raises.  The safety filter and the joint
-projection together did not execute $0.20$ of the learned
-controller's sampled actions per episode --- one action in 10000 --- so the
+projection together left $0.20$ of the $16\,000$
+actions sampled in an episode unexecuted --- one action in 80000 --- so the
 policy gradient is very nearly
 consistent with the trajectory that was actually taken; the
 "the executed action is not the chosen action" problem, which is real in
@@ -196,9 +199,9 @@ The learned controller also burns more energy than the heuristic
 stranding fewer UAVs, which is the signature of a policy that moves
 deliberately rather than one that wanders.  Its connectivity availability is
 below $1.000$ because UAVs leave the active set when a pack empties away
-from a pad, and not because the safety filter leaks: over $2000$ steps of a
-random policy the graph was disconnected on no step in which the active set
-was unchanged (Section~\ref{sec:results_abl}).
+from a pad, and not because the safety filter leaks: over $2000$
+steps driven by the learned controller the graph was disconnected on no step in
+which the active set was unchanged (Section~\ref{sec:results_abl}).
 
 %% OBS
 
@@ -250,9 +253,9 @@ the credit to act on it chases.
 
 The arms share their training seeds, so the comparisons are paired: $adding the agent identity$ (+0.015, 95\% interval [-0.130, +0.161], an upper limit below the gap of 0.309); $the full observation of the proposed configuration$ (+0.023, 95\% interval [-0.015, +0.062], an upper limit below the gap of 0.309).  Each upper limit is below the gap of 0.309 to the unprivileged reactive rule, so the content of the observation is not what accounts for the gap; what the observation terms buy is the ability to specialise at all, and the identity raises the number of distinct actions a policy takes from 1.76 to 2.19 out of eight, which is the specialisation the arms measure.
 
-The resolution of the summary makes no difference to the coverage: $G=0$: 0.640, $G=4$: 0.643, $G=8$: 0.651, and the largest of the differences is 0.011, inside the seed-to-seed spread of the learner (0.052).  What the summary does change is the swarm's behaviour: the spread grows, from 9.0 m without it to 10.6 m and 10.3 m with it, because a policy that follows the deficit spreads the swarm out instead of keeping it together.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
+The resolution of the summary makes no difference to the coverage: $G=0$: 0.640, $G=4$: 0.643, $G=8$: 0.651, and the largest of the differences is 0.011, inside the seed-to-seed spread of the learner (0.058).  What the summary does change is the swarm's behaviour: the spread grows, from 9.0 m without it to 10.6 m and 10.3 m with it, because a policy that follows the deficit spreads the swarm out instead of keeping it together.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
-The observation term with the largest effect on the coverage is the pad bearing, and Table~\ref{tab:results_abl} prices it: it is worth -0.013 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.  The reason is easy to see in
+The observation term with the largest effect on the coverage is the pad bearing, and Table~\ref{tab:results_abl} prices it: it is worth +0.013 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.  The reason is easy to see in
 retrospect.  Without a direction to the charger a UAV cannot come home, so
 the swarm drains its packs in the field; and a swarm that has drained its
 packs is not a swarm that can be asked to cover anything.
@@ -339,7 +342,7 @@ arms below are measured at 8 training seeds, and the paired
 interval is what makes the number they report mean something.  The
 paired interval does not have that failure mode, and it also reports the
 resolution of the measurement, which is the number a reader actually
-needs.  The paired comparison, in which every variant is trained on the same training seeds as the full configuration, separates the components into two groups.  The components whose 95\% confidence interval for the paired difference excludes zero are $the under-coverage term$ (+0.094, 95\% CI [+0.039, +0.149]); every other component's interval includes zero, and the smallest difference this protocol could resolve anywhere is $0.070$ of persistent coverage, which is the WIDEST arm's resolution.
+needs.  The paired comparison, in which every variant is trained on the same training seeds as the full configuration, separates the components into two groups.  The differences below are the FULL configuration minus the variant, so a positive number is what the component is worth.  The components whose 95\% confidence interval for the paired difference excludes zero are $the under-coverage term$ (+0.094, 95\% CI [+0.039, +0.149]), $the whole design$ (+0.036, 95\% CI [+0.017, +0.054]); every other component's interval includes zero, and the worst resolution anywhere in the table is $0.070$ of persistent coverage, which is the WIDEST arm's resolution: the resolution is per-arm, and each arm's own interval is in the table.
 
 What the intervals do and do not say is worth stating precisely, because a
 null result of this width is a statement about the resolution of the
@@ -373,7 +376,7 @@ spent.
 
 %% ABLSTRESS
 
-Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the reserve and arbitration mechanisms actually fire. The ordering of the components cannot be read off this table: the components whose paired interval excludes zero are the reserve UAV (+0.190, 95\% interval [+0.104, +0.277]), the action mask (-0.050, 95\% interval [-0.094, -0.006]), the whole design (+0.181, 95\% interval [+0.107, +0.255]); and the components whose interval includes zero -- the criticality term (+0.000, 95\% interval [-0.010, +0.011]), the degraded-service term (-0.010, 95\% interval [-0.055, +0.035]), the energy-cost term (-0.000, 95\% interval [-0.000, +0.000]), the under-coverage term (+0.010, 95\% interval [-0.039, +0.060]), the charging arbitration (-0.006, 95\% interval [-0.024, +0.012]), the agent identity (-0.004, 95\% interval [-0.125, +0.117]), the coverage map (+0.016, 95\% interval [-0.118, +0.150]), the pad bearing (-0.007, 95\% interval [-0.136, +0.121]) -- are not separated by this table at all.  The differences between the variants are of the same order as the width of the intervals, so the table reports what the stress scenario does to the swarm and not which component matters.  The framework's recovery mechanism, which re-seats an exhausted UAV at a charging pad, is a plausible mechanism for the behaviour of the stress scenario --- a re-seated UAV is out of communication range of the swarm until it flies back --- but this table does not resolve it, and we do not claim it.
+Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the reserve and arbitration mechanisms actually fire. The ordering of the components cannot be read off this table: the components whose paired interval excludes zero are the reserve UAV (-0.190, 95\% interval [-0.277, -0.104]), the action mask (+0.050, 95\% interval [+0.006, +0.094]), the whole design (-0.181, 95\% interval [-0.255, -0.107]); and the components whose interval includes zero -- the criticality term (-0.000, 95\% interval [-0.011, +0.010]), the degraded-service term (+0.010, 95\% interval [-0.035, +0.055]), the energy-cost term (+0.000, 95\% interval [-0.000, +0.000]), the under-coverage term (-0.010, 95\% interval [-0.060, +0.039]), the charging arbitration (+0.006, 95\% interval [-0.012, +0.024]), the agent identity (+0.004, 95\% interval [-0.117, +0.125]), the coverage map (-0.016, 95\% interval [-0.150, +0.118]), the pad bearing (+0.007, 95\% interval [-0.121, +0.136]) -- are not separated by this table at all.  The differences below are the FULL configuration minus the variant, so a negative number is what the component is worth on this scenario.  The differences between the variants are of the same order as the width of the intervals, so the table reports what the stress scenario does to the swarm and not which component matters.  The framework's recovery mechanism, which re-seats an exhausted UAV at a charging pad, is a plausible mechanism for the behaviour of the stress scenario --- a re-seated UAV is out of communication range of the swarm until it flies back --- but this table does not resolve it, and we do not claim it.
 
 %% CREDIT
 

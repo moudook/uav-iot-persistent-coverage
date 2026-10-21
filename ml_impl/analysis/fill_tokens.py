@@ -247,6 +247,11 @@ def build_tokens():
         tok[f"{key}_AG"] = f(r["AG"])
         tok[f"{key}_SC"] = f(r["SC"])
         tok[f"{key}_CI"] = f(r["CovIntegral"])
+        # the budget the baseline was trained at, so that the prose can
+        # say it: the comparison against the proposed method is a
+        # comparison of two budgets unless the budgets are stated
+        if r.get("episodes"):
+            tok[f"{key}_EPISODES"] = str(r["episodes"])
         # the spread is the SAMPLE standard deviation of the per-seed
         # values, the same number the table prints and the same number
         # every interval in the paper is built from
@@ -470,10 +475,19 @@ def build_tokens():
         parts = []
         for r in mr:
             parts.append(f"$G={r['grid']}$: {f(r['CK'])}")
-        # the yardstick for "makes a difference": the learner's own
-        # seed-to-seed spread
-        spreads = [float(r.get("CK_std", 0.0)) for r in mr]
-        yard = max(spreads) if spreads else 0.0
+        # the yardstick for "makes a difference": the LEARNER's own
+        # seed-to-seed spread, so that the sentence compares the map's
+        # effect with the spread of the thing it is an effect of.  The
+        # map sweep's own arm spreads are a different quantity, and using
+        # one of them made the sentence compare two different things.
+        yard = tok.get("MAPPO_CK_STD")
+        try:
+            yard = float(yard)
+        except (TypeError, ValueError):
+            yard = 0.0
+        if not yard:
+            spreads = [float(r.get("CK_std", 0.0)) for r in mr]
+            yard = max(spreads) if spreads else 0.0
         cks = {int(r["grid"]): float(r["CK"]) for r in mr}
         sp = {int(r["grid"]): float(r.get("mean_spread_m", 0.0)) for r in mr}
         base = cks.get(0)
@@ -745,12 +759,21 @@ def build_tokens():
                  "no-mask": "the action mask",
                  "no-agent-id": "the agent identity",
                  "no-map": "the coverage map",
-                 "no-pad-bearing": "the pad bearing"}
+                 "no-pad-bearing": "the pad bearing",
+                 # the last row removes the framework's mechanisms
+                 # together, so it is not a single-component variant
+                 "VanillaMAPPO": "the whole design"}
         moved, still, paired = [], [], []
         fs = per_seed_ck(full) if full else []
         for name, r in by.items():
-            if name in ("Full", "VanillaMAPPO"):
+            if name == "Full":
                 continue
+            # The Vanilla row removes the framework's mechanisms TOGETHER,
+            # so it is not a single-component variant -- but it is still
+            # measured on the same training seeds, and leaving it out of
+            # the paired list made the summary say that every other
+            # component's interval includes zero, which is false: the
+            # whole design's interval excludes it.
             try:
                 delta = float(r["CK"]) - float(full["CK"])
             except (TypeError, ValueError, KeyError):
@@ -825,15 +848,18 @@ def build_tokens():
                     "The paired comparison, in which every variant is "
                     "trained on the same training seeds as the full "
                     "configuration, separates the components into two "
-                    "groups.  The components whose 95\\% confidence interval "
-                    "for the paired difference excludes zero are "
+                    "groups.  The differences below are the FULL "
+                    "configuration minus the variant, so a positive number "
+                    "is what the component is worth.  The components whose "
+                    "95\\% confidence interval for the paired difference "
+                    "excludes zero are "
                     + ", ".join(parts)
-                    + "; every other component's interval includes zero, " "and the smallest difference this protocol could resolve anywhere is " "$@@ABL_RESOLUTION@@$ of persistent coverage, which is the WIDEST " "arm's resolution")
+                    + "; every other component's interval includes zero, " "and the worst resolution anywhere in the table is " "$@@ABL_RESOLUTION@@$ of persistent coverage, which is the WIDEST " "arm's resolution: the resolution is per-arm, and each arm's own interval is in the table")
             else:
                 tok["ABL_SUMMARY"] = (
                     "Every component's 95\\% confidence interval for the "
-                    "paired difference includes zero, and the smallest "
-                    "difference this protocol could resolve anywhere is "
+                    "paired difference includes zero, and the worst "
+                    "resolution anywhere in the table is "
                     "$@@ABL_RESOLUTION@@$ of persistent coverage, which is "
                     "the WIDEST arm's resolution: the resolution is "
                     "per-arm, and each arm's own interval is in the table")
@@ -923,13 +949,18 @@ def build_tokens():
         if best is not None:
             n, pmean, pstd = best
             tok["ABL_BEST_OBS"] = obs_terms[n]
-            tok["ABL_BEST_OBS_DELTA"] = f"{-pmean:+.3f}"
+            # The convention is the TABLE's: a component's worth is
+            # FULL minus the variant without it, so a positive number
+            # means the component HELPS.  The prose used to print the
+            # opposite sign, which agreed with the table by luck at
+            # three seeds and disagreed with it at eight.
+            tok["ABL_BEST_OBS_DELTA"] = f"{pmean:+.3f}"
             resolved = (pmean + pstd) < 0 or (pmean - pstd) > 0
             tok["ABL_BEST_OBS_TEXT"] = (
                 f"The observation term with the largest effect on the "
                 f"coverage is {obs_terms[n]}, and "
                 f"Table~\\ref{{tab:results_abl}} prices "
-                f"it: it is worth {-pmean:.3f} of persistent "
+                f"it: it is worth {pmean:+.3f} of persistent "
                 f"coverage, paired over the shared training seeds"
                 + (", and it is the largest single observation effect in "
                    "this work." if resolved else
@@ -1473,11 +1504,14 @@ def build_tokens():
                 vs = per_seed_ck(r)
                 if not (sfs and vs and len(sfs) == len(vs)):
                     continue
-                d = float(r["CK"]) - float(sfull["CK"])   # variant - Full
                 label = names.get(r["model"], r["model"])
                 if r["model"] == "VanillaMAPPO":
                     label = "the whole design"
-                mean, half, p, n = paired_stat(vs, sfs)
+                # FULL minus the variant, the TABLE's convention: a
+                # positive number means the component helps.  The
+                # opposite order printed every sign in this summary
+                # backwards against the table beside it.
+                mean, half, p, n = paired_stat(sfs, vs)
                 ex = (mean - half > 0) or (mean + half < 0)
                 entry = (label, mean, half)
                 (resolved if ex else unresolved).append(entry)
@@ -1500,7 +1534,10 @@ def build_tokens():
                 tok["STRESS_SUMMARY"] = (
                     "The ordering of the components cannot be read off this "
                     "table: " + "; ".join(parts)
-                    + ".  The differences between the variants are of the "
+                    + ".  The differences below are the FULL configuration "
+                    "minus the variant, so a negative number is what the "
+                    "component is worth on this scenario.  The differences "
+                    "between the variants are of the "
                     "same order as the width of the intervals, so the table "
                     "reports what the stress scenario does to the swarm and "
                     "not which component matters.  The framework's recovery "
@@ -1529,37 +1566,57 @@ def build_tokens():
             tok["ALT_EPISODES"] = str(a5.get("episodes", "?"))
             better = a5["CK"] > r8["CK"]
             tok["ALT_BETTER"] = "yes" if better else "no"
+            # The comparison is between the LEARNED controller at two
+            # deployments.  The rule baselines were not measured at the
+            # alternative operating point, so the deployment is not shown
+            # to be better for a RULE -- only for the controller the
+            # paper trains.  Saying "it is BETTER" claimed the stronger
+            # thing.
             tok["ALT_COMPARISON"] = (
                 "and on this instance the deployment it identifies is the "
-                "better of the two"
+                "better of the two for the learned controller"
                 if better else
                 "and on this instance the deployment it identifies is the "
-                "worse of the two")
+                "worse of the two for the learned controller")
             if better:
                 tok["ALT_VERDICT"] = (
-                    f"the alternative deployment is not merely feasible, it is "
-                    f"BETTER: with five UAVs and a 45 m coverage radius the "
-                    f"learned controller reaches {a5['CK']:.3f} against "
-                    f"{r8['CK']:.3f} for the reported eight-UAV deployment, "
-                    f"a difference of {a5['CK']-r8['CK']:+.3f} on the same "
-                    f"training seeds and the same evaluation scenes")
+                    f"the alternative deployment is feasible for the learned "
+                    f"controller, and it does better there: with five UAVs "
+                    f"and a 45 m coverage radius the learned controller "
+                    f"reaches {a5['CK']:.3f} against {r8['CK']:.3f} for the "
+                    f"reported eight-UAV deployment, a difference of "
+                    f"{a5['CK']-r8['CK']:+.3f} on the same training seeds "
+                    f"and the same evaluation scenes.  The rule baselines "
+                    f"were not measured at that operating point, so this "
+                    f"establishes feasibility for the learned controller "
+                    f"and not the superiority of the deployment")
             else:
                 tok["ALT_VERDICT"] = (
-                    f"the alternative deployment is feasible but not better: "
-                    f"with five UAVs and a 45 m coverage radius the learned "
-                    f"controller reaches {a5['CK']:.3f} against "
-                    f"{r8['CK']:.3f} for the reported eight-UAV deployment, a "
-                    f"difference of {a5['CK']-r8['CK']:+.3f}")
+                    f"the alternative deployment is feasible for the learned "
+                    f"controller but does not do better there: with five UAVs "
+                    f"and a 45 m coverage radius the learned controller "
+                    f"reaches {a5['CK']:.3f} against {r8['CK']:.3f} for the "
+                    f"reported eight-UAV deployment, a difference of "
+                    f"{a5['CK']-r8['CK']:+.3f}.  The rule baselines were not "
+                    f"measured at that operating point, so the comparison is "
+                    f"between the learned controller at two deployments and "
+                    f"not between the deployments themselves")
 
     # the plasticity probe of the trained actor
     # ------------------------------------------------------------------
     dor = load_json("dormancy.json")
     if dor:
         silent_vals, dormant_any = [], 0
+        # The token names carry no digits: TeX ends a control word at the
+        # first non-letter, so a token called DORM_L0_T001 would be the
+        # macro \tokDormLzeroTzerozeroone.
+        layer_names = {"L0": "A", "L1": "B"}
+        threshold_names = {"0.001": "LOW", "0.01": "MID", "0.05": "MIDHIGH",
+                           "0.1": "HIGH"}
         for r in dor:
-            lay = str(r.get("layer", "L0")).upper()
-            for tau, tag in (("0.001", "T001"), ("0.01", "T01"),
-                             ("0.05", "T05"), ("0.1", "T1")):
+            lay = layer_names.get(str(r.get("layer", "L0")).upper(), "A")
+            for tau, tag in (("0.001", "LOW"), ("0.01", "MID"),
+                             ("0.05", "MIDHIGH"), ("0.1", "HIGH")):
                 tok[f"DORM_{lay}_{tag}_DORMANT"] = f(
                     r.get(f"dormant_frac_{tau}", 0.0), 3)
                 tok[f"DORM_{lay}_{tag}_SILENT"] = f(
@@ -1796,18 +1853,22 @@ def build_tokens():
         tok["EPISODE_STEPS"] = f"{int(c0.episode_len)}"
         tok["EPISODE_SECONDS"] = f"{c0.episode_len * c0.dt:.0f}"
         # How large the filter's intervention is, as a SHARE of the
-        # episode's sampled actions.  The table prints the count per
-        # episode; the prose needs the ratio, because "0.20 actions" reads
-        # as nothing while "one action in ten thousand" is the fact.
+        # episode's sampled actions.  The count is accumulated over EVERY
+        # agent, so the denominator is the number of agents times the
+        # number of steps -- dividing by the steps alone understated the
+        # denominator by a factor of N and made the filter's intervention
+        # look smaller than it is.
         try:
             un = float(tok.get("MAPPO_UNEXEC", "0"))
+            sampled = int(c0.N) * int(c0.episode_len)
+            tok["MAPPO_SAMPLED"] = f"{sampled:,}".replace(",", r"\,")
             if un > 0:
-                r = c0.episode_len / un
+                r = sampled / un
                 if abs(r - round(r)) < 0.05:
                     tok["MAPPO_UNEXEC_RATIO"] = f"one action in {int(round(r))}"
                 else:
                     tok["MAPPO_UNEXEC_RATIO"] = (
-                        f"{100 * un / c0.episode_len:.3f}\\% of them")
+                        f"{100 * un / sampled:.3f}\\% of them")
             else:
                 tok["MAPPO_UNEXEC_RATIO"] = "none of them"
         except Exception:                                      # pragma: no cover

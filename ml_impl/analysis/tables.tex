@@ -7,7 +7,7 @@
   \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
 \fi
 
-\caption{Base comparison on the corrected configuration.  The learned controller is trained 8 times and its row is the mean over those 8 runs, with the $\pm$ the seed-to-seed spread; the rule baselines are deterministic and carry no spread of their own.  ``Unexec.'' is the number of sampled actions that the safety filter or the joint projection did not execute, which is the size of the gap between the policy gradient and the trajectory.  The two learned baselines are implementations of the method families of Table~\ref{tab:comparison}, not reproductions of the cited papers.}
+\caption{Base comparison on the corrected configuration.  The learned controller is trained 8 times and its row is the mean over those 8 runs, with the $\pm$ the seed-to-seed spread; the rule baselines are deterministic and carry no spread of their own.  ``Unexec.'' is the number of sampled actions that the safety filter or the joint projection did not execute, which is the size of the gap between the policy gradient and the trajectory.  The two learned baselines are implementations of the method families of Table~\ref{tab:comparison}, not reproductions of the cited papers.  The two learned baselines are trained for 20 episodes, a smaller budget than the proposed method's, and the credit arm of Section~\ref{sec:results_credit} re-measures the same local-critic learner at the base budget.}
 \label{tab:results_main}
 \centering
 \scriptsize
@@ -42,7 +42,7 @@ Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 & -- & 0 \\
   \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
 \fi
 
-\caption{Component ablation on the feasible base configuration.  Every variant is trained on the same configuration with the same budget and from the same training seeds, and differs from the full configuration in exactly one component.  The $\pm$ is the seed-to-seed spread of the training runs, and $\Delta$CK is the paired difference from the full configuration, measured on the same training runs.}
+\caption{Component ablation on the feasible base configuration.  Every variant is trained on the same configuration with the same budget and from the same training seeds, and differs from the full configuration in exactly one component --- the last row excepted, which removes the framework's mechanisms together.  The $\pm$ is the seed-to-seed spread of the training runs, and $\Delta$CK is the paired difference from the full configuration, measured on the same training runs: a positive number is what the component is worth.}
 \label{tab:results_abl}
 \centering
 \scriptsize
@@ -78,7 +78,7 @@ Vanilla MAPPO & 0.627\,$\pm$\,0.046 & 0.986 & 0.001 & 0.373 & 0.8 & +0.036 \\
   \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
 \fi
 
-\caption{Component ablation on the S8 combined-stress scenario (a failure at step 500, one charging pad, $B=15$\,kJ, $R_{\mathrm{comm}}=30$\,m, $R_{\mathrm{cov}}=30$\,m).}
+\caption{Component ablation on the S8 combined-stress scenario (a failure at step 500, one charging pad, $B=15$\,kJ, $R_{\mathrm{comm}}=30$\,m, $R_{\mathrm{cov}}=30$\,m).  The variants are trained for 6 episodes, a quarter of the base comparison's budget, which is why the full configuration scores far lower here than it does in the scenario matrix.}
 \label{tab:results_ablstress}
 \centering
 \scriptsize
@@ -158,9 +158,9 @@ S9 & initial deployment & 0.730 & 0.906 & 0.994 & 0.027 & 0.491 & 0.980 \\
 \cmidrule(lr){2-4}
 Observation & CK & AG & SC &  &  \\
 \midrule
-A local only & 0.639\,$\pm$\,0.064 & 0.981 & 0.011 & 1.76 / 8 & 10.7 \\
-B + identity & 0.654\,$\pm$\,0.109 & 0.982 & 0.015 & 2.19 / 8 & 10.0 \\
-\tblHl \textbf{C + identity + map} & \textbf{0.662\,$\pm$\,0.055} & \textbf{0.984} & \textbf{0.010} & \textbf{1.83 / 8} & \textbf{10.8} \\
+A local only & 0.639\,$\pm$\,0.069 & 0.981 & 0.011 & 1.76 / 8 & 10.7 \\
+B + identity & 0.654\,$\pm$\,0.116 & 0.982 & 0.015 & 2.19 / 8 & 10.0 \\
+\tblHl \textbf{C + identity + map} & \textbf{0.662\,$\pm$\,0.058} & \textbf{0.984} & \textbf{0.010} & \textbf{1.83 / 8} & \textbf{10.8} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -239,8 +239,8 @@ $G=8$ & 0.651 & 0.986 & 0.009 & 10.3 \\
 \cmidrule(lr){2-5}
 Learner & CK & AG & SC & CovIntegral &  \\
 \midrule
-\tblHl \textbf{A} & \textbf{0.662\,$\pm$\,0.055} & \textbf{0.984} & \textbf{0.010} & \textbf{0.338} & \textbf{--} \\
-B & 0.641\,$\pm$\,0.060 & 0.971 & 0.013 & 0.359 & -- \\
+\tblHl \textbf{A} & \textbf{0.662\,$\pm$\,0.058} & \textbf{0.984} & \textbf{0.010} & \textbf{0.338} & \textbf{--} \\
+B & 0.641\,$\pm$\,0.065 & 0.971 & 0.013 & 0.359 & -- \\
 \bottomrule
 \end{tabular}
 \tblNote{* Energy is not recorded in this artefact.}
