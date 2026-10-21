@@ -53,6 +53,36 @@ def f(x, nd=3):
     return f"{float(x):.{nd}f}"
 
 
+def macro_name(token: str) -> str:
+    """The LaTeX macro that carries a token's value in the paper's source.
+
+    The paper's hand-written prose refers to a number by its MACRO, not by
+    its value: the assembler writes the macro definitions from this table
+    on every run, so a number that comes from an experiment is regenerated
+    whenever the artefact changes.  Writing the value into the source
+    instead would freeze it, and a frozen number is the failure this
+    project keeps having to undo.
+
+    The macro name is the token's name in camel case with a 'tok' prefix:
+    GAP -> \\tokGap, EPISODE_STEPS -> \\tokEpisodeSteps.  LaTeX control
+    sequence names cannot contain an underscore, which is why the token
+    names are mapped rather than used directly -- and they cannot contain
+    a DIGIT either, because TeX ends a control word at the first
+    non-letter: \\tokAltN5R would be the control sequence \\tokAltN
+    followed by the characters "5R".  The digits are therefore spelled
+    out.
+    """
+    digits = {"0": "Zero", "1": "One", "2": "Two", "3": "Three",
+              "4": "Four", "5": "Five", "6": "Six", "7": "Seven",
+              "8": "Eight", "9": "Nine"}
+    parts = [p for p in token.split("_") if p]
+    out = []
+    for p in parts:
+        word = "".join(digits.get(c, c) for c in p)
+        out.append(word[:1].upper() + word[1:].lower())
+    return "\\tok" + "".join(out)
+
+
 def per_seed_ck(row):
     """The per-training-seed CK values of an ablation row, if present."""
     v = row.get("per_seed_CK", "") if row else ""
@@ -1146,25 +1176,28 @@ def build_tokens():
     bud = load_json("ab_budget.json")
     if bud:
         rows = sorted(bud, key=lambda r: int(r.get("episodes", 0)))
-        parts = ", ".join(f"{int(r['episodes'])} episodes: {f(r['CK'])}"
-                          for r in rows)
-        spread = float(rows[-1]["CK"]) - float(rows[0]["CK"])
+        # The arithmetic is done on the ROUNDED values, so that the paper's
+        # own numbers add up: the increments it prints must sum to the
+        # spread it prints, and both must be the difference of the values
+        # the reader can see in the sentence.
+        cks = [round(float(r["CK"]), 3) for r in rows]
+        stds = [float(r.get("CK_std", 0.0)) for r in rows]
+        ns = [int(r.get("seeds", 3) or 3) for r in rows]
+        parts = ", ".join(f"{int(r['episodes'])} episodes: {c:.3f}"
+                          for r, c in zip(rows, cks))
+        incs = [b - a for a, b in zip(cks, cks[1:])]
+        spread = cks[-1] - cks[0]
         tok["BUDGET_SWEEP"] = parts
         tok["BUDGET_SPREAD"] = f"{spread:+.3f}"
-        tok["BUDGET_MIN"] = f"{min(float(r['CK']) for r in rows):.3f}"
-        tok["BUDGET_MAX"] = f"{max(float(r['CK']) for r in rows):.3f}"
+        tok["BUDGET_MIN"] = f"{min(cks):.3f}"
+        tok["BUDGET_MAX"] = f"{max(cks):.3f}"
         tok["BUDGET_RANGE"] = (f"{int(rows[0]['episodes'])} to "
                                f"{int(rows[-1]['episodes'])}")
         tok["BUDGET_N"] = str(len(rows))
-        # the increments, so that "is it still rising?" is answered by the
-        # measurement and not by an assertion
-        incs = []
-        for a, b in zip(rows, rows[1:]):
-            incs.append(float(b["CK"]) - float(a["CK"]))
         tok["BUDGET_INCREMENTS"] = ", ".join(f"{d:+.3f}" for d in incs)
         tok["BUDGET_LAST_DELTA"] = f"{incs[-1]:+.3f}" if incs else "n/a"
         tok["BUDGET_FIRST_DELTA"] = f"{incs[0]:+.3f}" if incs else "n/a"
-        max_std = max(float(r.get("CK_std", 0.0)) for r in rows)
+        max_std = max(stds) if stds else 0.0
         tok["BUDGET_MAX_STD"] = f"{max_std:.3f}"
         # the movement as a fraction of the gap it would have to explain
         if "GAP" in tok:
@@ -1172,42 +1205,52 @@ def build_tokens():
             frac = abs(spread) / gap if gap else float("nan")
             tok["BUDGET_FRAC"] = f"{100 * frac:.0f}"
             tok["BUDGET_GAP"] = f"{gap:.3f}"
-        # IS the evaluated coverage still rising at the longest budget?
-        # This is the question the sweep exists to answer, and the answer
-        # has to be read off the increments, not asserted.
-        rising = bool(incs) and incs[-1] > 0
-        tok["BUDGET_STILL_RISING"] = "yes" if rising else "no"
-        if rising:
-            # The curve on the TRAINING scene has flattened, but across
-            # separate runs the EVALUATED coverage is still rising at the
-            # longest budget.  Both are measurements.  The honest statement
-            # is therefore that the budget is not excluded, that the sweep
-            # bounds what the budget buys over the range it covers, and that
-            # nothing is extrapolated beyond it.
+        # IS the last increment distinguishable from zero at three seeds?
+        # The comparison is the difference of two means, each the mean of
+        # three runs, so its standard error is sqrt(s1^2/n1 + s2^2/n2).  A
+        # difference smaller than two standard errors is not resolved by
+        # this protocol, and the paper must say so rather than read a trend
+        # into it.
+        se = float("nan")
+        t = float("nan")
+        if len(rows) >= 2:
+            se = math.sqrt(stds[-2] ** 2 / ns[-2] + stds[-1] ** 2 / ns[-1])
+            if se > 0:
+                t = incs[-1] / se
+        tok["BUDGET_SE"] = f"{se:.3f}" if se == se else "n/a"
+        tok["BUDGET_T"] = f"{t:.2f}" if t == t else "n/a"
+        resolved = bool(t == t and abs(t) >= 2.0)
+        tok["BUDGET_LAST_RESOLVED"] = "yes" if resolved else "no"
+        if resolved:
+            # the coverage really is still rising at the longest budget
             tok["BUDGET_VERDICT"] = (
                 f"the coverage moves by {spread:+.3f} over the range the "
                 f"sweep covers, which is about {tok.get('BUDGET_FRAC', 'n/a')}"
                 f"\\% of the gap of {tok.get('BUDGET_GAP', 'n/a')}, and the "
                 f"increments between successive budgets are "
-                f"{tok['BUDGET_INCREMENTS']}, so the evaluated coverage is "
-                f"still rising at the longest budget we ran: the budget is "
-                f"therefore not excluded as a partial cause of the shortfall"
-            )
-            tok["BUDGET_CAVEAT"] = (
-                "we do not extrapolate the sweep past the budgets it "
-                "covers, and we do not claim that a larger budget would "
-                "close the gap")
+                f"{tok['BUDGET_INCREMENTS']}; the last of them, "
+                f"{tok['BUDGET_LAST_DELTA']}, is {abs(t):.1f} standard errors "
+                f"from zero, so the evaluated coverage is still rising at "
+                f"the longest budget we ran and the budget is therefore not "
+                f"excluded as a partial cause of the shortfall")
         else:
+            # the last increment is WITHIN the noise: the sweep does not
+            # resolve what the budget contributes, and the paper says so
             tok["BUDGET_VERDICT"] = (
                 f"the coverage moves by {spread:+.3f} over the range the "
-                f"sweep covers, against a seed-to-seed spread of about "
-                f"{max_std:.3f}, and the increments between successive "
-                f"budgets are {tok['BUDGET_INCREMENTS']}, so the coverage "
-                f"has stopped rising over the range we can afford: the "
-                f"shortfall is not made of the training budget at this scale")
-            tok["BUDGET_CAVEAT"] = (
-                "we do not extrapolate the sweep past the budgets it "
-                "covers")
+                f"sweep covers, which is about {tok.get('BUDGET_FRAC', 'n/a')}"
+                f"\\% of the gap of {tok.get('BUDGET_GAP', 'n/a')}, and the "
+                f"increments between successive budgets are "
+                f"{tok['BUDGET_INCREMENTS']}; but the last of them, "
+                f"{tok['BUDGET_LAST_DELTA']}, is only "
+                f"{abs(t):.1f} standard errors from zero "
+                f"(the standard error of the difference is {tok['BUDGET_SE']}"
+                f", at three training seeds per budget), so the sweep does "
+                f"not resolve what the budget contributes and the budget is "
+                f"neither excluded nor shown to be a cause of the shortfall")
+        tok["BUDGET_CAVEAT"] = (
+            "we do not extrapolate the sweep past the budgets it covers, "
+            "and we do not claim that a larger budget would close the gap")
 
     # ------------------------------------------------------------------
     # the episode length, in both units, so that the two "400"s of the
@@ -1260,7 +1303,9 @@ def build_tokens():
         ps = feas.get("packing_survey") or {}
         if ps:
             tok["PACK_SEEDS"] = str(ps["seeds"])
-            tok["PACK_MEAN"] = f(ps["packing_size_mean"], 2)
+            # three decimals, so that the mean and the bound derived from
+            # it are visibly consistent to the reader (2 x 2.133 = 4.27)
+            tok["PACK_MEAN"] = f(ps["packing_size_mean"], 3)
             tok["PACK_MIN"] = str(ps["packing_size_min"])
             tok["PACK_MAX"] = str(ps["packing_size_max"])
             tok["PACK_N_MEAN"] = f(ps["N_required_mean"], 2)

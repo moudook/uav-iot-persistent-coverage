@@ -102,20 +102,26 @@ the first five episodes ($@@CURVE_FIRST@@$) is the same as its mean over
 the last five ($@@CURVE_LAST@@$): the curve has flattened.  The best
 single episode, $@@CURVE_BEST@@$, is on a training scene, and the same
 policy scores $@@CURVE_EVAL@@$ on unseen scenes, so the training-scene
-figure is not an estimate of the deployed performance.  The budget is
-therefore bounded rather than eliminated: at this configuration the curve
-on the training scene is flat over the budget we can afford, and we do not
-claim that a larger budget would not change the picture.  The sweep behind
-that statement trains independent runs at each of three budgets rather
-than reading one
+figure is not an estimate of the deployed performance.  Two things about
+that curve limit what it can support, and both are stated rather than
+assumed: it is a single run, so it carries no seed-to-seed spread and no
+interval, and it is measured on the scene the policy trains on.  The
+budget is therefore bounded rather than eliminated: at this configuration
+the curve on the training scene is flat over the budget we can afford, and
+we do not claim that a larger budget would not change the picture.  The
+sweep behind that statement trains independent runs at each of three
+budgets rather than reading one
 run's curve at different points, so it compares budgets and does not
 restate the curve: @@BUDGET_SWEEP@@, and @@BUDGET_VERDICT@@.  The two
 measurements differ in what they can support, and the difference is worth
 stating rather than smoothing over: the curve flattens on the scene the
-policy trains on, while across separate runs the coverage on unseen
-scenes is still rising at the longest budget the sweep covers.  A
-flattening training curve is therefore not evidence that the budget has
-stopped mattering, and we do not use it as such; @@BUDGET_CAVEAT@@.
+policy trains on, while the sweep's own last increment is within the
+seed-to-seed spread of the runs it compares, so the sweep does not settle
+the question on unseen scenes either.  A flattening training curve is
+therefore not evidence that the budget has stopped mattering, and we do
+not use it as such; @@BUDGET_CAVEAT@@.  Neither measurement resolves what
+the budget contributes to the gap, and the paper says that rather than
+choosing the one of the two that reads more favourably.
 
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs

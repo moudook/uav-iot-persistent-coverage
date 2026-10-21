@@ -69,11 +69,11 @@ controllers most sharply, even though we criticise it for a different
 reason elsewhere.
 
 It is worth separating the two sources of variation in the headline
-number, because they behave differently.  Across the @@VAR_N_SEEDS@@
-training runs of the learned controller the coverage varies by $@@VAR_SEED@@$
-(the standard error of the mean is $@@VAR_SEED_SE@@$); across the
-@@VAR_N_SCENES@@ evaluation scenes it varies by $@@VAR_SCENE@@$ (the
-standard error of the mean over the scenes is $@@VAR_SCENE_SE@@$).  The
+number, because they behave differently.  Across the 5
+training runs of the learned controller the coverage varies by $0.030$
+(the standard error of the mean is $0.013$); across the
+5 evaluation scenes it varies by $0.103$ (the
+standard error of the mean over the scenes is $0.046$).  The
 scene component is common to every controller in the comparison, because
 they are all evaluated on the same scenes, and it therefore cancels in
 every difference this paper reports; the seed component does not, and it
@@ -102,20 +102,26 @@ the first five episodes ($0.667$) is the same as its mean over
 the last five ($0.671$): the curve has flattened.  The best
 single episode, $0.801$, is on a training scene, and the same
 policy scores $0.744$ on unseen scenes, so the training-scene
-figure is not an estimate of the deployed performance.  The budget is
-therefore bounded rather than eliminated: at this configuration the curve
-on the training scene is flat over the budget we can afford, and we do not
-claim that a larger budget would not change the picture.  The sweep behind
-that statement trains independent runs at each of three budgets rather
-than reading one
+figure is not an estimate of the deployed performance.  Two things about
+that curve limit what it can support, and both are stated rather than
+assumed: it is a single run, so it carries no seed-to-seed spread and no
+interval, and it is measured on the scene the policy trains on.  The
+budget is therefore bounded rather than eliminated: at this configuration
+the curve on the training scene is flat over the budget we can afford, and
+we do not claim that a larger budget would not change the picture.  The
+sweep behind that statement trains independent runs at each of three
+budgets rather than reading one
 run's curve at different points, so it compares budgets and does not
-restate the curve: 8 episodes: 0.609, 16 episodes: 0.640, 25 episodes: 0.698, and the coverage moves by +0.090 over the range the sweep covers, which is about 33\% of the gap of 0.271, and the increments between successive budgets are +0.031, +0.058, so the evaluated coverage is still rising at the longest budget we ran: the budget is therefore not excluded as a partial cause of the shortfall.  The two
+restate the curve: 8 episodes: 0.609, 16 episodes: 0.640, 25 episodes: 0.698, and the coverage moves by +0.089 over the range the sweep covers, which is about 33\% of the gap of 0.271, and the increments between successive budgets are +0.031, +0.058; but the last of them, +0.058, is only 1.2 standard errors from zero (the standard error of the difference is 0.048, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall.  The two
 measurements differ in what they can support, and the difference is worth
 stating rather than smoothing over: the curve flattens on the scene the
-policy trains on, while across separate runs the coverage on unseen
-scenes is still rising at the longest budget the sweep covers.  A
-flattening training curve is therefore not evidence that the budget has
-stopped mattering, and we do not use it as such; we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap.
+policy trains on, while the sweep's own last increment is within the
+seed-to-seed spread of the runs it compares, so the sweep does not settle
+the question on unseen scenes either.  A flattening training curve is
+therefore not evidence that the budget has stopped mattering, and we do
+not use it as such; we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap.  Neither measurement resolves what
+the budget contributes to the gap, and the paper says that rather than
+choosing the one of the two that reads more favourably.
 
 The learned controller does not reach the heuristic, and the two learned
 baselines locate the reason.  The Masked PPO with a local critic differs
@@ -255,15 +261,15 @@ fly, it leaves the swarm, and it stops covering.  The obvious reading was
 that the controller had failed at energy management, and the obvious fix
 was a reward term that prices the consequence of an empty pack.
 
-The reading was wrong, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.271 to the reactive heuristic: $removing the energy constraint$ (-0.044, 95\% interval [-0.327, +0.238], an upper limit below the gap of 0.271); $removing the threshold term$ (-0.021, 95\% interval [-0.063, +0.020], an upper limit below the gap of 0.271); $the previous energy rule$ (-0.054, 95\% interval [-0.245, +0.137], an upper limit below the gap of 0.271).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.
+The reading was wrong, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.271 to the reactive heuristic: $removing the energy constraint$ (-0.009, 95\% interval [-0.218, +0.200], an upper limit below the gap of 0.271); $removing the threshold term$ (+0.009, 95\% interval [-0.049, +0.066], an upper limit below the gap of 0.271); $the previous energy rule$ (-0.120, 95\% interval [-0.236, -0.003], an upper limit below the gap of 0.271).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.
 
 What the diagnostic actually found was a defect in the safety filter rather
 than a property of the policy.  The mask's energy test admitted a
 departure with a flat battery, so a UAV could fly until its pack was empty
 away from a pad; the correction is to require a UAV to retain, after the
 move, the energy to reach a charging pad plus the reserve margin.  The
-stranding falls from $6.1$ UAVs per episode to $0.9$, and
-the return-to-charge transitions rise from $135$ to $636$ per
+stranding falls from $6.7$ UAVs per episode to $1.1$, and
+the return-to-charge transitions rise from $97$ to $613$ per
 episode, because the UAVs now come home instead of dying in the field.  The
 coverage is unchanged to within the spread, and that is the honest
 conclusion: the defect was real, the repair was correct, and neither the
@@ -271,8 +277,8 @@ defect nor the repair explains the gap to the reactive heuristic.
 
 It is worth being explicit about what that null is and is not about, since
 a null result is easy to misread.  It is \emph{not} a statement that the
-energy constraint is inactive: the two rules differ by $5.2$
-stranded UAVs per episode and by $501$ return-to-charge
+energy constraint is inactive: the two rules differ by $5.6$
+stranded UAVs per episode and by $516$ return-to-charge
 transitions, so the test is doing substantial work and the swarm's energy
 behaviour differs markedly between them.  It is a statement about the
 effect of that work on the \emph{coverage}, and the effect is small.  A
@@ -311,12 +317,12 @@ training seeds it would flag roughly one null component in three, while
 still being unable to detect a true effect of the size it flags.  The
 paired interval does not have that failure mode, and it also reports the
 resolution of the measurement, which is the number a reader actually
-needs.  Every component's 95\% confidence interval for the paired difference includes zero, and the smallest difference this protocol could resolve is $0.111$ of persistent coverage.
+needs.  Every component's 95\% confidence interval for the paired difference includes zero, and the smallest difference this protocol could resolve is $0.209$ of persistent coverage.
 
 What the intervals do and do not say is worth stating precisely, because a
 null result of this width is a statement about the resolution of the
 measurement and not about the component.  The measurement resolves no
-effect smaller than about $0.111$ of persistent coverage, at
+effect smaller than about $0.209$ of persistent coverage, at
 this training budget and with this number of training seeds.  The
 intervals are per-arm and are not adjusted for the number of arms, so a
 reader who wants a family-wise statement should treat the set of arms as
@@ -326,7 +332,7 @@ A component can be redundant with another, in which case removing either
 one alone costs nothing while removing both costs a great deal; and a
 component that matters only at a larger budget is invisible at this one.
 The budget sweep above speaks to the second case for the full
-configuration, and it does not settle it: the coverage moves by +0.090 over the range the sweep covers, which is about 33\% of the gap of 0.271, and the increments between successive budgets are +0.031, +0.058, so the evaluated coverage is still rising at the longest budget we ran: the budget is therefore not excluded as a partial cause of the shortfall.  The arms
+configuration, and it does not settle it: the coverage moves by +0.089 over the range the sweep covers, which is about 33\% of the gap of 0.271, and the increments between successive budgets are +0.031, +0.058; but the last of them, +0.058, is only 1.2 standard errors from zero (the standard error of the difference is 0.048, at three training seeds per budget), so the sweep does not resolve what the budget contributes and the budget is neither excluded nor shown to be a cause of the shortfall.  The arms
 here are each measured at the single budget the base comparison uses, so
 for the individual components we do not claim budget-independence, and
 we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap.

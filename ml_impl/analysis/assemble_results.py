@@ -50,6 +50,40 @@ def replace_region(src, begin, end, body):
     return src[:i + len(begin)] + "\n" + body + "\n" + src[j:], True
 
 
+MACRO_BEGIN = "%% BEGIN TOKEN MACROS"
+MACRO_END = "%% END TOKEN MACROS"
+
+
+def write_token_macros(src, tok, missing):
+    """Write the macro definitions for every token into the paper.
+
+    The hand-written prose refers to a number by its macro (\tokGap), and
+    the definitions are written here, from the token table, on every
+    assembly.  The number therefore regenerates whenever the artefact
+    changes, which is the whole point: a value written into the source
+    would freeze at whatever the first assembly found.
+
+    A token with no value becomes a visible marker, so an incomplete
+    paper is impossible to miss.
+    """
+    from fill_tokens import macro_name
+
+    lines = []
+    for name in sorted(tok):
+        value = str(tok[name])
+        lines.append(f"\\newcommand{{\\{macro_name(name)[1:]}}}"
+                     f"{{{value}}}")
+    for name in sorted(missing):
+        esc = name.replace("_", r"\_")
+        lines.append(f"\\newcommand{{\\{macro_name(name)[1:]}}}"
+                     f"{{\\mbox{{\\textbf{{[pending: {esc}]}}}}}}")
+    body = ("\n% The numbers that come from an experiment.  These definitions are\n"
+            "% written by analysis/assemble_results.py from the artefact table,\n"
+            "% so the prose cannot drift away from the measurement.\n"
+            + "\n".join(lines))
+    return replace_region(src, MACRO_BEGIN, MACRO_END, body)
+
+
 def read_blocks(path):
     if not os.path.exists(path):
         return {m.strip(): "" for m in MARKERS}
@@ -316,6 +350,19 @@ __BLOCK_SCEN__
         src, ok = replace_region(src, begin, end, body)
         if not ok:
             raise SystemExit(f"could not locate the {begin} region in the paper")
+
+    src, leftover = fill(src, tok)
+
+    # The hand-written prose refers to a number by its MACRO, and the macro
+    # definitions are written here, from the same table, on every run.  The
+    # definitions are therefore regenerated whenever the artefact changes,
+    # and the prose cannot drift away from the measurement.  (Filling the
+    # tokens in the source instead would freeze the values: an assembly
+    # would consume the token, and every later assembly would leave the
+    # number where the first one put it.)
+    src, ok = write_token_macros(src, tok, leftover)
+    if not ok:
+        raise SystemExit("could not locate the token-macro region in the paper")
 
     src, leftover = fill(src, tok)
     if leftover:
