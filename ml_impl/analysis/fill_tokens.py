@@ -1251,6 +1251,23 @@ def build_tokens():
             + "; ".join(parts)
             + f", against a gap of {gap:.3f}"
             + bud + tail + ref_clause + ".")
+        # The abstract's version: the same verdict, without the list of
+        # numbers.  An abstract that reads like a table is not an
+        # abstract, and the numbers belong in the results.
+        if not not_cleared:
+            tok["ARMS_SUMMARY_SHORT"] = (
+                f"Controlled arms bound how much of the gap each alternative "
+                f"explanation can account for, and every arm's upper "
+                f"confidence limit lies below the gap of {gap:.3f} --- by "
+                f"margins that are small but positive, the smallest of them "
+                f"{margins[0]:.3f} --- so none of the explanations the arms "
+                f"test can be the whole of it")
+        else:
+            tok["ARMS_SUMMARY_SHORT"] = (
+                f"Controlled arms bound how much of the gap each alternative "
+                f"explanation can account for, and the arm testing "
+                f"{' and '.join(not_cleared)} does not exclude the whole gap, "
+                f"so that explanation remains a candidate")
     else:
         tok["ARMS_SUMMARY_SENTENCE"] = (
             "the arms that test the alternative explanations have not been "
