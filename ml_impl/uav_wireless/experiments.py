@@ -303,6 +303,9 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
     """
     import copy, csv, json, os
     here = os.path.dirname(os.path.abspath(__file__))
+    # the device this run trains on; it is part of the protocol, and a row
+    # measured on another device is never reused
+    RUN_DEVICE = os.environ.get("UAV_DEVICE", "cpu")
     analysis = os.path.join(os.path.dirname(here), "analysis")
     print(f"\n=== Ablations ({'S8 combined stress' if stress else 'feasible base config'}) ===")
     print(f" protocol: {episodes} episodes x {c_episode(base)} steps, "
@@ -352,6 +355,10 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
                     and int(d.get("episodes", -1)) == int(episodes)
                     and int(d.get("eval_seeds", -1)) == int(eval_seeds)
                     and int(d.get("seeds", -1)) == int(seeds)
+                    # the device is part of the protocol: a variant
+                    # trained on the GPU and its partner trained on the
+                    # CPU are not a paired comparison
+                    and str(d.get("device", "")) == RUN_DEVICE
                     and d.get("model") in variants):
                 done[d["model"]] = d
     rows = []

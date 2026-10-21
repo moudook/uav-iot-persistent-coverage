@@ -94,6 +94,7 @@ def main():
 
     rows = []
     out_path = os.path.join(HERE, "ab_map_resolution.json")
+    run_device = os.environ.get("UAV_DEVICE", "cpu")
     # RESUME: a grid measured under the same protocol is reused, and the
     # artefact is written after every grid
     done = {}
@@ -102,7 +103,8 @@ def main():
             for r in json.load(open(out_path, encoding="utf-8")):
                 if (int(r.get("episodes", -1)) == int(args.episodes)
                         and int(r.get("seeds", -1)) == int(args.seeds)
-                        and int(r.get("eval_seeds", -1)) == int(args.eval_seeds)):
+                        and int(r.get("eval_seeds", -1)) == int(args.eval_seeds)
+                        and str(r.get("device", "")) == run_device):
                     done[int(r["grid"])] = r
         except Exception:
             done = {}

@@ -71,6 +71,7 @@ def main():
 
     rows = []
     out_path = os.path.join(HERE, "ab_credit.json")
+    run_device = os.environ.get("UAV_DEVICE", "cpu")
     # RESUME: an arm measured under the same protocol is reused, and the
     # artefact is written after every arm, so an interruption does not cost
     # the training that has already been done
@@ -80,7 +81,8 @@ def main():
             for r in json.load(open(out_path, encoding="utf-8")):
                 if (int(r.get("episodes", -1)) == int(args.episodes)
                         and int(r.get("seeds", -1)) == int(args.seeds)
-                        and int(r.get("eval_seeds", -1)) == int(args.eval_seeds)):
+                        and int(r.get("eval_seeds", -1)) == int(args.eval_seeds)
+                        and str(r.get("device", "")) == run_device):
                     done[r["arm"]] = r
         except Exception:
             done = {}
