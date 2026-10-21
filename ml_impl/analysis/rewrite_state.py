@@ -171,10 +171,16 @@ PAPER = """## The paper
   never left stale.
 - `analysis/final_checks.py` is the gate: eight checks, and it exits
   non-zero if any of them fails.
-- **The length is still undecided.** At 29 pages this is a preprint or a
-  journal submission with overlength charges, not a conference paper
-  (6-8 pages). The user has been asked which venue is intended and has
-  not answered; the full paper stands until they do."""
+- **The venue is decided: an arXiv preprint.** The user asked for an
+  arXiv-style paper with explanatory diagrams, in the manner of the
+  AOHT-AI paper.  arXiv has no page limit, so the full 30 pages stand;
+  the work now is the explanatory figures, not a cut.  The IEEEtran
+  format stays, because it is what a reader on arXiv expects from a
+  networking paper.
+- **The figures must explain, not decorate.** Every figure is drawn from
+  the token table, so a figure cannot disagree with the prose, and the
+  central claim (which arms are excluded, and by how much) is drawn as a
+  picture rather than left in a table."""
 
 FINDINGS = """## What the audits found, and what changed because of them
 Six independent reviews have been run: two mathematical (MiniMax M3.1 --

@@ -93,7 +93,13 @@ def write_token_macros(src, tok, missing):
     # Without this the paper would not compile, because an undefined
     # control sequence is an error, and the error is much harder to
     # read than a marker.
-    used = set(re.findall(r"\\(tok[A-Za-z]+)", src))
+    # The scan is over the PROSE, not over the whole file: the macro
+    # block itself contains the definitions, and reading them as "uses"
+    # would keep a macro alive that nothing uses, and mark it pending.
+    i_mb = src.find(MACRO_BEGIN)
+    j_mb = src.find(MACRO_END)
+    prose = src[:i_mb] + src[j_mb:] if (i_mb >= 0 and j_mb > i_mb) else src
+    used = set(re.findall(r"\\(tok[A-Za-z]+)", prose))
     # the macros that are already written, from the table AND from the
     # pending list: a macro that is in both would otherwise be defined
     # twice, and LaTeX stops at the second definition

@@ -257,7 +257,36 @@ def main():
     print(" 7. the paper's numbers about itself")
     tex = open(os.path.join(PROJ, "Mlawn-midsem-tex.tex"),
                encoding="utf-8").read()
-    # The paper refers to these numbers by their MACROS, so the checks
+    # A PLACEHOLDER in the source -- "TABLE XX", "TBD", "XX" -- is a hole
+    # in the paper that the LaTeX log does not report, because it is not
+    # a reference.  The check looks for the literal placeholders, and for
+    # a table or a figure that has no label.
+    placeholders = re.findall(r"TABLE XX|FIGURE XX|Fig\. XX|\bTBD\b|"
+                               r"\bXXX+\b|\[pending", tex)
+    if placeholders:
+        failures.append(f"the source still has placeholders: "
+                        f"{sorted(set(placeholders))}")
+    ntab = len(re.findall(r"\\begin\{table\*?\}", tex))
+    nlab = len(re.findall(r"\\label\{tab:", tex))
+    nfig = len(re.findall(r"\\begin\{figure\*?\}", tex))
+    nflab = len(re.findall(r"\\label\{fig:", tex))
+    print(f"   {ntab} tables, {nlab} of them labelled; "
+          f"{nfig} figures, {nflab} of them labelled")
+    if nlab != ntab:
+        failures.append(f"{ntab - nlab} table(s) have no label, so they "
+                        f"cannot be referred to")
+    if nflab != nfig:
+        failures.append(f"{nfig - nflab} figure(s) have no label, so they "
+                        f"cannot be referred to")
+    # every figure has to be referred to in the text: an unreferenced
+    # float is a formatting defect in an IEEE paper
+    for name in re.findall(r"\\label\{fig:([^}]*)\}", tex):
+        if f"\\ref{{fig:{name}}}" not in tex:
+            failures.append(f"the figure {name} is never referred to")
+    for name in re.findall(r"\\label\{tab:([^}]*)\}", tex):
+        if f"\\ref{{tab:{name}}}" not in tex:
+            failures.append(f"the table {name} is never referred to")
+    # the paper refers to these numbers by their MACROS, so the checks
     # have to resolve them the way LaTeX does: read the definitions out
     # of the macro block and substitute them.
     macros = dict(re.findall(r"\\newcommand\{\\(tok[A-Za-z]*)\}\{([^}]*)\}",

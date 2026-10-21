@@ -73,7 +73,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 % so the prose cannot drift away from the measurement.
 \newcommand{\tokAblBestObs}{the coverage map}
 \newcommand{\tokAblBestObsDelta}{-0.039}
-\newcommand{\tokAblBestObsText}{The observation term with the largest effect on the coverage is the coverage map, and the table above prices it: it is worth -0.039 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.}
+\newcommand{\tokAblBestObsText}{The observation term with the largest effect on the coverage is the coverage map, and Table~\ref{tab:results_abl} prices it: it is worth -0.039 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.}
 \newcommand{\tokAblCrit}{4.30}
 \newcommand{\tokAblDelta}{+0.037}
 \newcommand{\tokAblEpisodes}{25}
@@ -418,8 +418,6 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokVarSceneSe}{0.054}
 \newcommand{\tokVarSeed}{0.058}
 \newcommand{\tokVarSeedSe}{0.021}
-\newcommand{\tokAblText}{\mbox{\textbf{[pending: tokAblText]}}}
-\newcommand{\tokCreditText}{\mbox{\textbf{[pending: tokCreditText]}}}
 %% END TOKEN MACROS
 
 \begin{document}
@@ -632,7 +630,7 @@ rather than quietly dropped, and we keep the argument in the record
 because it was reasonable, and because the measurement is more useful to a
 reader than the argument would have been.
 
-Unlike the idealized global articulation-point indicator sometimes used in analysis, $\rho_i$ is intended to be computable during execution from neighborhood exchange. The simulator may additionally compute the exact articulation-point indicator for evaluation and for the centralized critic. This distinction avoids assuming that an individual UAV can magically obtain the complete global topology.
+Unlike the idealized global articulation-point indicator sometimes used in analysis, $\rho_i$ is intended to be computable during execution from neighborhood exchange. The simulator may additionally compute the exact articulation-point indicator for evaluation and for the centralized critic. This distinction avoids assuming that an individual UAV can magically obtain the complete global topology. Table~\ref{tab:obs} lists the observation variables each agent actually receives, and which of them are for the actor and which for the critic.
 
 \begin{table}[t]
 \caption{Local observation variables available to each deployed UAV.}
@@ -688,7 +686,7 @@ Charge & Request charging when inside a pad service region; pad selection is han
 \bottomrule
 \end{tabularx}
 \end{table}
-where $\Pi_{\Omega}$ projects into the permitted airspace. A charge request is feasible only when the UAV is inside a station neighborhood of a free pad. The RL layer does not select a pad as part of its action; pad choice is handled by the arbitration layer in Section~\ref{sec:charging}.
+where $\Pi_{\Omega}$ projects into the permitted airspace. A charge request is feasible only when the UAV is inside a station neighborhood of a free pad. Table~\ref{tab:actions} gives the effect of each of the six actions. The RL layer does not select a pad as part of its action; pad choice is handled by the arbitration layer in Section~\ref{sec:charging}.
 
 \subsection{Persistent $K$-Coverage}
 \label{sec:coverage}
@@ -1147,7 +1145,7 @@ return-urgency feature, and it is the term the paper's own metric table
 asks for when it lists ``minimum battery level, and threshold violations''
 under Energy. Section~\ref{sec:results} reports a controlled measurement of
 the effect of this term and of the alternative hypothesis that the energy
-constraint is simply too tight for the episode length.
+constraint is simply too tight for the episode length. Table~\ref{tab:hardsoft} separates the two kinds of constraint: the hard ones the filter enforces on every candidate action, and the trade-offs the reward asks the policy to make.
 
 \begin{table}[t]
 \caption{Hard constraints versus learned trade-offs.}
@@ -1413,7 +1411,7 @@ A practical implementation can use a multilayer perceptron for the shared actor 
 
 
 \subsection{Training Hyperparameters}
-The initial training configuration follows the values in the project presentation. These values are starting points for the implementation and can be tuned on a validation set without changing the system formulation.
+The initial training configuration follows the values in the project presentation. These values are starting points for the implementation and can be tuned on a validation set without changing the system formulation. Table~\ref{tab:hyper} gives them.
 
 \begin{table}[t]
 \caption{Initial MAPPO training configuration.}
@@ -1718,7 +1716,7 @@ it as one: a second version of the same rule, with the motion and recharge
 logic unchanged but the global coverage state removed --- each UAV judges
 only the sensors within twice the coverage radius of its own position, and
 there is no assignment, so UAVs that want the same sensor contend for it
---- is reported as \emph{Reactive (local assignment)} in the table above.  It
+--- is reported as \emph{Reactive (local assignment)} in Table~\ref{tab:results_main}.  It
 reaches $0.972$ with connectivity availability $1.000$ and
 a service continuity of $0.777$, against the privileged version's
 $0.953$, $1.000$ and $0.751$.  The privileged version is in fact slightly WORSE than the unprivileged one (-0.019), so the global coverage state is not what gives the rule its edge --- the global round-robin assignment makes the UAVs contend for sensors, and the local rule does better --- and the gap to the learned controller is therefore not an information artefact at all.
@@ -1990,7 +1988,7 @@ The arms share their training seeds, so the comparisons are paired: $adding the 
 
 The resolution of the summary makes no difference to the coverage: $G=0$: 0.645, $G=4$: 0.669, $G=8$: 0.645, and the largest of the differences is 0.025, inside the seed-to-seed spread of the learner (0.058).  What the summary does change is the swarm's behaviour: the spread grows, from 8.1 m without it to 9.4 m and 8.4 m with it, because a policy that follows the deficit spreads the swarm out instead of keeping it together.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
-The observation term with the largest effect on the coverage is the coverage map, and the table above prices it: it is worth -0.039 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.  The reason is easy to see in
+The observation term with the largest effect on the coverage is the coverage map, and Table~\ref{tab:results_abl} prices it: it is worth -0.039 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.  The reason is easy to see in
 retrospect.  Without a direction to the charger a UAV cannot come home, so
 the swarm drains its packs in the field; and a swarm that has drained its
 packs is not a swarm that can be asked to cover anything.
@@ -2188,7 +2186,7 @@ no pad bearing & 0.242\,$\pm$\,0.016 & 0.757 & 0.000 & 0.758 & 6.2 & +0.070 \\
 \end{tabular}
 \end{table}
 
-The ordering of the components cannot be read off this table: the components whose interval includes zero -- the criticality term (-0.003, 95\% interval [-0.046, +0.040]), the degraded-service term (-0.018, 95\% interval [-0.098, +0.062]), the energy-cost term (+0.000, 95\% interval [+0.000, +0.000]), the under-coverage term (+0.010, 95\% interval [-0.018, +0.038]), the reserve UAV (+0.187, 95\% interval [-0.115, +0.490]), the charging arbitration (-0.018, 95\% interval [-0.089, +0.052]), the action mask (-0.032, 95\% interval [-0.119, +0.054]), the agent identity (-0.078, 95\% interval [-0.428, +0.272]), the coverage map (-0.045, 95\% interval [-0.390, +0.300]), the pad bearing (-0.070, 95\% interval [-0.467, +0.327]), the whole design (+0.193, 95\% interval [-0.109, +0.495]) -- are not separated by this table at all.  The differences between the variants are of the same order as the width of the intervals, so the table reports what the stress scenario does to the swarm and not which component matters.  The framework's recovery mechanism, which re-seats an exhausted UAV at a charging pad, is a plausible mechanism for the behaviour of the stress scenario --- a re-seated UAV is out of communication range of the swarm until it flies back --- but this table does not resolve it, and we do not claim it.
+Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the reserve and arbitration mechanisms actually fire. The ordering of the components cannot be read off this table: the components whose interval includes zero -- the criticality term (-0.003, 95\% interval [-0.046, +0.040]), the degraded-service term (-0.018, 95\% interval [-0.098, +0.062]), the energy-cost term (+0.000, 95\% interval [+0.000, +0.000]), the under-coverage term (+0.010, 95\% interval [-0.018, +0.038]), the reserve UAV (+0.187, 95\% interval [-0.115, +0.490]), the charging arbitration (-0.018, 95\% interval [-0.089, +0.052]), the action mask (-0.032, 95\% interval [-0.119, +0.054]), the agent identity (-0.078, 95\% interval [-0.428, +0.272]), the coverage map (-0.045, 95\% interval [-0.390, +0.300]), the pad bearing (-0.070, 95\% interval [-0.467, +0.327]), the whole design (+0.193, 95\% interval [-0.109, +0.495]) -- are not separated by this table at all.  The differences between the variants are of the same order as the width of the intervals, so the table reports what the stress scenario does to the swarm and not which component matters.  The framework's recovery mechanism, which re-seats an exhausted UAV at a charging pad, is a plausible mechanism for the behaviour of the stress scenario --- a re-seated UAV is out of communication range of the swarm until it flies back --- but this table does not resolve it, and we do not claim it.
 
 \subsection{The credit assignment, and the cheapest test of it}
 \label{sec:results_credit}
@@ -2299,7 +2297,7 @@ S9 & initial deployment & 0.730 & 0.906 & 0.994 & 0.027 & 0.491 & 0.980 \\
 \end{tabular}
 \end{table}
 
-Each row is the mean over the variants of that scenario, with the proposed
+Table~\ref{tab:results_scen} is the scenario matrix: it says whether the ordering survives outside the configuration it was measured on. Each row is the mean over the variants of that scenario, with the proposed
 controller and the two rules evaluated on the same scenes.  The scenario
 policies are trained at the base comparison's budget, and one
 policy is trained per distinct $(N, M, \text{pads})$ combination, because
@@ -2398,7 +2396,8 @@ INET's \texttt{Radio} module does expose exactly such a statistic, the
 it: a transmit-power sweep in which the only quantity that changes is the
 UAV's transmit power, over a 117~dB range, with receivers at 10, 30, 50 and
 80~m and a UAV at 50~m altitude (\texttt{run\_phy\_probe.sh},
-\texttt{analysis/phy\_runtime\_probe.py}). The result is specific, and it is
+\texttt{analysis/phy\_runtime\_probe.py}). Table~\ref{tab:phyprobe} is the
+probe.  The result is specific, and it is
 reported here in full because it is the evidence for what the paper does and
 does not claim.
 

@@ -578,6 +578,56 @@ code, no repository) and to be adversarial rather than agreeable.
   broader than the audit, an arms' sentence that did not name its
   reference arm, an exclusion stated without its scope, and a share
   whose denominator appears nowhere in the paper.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+- **Audit 7** (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+  checked against the raw per-seed rows, with every interval recomputed
+  by hand. Ten findings, all applied: the budget's paired increment, two
+  population standard deviations, a rounding disagreement between a
+  summary and its table, the wrong rule named in a sentence, an
+  asymmetric interval described as symmetric, a caption that said five
+  where the table said eight, an audit claim in the abstract that was
+  broader than the audit, an arms' sentence that did not name its
+  reference arm, an exclusion stated without its scope, and a share
+  whose denominator appears nowhere in the paper.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+- **Audit 7** (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+  checked against the raw per-seed rows, with every interval recomputed
+  by hand. Ten findings, all applied: the budget's paired increment, two
+  population standard deviations, a rounding disagreement between a
+  summary and its table, the wrong rule named in a sentence, an
+  asymmetric interval described as symmetric, a caption that said five
+  where the table said eight, an audit claim in the abstract that was
+  broader than the audit, an arms' sentence that did not name its
+  reference arm, an exclusion stated without its scope, and a share
+  whose denominator appears nowhere in the paper.
 ## THE CITATIONS, CHECKED AGAINST THE SOURCES (21 Oct)
 Every number the paper attributes to a cited work has been checked
 against the source, and the checks are in the paper's own record:
@@ -793,10 +843,16 @@ THEN
   never left stale.
 - `analysis/final_checks.py` is the gate: eight checks, and it exits
   non-zero if any of them fails.
-- **The length is still undecided.** At 29 pages this is a preprint or a
-  journal submission with overlength charges, not a conference paper
-  (6-8 pages). The user has been asked which venue is intended and has
-  not answered; the full paper stands until they do.
+- **The venue is decided: an arXiv preprint.** The user asked for an
+  arXiv-style paper with explanatory diagrams, in the manner of the
+  AOHT-AI paper.  arXiv has no page limit, so the full 30 pages stand;
+  the work now is the explanatory figures, not a cut.  The IEEEtran
+  format stays, because it is what a reader on arXiv expects from a
+  networking paper.
+- **The figures must explain, not decorate.** Every figure is drawn from
+  the token table, so a figure cannot disagree with the prose, and the
+  central claim (which arms are excluded, and by how much) is drawn as a
+  picture rather than left in a table.
 ## DeepSeek research protocol (2-tab limit, STRICT)
 - Batch 1: Tab 1 (K-coverage literature gap) + Tab 2 (MAPPO correctness) -- DONE.
 - Batch 2: Tab 3 (non-degenerate coverage metrics) -- DONE.

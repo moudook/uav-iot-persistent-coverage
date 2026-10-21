@@ -906,7 +906,8 @@ def build_tokens():
             resolved = (pmean + pstd) < 0 or (pmean - pstd) > 0
             tok["ABL_BEST_OBS_TEXT"] = (
                 f"The observation term with the largest effect on the "
-                f"coverage is {obs_terms[n]}, and the table above prices "
+                f"coverage is {obs_terms[n]}, and "
+                f"Table~\\ref{{tab:results_abl}} prices "
                 f"it: it is worth {-pmean:.3f} of persistent "
                 f"coverage, paired over the shared training seeds"
                 + (", and it is the largest single observation effect in "
@@ -1019,9 +1020,12 @@ def build_tokens():
                 "budget rather than of a particular regime, and a reader "
                 "told only that a learned controller loses to a rule has "
                 "been told the whole of it.")
-    tok.setdefault("ABL_TEXT", "")
-    tok.setdefault("CREDIT_TEXT", "")
-    tok.setdefault("SCEN_TEXT", "")
+    # These two are placeholders for the blocks that are assembled
+    # separately; they are not measurements, and an empty value would be
+    # screened out and would leave a [pending] marker in the paper for a
+    # token nothing uses.
+    for _k in ("ABL_TEXT", "CREDIT_TEXT"):
+        tok.pop(_k, None)
 
     cr = load_json("ab_credit.json")
     if len(cr) >= 2:

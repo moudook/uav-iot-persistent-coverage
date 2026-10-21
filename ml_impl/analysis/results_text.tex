@@ -37,7 +37,7 @@ it as one: a second version of the same rule, with the motion and recharge
 logic unchanged but the global coverage state removed --- each UAV judges
 only the sensors within twice the coverage radius of its own position, and
 there is no assignment, so UAVs that want the same sensor contend for it
---- is reported as \emph{Reactive (local assignment)} in the table above.  It
+--- is reported as \emph{Reactive (local assignment)} in Table~\ref{tab:results_main}.  It
 reaches $@@REACTL_CK@@$ with connectivity availability $@@REACTL_AG@@$ and
 a service continuity of $@@REACTL_SC@@$, against the privileged version's
 $@@REACT_CK@@$, $@@REACT_AG@@$ and $@@REACT_SC@@$.  @@REACTL_VERDICT@@.
@@ -365,7 +365,7 @@ spent.
 
 %% ABLSTRESS
 
-@@STRESS_SUMMARY@@
+Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the reserve and arbitration mechanisms actually fire. @@STRESS_SUMMARY@@
 
 %% CREDIT
 
@@ -402,7 +402,7 @@ not claim to have implemented or evaluated them here.
 
 %% SCEN
 
-Each row is the mean over the variants of that scenario, with the proposed
+Table~\ref{tab:results_scen} is the scenario matrix: it says whether the ordering survives outside the configuration it was measured on. Each row is the mean over the variants of that scenario, with the proposed
 controller and the two rules evaluated on the same scenes.  The scenario
 policies are trained at the base comparison's budget, and one
 policy is trained per distinct $(N, M, \text{pads})$ combination, because

@@ -37,7 +37,7 @@ it as one: a second version of the same rule, with the motion and recharge
 logic unchanged but the global coverage state removed --- each UAV judges
 only the sensors within twice the coverage radius of its own position, and
 there is no assignment, so UAVs that want the same sensor contend for it
---- is reported as \emph{Reactive (local assignment)} in the table above.  It
+--- is reported as \emph{Reactive (local assignment)} in Table~\ref{tab:results_main}.  It
 reaches $0.972$ with connectivity availability $1.000$ and
 a service continuity of $0.777$, against the privileged version's
 $0.953$, $1.000$ and $0.751$.  The privileged version is in fact slightly WORSE than the unprivileged one (-0.019), so the global coverage state is not what gives the rule its edge --- the global round-robin assignment makes the UAVs contend for sensors, and the local rule does better --- and the gap to the learned controller is therefore not an information artefact at all.
@@ -248,7 +248,7 @@ The arms share their training seeds, so the comparisons are paired: $adding the 
 
 The resolution of the summary makes no difference to the coverage: $G=0$: 0.645, $G=4$: 0.669, $G=8$: 0.645, and the largest of the differences is 0.025, inside the seed-to-seed spread of the learner (0.058).  What the summary does change is the swarm's behaviour: the spread grows, from 8.1 m without it to 9.4 m and 8.4 m with it, because a policy that follows the deficit spreads the swarm out instead of keeping it together.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
-The observation term with the largest effect on the coverage is the coverage map, and the table above prices it: it is worth -0.039 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.  The reason is easy to see in
+The observation term with the largest effect on the coverage is the coverage map, and Table~\ref{tab:results_abl} prices it: it is worth -0.039 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.  The reason is easy to see in
 retrospect.  Without a direction to the charger a UAV cannot come home, so
 the swarm drains its packs in the field; and a swarm that has drained its
 packs is not a swarm that can be asked to cover anything.
@@ -365,7 +365,7 @@ spent.
 
 %% ABLSTRESS
 
-The ordering of the components cannot be read off this table: the components whose interval includes zero -- the criticality term (-0.003, 95\% interval [-0.046, +0.040]), the degraded-service term (-0.018, 95\% interval [-0.098, +0.062]), the energy-cost term (+0.000, 95\% interval [+0.000, +0.000]), the under-coverage term (+0.010, 95\% interval [-0.018, +0.038]), the reserve UAV (+0.187, 95\% interval [-0.115, +0.490]), the charging arbitration (-0.018, 95\% interval [-0.089, +0.052]), the action mask (-0.032, 95\% interval [-0.119, +0.054]), the agent identity (-0.078, 95\% interval [-0.428, +0.272]), the coverage map (-0.045, 95\% interval [-0.390, +0.300]), the pad bearing (-0.070, 95\% interval [-0.467, +0.327]), the whole design (+0.193, 95\% interval [-0.109, +0.495]) -- are not separated by this table at all.  The differences between the variants are of the same order as the width of the intervals, so the table reports what the stress scenario does to the swarm and not which component matters.  The framework's recovery mechanism, which re-seats an exhausted UAV at a charging pad, is a plausible mechanism for the behaviour of the stress scenario --- a re-seated UAV is out of communication range of the swarm until it flies back --- but this table does not resolve it, and we do not claim it.
+Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the reserve and arbitration mechanisms actually fire. The ordering of the components cannot be read off this table: the components whose interval includes zero -- the criticality term (-0.003, 95\% interval [-0.046, +0.040]), the degraded-service term (-0.018, 95\% interval [-0.098, +0.062]), the energy-cost term (+0.000, 95\% interval [+0.000, +0.000]), the under-coverage term (+0.010, 95\% interval [-0.018, +0.038]), the reserve UAV (+0.187, 95\% interval [-0.115, +0.490]), the charging arbitration (-0.018, 95\% interval [-0.089, +0.052]), the action mask (-0.032, 95\% interval [-0.119, +0.054]), the agent identity (-0.078, 95\% interval [-0.428, +0.272]), the coverage map (-0.045, 95\% interval [-0.390, +0.300]), the pad bearing (-0.070, 95\% interval [-0.467, +0.327]), the whole design (+0.193, 95\% interval [-0.109, +0.495]) -- are not separated by this table at all.  The differences between the variants are of the same order as the width of the intervals, so the table reports what the stress scenario does to the swarm and not which component matters.  The framework's recovery mechanism, which re-seats an exhausted UAV at a charging pad, is a plausible mechanism for the behaviour of the stress scenario --- a re-seated UAV is out of communication range of the swarm until it flies back --- but this table does not resolve it, and we do not claim it.
 
 %% CREDIT
 
@@ -402,7 +402,7 @@ not claim to have implemented or evaluated them here.
 
 %% SCEN
 
-Each row is the mean over the variants of that scenario, with the proposed
+Table~\ref{tab:results_scen} is the scenario matrix: it says whether the ordering survives outside the configuration it was measured on. Each row is the mean over the variants of that scenario, with the proposed
 controller and the two rules evaluated on the same scenes.  The scenario
 policies are trained at the base comparison's budget, and one
 policy is trained per distinct $(N, M, \text{pads})$ combination, because
