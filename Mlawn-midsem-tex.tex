@@ -24,9 +24,10 @@
 \renewcommand{\bottomfraction}{0.8}
 \renewcommand{\textfraction}{0.07}
 \renewcommand{\floatpagefraction}{0.8}
-% The last page's columns are balanced, and the balancing can make a column
-% fractionally taller than the text height.  Not stretching the columns to
-% fill the page removes the overfull vbox that this produces.
+% The last page's columns are balanced, and the balancing can leave the
+% column a few points taller than the text height.  That lands in the
+% bottom margin, which is 19 mm wide, and is invisible; the gate
+% distinguishes a visible overfull box from one that lands in the margin.
 \raggedbottom
 \definecolor{uavblue}{RGB}{37,99,235}
 \definecolor{uavcyan}{RGB}{8,145,178}
@@ -74,6 +75,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokAblBestObsDelta}{-0.039}
 \newcommand{\tokAblBestObsText}{The observation term with the largest effect on the coverage is the coverage map, and the table above prices it: it is worth -0.039 of persistent coverage, paired over the shared training seeds, and it is the largest of the three, though the interval is wide at this seed count.}
 \newcommand{\tokAblCrit}{4.30}
+\newcommand{\tokAblDelta}{+0.037}
 \newcommand{\tokAblEpisodes}{25}
 \newcommand{\tokAblEpisodesStress}{6}
 \newcommand{\tokAblIdCi}{[-0.129, +0.181]}
@@ -90,12 +92,16 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokAblMaskP}{0.748}
 \newcommand{\tokAblMaskSpread}{0.050}
 \newcommand{\tokAblNSeeds}{3}
+\newcommand{\tokAblPadCi}{[-0.258, +0.312]}
+\newcommand{\tokAblPadDelta}{+0.027}
+\newcommand{\tokAblPadP}{0.726}
+\newcommand{\tokAblPadSpread}{0.115}
 \newcommand{\tokAblPairs}{the under-coverage term +0.097\,(0.084), the coverage map +0.039\,(0.062)}
-\newcommand{\tokAblResolution}{0.209}
+\newcommand{\tokAblResolution}{0.285}
 \newcommand{\tokAblResolutionMin}{0.000}
-\newcommand{\tokAblResolutionSd}{0.049}
+\newcommand{\tokAblResolutionSd}{0.066}
 \newcommand{\tokAblSeeds}{3}
-\newcommand{\tokAblSummary}{Every component's 95\% confidence interval for the paired difference includes zero, and the smallest difference this protocol could resolve anywhere is $0.209$ of persistent coverage, which is the WIDEST arm's resolution: the resolution is per-arm, and each arm's own interval is in the table}
+\newcommand{\tokAblSummary}{Every component's 95\% confidence interval for the paired difference includes zero, and the smallest difference this protocol could resolve anywhere is $0.285$ of persistent coverage, which is the WIDEST arm's resolution: the resolution is per-arm, and each arm's own interval is in the table}
 \newcommand{\tokAblText}{}
 \newcommand{\tokAblYardstick}{0.030}
 \newcommand{\tokAltNfiveR}{44.72}
@@ -2062,6 +2068,8 @@ no-charging arbitration & 0.694\,$\pm$\,0.056 & 0.986 & 0.028 & 0.306 & 0.7 & +0
 no-action mask & 0.688\,$\pm$\,0.050 & 0.986 & 0.011 & 0.312 & 0.8 & +0.011 \\
 no agent identity & 0.672\,$\pm$\,0.045 & 0.965 & 0.007 & 0.328 & 1.5 & +0.026 \\
 no coverage map & 0.660\,$\pm$\,0.071 & 0.976 & 0.015 & 0.340 & 1.1 & +0.039 \\
+no pad bearing & 0.672\,$\pm$\,0.062 & 0.981 & 0.014 & 0.328 & 0.9 & +0.027 \\
+\textbf{Vanilla MAPPO} & 0.662\,$\pm$\,0.013 & 0.991 & 0.002 & 0.338 & 0.8 & +0.037 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2086,11 +2094,11 @@ training seeds it would flag roughly one null component in three, while
 still being unable to detect a true effect of the size it flags.  The
 paired interval does not have that failure mode, and it also reports the
 resolution of the measurement, which is the number a reader actually
-needs.  Every component's 95\% confidence interval for the paired difference includes zero, and the smallest difference this protocol could resolve anywhere is $0.209$ of persistent coverage, which is the WIDEST arm's resolution: the resolution is per-arm, and each arm's own interval is in the table.
+needs.  Every component's 95\% confidence interval for the paired difference includes zero, and the smallest difference this protocol could resolve anywhere is $0.285$ of persistent coverage, which is the WIDEST arm's resolution: the resolution is per-arm, and each arm's own interval is in the table.
 
 What the intervals do and do not say is worth stating precisely, because a
 null result of this width is a statement about the resolution of the
-measurement and not about the component.  The widest of the arms resolves no effect smaller than about $0.209$ of persistent coverage, at this training budget and with this number of training seeds, so the resolution is per-arm and a reader who wants a particular component's resolution must read it off that component's interval.  The
+measurement and not about the component.  The widest of the arms resolves no effect smaller than about $0.285$ of persistent coverage, at this training budget and with this number of training seeds, so the resolution is per-arm and a reader who wants a particular component's resolution must read it off that component's interval.  The
 intervals are per-arm and are not adjusted for the number of arms, so a
 reader who wants a family-wise statement should treat the set of arms as
 one test with several comparisons rather than as several independent

@@ -71,6 +71,17 @@ def write_token_macros(src, tok, missing):
     lines = []
     for name in sorted(tok):
         value = str(tok[name])
+        # A token's VALUE can quote another token (the contribution bullet
+        # quotes the identity arm's interval).  In the prose the two are
+        # substituted in sequence, but a macro's body is expanded where it
+        # is USED, so the nested token would survive into the paper.  The
+        # values are therefore resolved before the definitions are
+        # written.
+        for _ in range(4):
+            if "@@" not in value:
+                break
+            for inner in sorted(tok):
+                value = value.replace(f"@@{inner}@@", str(tok[inner]))
         lines.append(f"\\newcommand{{\\{macro_name(name)[1:]}}}"
                      f"{{{value}}}")
     for name in sorted(missing):
