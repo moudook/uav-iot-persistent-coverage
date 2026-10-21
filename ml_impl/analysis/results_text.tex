@@ -266,8 +266,6 @@ fly, it leaves the swarm, and it stops covering.  The obvious reading was
 that the controller had failed at energy management, and the obvious fix
 was a reward term that prices the consequence of an empty pack.
 
-@@ENERGY_SUMMARY@@
-
 What the diagnostic actually found was a defect in the safety filter rather
 than a property of the policy.  The mask's energy test admitted a
 departure with a flat battery, so a UAV could fly until its pack was empty
@@ -297,6 +295,8 @@ what the filter is worth, not what the learner is missing.  A
 difference of this width is also a statement about the resolution of the
 arm and not about the component, and we report that resolution with the
 interval.
+
+@@ENERGY_SUMMARY@@
 
 That is the sequence the framework is for.  A coverage comparison on its
 own would have reported that the learned controller mismanages energy, and

@@ -277,7 +277,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokEdShare}{43}
 \newcommand{\tokEdStr}{6.7}
 \newcommand{\tokEdStrDelta}{5.6}
-\newcommand{\tokEdVerdict}{the repair is not a null: the coverage it adds is +0.120 on the same training seeds (95\% interval [+0.003, +0.236], which excludes zero), and that is about 43\% of the gap to the reactive heuristic}
+\newcommand{\tokEdVerdict}{The repair is not a null: the coverage it adds is +0.120 on the same training seeds (95\% interval [+0.003, +0.236], which excludes zero), and that is about 43\% of the gap to the reactive heuristic}
 \newcommand{\tokEnergyDelta}{-0.009}
 \newcommand{\tokEnergySummary}{The reading was wrong, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.276 to the reactive heuristic: $removing the energy constraint$ (-0.009, 95\% interval [-0.218, +0.200], an upper limit below the gap of 0.276); $removing the threshold term$ (+0.009, 95\% interval [-0.049, +0.066], an upper limit below the gap of 0.276); $the previous energy rule$ (-0.120, 95\% interval [-0.236, -0.003], an upper limit below the gap of 0.276).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.}
 \newcommand{\tokEpisodeSeconds}{400}
@@ -2004,8 +2004,6 @@ fly, it leaves the swarm, and it stops covering.  The obvious reading was
 that the controller had failed at energy management, and the obvious fix
 was a reward term that prices the consequence of an empty pack.
 
-The reading was wrong, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.276 to the reactive heuristic: $removing the energy constraint$ (-0.009, 95\% interval [-0.218, +0.200], an upper limit below the gap of 0.276); $removing the threshold term$ (+0.009, 95\% interval [-0.049, +0.066], an upper limit below the gap of 0.276); $the previous energy rule$ (-0.120, 95\% interval [-0.236, -0.003], an upper limit below the gap of 0.276).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.
-
 What the diagnostic actually found was a defect in the safety filter rather
 than a property of the policy.  The mask's energy test admitted a
 departure with a flat battery, so a UAV could fly until its pack was empty
@@ -2014,7 +2012,7 @@ move, the energy to reach a charging pad plus the reserve margin.  The
 stranding falls from $6.7$ UAVs per episode to $1.1$, and
 the return-to-charge transitions rise from $97$ to $613$ per
 episode, because the UAVs now come home instead of dying in the field.
-the repair is not a null: the coverage it adds is +0.120 on the same training seeds (95\% interval [+0.003, +0.236], which excludes zero), and that is about 43\% of the gap to the reactive heuristic.  The defect was therefore real and the repair was
+The repair is not a null: the coverage it adds is +0.120 on the same training seeds (95\% interval [+0.003, +0.236], which excludes zero), and that is about 43\% of the gap to the reactive heuristic.  The defect was therefore real and the repair was
 correct, and the repair is already part of the proposed configuration: it
 is not a candidate explanation of the residual gap, because the gap is
 measured against a controller that has the repair in it.  What the repair
@@ -2035,6 +2033,8 @@ what the filter is worth, not what the learner is missing.  A
 difference of this width is also a statement about the resolution of the
 arm and not about the component, and we report that resolution with the
 interval.
+
+The reading was wrong, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.276 to the reactive heuristic: $removing the energy constraint$ (-0.009, 95\% interval [-0.218, +0.200], an upper limit below the gap of 0.276); $removing the threshold term$ (+0.009, 95\% interval [-0.049, +0.066], an upper limit below the gap of 0.276); $the previous energy rule$ (-0.120, 95\% interval [-0.236, -0.003], an upper limit below the gap of 0.276).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.
 
 That is the sequence the framework is for.  A coverage comparison on its
 own would have reported that the learned controller mismanages energy, and

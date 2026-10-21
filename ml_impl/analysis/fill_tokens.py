@@ -539,7 +539,7 @@ def build_tokens():
                 tok["ED_GAP_GAP"] = f"{gap:.3f}"
             if excludes_zero:
                 tok["ED_VERDICT"] = (
-                    f"the repair is not a null: the coverage it adds is "
+                    f"The repair is not a null: the coverage it adds is "
                     f"{mean:+.3f} on the same training seeds (95\\% interval "
                     f"[{mean-half:+.3f}, {mean+half:+.3f}], which excludes "
                     f"zero), and that is about "
@@ -547,7 +547,7 @@ def build_tokens():
                     f"reactive heuristic")
             else:
                 tok["ED_VERDICT"] = (
-                    f"the coverage the repair adds is {mean:+.3f} on the "
+                    f"The coverage the repair adds is {mean:+.3f} on the "
                     f"same training seeds (95\\% interval "
                     f"[{mean-half:+.3f}, {mean+half:+.3f}], which includes "
                     f"zero), so the repair's effect on the coverage is not "
