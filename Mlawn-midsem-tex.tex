@@ -327,10 +327,10 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokGreedyRet}{548}
 \newcommand{\tokGreedySc}{0.066}
 \newcommand{\tokGreedyStr}{2.6}
-\newcommand{\tokIddqnAg}{0.990}
-\newcommand{\tokIddqnCi}{0.604}
-\newcommand{\tokIddqnCk}{0.396}
-\newcommand{\tokIddqnCkStd}{0.141}
+\newcommand{\tokIddqnAg}{0.985}
+\newcommand{\tokIddqnCi}{0.627}
+\newcommand{\tokIddqnCk}{0.373}
+\newcommand{\tokIddqnCkStd}{0.090}
 \newcommand{\tokIddqnSc}{0.000}
 \newcommand{\tokInfAg}{1.000}
 \newcommand{\tokInfCk}{0.648}
@@ -383,12 +383,12 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokPackStepsMoving}{1863}
 \newcommand{\tokPhyDelta}{0.012}
 \newcommand{\tokPhyRows}{24}
-\newcommand{\tokPpolAg}{0.991}
-\newcommand{\tokPpolCi}{0.368}
-\newcommand{\tokPpolCk}{0.632}
-\newcommand{\tokPpolCkStd}{0.034}
-\newcommand{\tokPpolDelta}{-0.030}
-\newcommand{\tokPpolSc}{0.004}
+\newcommand{\tokPpolAg}{0.979}
+\newcommand{\tokPpolCi}{0.363}
+\newcommand{\tokPpolCk}{0.637}
+\newcommand{\tokPpolCkStd}{0.060}
+\newcommand{\tokPpolDelta}{-0.025}
+\newcommand{\tokPpolSc}{0.011}
 \newcommand{\tokProjRevisions}{0.20}
 \newcommand{\tokReactlAg}{1.000}
 \newcommand{\tokReactlCi}{0.028}
@@ -1713,8 +1713,8 @@ Fixed & 0.372 & 1.000 & 0.000 & 0.628 & 257.20 & 178097 \\
 Greedy & 0.786 & 0.964 & 0.066 & 0.214 & 5039.40 & 211199 \\
 Reactive & 0.953 & 1.000 & 0.751 & 0.047 & 1525.60 & 183675 \\
 Reactive (local assignment) & 0.972 & 1.000 & 0.777 & 0.028 & 1620.80 & 185613 \\
-Independent DQN & 0.396\,$\pm$\,0.141 & 0.990 & 0.000 & 0.604 & -- & -- \\
-Masked PPO (local critic) & 0.632\,$\pm$\,0.034 & 0.991 & 0.004 & 0.368 & -- & -- \\
+Independent DQN & 0.373\,$\pm$\,0.090 & 0.985 & 0.000 & 0.627 & -- & -- \\
+Masked PPO (local critic) & 0.637\,$\pm$\,0.060 & 0.979 & 0.011 & 0.363 & -- & -- \\
 \tblHl \textbf{MAPPO (proposed)} & \textbf{0.662\,$\pm$\,0.055} & \textbf{0.984} & \textbf{0.010} & \textbf{0.338} & \textbf{0.20} & \textbf{209863} \\
 MAPPO (argmax) & 0.389\,$\pm$\,0.073 & 0.991 & 0.000 & 0.611 & 0.25 & 202984 \\
 \midrule
@@ -1884,11 +1884,11 @@ baselines locate the reason.  The Masked PPO with a local critic differs
 from the proposed method in exactly one respect: each agent has its own
 actor and its own critic on its own observation, instead of a
 parameter-shared actor with a centralised critic.  It reaches
-$0.632$ against the proposed method's $0.662$, a difference
-of $-0.030$ that is small beside the seed-to-seed spread of the
+$0.637$ against the proposed method's $0.662$, a difference
+of $-0.025$ that is small beside the seed-to-seed spread of the
 learner, and Section~\ref{sec:results_credit} tests that comparison
 properly, on paired training seeds.  The Independent DQN arm, at
-$0.396$, is the value-based point of comparison and shows what the
+$0.373$, is the value-based point of comparison and shows what the
 task costs a controller that does not use the framework's mechanisms at
 all.  Vanilla MAPPO, which removes the
 framework's observation terms, reward shaping, charging arbitration,

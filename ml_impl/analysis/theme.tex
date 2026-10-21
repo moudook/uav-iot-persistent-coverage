@@ -144,7 +144,11 @@
       mark size=2.4pt,
       mark options={line width=0.5pt},
       error bars/error bar style={line width=2.6pt, line cap=round},
-      error bars/error mark=none,
+      % the interval carries END CAPS: a forest plot whose interval is a
+      % plain bar reads as an extent without bounds, and the caps are
+      % what say "this is where the interval ends"
+      error bars/error mark=|,
+      error bars/error mark options={mark size=3.0pt, line width=0.8pt},
   },
   uavintervalx/.style={
       uavinterval,
