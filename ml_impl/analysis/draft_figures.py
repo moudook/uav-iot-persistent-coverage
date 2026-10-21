@@ -22,8 +22,7 @@ Run:  python analysis/draft_figures.py            (write fragments + PNGs)
 
 from __future__ import annotations
 
-import csv
-import json
+import math
 import os
 import re
 import subprocess
@@ -38,18 +37,18 @@ if ML not in sys.path:
 
 from fill_tokens import build_tokens, sample_std      # noqa: E402
 
-# ----------------------------------------------------------------------
-# the house style: the same pgfplots options the existing learning-curve
-# figure uses, with the paper's own colour names
-# ----------------------------------------------------------------------
-COMMON = (
+# the one-column width of the paper (IEEEtran conference), in TeX points
+COL_PT = 3.5 * 72.27
+
+# the house style: the pgfplots options the existing learning-curve figure
+# uses, with the paper's own colour names
+STYLE = (
     r"  grid=both, grid style={gray!20}, tick label style={font=\tiny},"
     "\n"
-    r"  label style={font=\small}, legend style={font=\tiny},"
+    r"  label style={font=\small},"
     "\n"
     r"  legend cell align=left, clip=false,"
 )
-# the six colours the paper's preamble defines
 UAVBLUE, UAVCYAN, UAVGREEN = "uavblue", "uavcyan", "uavgreen"
 UAVORANGE, UAVRED, UAVPURPLE = "uavorange", "uavred", "uavpurple"
 
@@ -83,14 +82,23 @@ def sgn(x, nd=3):
     return f"{x:+.{nd}f}"
 
 
-def floor_to(v, step):
-    import math
-    return math.floor(v / step) * step
+def nice_ticks(lo, hi, step=0.1):
+    """Round tick values inside [lo, hi], with no signed zero."""
+    out = []
+    k = math.ceil(lo / step - 1e-9)
+    while k * step <= hi + 1e-9:
+        v = round(k * step, 10)
+        if abs(v) < step / 1000.0:
+            v = 0.0
+        out.append(v)
+        k += 1
+    return out
 
 
-def ceil_to(v, step):
-    import math
-    return int(math.ceil(v / step)) * step
+def axis(opts, body):
+    """An axis environment: the options, closed, and then the body."""
+    return ("\\begin{axis}[" + "\n".join(opts) + "]\n" + body
+            + "\\end{axis}")
 
 
 # ----------------------------------------------------------------------
@@ -104,9 +112,11 @@ ARMS = [
     ("EC", r"energy\,C: no threshold", "removing the threshold term"),
     ("ED", r"energy\,D: prev.\ rule", "the previous energy rule"),
 ]
+# the group boundary: the two observation arms, then the three energy arms
+OBS_COUNT = 2
 
 
-def figure_arms(tok):
+def figure_arms(tok, wfrac=1.0):
     """The central claim as a picture: the arms' intervals vs the gap."""
     gap = req(tok, "GAP")
     arms = []
@@ -129,70 +139,91 @@ def figure_arms(tok):
     n = len(arms)
     lo_all = min(a["lo"] for a in arms)
     hi_all = max(a["hi"] for a in arms)
-    xmin = floor_to(lo_all - 0.03, 0.1)
-    xmax = max(ceil_to(hi_all + 0.04, 0.1), round(gap + 0.11, 3))
-    xt = [round(xmin + 0.1 * k, 3) for k in
-          range(int(round((xmax - xmin) / 0.1)) + 1)]
+    xmin = math.floor((lo_all - 0.03) * 10) / 10.0
+    xmax = max(math.ceil((hi_all + 0.04) * 10) / 10.0, round(gap + 0.11, 3))
     ymin, ymax = 0.35, n + 0.65
 
-    L = []
-    L.append(r"\begin{tikzpicture}")
-    L.append(r"\begin{axis}[width=\columnwidth,height=5.7cm,")
-    L.append(f"  xmin={xmin:.3f}, xmax={xmax:.3f}, "
-             f"ymin={ymin:.2f}, ymax={ymax:.2f},")
-    L.append("  xtick={" + ",".join(f"{t:g}" for t in xt) + "},")
-    L.append("  ytick={" + ",".join(str(n - i) for i in range(n)) + "},")
-    L.append("  yticklabels={"
-             + ",".join("{" + a["short"] + "}" for a in arms) + "},")
-    L.append(r"  xlabel={difference in persistent coverage "
-             r"(arm $-$ its reference arm)},")
-    L.append(COMMON)
-    L.append(r"  legend style={font=\tiny, at={(0.5,-0.36)}, anchor=north, "
-             r"legend columns=2}],")
-    # the gap: the quantity every arm would have to account for
-    L.append(f"  \\addplot[black, dashed, line width=1.1pt] coordinates "
-             f"{{({gap:.3f},{ymin:.2f}) ({gap:.3f},{ymax:.2f})}};")
+    opts = [
+        (r"  width=\columnwidth" if wfrac >= 0.999
+         else f"  width={wfrac:.2f}\\columnwidth") + ",height=5.7cm,",
+        f"  xmin={xmin:.3f}, xmax={xmax:.3f}, ymin={ymin:.2f}, "
+        f"ymax={ymax:.2f},",
+        "  xtick={" + ",".join(f"{t:g}" for t in nice_ticks(xmin, xmax)) + "},",
+        "  ytick={" + ",".join(str(n - i) for i in range(n)) + "},",
+        "  yticklabels={"
+        + ",".join("{" + a["short"] + "}" for a in arms) + "},",
+        r"  xlabel={difference in persistent coverage},",
+        STYLE,
+        r"  legend style={font=\tiny, at={(0.5,-0.30)}, anchor=north},"
+        "\n"
+        r"  legend columns=2,",
+    ]
+    body = []
+    # the gap's own 95% interval, as a band: every arm's upper limit lies
+    # below the band as well as below the point estimate
+    half = num(tok, "GAP_HALF")
+    if half is not None:
+        body.append(f"  \\addplot[draw=none, fill=gray!20, forget plot] "
+                    f"coordinates "
+                    f"{{({gap - half:.3f},{ymin:.2f}) ({gap + half:.3f},{ymin:.2f})"
+                    f" ({gap + half:.3f},{ymax:.2f}) ({gap - half:.3f},{ymax:.2f})"
+                    f"}} \\closedcycle;")
+    # the gap: the quantity every arm would have to account for.  It is
+    # kept out of the legend's image list, because the legend draws its
+    # own image for it.
+    body.append(f"  \\addplot[black, dashed, line width=1.1pt, forget plot] "
+                f"coordinates "
+                f"{{({gap:.3f},{ymin:.2f}) ({gap:.3f},{ymax:.2f})}};")
     for i, a in enumerate(arms):
         y = n - i
         col = UAVGREEN if a["excluded"] else UAVRED
-        L.append(f"  \\addplot[color={col}, line width=2.4pt, mark=none, "
-                 f"forget plot] coordinates "
-                 f"{{({a['lo']:.3f},{y}) ({a['hi']:.3f},{y})}};")
-        L.append(f"  \\addplot[only marks, mark=|, mark size=3.2pt, "
-                 f"color={col}, forget plot] coordinates "
-                 f"{{({a['lo']:.3f},{y}) ({a['hi']:.3f},{y})}};")
-        L.append(f"  \\addplot[only marks, mark=*, mark size=1.7pt, "
-                 f"color=black, mark options={{fill=white,draw=black,"
-                 f"line width=0.5pt}}, forget plot] coordinates "
-                 f"{{({a['mean']:.3f},{y})}};")
+        body.append(f"  \\addplot[color={col}, line width=2.4pt, mark=none, "
+                    f"forget plot] coordinates "
+                    f"{{({a['lo']:.3f},{y}) ({a['hi']:.3f},{y})}};")
+        body.append(f"  \\addplot[only marks, mark=|, mark size=3.2pt, "
+                    f"color={col}, forget plot] coordinates "
+                    f"{{({a['lo']:.3f},{y}) ({a['hi']:.3f},{y})}};")
+        body.append(f"  \\addplot[only marks, mark=*, mark size=1.7pt, "
+                    f"color=black, mark options={{fill=white,draw=black,"
+                    f"line width=0.5pt}}, forget plot] coordinates "
+                    f"{{({a['mean']:.3f},{y})}};")
+    # the separator between the two groups of arms
+    if OBS_COUNT < n:
+        ysep = n - OBS_COUNT + 0.5
+        body.append(f"  \\draw[gray!50, line width=0.4pt, "
+                    f"dash pattern=on 2pt off 2pt] "
+                    f"(axis cs:{xmin:.3f},{ysep:.2f}) -- "
+                    f"(axis cs:{xmax:.3f},{ysep:.2f});")
     # the legend: the three things the picture draws
-    L.append(r"  \addlegendimage{color=" + UAVGREEN + r", line width=2.4pt}")
-    L.append(r"  \addlegendimage{color=" + UAVRED + r", line width=2.4pt}")
-    L.append(r"  \addlegendimage{only marks, mark=*, mark size=1.7pt, "
-             r"color=black, mark options={fill=white,draw=black,"
-             r"line width=0.5pt}}")
-    L.append(r"  \addlegendimage{black, dashed, line width=1.1pt}")
-    L.append(r"  \legend{{95\% interval, upper limit below the gap},"
-             r"{95\% interval, upper limit past the gap},"
-             r"{paired mean},{the gap the arm must explain}}")
+    body.append(r"  \addlegendimage{color=" + UAVGREEN + r", line width=2.4pt}")
+    body.append(r"  \addlegendimage{color=" + UAVRED + r", line width=2.4pt}")
+    body.append(r"  \addlegendimage{only marks, mark=*, mark size=1.7pt, "
+                r"color=black, mark options={fill=white,draw=black,"
+                r"line width=0.5pt}}")
+    body.append(r"  \addlegendimage{black, dashed, line width=1.1pt}")
+    if half is not None:
+        body.append(r"  \addlegendimage{area legend, fill=gray!20, "
+                    r"draw=gray!50}")
+    body.append(r"  \legend{{95\% CI below the gap},{95\% CI past the gap},"
+                r"{paired mean},{the gap}"
+                + (r",{the gap's 95\% CI}" if half is not None else "") + "}")
     # the point estimate of each arm, above its bar
     for i, a in enumerate(arms):
         y = n - i
-        L.append(f"  \\node[anchor=south, font=\\tiny] at "
-                 f"(axis cs:{a['mean']:.3f},{y + 0.17:.2f}) "
-                 f"{{${sgn(a['mean'])}$}};")
+        body.append(f"  \\node[anchor=south, font=\\tiny] at "
+                    f"(axis cs:{a['mean']:.3f},{y + 0.17:.2f}) "
+                    f"{{${sgn(a['mean'])}$}};")
     # the label of the gap line, above the plot
-    L.append(f"  \\node[anchor=south, font=\\tiny] at "
-             f"(axis cs:{gap:.3f},{ymax:.2f}) "
-             f"{{the gap {gap:.3f}}};")
-    L.append(r"\end{axis}")
-    L.append(r"\end{tikzpicture}")
-
+    body.append(f"  \\node[anchor=south, font=\\tiny] at "
+                f"(axis cs:{gap:.3f},{ymax:.2f}) "
+                f"{{the gap {gap:.3f}}};")
+    frag = ("\\begin{tikzpicture}\n"
+            + axis(opts, "\n".join(body) + "\n")
+            + "\n\\end{tikzpicture}")
     for a in arms:
-        a["verdict"] = ("excluded" if a["excluded"]
-                        else "not excluded")
+        a["verdict"] = "excluded" if a["excluded"] else "not excluded"
         a["margin"] = gap - a["hi"]
-    return "\n".join(L), arms
+    return frag, arms
 
 
 # ----------------------------------------------------------------------
@@ -200,6 +231,7 @@ def figure_arms(tok):
 # ----------------------------------------------------------------------
 def budget_rows():
     """The training-budget sweep, from the artefact the table reads."""
+    import json
     p = os.path.join(HERE, "ab_budget.json")
     if not os.path.exists(p):
         raise SystemExit("ab_budget.json is missing; the budget figure was "
@@ -210,8 +242,9 @@ def budget_rows():
     for r in rows:
         per = [float(x) for x in (r.get("per_seed_CK") or [])]
         if not per:
-            raise SystemExit(f"the budget row for {r['episodes']} episodes has "
-                             f"no per-seed values; the figure was not drawn")
+            raise SystemExit(f"the budget row for {r['episodes']} episodes "
+                             f"has no per-seed values; the figure was not "
+                             f"drawn")
         out.append(dict(
             episodes=int(r["episodes"]),
             mean=float(r["CK"]),
@@ -224,7 +257,7 @@ def budget_rows():
     return out
 
 
-def figure_budget(tok):
+def figure_budget(tok, wfrac=1.0):
     """The training-budget sweep, with the seed spread and the paired gain."""
     gap = req(tok, "GAP")
     rule = req(tok, "BEST_RULE_CK")
@@ -232,7 +265,6 @@ def figure_budget(tok):
     paired = req(tok, "BUDGET_PAIRED")
     ci = tok.get("BUDGET_PAIRED_CI", "")
     frac = tok.get("BUDGET_FRAC", "")
-    lo_b, hi_b = tok.get("BUDGET_MIN"), tok.get("BUDGET_MAX")
     rows = budget_rows()
     eps = [r["episodes"] for r in rows]
     cks = [r["mean"] for r in rows]
@@ -240,49 +272,50 @@ def figure_budget(tok):
     nseed = rows[0]["n"]
 
     xmin, xmax = min(eps) - 3.0, max(eps) + 4.5
-    ymin = min(c - s for c, s in zip(cks, sds)) - 0.06
-    ymax = rule + 0.07
-    arrow_x = max(eps) + 1.7
-    lab_x = arrow_x + 0.7
+    ymin = min(c - s for c, s in zip(cks, sds)) - 0.07
+    ymax = rule + 0.10
+    arrow_x = max(eps) + 1.4
+    lab_x = arrow_x + 1.7
 
-    L = []
-    L.append(r"\begin{tikzpicture}")
-    L.append(r"\begin{axis}[width=\columnwidth,height=5.6cm,")
-    L.append(f"  xmin={xmin:.2f}, xmax={xmax:.2f}, "
-             f"ymin={ymin:.3f}, ymax={ymax:.3f},")
-    L.append("  xtick={" + ",".join(str(e) for e in eps) + "},")
-    L.append("  ytick={" + ",".join(f"{y:g}" for y in
-             [round(ymin + 0.1 * k, 1) for k in range(1, 8)]) + "},")
-    L.append(r"  xlabel={training episodes}, ylabel={persistent coverage},")
-    L.append(COMMON)
-    L.append(r"  legend style={font=\tiny, at={(0.5,-0.30)}, anchor=north, "
-             r"legend columns=1}],")
+    opts = [
+        (r"  width=\columnwidth" if wfrac >= 0.999
+         else f"  width={wfrac:.2f}\\columnwidth") + ",height=5.6cm,",
+        f"  xmin={xmin:.2f}, xmax={xmax:.2f}, ymin={ymin:.3f}, "
+        f"ymax={ymax:.3f},",
+        "  xtick={" + ",".join(str(e) for e in eps) + "},",
+        "  ytick={" + ",".join(f"{y:g}" for y in nice_ticks(ymin, ymax))
+         + "},",
+        r"  xlabel={training episodes}, ylabel={persistent coverage},",
+        STYLE,
+        r"  legend style={font=\tiny, at={(0.5,-0.30)}, anchor=north},"
+        "\n"
+        r"  legend columns=1,",
+    ]
+    body = []
     # the rule the gap is measured against
-    L.append(f"  \\addplot[black, dashed, line width=1.0pt] coordinates "
-             f"{{({xmin:.2f},{rule:.3f}) ({xmax:.2f},{rule:.3f})}};")
+    body.append(f"  \\addplot[black, dashed, line width=1.0pt] coordinates "
+                f"{{({xmin:.2f},{rule:.3f}) ({xmax:.2f},{rule:.3f})}};")
     # the sweep, with the seed-to-seed spread
     coords = " ".join(
         f"({e},{c}) +- (0,{s:.4f})" for e, c, s in zip(eps, cks, sds))
-    L.append(r"  \addplot[color=" + UAVBLUE + r", thick, mark=*, mark size=1.9pt,"
-             r" mark options={fill=" + UAVBLUE + r"},"
-             r" error bars/.cd, y dir=both, y explicit,"
-             r" error bar style={line width=0.8pt, color=" + UAVBLUE + r"},"
-             r" error mark options={rotate=90, mark size=3pt, line width=0.8pt,"
-             r" color=" + UAVBLUE + r"}] coordinates {" + coords + "};")
-    L.append(r"  \legend{the strongest rule,"
-             r"the learned controller ($\pm 1$ s.d. over the "
-             r"training seeds)}")
+    body.append(r"  \addplot[color=" + UAVBLUE + r", thick, mark=*, "
+                r"mark size=1.9pt, mark options={fill=" + UAVBLUE + r"},"
+                r" error bars/.cd, y dir=both, y explicit,"
+                r" error bar style={line width=0.8pt, color=" + UAVBLUE + r"},"
+                r" error mark options={rotate=90, mark size=3pt, line width=0.8pt,"
+                r" color=" + UAVBLUE + r"}] coordinates {" + coords + "};")
+    body.append(r"  \legend{{the strongest rule},{the learned controller}}")
     # the gap that is left at the longest budget
-    L.append(f"  \\draw[{UAVRED}, line width=0.9pt, <->] "
-             f"(axis cs:{arrow_x:.2f},{cks[-1]:.3f}) -- "
-             f"(axis cs:{arrow_x:.2f},{rule:.3f});")
-    L.append(f"  \\node[rotate=90, anchor=south, font=\\tiny, text={UAVRED}] "
-             f"at (axis cs:{lab_x:.2f},{(cks[-1] + rule) / 2:.3f}) "
-             f"{{gap {gap:.3f}}};")
+    body.append(f"  \\draw[{UAVRED}, line width=0.9pt, <->] "
+                f"(axis cs:{arrow_x:.2f},{cks[-1]:.3f}) -- "
+                f"(axis cs:{arrow_x:.2f},{rule:.3f});")
+    body.append(f"  \\node[rotate=90, anchor=south, font=\\tiny, "
+                f"text={UAVRED}] at (axis cs:{lab_x:.2f},{cks[-1]:.3f}) "
+                f"{{gap {gap:.3f}}};")
     # the rule's name, above its line
-    L.append(f"  \\node[anchor=south west, font=\\tiny] at "
-             f"(axis cs:{xmin + 0.4:.2f},{rule + 0.004:.3f}) "
-             f"{{{rule_name} ({rule:.3f})}};")
+    body.append(f"  \\node[anchor=south west, font=\\tiny] at "
+                f"(axis cs:{xmin + 0.4:.2f},{rule + 0.005:.3f}) "
+                f"{{{rule_name} ({rule:.3f})}};")
     # the paired gain over the range the sweep covers
     txt = (f"training over {eps[0]}--{eps[-1]} episodes: "
            f"$\\Delta={sgn(paired)}$")
@@ -290,13 +323,14 @@ def figure_budget(tok):
         txt += f"\\\\95\\% CI {ci}"
     if frac:
         txt += f" --- {frac}\\% of the gap"
-    L.append(f"  \\node[anchor=north west, font=\\tiny, align=left] at "
-             f"(axis cs:{xmin + 0.4:.2f},{rule - 0.012:.3f}) {{{txt}}};")
-    L.append(r"\end{axis}")
-    L.append(r"\end{tikzpicture}")
-    return "\n".join(L), dict(rows=rows, gap=gap, rule=rule,
-                              rule_name=rule_name, paired=paired, ci=ci,
-                              frac=frac, lo=lo_b, hi=hi_b, nseed=nseed)
+    txt += f"\\\\bars: $\\pm 1$ s.d. over the {nseed} training seeds"
+    body.append(f"  \\node[anchor=north west, font=\\tiny, align=left] at "
+                f"(axis cs:{xmin + 0.4:.2f},{rule - 0.014:.3f}) {{{txt}}};")
+    frag = ("\\begin{tikzpicture}\n"
+            + axis(opts, "\n".join(body) + "\n")
+            + "\n\\end{tikzpicture}")
+    return frag, dict(rows=rows, gap=gap, rule=rule, rule_name=rule_name,
+                       paired=paired, ci=ci, frac=frac, nseed=nseed)
 
 
 # ----------------------------------------------------------------------
@@ -304,6 +338,7 @@ def figure_budget(tok):
 # ----------------------------------------------------------------------
 def scenario_points():
     """The learned controller's deficit against the stronger rule, per variant."""
+    import csv
     p = os.path.join(ML, "results_scenarios.csv")
     if not os.path.exists(p):
         raise SystemExit("results_scenarios.csv is missing; the scenario "
@@ -323,12 +358,12 @@ def scenario_points():
                 groups.append([s, len(pts), len(pts)])
             groups[-1][2] = len(pts) + 1
             pts.append(dict(idx=len(pts) + 1, scen=s,
-                            var=r.get("variant", "?"), d=d,
-                            question=r.get("question", "")))
+                             var=r.get("variant", "?"), d=d,
+                             question=r.get("question", "")))
     return pts, groups
 
 
-def figure_scen(tok):
+def figure_scen(tok, wfrac=1.0):
     """The scenario matrix: the deficit on every single variant."""
     pts, groups = scenario_points()
     if not pts:
@@ -339,53 +374,57 @@ def figure_scen(tok):
     n = len(pts)
     ds = [p["d"] for p in pts]
     ymin = min(min(ds) - 0.03, -0.05)
-    ymax = 0.05
+    ymax = 0.12
     xmin, xmax = 0.3, n + 0.7
 
-    L = []
-    L.append(r"\begin{tikzpicture}")
-    L.append(r"\begin{axis}[width=\columnwidth,height=5.0cm,")
-    L.append(f"  xmin={xmin:.2f}, xmax={xmax:.2f}, "
-             f"ymin={ymin:.3f}, ymax={ymax:.3f},")
-    centres = [0.5 * (g[1] + g[2]) for g in groups]
-    L.append("  xtick={" + ",".join(f"{c:g}" for c in centres) + "},")
-    L.append("  xticklabels={" + ",".join(g[0] for g in groups) + "},")
-    L.append("  ytick={" + ",".join(f"{y:g}" for y in
-             [round(ymin + 0.1 * k, 1) for k in range(1, 6)]) + "},")
-    L.append(r"  xlabel={scenario (each marker is one variant)},"
-             r" ylabel={coverage difference (learned $-$ rule)},")
-    L.append(COMMON)
+    opts = [
+        (r"  width=\columnwidth" if wfrac >= 0.999
+         else f"  width={wfrac:.2f}\\columnwidth") + ",height=5.0cm,",
+        f"  xmin={xmin:.2f}, xmax={xmax:.2f}, ymin={ymin:.3f}, "
+        f"ymax={ymax:.3f},",
+        "  xtick={" + ",".join(f"{0.5 * (g[1] + g[2]):g}" for g in groups)
+         + "},",
+        "  xticklabels={" + ",".join(g[0] for g in groups) + "},",
+        "  ytick={" + ",".join(f"{y:g}" for y in nice_ticks(ymin, ymax))
+         + "},",
+        r"  xlabel={scenario (each marker is one variant)},"
+        r" ylabel={persistent coverage difference},",
+        STYLE,
+    ]
+    body = []
     # the separators between the scenarios
     for g in groups[:-1]:
         x = g[2] + 0.5
-        L.append(f"  \\draw[gray!45, line width=0.4pt] "
-                 f"(axis cs:{x:.2f},{ymin:.3f}) -- "
-                 f"(axis cs:{x:.2f},{ymax:.3f});")
+        body.append(f"  \\draw[gray!45, line width=0.4pt] "
+                    f"(axis cs:{x:.2f},{ymin:.3f}) -- "
+                    f"(axis cs:{x:.2f},{ymax:.3f});")
     # the level line
-    L.append(f"  \\addplot[{UAVRED}, dashed, line width=1.0pt] coordinates "
-             f"{{({xmin:.2f},0) ({xmax:.2f},0)}};")
+    body.append(f"  \\addplot[{UAVRED}, dashed, line width=1.0pt] coordinates "
+                f"{{({xmin:.2f},0) ({xmax:.2f},0)}};")
     # the variants
-    L.append(r"  \addplot[only marks, mark=*, mark size=1.8pt, color="
-             + UAVBLUE + ", mark options={fill=" + UAVBLUE + "}] coordinates {"
-             + " ".join(f"({p['idx']},{p['d']:.3f})" for p in pts) + "};")
-    # the two labels that carry the point of the figure
-    L.append(f"  \\node[anchor=south east, font=\\tiny, text={UAVRED}] at "
-             f"(axis cs:{xmax - 0.2:.2f},0.004) "
-             f"{{level with the stronger rule}};")
-    L.append(f"  \\node[anchor=south west, font=\\tiny, text={UAVRED}] at "
-             f"(axis cs:{xmin + 0.2:.2f},0.004) "
-             f"{{{losses} of the {n} variants behind}};")
-    L.append(r"\end{axis}")
-    L.append(r"\end{tikzpicture}")
-    return "\n".join(L), dict(pts=pts, groups=groups, wins=wins,
-                              losses=losses, ties=ties, n=n)
+    body.append(r"  \addplot[only marks, mark=*, mark size=1.8pt, color="
+                + UAVBLUE + ", mark options={fill=" + UAVBLUE + "}] coordinates {"
+                + " ".join(f"({p['idx']},{p['d']:.3f})" for p in pts) + "};")
+    # the two labels that carry the point of the figure: both sit in the
+    # band ABOVE the zero line, which no marker can reach
+    body.append(f"  \\node[anchor=south east, font=\\tiny, text={UAVRED}] at "
+                f"(axis cs:{xmax - 0.3:.2f},0.008) "
+                f"{{level with the stronger rule}};")
+    body.append(f"  \\node[anchor=south west, font=\\tiny, text={UAVRED}] at "
+                f"(axis cs:{xmin + 0.3:.2f},0.008) "
+                f"{{{losses} of the {n} variants behind}};")
+    frag = ("\\begin{tikzpicture}\n"
+            + axis(opts, "\n".join(body) + "\n")
+            + "\n\\end{tikzpicture}")
+    return frag, dict(pts=pts, groups=groups, wins=wins, losses=losses,
+                       ties=ties, n=n)
 
 
 # ----------------------------------------------------------------------
 # the standalone renderers
 # ----------------------------------------------------------------------
 PREAMBLE = r"""\documentclass[10pt]{article}
-\usepackage[paperwidth=4.3in,paperheight=3.4in,margin=0.4in]{geometry}
+\usepackage[paperwidth=4.3in,paperheight=5.2in,margin=0.4in]{geometry}
 \usepackage{amsmath}
 \usepackage{tikz}
 \usepackage{pgfplots}
@@ -407,80 +446,156 @@ PREAMBLE = r"""\documentclass[10pt]{article}
 """
 
 
+def crop_png(png, pdf, dpi=150, margin=8):
+    """Crop the rendered page to the figure, so the preview shows the
+    figure and not the page."""
+    try:
+        import numpy as np
+        import pymupdf
+    except Exception:                                        # pragma: no cover
+        return
+    doc = pymupdf.open(pdf)
+    page = doc[0]
+    pix = page.get_pixmap(dpi=dpi)
+    img = np.frombuffer(pix.samples, dtype=np.uint8)
+    img = img.reshape(pix.height, pix.width, pix.n)[:, :, :3]
+    nonwhite = (img < 245).any(axis=2)
+    rows = np.where(nonwhite.any(axis=1))[0]
+    cols = np.where(nonwhite.any(axis=0))[0]
+    if not len(rows) or not len(cols):
+        return
+    sc = 72.0 / dpi
+    rect = pymupdf.Rect(max(0, cols[0] - margin) * sc,
+                        max(0, rows[0] - margin) * sc,
+                        min(pix.width, cols[-1] + margin) * sc,
+                        min(pix.height, rows[-1] + margin) * sc)
+    page.get_pixmap(dpi=dpi, clip=rect).save(png)
+
+
+def compile_tex(doc, timeout=180):
+    """Run pdflatex on `doc`; return (ok, log)."""
+    base = os.path.basename(doc).replace(".tex", "")
+    for stale in (base + ".pdf", base + ".log", base + ".aux"):
+        p = os.path.join(HERE, stale)
+        if os.path.exists(p):
+            os.remove(p)
+    try:
+        subprocess.run(["pdflatex", "-interaction=nonstopmode", "-file-line-error",
+                        base + ".tex"], cwd=HERE, capture_output=True,
+                       text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return False, "pdflatex timed out"
+    logp = os.path.join(HERE, base + ".log")
+    log = open(logp, encoding="utf-8", errors="replace").read() \
+        if os.path.exists(logp) else ""
+    ok = "Output written on" in log
+    return ok, log
+
+
+def natural_width(log):
+    m = re.search(r"FIGWIDTH=([0-9.]+)pt", log)
+    return float(m.group(1)) if m else None
+
+
 def render(name, body, do_render=True):
-    """Write the fragment, render it, and check it against the column width."""
+    """Write the fragment, render it, and report the natural width."""
     frag = os.path.join(HERE, name + ".tex")
     with open(frag, "w", encoding="utf-8") as f:
         f.write(body + "\n")
-    print(f"Wrote {frag}")
     if not do_render:
         return None
     doc = os.path.join(HERE, "render_" + name + ".tex")
     with open(doc, "w", encoding="utf-8") as f:
         f.write(PREAMBLE % (name + ".tex"))
-    for stale in (doc.replace(".tex", ".pdf"),
-                  doc.replace(".tex", ".log"),
-                  doc.replace(".tex", ".aux")):
-        if os.path.exists(stale):
-            os.remove(stale)
-    p = subprocess.run(
-        ["pdflatex", "-interaction=nonstopmode", "-halt-on-error",
-         os.path.basename(doc)],
-        cwd=HERE, capture_output=True, text=True)
-    log = ""
-    if os.path.exists(doc.replace(".tex", ".log")):
-        log = open(doc.replace(".tex", ".log"), encoding="utf-8",
-                   errors="replace").read()
-    if p.returncode != 0 or "Output written on" not in log:
+    ok, log = compile_tex(doc)
+    if not ok:
         print(f"  [render] {name} did not compile:")
-        print("\n".join(log.splitlines()[-25:]))
+        print("\n".join(log.splitlines()[-20:]))
         return None
-    m = re.search(r"FIGWIDTH=([0-9.]+)pt", log)
-    width_pt = float(m.group(1)) if m else float("nan")
-    col_pt = 3.5 * 72.27          # IEEEtran's one-column width
+    w = natural_width(log)
     over = re.findall(r"Overfull \\hbox \(([0-9.]+)pt", log)
-    print(f"  [render] {name}: natural width {width_pt:.1f}pt "
-          f"({width_pt / 72.27:.2f}in) against a 3.50in column"
-          + ("  <-- TOO WIDE" if width_pt > col_pt + 0.5 else ""))
+    pages = re.search(r"Output written on .*\((\d+) pages?", log)
+    if pages and int(pages.group(1)) > 1:
+        print(f"  [render] {name}: the preview ran to "
+              f"{pages.group(1)} pages")
+    if w is not None:
+        print(f"  [render] {name}: natural width {w:.1f}pt "
+              f"({w / 72.27:.2f}in) against a 3.50in column"
+              + ("  <-- TOO WIDE" if w > COL_PT + 1.0 else ""))
     if over:
         print(f"  [render] {name}: overfull hboxes {over}")
     pdf = doc.replace(".tex", ".pdf")
     png = os.path.join(HERE, name + ".png")
-    for stale in (png,):
-        if os.path.exists(stale):
-            os.remove(stale)
+    if os.path.exists(png):
+        os.remove(png)
     subprocess.run(["pdftoppm", "-png", "-r", "150", "-singlefile",
-                    os.path.basename(pdf), os.path.basename(png[:-4])],
+                    os.path.basename(pdf), os.path.basename(name)],
                    cwd=HERE, capture_output=True, text=True)
     if os.path.exists(png):
+        crop_png(png, pdf)
         print(f"Wrote {png}")
     else:
         print(f"  [render] {name}: the PNG was not produced")
-    return width_pt
+    return w
+
+
+def fit_and_render(name, builder, do_render=True):
+    """Render, and shrink the axis until the figure fits the column.
+
+    The axis width is fitted, not guessed: the figure is rendered, its
+    natural width is measured (the fragment is boxed, so the measurement
+    is the width the figure will have in the column), and the axis is
+    narrowed until the whole thing fits the 3.5in column.
+    """
+    wfrac = 1.0
+    info = None
+    for attempt in range(6):
+        body, info = builder(wfrac)
+        w = render(name, body, do_render)
+        if w is None:
+            return info
+        if w <= COL_PT + 0.5:
+            return info
+        # the part of the width that does not scale with the axis (the
+        # y tick labels, which pgfplots does not measure correctly)
+        fixed = w - COL_PT * wfrac
+        new = max(0.30, (COL_PT - fixed) / COL_PT)
+        wfrac = math.floor(new * 100) / 100.0
+        print(f"  [render] {name}: too wide by {w - COL_PT:.1f}pt; "
+              f"retrying at width={wfrac:.2f}\\columnwidth")
+    return info
 
 
 def main():
     do_render = "--no-render" not in sys.argv
     tok = build_tokens()
 
-    body, arms = figure_arms(tok)
-    render("fig_arms", body, do_render)
+    arms = fit_and_render("fig_arms", lambda f: figure_arms(tok, f),
+                           do_render)
     print("  [arms] gap {:.3f}".format(req(tok, "GAP")))
     for a in arms:
         print("    {:6s} {:>7s}  95% CI [{:+.3f}, {:+.3f}]  {}"
               .format(a["key"], sgn(a["mean"]), a["lo"], a["hi"],
                       a["verdict"]))
 
-    body, bud = figure_budget(tok)
-    render("fig_budget", body, do_render)
+    bud = fit_and_render("fig_budget", lambda f: figure_budget(tok, f),
+                          do_render)
     print("  [budget] sweep " + tok.get("BUDGET_SWEEP", "?"))
     print("    paired {:+}  CI {}  ({}% of the gap {:.3f})".format(
         bud["paired"], bud["ci"], bud["frac"], bud["gap"]))
 
-    body, scen = figure_scen(tok)
-    render("fig_scen", body, do_render)
+    scen = fit_and_render("fig_scen", lambda f: figure_scen(tok, f),
+                           do_render)
     print("  [scen] {} variants: {} ahead, {} behind, {} level".format(
         scen["n"], scen["wins"], scen["losses"], scen["ties"]))
+
+    # the renderer's intermediate files are noise: the standalone .tex, the
+    # PDF and the PNG are what is worth keeping
+    for name in ("fig_arms", "fig_budget", "fig_scen"):
+        for ext in (".aux", ".log", ".out"):
+            p = os.path.join(HERE, "render_" + name + ext)
+            if os.path.exists(p):
+                os.remove(p)
     return 0
 
 

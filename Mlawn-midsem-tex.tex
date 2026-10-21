@@ -2406,7 +2406,10 @@ does not claim.
 \caption{OMNeT++/INET runtime probe. The only difference between the rows is
 the UAV's transmit power. ``Receptions'' is the number of packets the receiver
 radio delivered to the upper layer; ``$SNIR_{\mathrm{INET}}$'' is the
-reported \texttt{minSnir} statistic.}
+reported \texttt{minSnir} statistic.  A zero in the reception count means
+the link is below the receiver's sensitivity threshold, so nothing is
+delivered; a dash means the statistic was not reported at all, because with
+no delivered packet there is no received signal to report it on.}
 \label{tab:phyprobe}
 \centering
 \scriptsize
@@ -2477,7 +2480,9 @@ not reported as dead.
 \caption{Plasticity probe of the trained shared actor (128 units per hidden
 layer). ``Dormant'' means the mean absolute activation is below the stated
 fraction of the layer mean; ``silent'' is the same test on the mean absolute
-per-agent gradient; ``dead'' is both.}
+per-agent gradient; ``dead'' is both.  Every entry is a measured count or a
+measured fraction: the zeros say that no neuron in that layer fails the
+test at that threshold, which is the result the probe was run to get.}
 \label{tab:dormancy}
 \centering
 \scriptsize
