@@ -117,7 +117,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokArgStr}{2.5}
 \newcommand{\tokArmsMargin}{0.076}
 \newcommand{\tokArmsMarginMax}{0.076}
-\newcommand{\tokArmsSummarySentence}{Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.377, margin -0.101); the full observation of the proposed configuration (upper limit 0.164, margin +0.112); removing the energy constraint (upper limit 0.200, margin +0.076); removing the threshold term (upper limit 0.066, margin +0.210), against a gap of 0.276.  The arms whose upper limit reaches past the gap -- adding the agent identity -- are NOT excluded, and remain candidate explanations; the others are excluded as the whole of the explanation.}
+\newcommand{\tokArmsSummarySentence}{Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.377, margin -0.101); the full observation of the proposed configuration (upper limit 0.164, margin +0.112); removing the energy constraint (upper limit 0.200, margin +0.076); removing the threshold term (upper limit 0.066, margin +0.210); the previous energy rule (upper limit -0.003, margin +0.279), against a gap of 0.276.  The arms whose upper limit reaches past the gap -- adding the agent identity -- are NOT excluded, and remain candidate explanations; the others are excluded as the whole of the explanation.}
 \newcommand{\tokArmsVerdict}{controlled arms bound how much of the gap the alternative explanations can account for: the interval of the arms testing the content of the observation and the energy model do not exclude the whole gap, so the content of the observation is not excluded by it}
 \newcommand{\tokAuditFail}{0}
 \newcommand{\tokAuditInfo}{4}
@@ -263,8 +263,23 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokEcRet}{622.3}
 \newcommand{\tokEcSc}{0.040}
 \newcommand{\tokEcStr}{0.9}
+\newcommand{\tokEdCi}{[-0.236, -0.003]}
+\newcommand{\tokEdCk}{0.579}
+\newcommand{\tokEdDelta}{-0.120}
+\newcommand{\tokEdExcludesZero}{yes}
+\newcommand{\tokEdGapGap}{0.276}
+\newcommand{\tokEdHalf}{0.117}
+\newcommand{\tokEdN}{3}
+\newcommand{\tokEdP}{0.048}
+\newcommand{\tokEdPaired}{-0.120}
+\newcommand{\tokEdRet}{97}
+\newcommand{\tokEdRetDelta}{516}
+\newcommand{\tokEdShare}{43}
+\newcommand{\tokEdStr}{6.7}
+\newcommand{\tokEdStrDelta}{5.6}
+\newcommand{\tokEdVerdict}{The repair is not a null: the coverage it adds is +0.120 on the same training seeds (95\% interval [+0.003, +0.236], which excludes zero), and that is about 43\% of the gap to the reactive heuristic}
 \newcommand{\tokEnergyDelta}{-0.009}
-\newcommand{\tokEnergySummary}{The reading was wrong, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.276 to the reactive heuristic: $removing the energy constraint$ (-0.009, 95\% interval [-0.218, +0.200], an upper limit below the gap of 0.276); $removing the threshold term$ (+0.009, 95\% interval [-0.049, +0.066], an upper limit below the gap of 0.276).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.}
+\newcommand{\tokEnergySummary}{The reading was wrong, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.276 to the reactive heuristic: $removing the energy constraint$ (-0.009, 95\% interval [-0.218, +0.200], an upper limit below the gap of 0.276); $removing the threshold term$ (+0.009, 95\% interval [-0.049, +0.066], an upper limit below the gap of 0.276); $the previous energy rule$ (-0.120, 95\% interval [-0.236, -0.003], an upper limit below the gap of 0.276).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.}
 \newcommand{\tokEpisodeSeconds}{400}
 \newcommand{\tokEpisodeSteps}{2000}
 \newcommand{\tokFixedAg}{1.000}
@@ -1857,10 +1872,11 @@ was unchanged (Section~\ref{sec:results_abl}).
 each training run of the proposed controller, on the
 training scene, against the reactive heuristic's coverage
 on the evaluation scenes.  The curves have flattened over
-the budget the experiments use, which is what bounds the
-explanation that the shortfall is a training-budget artefact.
-The per-episode values are on the training scene and are
-therefore not the deployed performance.}
+the budget the experiments use, but only on the scene the
+policy trains on; the budget sweep below is what says
+whether that carries over to unseen scenes, and it does
+not resolve it.  The per-episode values are on the training
+scene and are therefore not the deployed performance.}
 \label{fig:learningcurve}
 \end{figure}
 

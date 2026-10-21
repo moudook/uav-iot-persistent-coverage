@@ -59,5 +59,26 @@
     "episodes": 25,
     "seeds": 3,
     "eval_seeds": 5
+  },
+  {
+    "arm": "D: with the previous energy rule",
+    "lam_B": 2.0,
+    "strict_energy_mask": false,
+    "CK": 0.5787711714732025,
+    "CK_std": 0.037929109884930236,
+    "AG": 0.9535773089453222,
+    "SC": 0.0038879971464241127,
+    "CovIntegral": 0.42122882852679827,
+    "stranded_per_episode": 6.666666666666667,
+    "return_events_per_episode": 97.13333333333334,
+    "per_seed_CK": [
+      0.5959985144195993,
+      0.6141500000000051,
+      0.526165000000003
+    ],
+    "device": "cpu",
+    "episodes": 25,
+    "seeds": 3,
+    "eval_seeds": 5
   }
 ]

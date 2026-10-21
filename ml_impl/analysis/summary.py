@@ -36,12 +36,15 @@ def main():
     out = {}
 
     main_rows = {r["model"]: r for r in rows_csv("results_main.csv")}
+    # the numeric columns are converted; the DEVICE is a string and is
+    # reported as one
+    NUMERIC = ("CK", "CK_std", "AG", "SC", "CovIntegral", "ReturnEvents",
+               "Stranded", "train_seeds")
     out["main"] = {k: {c: (float(v[c]) if v.get(c) not in (None, "")
-                                      else None)
-                        for c in ("CK", "CK_std", "AG", "SC", "CovIntegral",
-                                  "ReturnEvents", "Stranded", "train_seeds",
-                                  "device")
+                              else None)
+                        for c in NUMERIC
                         if c in v}
+                    | {"device": v.get("device", "")}
                     for k, v in main_rows.items()}
     if "MAPPO" in main_rows and "Reactive" in main_rows:
         gap = (float(main_rows["Reactive"]["CK"])
