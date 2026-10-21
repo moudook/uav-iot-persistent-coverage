@@ -71,7 +71,8 @@ def main():
     args = ap.parse_args()
 
     # regenerate the tables and fill the prose tokens
-    for script in ("make_tables.py", "fill_tokens.py"):
+    for script in ("make_tables.py", "make_figures.py",
+                   "fill_tokens.py"):
         r = subprocess.run([sys.executable,
                             os.path.join(HERE, script)],
                            capture_output=True, text=True)
@@ -151,6 +152,8 @@ configuration the certificate admits.
 __TAB_MAIN__
 
 __BLOCK_MAIN__
+
+__FIG_CURVE__
 
 \subsection{What the local observation must contain}
 \label{sec:results_obs}
@@ -246,7 +249,27 @@ __BLOCK_SCEN__
 
 """
 
+    fig_lines = []
+    fig_path = os.path.join(HERE, "fig_learning_curve.tex")
+    if os.path.exists(fig_path):
+        fig_lines = [r"\begin{figure}[t]", r"\centering", r"\small"]
+        fig_lines.append(open(fig_path, encoding="utf-8").read().strip())
+        fig_lines.append(r"\caption{The per-episode persistent coverage of")
+        fig_lines.append(r"each training run of the proposed controller, on the")
+        fig_lines.append(r"training scene, against the reactive heuristic's coverage")
+        fig_lines.append(r"on the evaluation scenes.  The curves have flattened over")
+        fig_lines.append(r"the budget the experiments use, which is what bounds the")
+        fig_lines.append(r"explanation that the shortfall is a training-budget artefact.")
+        fig_lines.append(r"The per-episode values are on the training scene and are")
+        fig_lines.append(r"therefore not the deployed performance.}")
+        fig_lines.append(r"\label{fig:learningcurve}")
+        fig_lines.append(r"\end{figure}")
+    else:
+        print("WARNING: the learning-curve figure was not generated")
+    fig = "\n".join(fig_lines)
+
     section = (section
+               .replace("__FIG_CURVE__", fig)
                .replace("__TAB_MAIN__", tab('tab:results_main'))
                .replace("__TAB_OBS__", tab('tab:results_obs'))
                .replace("__TAB_ENERGY__", tab('tab:results_energy'))
