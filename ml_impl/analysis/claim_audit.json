@@ -64,6 +64,22 @@
     "note": "a random sensor draw essentially never meets the corner condition, which is why the region certificate does not transfer."
   },
   {
+    "id": "D1",
+    "claim": "the DEVICE changes a training run: the same configuration and the same seed give different weights on the GPU and on the CPU, so the device has to be recorded with every artefact",
+    "status": "PASS",
+    "measured": "over 2 episodes the weights differ by at most 1.20e-03 and the coverage by 0.012608 between the GPU and the CPU",
+    "expected": "the weights differ",
+    "note": "a run on the GPU and a run on the CPU are not the same experiment, which is why the device is part of the protocol and is recorded with every artefact."
+  },
+  {
+    "id": "D2",
+    "claim": "the THREAD COUNT does not change this workload: the same configuration and the same seed give identical weights with one thread and with two",
+    "status": "PASS",
+    "measured": "over 2 episodes the weights differ by at most 0.00e+00 between one thread and two",
+    "expected": "the weights are identical",
+    "note": "the thread count is pinned anyway, so that the result cannot depend on how many cores the machine happened to be using; this item records what it actually does here."
+  },
+  {
     "id": "C7a",
     "claim": "the achievability construction is admissible under the simulator's own safety filter (so the ceiling is reachable)",
     "status": "PASS",
@@ -249,7 +265,7 @@
     "id": "R1",
     "claim": "the evaluation of a sampled policy is a function of (policy, scene) and does not depend on the ambient state of the global RNG; the sampling stream is seeded from the evaluation seed alone, so every controller is measured on the same stream on the same scene",
     "status": "PASS",
-    "measured": "CK=1.0 and Energy=3604.0 and Distance=188.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3604.0 and Distance=188.0 and CovIntegral=0.0",
+    "measured": "CK=1.0 and Energy=3569.0 and Distance=181.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3569.0 and Distance=181.0 and CovIntegral=0.0",
     "expected": "identical",
     "note": "the policy samples, so the sampling stream is seeded from the evaluation seed; every controller therefore sees the same stream on the same scene"
   },

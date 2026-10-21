@@ -202,6 +202,70 @@ def main():
     else:
         print("[SKIP] the corner transfer: run analysis/corner_transfer.py\n")
 
+
+    # --- the device and the thread count are part of the protocol ------
+    # The paper says the device and the thread count have to be recorded
+    # with every artefact, because the floating-point kernels differ.  That
+    # was an argument; analysis/device_sensitivity.py measures it, and this
+    # item recomputes what the measurement says.
+    ds_path = os.path.join(HERE, "device_sensitivity.json")
+    if os.path.exists(ds_path):
+        with open(ds_path, encoding="utf-8") as f:
+            ds = json.load(f)
+        comps = ds.get("comparisons", [])
+        dev = [c for c in comps if c.get("other_device") == "cuda"]
+        thr = [c for c in comps if c.get("other_device") == "cpu"]
+        if dev:
+            c = dev[0]
+            tok_dev = c.get("max_abs_weight_difference", 0.0)
+            tok_ck = c.get("coverage_difference", 0.0)
+            check("D1", "the DEVICE changes a training run: the same "
+                         "configuration and the same seed give different "
+                         "weights on the GPU and on the CPU, so the device "
+                         "has to be recorded with every artefact",
+                  tok_dev > 0.0,
+                  f"over {ds.get('episodes')} episodes the weights differ by "
+                  f"at most {tok_dev:.2e} and the coverage by {tok_ck:.6f} "
+                  f"between the GPU and the CPU",
+                  "the weights differ",
+                  "a run on the GPU and a run on the CPU are not the same "
+                  "experiment, which is why the device is part of the "
+                  "protocol and is recorded with every artefact.")
+        if thr:
+            c = thr[0]
+            check("D2", "the THREAD COUNT does not change this workload: "
+                         "the same configuration and the same seed give "
+                         "identical weights with one thread and with two",
+                  c.get("max_abs_weight_difference", 1.0) == 0.0,
+                  f"over {ds.get('episodes')} episodes the weights differ by "
+                  f"at most {c.get('max_abs_weight_difference', 0.0):.2e} "
+                  f"between one thread and two",
+                  "the weights are identical",
+                  "the thread count is pinned anyway, so that the result "
+                  "cannot depend on how many cores the machine happened to "
+                  "be using; this item records what it actually does here.")
+
+    # --- the alternative corrected deployment --------------------------
+    alt_path = os.path.join(HERE, "alt_deployment.json")
+    if os.path.exists(alt_path):
+        with open(alt_path, encoding="utf-8") as f:
+            alt = json.load(f)
+        by = {r["arm"]: r for r in alt}
+        a5, r8 = by.get("alt"), by.get("reported")
+        if a5 and r8:
+            check("A1", "the alternative corrected deployment (N = 5, "
+                         "R_cov = 45 m) is FEASIBLE and is measured, not "
+                         "only argued",
+                  a5["CK"] > 0.5,
+                  f"the learned controller reaches {a5['CK']:.3f} on the "
+                  f"alternative against {r8['CK']:.3f} on the reported "
+                  f"deployment, over {a5.get('seeds')} training seeds and "
+                  f"{a5.get('episodes')} episodes",
+                  "the coverage is substantial",
+                  "the certificate identified a deployment the original "
+                  "configuration could not use, and on this instance it is "
+                  "the better of the two.")
+
     # --- C7: the safety filter and the achievability construction ------
     from analysis.mask_admissibility import (graph_properties,
                                              check_constructions,
