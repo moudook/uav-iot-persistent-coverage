@@ -85,9 +85,13 @@ STRIP_Y = 4.75                   # the legend strip
 # goes STRIP_INSET from the left edge and the box is shortened to match.
 STRIP_INSET = 10.5               # pt, from the picture's left edge
 
-BLUE, CYAN, GREEN = "uavblue", "uavcyan", "uavgreen"
-ORANGE, RED, PURPLE = "uavorange", "uavred", "uavpurple"
-GREY = "uavgray"
+# The palette.  One hue carries the method, the greys carry the
+# references, and the accents carry meanings only -- so the picture and
+# the paper's other figures are read the same way.  The names are the
+# palette's (analysis/theme.tex), not literals.
+BLUE, CYAN, GREEN = "uavblue", "uavp50", "uavok"
+ORANGE, RED, PURPLE = "uavwarn", "uavaccent", "uavdeep"
+GREY = "uavg50"
 
 # the arms of the controlled comparison: the token prefix and the short
 # name on the axis (the same names the paper's own figure uses)
@@ -371,7 +375,17 @@ def panel_a(d):
 # panel (b): the controller, and what it is measured against
 # ----------------------------------------------------------------------
 def panel_b(d):
-    """The CTDE controller schematic and the reference set."""
+    """The CTDE controller, and what it is measured against.
+
+    The panel is drawn on three rules, and they are the whole design:
+
+      * a thing that acts on another thing sits DIRECTLY BELOW it and
+        points straight up at it, so no arrow has to be traced;
+      * a label is either beside what it labels or above what it
+        labels, never on top of it;
+      * the panel is spaced, not packed: the boxes are small, the gaps
+        are wide, and nothing is drawn twice.
+    """
     scale = 4.20                       # cm per unit of persistent coverage
     x0 = 0.05
     w_ours = scale * d["ck_ours"]
@@ -382,67 +396,68 @@ def panel_b(d):
 
     o = []
     o.append(f"\\begin{{scope}}[shift={{({X_B:.2f}cm,0cm)}}]")
-    # ---- the loop: observation, shared actor, executed action --------
-    o.append(r"  \node[box, fill=" + CYAN + r"!10, draw=" + CYAN + r","
-             r" minimum width=1.10cm, minimum height=0.46cm]"
-             r" (obs) at (0.60,3.30) {obs.\ $\mathbf o_i$};")
-    o.append(r"  \node[box, fill=" + PURPLE + r"!10, draw=" + PURPLE + r","
-             r" minimum width=1.80cm, minimum height=0.46cm]"
-             r" (actor) at (2.35,3.30) {shared actor $\pi_\theta$};")
-    o.append(r"  \node[box, fill=" + GREY + r"!8, draw=" + GREY + r","
-             r" minimum width=1.50cm, minimum height=0.46cm]"
-             r" (act) at (4.10,3.30) {action $a_i$};")
-    o.append(r"  \draw[arr] (obs.east) -- node[above, font=\tiny] "
-             r" {$\mathbf o_i$} (actor.west);")
+
+    # ---- row 1: the deployment loop ---------------------------------
+    o.append(r"  \node[box, fill=" + CYAN + r"!12, draw=" + CYAN + r","
+             r" minimum width=0.95cm, minimum height=0.40cm, inner sep=1pt]"
+             r" (obs) at (0.55,3.30) {obs.\ $\mathbf o_i$};")
+    o.append(r"  \node[box, fill=" + BLUE + r"!9, draw=" + BLUE + r","
+             r" minimum width=1.55cm, minimum height=0.40cm, inner sep=1pt]"
+             r" (actor) at (2.00,3.30) {shared actor $\pi_\theta$};")
+    o.append(r"  \node[box, fill=" + GREY + r"!10, draw=" + GREY + r","
+             r" minimum width=1.05cm, minimum height=0.40cm, inner sep=1pt]"
+             r" (act) at (3.45,3.30) {action $a_i$};")
+    o.append(r"  \draw[arr] (obs.east) -- (actor.west);")
     o.append(r"  \draw[arr] (actor.east) -- (act.west);")
-    # ---- the training-only critic and the hard feasibility layer -----
-    o.append(r"  \node[box, dashed, fill=" + PURPLE + r"!7, draw=" + PURPLE
-             + r", minimum width=1.80cm, minimum height=0.62cm,"
-             r" inner sep=1pt]"
-             r" (crit) at (0.95,2.45) {centralized critic\\$V_\phi(\mathbf s_t)$"
-             r"\\(training only)};")
-    o.append(r"  \draw[darr] (crit.north) -- (1.55,3.03);")
-    o.append(r"  \node[box, fill=" + RED + r"!8, draw=" + RED + r","
-             r" minimum width=2.70cm, minimum height=0.62cm, inner sep=1pt]"
-             r" (hard) at (3.40,2.45) {hard layer (not learned)\\"
-             r"connectivity mask $H{=}" + str(d["mask_h"]) + r"$\\reserve UAV\\"
-             r"charging arbitration};")
-    o.append(r"  \draw[arr] (hard.north west) -- (2.60,3.03);")
 
-    # ---- the corrected configuration this is all measured on ---------
-    o.append(rf"  \node[anchor=north west, font=\tiny] at (0.05,2.02) "
-             rf"{{corrected: $N={d['n_corrected']}$, $K={d['K']}$, "
-             rf"$R_{{\mathrm{{cov}}}}={d['r_corrected']:.0f}$\,m}};")
+    # ---- row 2: what feeds the actor, and what filters the action ----
+    # The critic is TRAINING ONLY: dashed arrow, and the word says so.
+    # The hard layer is NOT LEARNED: red, and it points at the action,
+    # because that is where the mask acts.
+    o.append(r"  \node[align=center, font=\tiny, text=" + PURPLE + r"] "
+             r"(critlbl) at (1.85,2.42) {critic $V_\phi(\mathbf s_t)$\\"
+             r"\emph{training only}};")
+    o.append(r"  \draw[darr,->] (critlbl.north) -- (actor.south);")
+    o.append(r"  \node[align=center, font=\tiny, text=" + RED + r"] "
+             r"(hardlbl) at (3.50,2.34) {connectivity mask\\reserve UAV\\"
+             r"charging\\\emph{not learned}};")
+    o.append(r"  \draw[arr] (hardlbl.north) -- (act.south);")
 
-    # ---- the reference set ------------------------------------------
-    o.append(hatched(x0, 1.00, x_ours, 1.16, BLUE))
-    o.append(rf"  \node[anchor=south west, font=\tiny] at ({x0:.2f},1.19) "
+    # ---- row 3: the reference set ------------------------------------
+    # The method, the rule it loses to, and the achievability ceiling,
+    # on one scale.  The scale is the cramped part of the panel, so the
+    # rules are strict: every name is on its own line, every value is
+    # beside its own bar, the gap's label is BELOW its arrow, and the
+    # ceiling carries only its number, because the caption says what the
+    # line is.
+    o.append(hatched(x0, 1.20, x_ours, 1.34, BLUE))
+    o.append(rf"  \node[anchor=south west, font=\tiny] at ({x0:.2f},1.36) "
              rf"{{CTDE MAPPO}};")
-    o.append(rf"  \node[anchor=west, font=\tiny] at ({x_ours + 0.06:.2f},1.08) "
+    o.append(rf"  \node[anchor=west, font=\tiny] at ({x_ours + 0.08:.2f},1.27) "
              rf"{{{d['ck_ours']:.3f}}};")
     o.append(rf"  \filldraw[fill=gray!55, draw=gray!70, line width=0.4pt] "
-             rf"({x0:.2f},0.36) rectangle ({x_rule:.2f},0.52);")
-    o.append(rf"  \node[anchor=south west, font=\tiny] at ({x0:.2f},0.55) "
+             rf"({x0:.2f},0.40) rectangle ({x_rule:.2f},0.54);")
+    o.append(rf"  \node[anchor=north west, font=\tiny] at ({x0:.2f},0.36) "
              rf"{{unprivileged reactive rule}};")
-    o.append(rf"  \node[anchor=west, font=\tiny] at ({x_rule + 0.06:.2f},0.44) "
+    # the rule's value goes BELOW its bar's end: the ceiling's line stands
+    # only 0.1 cm to the right of the bar, so there is no room beside it
+    o.append(rf"  \node[anchor=north, font=\tiny] at ({x_rule:.2f},0.38) "
              rf"{{{d['ck_rule']:.3f}}};")
-    # the gap between the two bars
-    o.append(rf"  \draw[{RED}, line width=0.9pt, <->] ({x_ours:.2f},0.85) -- "
-             rf"({x_rule:.2f},0.85);")
-    o.append(rf"  \node[anchor=north, font=\tiny, text={RED}] at "
-             rf"({(x_ours + x_rule) / 2:.2f},0.83) {{gap {d['gap']:.3f}}};")
-    # the achievability ceiling
-    o.append(rf"  \draw[black, dashed, line width=1.0pt] ({x_ora:.2f},0.25) "
-             rf"-- ({x_ora:.2f},1.45);")
-    o.append(rf"  \node[anchor=south east, font=\tiny] at ({x_ora - 0.05:.2f},"
-             rf"1.30) {{teleporting oracle {d['ck_oracle']:.3f}}};")
+    # the gap between the two bars, with its label BELOW the arrow
+    o.append(rf"  \draw[{RED}, line width=0.9pt, <->] ({x_ours:.2f},0.90) -- "
+             rf"({x_rule:.2f},0.90);")
+    o.append(rf"  \node[anchor=north, font=\tiny, text={RED}, yshift=-1pt] at "
+             rf"({(x_ours + x_rule) / 2:.2f},0.88) {{gap {d['gap']:.3f}}};")
+    # the achievability ceiling: a dashed line and its number.  What the
+    # line IS is said in the caption, not in the picture, so the picture
+    # stays clear.
+    o.append(rf"  \draw[black, dashed, line width=1.0pt] ({x_ora:.2f},0.22) "
+             rf"-- ({x_ora:.2f},1.16);")
+    o.append(rf"  \node[anchor=west, font=\tiny] at ({x_ora + 0.04:.2f},1.16) "
+             rf"{{{d['ck_oracle']:.3f}}};")
     o.append("\\end{scope}")
     return "\n".join(o)
 
-
-# ----------------------------------------------------------------------
-# panel (c): the controlled arms against the gap
-# ----------------------------------------------------------------------
 def panel_c(d):
     """The arms' 95% intervals, against the gap they would have to explain."""
     gap = d["gap"]
@@ -505,7 +520,10 @@ def panel_c(d):
                      f"dash pattern=on 2pt off 2pt] "
                      f"(axis cs:{xmin:.3f},{ysep:.2f}) -- "
                      f"(axis cs:{xmax:.3f},{ysep:.2f});")
-    o.append(f"  \\node[anchor=north, font=\\tiny] at "
+    # The gap's label sits to the LEFT of the dashed line, clear of it and
+    # of the shaded band: a label printed on the line is a label the
+    # reader cannot read.
+    o.append(f"  \\node[anchor=south east, font=\\tiny, xshift=-1.5pt] at "
              f"(axis cs:{gap:.3f},{ymax - 0.06:.2f}) "
              f"{{the gap {gap:.3f}}};")
     o.append("\\end{axis}")
@@ -520,22 +538,22 @@ def legend_strip(d):
     items = [
         (r"\tikz[baseline=-0.6ex]{"
          + hatched(0, 0, 0.52, 0.15, BLUE, indent="  ") + "}",
-         r"\textbf{the learned CTDE MAPPO}"),
+         r"\textbf{CTDE MAPPO}"),
         (rf"\tikz[baseline=-0.6ex]{{\filldraw[fill=gray!55, draw=gray!70, "
          rf"line width=0.4pt] (0,0) rectangle (0.52,0.15);}}",
-         r"\textbf{the hand-designed rule}"),
+         r"\textbf{reactive rule}"),
         (rf"\tikz[baseline=-0.6ex]{{\draw[black, dashed, line width=1.1pt] "
          rf"(0,0) -- (0.52,0);}}", "the gap"),
         (rf"\tikz[baseline=-0.6ex]{{\filldraw[fill=gray!20, draw=gray!50, "
          rf"line width=0.4pt] (0,0) rectangle (0.52,0.15);}}",
-         "the gap's 95\\% CI"),
+         "gap's 95\\% CI"),
         (rf"\tikz[baseline=-0.6ex]{{\draw[{GREEN}, line width=2.4pt, "
          rf"line cap=round] (0,0) -- (0.52,0); "
          rf"\filldraw[fill=white, draw=black, line width=0.5pt] "
-         rf"(0.26,0) circle (0.055);}}", "95\\% CI, paired mean"),
+         rf"(0.26,0) circle (0.055);}}", "95\\% CI (paired)"),
         (rf"\tikz[baseline=-0.6ex]{{\filldraw[fill={RED}!8, draw={RED}!40, "
          rf"line width=0.4pt] (0,0) rectangle (0.52,0.15);}}",
-         "the two criteria disagree"),
+         "criteria disagree"),
     ]
     body = r"\hspace*{6pt}" + " \\hfill ".join(f"{sw}\\ {{{lab}}}" for sw, lab in items) + r"\hspace*{6pt}"
     o = []
@@ -580,6 +598,15 @@ def titles():
 # ----------------------------------------------------------------------
 def fragment(tok, d):
     o = []
+    # The shared theme carries the palette and the figure styles; the
+    # fragment bootstraps it, the way the other figures do, so it can be
+    # dropped into a document that has not loaded it.
+    o.append(r"\ifdefined\uavtheme\else")
+    o.append(r"  \IfFileExists{ml_impl/analysis/theme.tex}"
+             r"{\input{ml_impl/analysis/theme.tex}}{%")
+    o.append(r"  \IfFileExists{theme.tex}{\input{theme.tex}}{%")
+    o.append(r"  \errmessage{the figures need ml_impl/analysis/theme.tex}}}%")
+    o.append(r"\fi")
     o.append(r"\begin{tikzpicture}["
              r"font=\tiny,"
              r"box/.style={draw,rounded corners=2pt,align=center,"
@@ -609,6 +636,8 @@ def fragment(tok, d):
 # the renderer
 # ----------------------------------------------------------------------
 PREAMBLE = r"""\documentclass[10pt]{article}
+%% The page is the PAPER's text width: the figure is measured on its
+%% own, and a page of a different width measures a different picture.
 \usepackage[paperwidth=7.5in,paperheight=6.4in,margin=0.17in]{geometry}
 \usepackage{amsmath}
 \usepackage{tikz}
@@ -626,6 +655,11 @@ PREAMBLE = r"""\documentclass[10pt]{article}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 \begin{document}
+%% The paper sets the figure in \small, and the render has to set it too:
+%% a legend measured at the document's default size is wider than the
+%% legend the paper prints, and the measurement then reports a width the
+%% paper does not have.
+\small
 \newsavebox{\figbox}
 \sbox{\figbox}{\input{%s}}
 \typeout{FIGWIDTH=\the\wd\figbox}
@@ -728,6 +762,13 @@ def render(name, body, do_render=True):
     shutil_copy = os.path.join(SCRATCH, name + ".tex")
     with open(shutil_copy, "w", encoding="utf-8") as f:
         f.write(body)
+    # the shared theme carries the palette, so the render needs it beside
+    # the fragment: the fragment looks for it by name
+    theme_src = os.path.join(HERE, "theme.tex")
+    if os.path.exists(theme_src):
+        with open(os.path.join(SCRATCH, "theme.tex"), "w",
+                  encoding="utf-8") as f:
+            f.write(open(theme_src, encoding="utf-8").read())
     ok, log = compile_tex(doc)
     if not ok:
         print("  [render] did not compile:")

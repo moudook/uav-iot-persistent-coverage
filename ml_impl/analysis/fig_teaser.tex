@@ -1,3 +1,8 @@
+\ifdefined\uavtheme\else
+  \IfFileExists{ml_impl/analysis/theme.tex}{\input{ml_impl/analysis/theme.tex}}{%
+  \IfFileExists{theme.tex}{\input{theme.tex}}{%
+  \errmessage{the figures need ml_impl/analysis/theme.tex}}}%
+\fi
 \begin{tikzpicture}[font=\tiny,box/.style={draw,rounded corners=2pt,align=center,inner sep=2pt,font=\tiny},arr/.style={-{Latex[length=1.6mm]},semithick,uavblue},darr/.style={-{Latex[length=1.6mm]},semithick,dashed,uavpurple}]
   \node[anchor=north west, inner sep=0pt, outer sep=0pt, font=\tiny] (strip) at (10.5pt,4.75) {
     \makebox[\dimexpr\textwidth-21pt\relax][s]{
@@ -8,7 +13,7 @@
       \draw[white, line width=0.35pt] (\t,0.000) -- (\t+0.150,0.150);
     }
   \end{scope}
-  \draw[uavblue, line width=0.4pt] (0.000,0.000) rectangle (0.520,0.150);}\ {\textbf{the learned CTDE MAPPO}} \hfill \tikz[baseline=-0.6ex]{\filldraw[fill=gray!55, draw=gray!70, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {\textbf{the hand-designed rule}} \hfill \tikz[baseline=-0.6ex]{\draw[black, dashed, line width=1.1pt] (0,0) -- (0.52,0);}\ {the gap} \hfill \tikz[baseline=-0.6ex]{\filldraw[fill=gray!20, draw=gray!50, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {the gap's 95\% CI} \hfill \tikz[baseline=-0.6ex]{\draw[uavgreen, line width=2.4pt, line cap=round] (0,0) -- (0.52,0); \filldraw[fill=white, draw=black, line width=0.5pt] (0.26,0) circle (0.055);}\ {95\% CI, paired mean} \hfill \tikz[baseline=-0.6ex]{\filldraw[fill=uavred!8, draw=uavred!40, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {the two criteria disagree}\hspace*{6pt}
+  \draw[uavblue, line width=0.4pt] (0.000,0.000) rectangle (0.520,0.150);}\ {\textbf{CTDE MAPPO}} \hfill \tikz[baseline=-0.6ex]{\filldraw[fill=gray!55, draw=gray!70, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {\textbf{reactive rule}} \hfill \tikz[baseline=-0.6ex]{\draw[black, dashed, line width=1.1pt] (0,0) -- (0.52,0);}\ {the gap} \hfill \tikz[baseline=-0.6ex]{\filldraw[fill=gray!20, draw=gray!50, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {gap's 95\% CI} \hfill \tikz[baseline=-0.6ex]{\draw[uavok, line width=2.4pt, line cap=round] (0,0) -- (0.52,0); \filldraw[fill=white, draw=black, line width=0.5pt] (0.26,0) circle (0.055);}\ {95\% CI (paired)} \hfill \tikz[baseline=-0.6ex]{\filldraw[fill=uavaccent!8, draw=uavaccent!40, line width=0.4pt] (0,0) rectangle (0.52,0.15);}\ {criteria disagree}\hspace*{6pt}
     }};
   \begin{scope}[on background layer]
     \draw[fill=white, draw=gray!55, line width=0.5pt, rounded corners=1.5pt]
@@ -25,47 +30,46 @@
   axis x line*=bottom, axis y line*=left, grid=both, grid style={gray!20},
   tick label style={font=\tiny}, label style={font=\small},
   clip=false, enlargelimits=false,]
-  \addplot[draw=none, fill=uavred!8, forget plot] coordinates {(3.326,0.00) (7.999,0.00) (7.999,3.05) (3.326,3.05)} \closedcycle;
+  \addplot[draw=none, fill=uavaccent!8, forget plot] coordinates {(3.326,0.00) (7.999,0.00) (7.999,3.05) (3.326,3.05)} \closedcycle;
   \addplot[gray!65, dashed, line width=0.9pt, forget plot] coordinates {(2.80,1) (9.30,1)};
-  \addplot[uavred, dashed, line width=1.1pt, forget plot] coordinates {(8,0.00) (8,3.05)};
+  \addplot[uavaccent, dashed, line width=1.1pt, forget plot] coordinates {(8,0.00) (8,3.05)};
   \addplot[color=uavblue, thick, mark=*, mark size=1.7pt, mark options={fill=uavblue}, forget plot] coordinates {(3,0.9020) (4,1.2026) (5,1.5033) (6,1.8040) (7,2.1046) (8,2.4053) (9,2.7059)};
-  \addplot[only marks, mark=o, mark size=2.6pt, color=uavred, mark options={fill=white, line width=1.1pt}, forget plot] coordinates {(5,1.5033)};
+  \addplot[only marks, mark=o, mark size=2.6pt, color=uavaccent, mark options={fill=white, line width=1.1pt}, forget plot] coordinates {(5,1.5033)};
   \addplot[only marks, mark=*, mark size=2.4pt, color=uavblue, mark options={fill=uavblue}, forget plot] coordinates {(8,2.4053)};
   \node[anchor=north west, font=\tiny, align=left] at (axis cs:5.08,1.443) {published\\$\sigma=1.503$};
   \node[anchor=south east, font=\tiny] at (axis cs:7.92,2.465) {corrected $N=8$};
-  \node[rotate=90, anchor=south, font=\tiny, text=uavred] at (axis cs:8,1.05) {$N\geq 4K=8$};
+  \node[rotate=90, anchor=south, font=\tiny, text=uavaccent] at (axis cs:8,1.05) {$N\geq 4K=8$};
   \node[anchor=south west, font=\tiny] at (axis cs:2.98,1.25) {$\sigma=1$};
   \node[anchor=south west, font=\tiny] at (axis cs:3.43,2.99) {the two criteria disagree};
   \node[anchor=north west, font=\tiny, align=left] at (axis cs:2.86,0.52) {sensor set: $N\geq 4.27$ on average\\$N=5$ excluded in 13\% of 30 draws};
 \end{axis}
 \begin{scope}[shift={(6.05cm,0cm)}]
-  \node[box, fill=uavcyan!10, draw=uavcyan, minimum width=1.10cm, minimum height=0.46cm] (obs) at (0.60,3.30) {obs.\ $\mathbf o_i$};
-  \node[box, fill=uavpurple!10, draw=uavpurple, minimum width=1.80cm, minimum height=0.46cm] (actor) at (2.35,3.30) {shared actor $\pi_\theta$};
-  \node[box, fill=uavgray!8, draw=uavgray, minimum width=1.50cm, minimum height=0.46cm] (act) at (4.10,3.30) {action $a_i$};
-  \draw[arr] (obs.east) -- node[above, font=\tiny]  {$\mathbf o_i$} (actor.west);
+  \node[box, fill=uavp50!12, draw=uavp50, minimum width=0.95cm, minimum height=0.40cm, inner sep=1pt] (obs) at (0.55,3.30) {obs.\ $\mathbf o_i$};
+  \node[box, fill=uavblue!9, draw=uavblue, minimum width=1.55cm, minimum height=0.40cm, inner sep=1pt] (actor) at (2.00,3.30) {shared actor $\pi_\theta$};
+  \node[box, fill=uavg50!10, draw=uavg50, minimum width=1.05cm, minimum height=0.40cm, inner sep=1pt] (act) at (3.45,3.30) {action $a_i$};
+  \draw[arr] (obs.east) -- (actor.west);
   \draw[arr] (actor.east) -- (act.west);
-  \node[box, dashed, fill=uavpurple!7, draw=uavpurple, minimum width=1.80cm, minimum height=0.62cm, inner sep=1pt] (crit) at (0.95,2.45) {centralized critic\\$V_\phi(\mathbf s_t)$\\(training only)};
-  \draw[darr] (crit.north) -- (1.55,3.03);
-  \node[box, fill=uavred!8, draw=uavred, minimum width=2.70cm, minimum height=0.62cm, inner sep=1pt] (hard) at (3.40,2.45) {hard layer (not learned)\\connectivity mask $H{=}3$\\reserve UAV\\charging arbitration};
-  \draw[arr] (hard.north west) -- (2.60,3.03);
-  \node[anchor=north west, font=\tiny] at (0.05,2.02) {corrected: $N=8$, $K=2$, $R_{\mathrm{cov}}=35$\,m};
+  \node[align=center, font=\tiny, text=uavdeep] (critlbl) at (1.85,2.42) {critic $V_\phi(\mathbf s_t)$\\\emph{training only}};
+  \draw[darr,->] (critlbl.north) -- (actor.south);
+  \node[align=center, font=\tiny, text=uavaccent] (hardlbl) at (3.50,2.34) {connectivity mask\\reserve UAV\\charging\\\emph{not learned}};
+  \draw[arr] (hardlbl.north) -- (act.south);
   \begin{scope}
-    \clip (0.050,1.000) rectangle (2.830,1.160);
-    \fill[uavblue] (0.050,1.000) rectangle (2.830,1.160);
-    \foreach \t in {0.000,0.144,0.288,0.432,0.576,0.720,0.864,1.008,1.152,1.296,1.440,1.584,1.728,1.872,2.016,2.160,2.304,2.448,2.592,2.736,2.880}{
-      \draw[white, line width=0.35pt] (\t,1.000) -- (\t+0.160,1.160);
+    \clip (0.050,1.200) rectangle (2.830,1.340);
+    \fill[uavblue] (0.050,1.200) rectangle (2.830,1.340);
+    \foreach \t in {0.000,0.126,0.252,0.378,0.504,0.630,0.756,0.882,1.008,1.134,1.260,1.386,1.512,1.638,1.764,1.890,2.016,2.142,2.268,2.394,2.520,2.646,2.772,2.898}{
+      \draw[white, line width=0.35pt] (\t,1.200) -- (\t+0.140,1.340);
     }
   \end{scope}
-  \draw[uavblue, line width=0.4pt] (0.050,1.000) rectangle (2.830,1.160);
-  \node[anchor=south west, font=\tiny] at (0.05,1.19) {CTDE MAPPO};
-  \node[anchor=west, font=\tiny] at (2.89,1.08) {0.662};
-  \filldraw[fill=gray!55, draw=gray!70, line width=0.4pt] (0.05,0.36) rectangle (4.13,0.52);
-  \node[anchor=south west, font=\tiny] at (0.05,0.55) {unprivileged reactive rule};
-  \node[anchor=west, font=\tiny] at (4.19,0.44) {0.972};
-  \draw[uavred, line width=0.9pt, <->] (2.83,0.85) -- (4.13,0.85);
-  \node[anchor=north, font=\tiny, text=uavred] at (3.48,0.83) {gap 0.309};
-  \draw[black, dashed, line width=1.0pt] (4.25,0.25) -- (4.25,1.45);
-  \node[anchor=south east, font=\tiny] at (4.20,1.30) {teleporting oracle 1.000};
+  \draw[uavblue, line width=0.4pt] (0.050,1.200) rectangle (2.830,1.340);
+  \node[anchor=south west, font=\tiny] at (0.05,1.36) {CTDE MAPPO};
+  \node[anchor=west, font=\tiny] at (2.91,1.27) {0.662};
+  \filldraw[fill=gray!55, draw=gray!70, line width=0.4pt] (0.05,0.40) rectangle (4.13,0.54);
+  \node[anchor=north west, font=\tiny] at (0.05,0.36) {unprivileged reactive rule};
+  \node[anchor=north, font=\tiny] at (4.13,0.38) {0.972};
+  \draw[uavaccent, line width=0.9pt, <->] (2.83,0.90) -- (4.13,0.90);
+  \node[anchor=north, font=\tiny, text=uavaccent, yshift=-1pt] at (3.48,0.88) {gap 0.309};
+  \draw[black, dashed, line width=1.0pt] (4.25,0.22) -- (4.25,1.16);
+  \node[anchor=west, font=\tiny] at (4.29,1.16) {1.000};
 \end{scope}
 \begin{axis}[at={(13.21cm,0cm)}, anchor=south west,
   scale only axis, width=4.95cm, height=3.60cm,
@@ -79,21 +83,21 @@
   clip=false, enlargelimits=false,]
   \addplot[draw=none, fill=gray!20, forget plot] coordinates {(0.260,0.35) (0.358,0.35) (0.358,6.65) (0.260,6.65)} \closedcycle;
   \addplot[black, dashed, line width=1.1pt, forget plot] coordinates {(0.309,0.35) (0.309,6.65)};
-  \addplot[color=uavgreen, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavgreen}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavgreen}] coordinates {(0.015,6) +- (0.145,0)};
+  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(0.015,6) +- (0.145,0)};
   \node[anchor=south, font=\tiny] at (axis cs:0.015,6.17) {$+0.015$};
-  \addplot[color=uavgreen, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavgreen}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavgreen}] coordinates {(0.023,5) +- (0.038,0)};
+  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(0.023,5) +- (0.038,0)};
   \node[anchor=south, font=\tiny] at (axis cs:0.023,5.17) {$+0.023$};
-  \addplot[color=uavgreen, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavgreen}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavgreen}] coordinates {(0.023,4) +- (0.058,0)};
+  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(0.023,4) +- (0.058,0)};
   \node[anchor=south, font=\tiny] at (axis cs:0.023,4.17) {$+0.023$};
-  \addplot[color=uavgreen, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavgreen}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavgreen}] coordinates {(-0.001,3) +- (0.029,0)};
+  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(-0.001,3) +- (0.029,0)};
   \node[anchor=south, font=\tiny] at (axis cs:-0.001,3.17) {$-0.001$};
-  \addplot[color=uavgreen, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavgreen}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavgreen}] coordinates {(-0.078,2) +- (0.040,0)};
+  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(-0.078,2) +- (0.040,0)};
   \node[anchor=south, font=\tiny] at (axis cs:-0.078,2.17) {$-0.078$};
-  \addplot[color=uavgreen, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavgreen}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavgreen}] coordinates {(-0.022,1) +- (0.058,0)};
+  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(-0.022,1) +- (0.058,0)};
   \node[anchor=south, font=\tiny] at (axis cs:-0.022,1.17) {$-0.022$};
   \draw[gray!50, line width=0.4pt, dash pattern=on 2pt off 2pt] (axis cs:-0.200,4.50) -- (axis cs:0.419,4.50);
   \draw[gray!50, line width=0.4pt, dash pattern=on 2pt off 2pt] (axis cs:-0.200,1.50) -- (axis cs:0.419,1.50);
-  \node[anchor=north, font=\tiny] at (axis cs:0.309,6.59) {the gap 0.309};
+  \node[anchor=south east, font=\tiny, xshift=-1.5pt] at (axis cs:0.309,6.59) {the gap 0.309};
 \end{axis}
   \pgfresetboundingbox
   \path[use as bounding box] (0,-1.15) rectangle (\textwidth,4.90);
