@@ -241,6 +241,21 @@ def main():
     ap.add_argument("--stage", default="all",
                     choices=["obs", "base", "abl", "ablstress", "learned",
                              "energy", "scen", "all"])
+    # The number of TRAINING SEEDS is part of the protocol, not a
+    # constant of the code: it sets the width of every interval the
+    # paper reports, and the arms are compared with the base
+    # comparison's arm A, so the arms and the base have to be trained
+    # with the same number of seeds or the cross-table identity check
+    # cannot hold.
+    ap.add_argument("--train-seeds", type=int, default=0,
+                    help="the base comparison's training seeds "
+                         "(0 = the default)")
+    ap.add_argument("--abl-seeds", type=int, default=0,
+                    help="the component ablation's training seeds "
+                         "(0 = the default)")
+    ap.add_argument("--obs-seeds", type=int, default=0,
+                    help="the observation arms' training seeds "
+                         "(0 = the default)")
     args = ap.parse_args()
 
     quick = args.quick
@@ -254,6 +269,12 @@ def main():
     abl_seeds = 1 if quick else 3
     stress_episodes = 2 if quick else 6
     obs_seeds = 2 if quick else 3
+    if args.train_seeds:
+        train_seeds = args.train_seeds
+    if args.abl_seeds:
+        abl_seeds = args.abl_seeds
+    if args.obs_seeds:
+        obs_seeds = args.obs_seeds
 
     t0 = time.time()
     print("=" * 78)
