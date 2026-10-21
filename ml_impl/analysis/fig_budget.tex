@@ -1,0 +1,19 @@
+\begin{tikzpicture}
+\begin{axis}[width=\columnwidth,height=5.6cm,
+  xmin=5.00, xmax=29.50, ymin=0.452, ymax=1.042,
+  xtick={8,16,25},
+  ytick={0.6,0.7,0.8,0.9,1,1.1,1.2},
+  xlabel={training episodes}, ylabel={persistent coverage},
+  grid=both, grid style={gray!20}, tick label style={font=\tiny},
+  label style={font=\small}, legend style={font=\tiny},
+  legend cell align=left, clip=false,
+  legend style={font=\tiny, at={(0.5,-0.30)}, anchor=north, legend columns=1}],
+  \addplot[black, dashed, line width=1.0pt] coordinates {(5.00,0.972) (29.50,0.972)};
+  \addplot[color=uavblue, thick, mark=*, mark size=1.9pt, mark options={fill=uavblue}, error bars/.cd, y dir=both, y explicit, error bar style={line width=0.8pt, color=uavblue}, error mark options={rotate=90, mark size=3pt, line width=0.8pt, color=uavblue}] coordinates {(8,0.5949518749999998) +- (0,0.0830) (16,0.6213462499999995) +- (0,0.0673) (25,0.6622724999999957) +- (0,0.0584)};
+  \legend{the strongest rule,the learned controller ($\pm 1$ s.d. over the training seeds)}
+  \draw[uavred, line width=0.9pt, <->] (axis cs:26.70,0.662) -- (axis cs:26.70,0.972);
+  \node[rotate=90, anchor=south, font=\tiny, text=uavred] at (axis cs:27.40,0.817) {gap 0.309};
+  \node[anchor=south west, font=\tiny] at (axis cs:5.40,0.976) {the unprivileged reactive rule (0.972)};
+  \node[anchor=north west, font=\tiny, align=left] at (axis cs:5.40,0.960) {training over 8--25 episodes: $\Delta=+0.067$\\95\% CI [+0.017, +0.118] --- 22\% of the gap};
+\end{axis}
+\end{tikzpicture}

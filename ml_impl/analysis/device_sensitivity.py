@@ -176,7 +176,8 @@ def merge(a):
     ref = parts[0]
     rows = []
     for r in parts[1:]:
-        dw = float(np.max(np.abs(r["weights"] - ref["weights"])))
+        dw = float(np.max(np.abs(np.asarray(r["weights"], dtype=float)
+                                 - np.asarray(ref["weights"], dtype=float))))
         dck = abs(r["CK"] - ref["CK"])
         rows.append(dict(other_device=r["device"], other_threads=r["threads"],
                          max_abs_weight_difference=dw,

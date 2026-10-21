@@ -174,12 +174,13 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
 
     The choice is not a matter of taste: it is measured, and the
     measurement is in analysis/device_sensitivity.json.  On this workload
-    the GPU is 28% SLOWER than the CPU (10.7 ms/step against 8.3 ms/step at
-    one thread), because the simulator is a sequential Python loop that is
-    85% of the run, while the network is 8% of it -- and on the GPU even
-    that 8% is nearly four times slower in absolute terms, since the
-    kernels are tiny and the launch overhead dominates.  There is nothing
-    for the GPU to accelerate here.
+    the GPU is about 1.26x SLOWER than the CPU, because the simulator is
+    a sequential Python loop that is 85% of the run, while the network is
+    8% of it -- and on the GPU even that 8% is nearly four times slower
+    in absolute terms, since the kernels are tiny and the launch
+    overhead dominates.  There is nothing for the GPU to accelerate
+    here.  (The ratio is the number to quote: the absolute cost per step
+    depends on what else the machine is running.)
     """
     torch.manual_seed(seed)
     # The thread count changes the order of the floating-point reductions,

@@ -70,7 +70,7 @@ Every number in the paper is produced under one protocol:
    configuration and seed give different weights on the GPU and on the
    CPU (`analysis/device_sensitivity.py`), while one thread and two
    threads give IDENTICAL weights for this workload. The GPU is also
-   MEASURED to be 1.2--1.3x SLOWER here: the simulator is a sequential
+   MEASURED to be 1.26x SLOWER here: the simulator is a sequential
    Python loop and is about 85% of a run, the network is about 8% of it,
    and on the GPU even that 8% is several times slower, because the
    tensors are tiny and the launch overhead dominates. There is nothing
@@ -628,6 +628,31 @@ code, no repository) and to be adversarial rather than agreeable.
   broader than the audit, an arms' sentence that did not name its
   reference arm, an exclusion stated without its scope, and a share
   whose denominator appears nowhere in the paper.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+- **Audit 7** (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+  checked against the raw per-seed rows, with every interval recomputed
+  by hand. Ten findings, all applied: the budget's paired increment, two
+  population standard deviations, a rounding disagreement between a
+  summary and its table, the wrong rule named in a sentence, an
+  asymmetric interval described as symmetric, a caption that said five
+  where the table said eight, an audit claim in the abstract that was
+  broader than the audit, an arms' sentence that did not name its
+  reference arm, an exclusion stated without its scope, and a share
+  whose denominator appears nowhere in the paper.
 ## THE CITATIONS, CHECKED AGAINST THE SOURCES (21 Oct)
 Every number the paper attributes to a cited work has been checked
 against the source, and the checks are in the paper's own record:
@@ -679,7 +704,7 @@ against the source, and the checks are in the paper's own record:
   the wrong way, and the paper says so rather than claiming the
   diagnosis.
 - **The GPU does not accelerate this workload.** Measured, in
-  `analysis/device_sensitivity.json`: the GPU takes about 1.2--1.3x the
+  `analysis/device_sensitivity.json`: the GPU takes about 1.26x the
   CPU's wall clock for the same training run. The profile says why: the
   simulator is a sequential Python loop and is about 85% of a run, the
   network is about 8% of it, and on the GPU even that 8% is several times
@@ -732,8 +757,12 @@ run on another device is a different experiment.
   parts (`analysis/ablation_part.py`, merged by
   `analysis/merge_ablation.py`) and the rest runs in `analysis/run_queue.py`.
 - **The GPU is idle because there is nothing for it to do here**: the
-  simulator is 85% of a run. Measured per device: the CPU with one
-  thread 8.3 ms/step, the CPU with two 8.4 ms/step, the GPU 10.7 ms/step.
+  simulator is 85% of a run.  MEASURED, in
+  `analysis/device_sensitivity.json`: the GPU takes about 1.26x the
+  CPU's wall clock for the same training run, and one thread against two
+  on the CPU makes almost no difference.  The RATIO is the number to
+  quote: the absolute cost per step depends on what else the machine is
+  running at the time.
 - **Every long stage is resumable**, and the resume keys include the
   device, the budget, the seed count and the evaluation-scene count. The
   budget sweep and the alternative deployment additionally cache every

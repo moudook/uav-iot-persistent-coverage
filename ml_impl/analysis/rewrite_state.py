@@ -103,7 +103,7 @@ Every number in the paper is produced under one protocol:
    configuration and seed give different weights on the GPU and on the
    CPU (`analysis/device_sensitivity.py`), while one thread and two
    threads give IDENTICAL weights for this workload. The GPU is also
-   MEASURED to be 1.2--1.3x SLOWER here: the simulator is a sequential
+   MEASURED to be 1.26x SLOWER here: the simulator is a sequential
    Python loop and is about 85% of a run, the network is about 8% of it,
    and on the GPU even that 8% is several times slower, because the
    tensors are tiny and the launch overhead dominates. There is nothing
@@ -300,7 +300,7 @@ NEGATIVE = """## Negative results, kept on the record
   the wrong way, and the paper says so rather than claiming the
   diagnosis.
 - **The GPU does not accelerate this workload.** Measured, in
-  `analysis/device_sensitivity.json`: the GPU takes about 1.2--1.3x the
+  `analysis/device_sensitivity.json`: the GPU takes about 1.26x the
   CPU's wall clock for the same training run. The profile says why: the
   simulator is a sequential Python loop and is about 85% of a run, the
   network is about 8% of it, and on the GPU even that 8% is several times
@@ -322,8 +322,12 @@ MACHINE = """## Machine notes (measured, 21 Oct)
   parts (`analysis/ablation_part.py`, merged by
   `analysis/merge_ablation.py`) and the rest runs in `analysis/run_queue.py`.
 - **The GPU is idle because there is nothing for it to do here**: the
-  simulator is 85% of a run. Measured per device: the CPU with one
-  thread 8.3 ms/step, the CPU with two 8.4 ms/step, the GPU 10.7 ms/step.
+  simulator is 85% of a run.  MEASURED, in
+  `analysis/device_sensitivity.json`: the GPU takes about 1.26x the
+  CPU's wall clock for the same training run, and one thread against two
+  on the CPU makes almost no difference.  The RATIO is the number to
+  quote: the absolute cost per step depends on what else the machine is
+  running at the time.
 - **Every long stage is resumable**, and the resume keys include the
   device, the budget, the seed count and the evaluation-scene count. The
   budget sweep and the alternative deployment additionally cache every

@@ -84,7 +84,8 @@ def sgn(x, nd=3):
 
 
 def floor_to(v, step):
-    return int(v / step) * step
+    import math
+    return math.floor(v / step) * step
 
 
 def ceil_to(v, step):
@@ -150,20 +151,20 @@ def figure_arms(tok):
              r"legend columns=2}],")
     # the gap: the quantity every arm would have to account for
     L.append(f"  \\addplot[black, dashed, line width=1.1pt] coordinates "
-             f"({gap:.3f},{ymin:.2f}) ({gap:.3f},{ymax:.2f});")
+             f"{{({gap:.3f},{ymin:.2f}) ({gap:.3f},{ymax:.2f})}};")
     for i, a in enumerate(arms):
         y = n - i
         col = UAVGREEN if a["excluded"] else UAVRED
         L.append(f"  \\addplot[color={col}, line width=2.4pt, mark=none, "
                  f"forget plot] coordinates "
-                 f"({a['lo']:.3f},{y}) ({a['hi']:.3f},{y});")
+                 f"{{({a['lo']:.3f},{y}) ({a['hi']:.3f},{y})}};")
         L.append(f"  \\addplot[only marks, mark=|, mark size=3.2pt, "
                  f"color={col}, forget plot] coordinates "
-                 f"({a['lo']:.3f},{y}) ({a['hi']:.3f},{y});")
+                 f"{{({a['lo']:.3f},{y}) ({a['hi']:.3f},{y})}};")
         L.append(f"  \\addplot[only marks, mark=*, mark size=1.7pt, "
                  f"color=black, mark options={{fill=white,draw=black,"
                  f"line width=0.5pt}}, forget plot] coordinates "
-                 f"({a['mean']:.3f},{y});")
+                 f"{{({a['mean']:.3f},{y})}};")
     # the legend: the three things the picture draws
     L.append(r"  \addlegendimage{color=" + UAVGREEN + r", line width=2.4pt}")
     L.append(r"  \addlegendimage{color=" + UAVRED + r", line width=2.4pt}")
@@ -171,9 +172,9 @@ def figure_arms(tok):
              r"color=black, mark options={fill=white,draw=black,"
              r"line width=0.5pt}}")
     L.append(r"  \addlegendimage{black, dashed, line width=1.1pt}")
-    L.append(r"  \legend{95\% interval, upper limit below the gap,"
-             r"95\% interval, upper limit past the gap,"
-             r"paired mean,the gap the arm must explain}")
+    L.append(r"  \legend{{95\% interval, upper limit below the gap},"
+             r"{95\% interval, upper limit past the gap},"
+             r"{paired mean},{the gap the arm must explain}}")
     # the point estimate of each arm, above its bar
     for i, a in enumerate(arms):
         y = n - i
@@ -258,7 +259,7 @@ def figure_budget(tok):
              r"legend columns=1}],")
     # the rule the gap is measured against
     L.append(f"  \\addplot[black, dashed, line width=1.0pt] coordinates "
-             f"({xmin:.2f},{rule:.3f}) ({xmax:.2f},{rule:.3f});")
+             f"{{({xmin:.2f},{rule:.3f}) ({xmax:.2f},{rule:.3f})}};")
     # the sweep, with the seed-to-seed spread
     coords = " ".join(
         f"({e},{c}) +- (0,{s:.4f})" for e, c, s in zip(eps, cks, sds))
@@ -362,7 +363,7 @@ def figure_scen(tok):
                  f"(axis cs:{x:.2f},{ymax:.3f});")
     # the level line
     L.append(f"  \\addplot[{UAVRED}, dashed, line width=1.0pt] coordinates "
-             f"({xmin:.2f},0) ({xmax:.2f},0);")
+             f"{{({xmin:.2f},0) ({xmax:.2f},0)}};")
     # the variants
     L.append(r"  \addplot[only marks, mark=*, mark size=1.8pt, color="
              + UAVBLUE + ", mark options={fill=" + UAVBLUE + "}] coordinates {"
