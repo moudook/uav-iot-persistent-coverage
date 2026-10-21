@@ -331,6 +331,10 @@ constraints have already discharged, and the terms that do matter are the
 ones the filter cannot enforce: who covers what, and how the energy is
 spent.
 
+%% ABLSTRESS
+
+The ordering of the components is not the same here as in the nominal regime, and that is a result rather than a nuisance: removing the agent identity costs 0.078, the pad bearing costs 0.070, the coverage map costs 0.045, the action mask costs 0.032 of persistent coverage, so the component helps; removing the whole design GAINS 0.193, the reserve UAV GAINS 0.187, so the component is a liability there.  The framework's recovery mechanism, which re-seats an exhausted UAV at a charging pad, is a liability when energy is scarce, because the re-seated UAV is out of communication range of the swarm until it flies back, and the swarm spends the scenario disconnected and gathered rather than spread.
+
 %% CREDIT
 
 The per-agent arm reaches $0.646$ against $0.683$ for

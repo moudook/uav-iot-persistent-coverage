@@ -29,8 +29,8 @@ TEX = os.path.join(PROJ, "Mlawn-midsem-tex.tex")
 TABLES = os.path.join(HERE, "tables.tex")
 TEXT = os.path.join(HERE, "results_text_filled.tex")
 
-MARKERS = ["%% CONTRIB", "%% MAIN", "%% OBS", "%% ENERGY", "%% ABL", "%% CREDIT",
-           "%% SCEN"]
+MARKERS = ["%% CONTRIB", "%% MAIN", "%% OBS", "%% ENERGY", "%% ABL",
+           "%% ABLSTRESS", "%% CREDIT", "%% SCEN"]
 
 # A region of the paper that is replaced wholesale from the template, so
 # that a number which comes from an experiment can live outside the Results
@@ -54,8 +54,8 @@ def read_blocks(path):
     if not os.path.exists(path):
         return {m.strip(): "" for m in MARKERS}
     raw = open(path, encoding="utf-8").read()
-    parts = re.split(r"^%%\s*(CONTRIB|MAIN|OBS|ENERGY|ABL|CREDIT|SCEN)\s*$", raw,
-                     flags=re.M)
+    parts = re.split(r"^%%\s*(CONTRIB|MAIN|OBS|ENERGY|ABL|ABLSTRESS|CREDIT|SCEN)\s*$",
+                     raw, flags=re.M)
     blocks = {}
     for i in range(1, len(parts), 2):
         blocks["%% " + parts[i]] = parts[i + 1].strip("\n")
@@ -196,6 +196,8 @@ __BLOCK_ABL__
 
 __TAB_ABL_STRESS__
 
+__BLOCK_ABL_STRESS__
+
 \subsection{The credit assignment, and the cheapest test of it}
 \label{sec:results_credit}
 
@@ -256,6 +258,7 @@ __BLOCK_SCEN__
                .replace("__BLOCK_OBS__", blocks['%% OBS'])
                .replace("__BLOCK_ENERGY__", blocks['%% ENERGY'])
                .replace("__BLOCK_ABL__", blocks['%% ABL'])
+               .replace("__BLOCK_ABL_STRESS__", blocks['%% ABLSTRESS'])
                .replace("__BLOCK_CREDIT__", blocks['%% CREDIT'])
                .replace("__BLOCK_SCEN__", blocks['%% SCEN']))
 

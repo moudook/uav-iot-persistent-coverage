@@ -1010,6 +1010,55 @@ def build_tokens():
         pass
 
     # ------------------------------------------------------------------
+    # THE COMBINED-STRESS TABLE.  The ordering of the components is not the
+    # same there as in the nominal regime, and the difference is a finding
+    # rather than a nuisance, so it is derived rather than left in a table.
+    # ------------------------------------------------------------------
+    stress = load_csv("results_ablation_stress.csv")
+    if stress:
+        sby = {r["model"]: r for r in stress}
+        sfull = sby.get("Full")
+        if sfull:
+            sfs = per_seed_ck(sfull)
+            helped, hurt = [], []
+            for r in stress:
+                if r["model"] in ("Full",):
+                    continue
+                vs = per_seed_ck(r)
+                if not (sfs and vs and len(sfs) == len(vs)):
+                    continue
+                d = float(r["CK"]) - float(sfull["CK"])   # variant - Full
+                label = names.get(r["model"], r["model"])
+                if r["model"] == "VanillaMAPPO":
+                    label = "the whole design"
+                if d <= -0.02:
+                    helped.append((label, -d))
+                elif d >= 0.02:
+                    hurt.append((label, d))
+            helped.sort(key=lambda x: -x[1])
+            hurt.sort(key=lambda x: -x[1])
+            parts = []
+            if helped:
+                parts.append("removing " + ", ".join(
+                    f"{lab} costs {v:.3f}" for lab, v in helped)
+                    + " of persistent coverage, so the component helps")
+            if hurt:
+                parts.append("removing " + ", ".join(
+                    f"{lab} GAINS {v:.3f}" for lab, v in hurt)
+                    + ", so the component is a liability there")
+            if parts:
+                tok["STRESS_SUMMARY"] = (
+                    "The ordering of the components is not the same here as "
+                    "in the nominal regime, and that is a result rather than "
+                    "a nuisance: " + "; ".join(parts)
+                    + ".  The framework's recovery mechanism, which re-seats "
+                    "an exhausted UAV at a charging pad, is a liability when "
+                    "energy is scarce, because the re-seated UAV is out of "
+                    "communication range of the swarm until it flies back, "
+                    "and the swarm spends the scenario disconnected and "
+                    "gathered rather than spread.")
+
+    # ------------------------------------------------------------------
     # the plasticity probe of the trained actor
     # ------------------------------------------------------------------
     dor = load_json("dormancy.json")
