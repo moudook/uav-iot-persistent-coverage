@@ -277,6 +277,36 @@ measured numbers, and the exact claims to check, because a fresh subagent
 has no context. It is instructed to work purely mathematically (no web, no
 code, no repository) and to be adversarial rather than agreeable.
 
+## THE CITATIONS, CHECKED AGAINST THE SOURCES (21 Oct)
+Every number the paper attributes to a cited work has been checked
+against the source, and the checks are in the paper's own record:
+- Song et al. (IEEE TMC 23(4):2504-2519, 2024) state that "MPC and MCTS
+  achieve approximately 81.04% and 67.07% of the optimal" (IEEE
+  Computer Society's page for the paper).  The survey table's 81.0% and
+  67.1% are right.
+- Fan et al. (arXiv:2603.16141, 2026) report 74% coverage with five UAVs
+  and ten nodes against an offline MILP upper bound.  The survey row now
+  says which configuration the figure belongs to.
+- Datsko et al. (IEEE RA-L 9(3):2893-2900, 2024) report a hover power of
+  426.03 W and an optimal-speed power of 465.23 W for their airframe, a
+  ratio of 1.092, and a range-optimal speed of 8.39 m/s.  The paper's 1.09
+  is right; the 8.39 m/s is that airframe's range-optimal speed, not a
+  general energy-optimal multirotor cruise speed, and the paper now says so.
+- The Luna et al. entry named authors who did not write the paper and
+  carried a DOI that points elsewhere.  It is now M. A. Luna, M. S. Ale
+  Isaac, A. R. Ragab, P. Campoy, P. Flores Pena and M. Molina, Sensors
+  22(6):2297, 2022, doi 10.3390/s22062297.
+- Zhang et al. (Sci. Rep. 15:6437, 2025) --- the IRADA paper --- couple
+  persistent monitoring, energy-constrained charging, limited
+  communication and failure recovery by task redistribution: four of the
+  five elements.  It is in the near-miss table, and the paper says that
+  its controller is reward-driven rather than learned (their own future
+  work proposes reinforcement learning for it), that the monitored
+  quantity is information freshness rather than K-redundant coverage, and
+  that they compute no achievability reference.
+- The novelty claim survives the search: no work in the searched corpus
+  couples all five elements, and the near-misses are named.
+
 ## IMPORTANT NEGATIVE RESULTS (do not forget)
 - The first OMNeT++ validation counted MAC frames and reported links
   closing at 50 km. The control (TX crushed 60 dB) returned the same count.
