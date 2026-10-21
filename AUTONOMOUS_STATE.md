@@ -678,6 +678,31 @@ code, no repository) and to be adversarial rather than agreeable.
   broader than the audit, an arms' sentence that did not name its
   reference arm, an exclusion stated without its scope, and a share
   whose denominator appears nowhere in the paper.
+
+- **Audit 4** (MiniMax M3.1, 21 Oct) -- the corner certificate's
+  geometry, the packing survey, and the budget sweep's inference. Found
+  four errors, all applied.
+- **Audit 5** (Beam Free Max, 21 Oct) -- the same three, independently.
+  Found the same four, plus that the corner condition is sufficient and
+  not necessary. All applied.
+- **Audit 6** (DeepSeek V4.1 Flash, 21 Oct) -- sixteen overstatements in
+  the prose against the artefacts. All applied; the serious one was the
+  energy repair reported as a null.
+- **Deep research** (Beam Free Max, 21 Oct) -- the attributed numbers
+  checked against their sources, the novelty claim stress-tested, and
+  the IEEE page limits established. Song's 81.04% and 67.07% and Fan's
+  74% are confirmed; the Luna reference was wrong and is fixed; the
+  novelty claim survives.
+- **Audit 7** (MiniMax M3.1, 21 Oct) -- the eight-seed re-measurement
+  checked against the raw per-seed rows, with every interval recomputed
+  by hand. Ten findings, all applied: the budget's paired increment, two
+  population standard deviations, a rounding disagreement between a
+  summary and its table, the wrong rule named in a sentence, an
+  asymmetric interval described as symmetric, a caption that said five
+  where the table said eight, an audit claim in the abstract that was
+  broader than the audit, an arms' sentence that did not name its
+  reference arm, an exclusion stated without its scope, and a share
+  whose denominator appears nowhere in the paper.
 ## THE CITATIONS, CHECKED AGAINST THE SOURCES (21 Oct)
 Every number the paper attributes to a cited work has been checked
 against the source, and the checks are in the paper's own record:
@@ -805,18 +830,28 @@ run on another device is a different experiment.
   device.
 ## What is running, and what is next
 RUNNING
-- `run_all.py --stage abl --abl-seeds 8` -- the component ablation at eight
-  training seeds, twelve variants.  This is the critical path: the paired
-  intervals of the component table are the paper's weakest evidence, and
-  at three seeds every one of them includes zero.
-- `analysis/ab_energy_management.py --episodes 25 --seeds 8 --eval-seeds 5`
-  -- the four energy arms.
-- `analysis/ab_budget.py --seeds 8 --eval-seeds 5` -- the training-budget
-  sweep, resuming from the finished eight-episode budget through a
-  per-seed cache.
-- `run_all.py --stage base --train-seeds 8 --resume` -- the base
-  comparison; seeds 0--4 are re-evaluated from their stored policies and
-  seeds 5--7 are trained.
+- `analysis/ablation_part.py --part stress_b` -- the stress ablation's
+  second part; the first is done.  The stress table is what exercises
+  the reserve and the arbitration, which the feasible configuration never
+  triggers.
+- `analysis/ab_map_resolution.py --episodes 20 --seeds 8` -- the
+  coverage-map resolution sweep at eight seeds.
+- The queue continues after those: the device timings, the merge of the
+  stress table, and the scenario matrix.
+
+DONE at eight training seeds: the base comparison, the observation
+arms, the credit arms, the energy arms, the training-budget sweep, the
+alternative corrected deployment and the component ablation (both parts,
+merged).
+
+NEXT
+- The visual identity: the figures and the tables take one theme, the
+  first page gets a teaser figure, and the project report stops being a
+  wall of text.  Three agents are drafting it -- one for the figure
+  theme and the report, one for the table style, one for the teaser --
+  and the author inspects every rendered PNG before it goes into the
+  paper.
+- Then: the final assembly, the full gate, and the arXiv-ready PDF.
 NEXT, AS SLOTS FREE
 - `analysis/ab_credit.py --episodes 25 --seeds 8 --eval-seeds 5` -- the
   credit-assignment arms.

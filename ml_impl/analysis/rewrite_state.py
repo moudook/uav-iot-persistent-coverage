@@ -346,18 +346,28 @@ MACHINE = """## Machine notes (measured, 21 Oct)
 
 NEXT = """## What is running, and what is next
 RUNNING
-- `run_all.py --stage abl --abl-seeds 8` -- the component ablation at eight
-  training seeds, twelve variants.  This is the critical path: the paired
-  intervals of the component table are the paper's weakest evidence, and
-  at three seeds every one of them includes zero.
-- `analysis/ab_energy_management.py --episodes 25 --seeds 8 --eval-seeds 5`
-  -- the four energy arms.
-- `analysis/ab_budget.py --seeds 8 --eval-seeds 5` -- the training-budget
-  sweep, resuming from the finished eight-episode budget through a
-  per-seed cache.
-- `run_all.py --stage base --train-seeds 8 --resume` -- the base
-  comparison; seeds 0--4 are re-evaluated from their stored policies and
-  seeds 5--7 are trained.
+- `analysis/ablation_part.py --part stress_b` -- the stress ablation's
+  second part; the first is done.  The stress table is what exercises
+  the reserve and the arbitration, which the feasible configuration never
+  triggers.
+- `analysis/ab_map_resolution.py --episodes 20 --seeds 8` -- the
+  coverage-map resolution sweep at eight seeds.
+- The queue continues after those: the device timings, the merge of the
+  stress table, and the scenario matrix.
+
+DONE at eight training seeds: the base comparison, the observation
+arms, the credit arms, the energy arms, the training-budget sweep, the
+alternative corrected deployment and the component ablation (both parts,
+merged).
+
+NEXT
+- The visual identity: the figures and the tables take one theme, the
+  first page gets a teaser figure, and the project report stops being a
+  wall of text.  Three agents are drafting it -- one for the figure
+  theme and the report, one for the table style, one for the teaser --
+  and the author inspects every rendered PNG before it goes into the
+  paper.
+- Then: the final assembly, the full gate, and the arXiv-ready PDF.
 NEXT, AS SLOTS FREE
 - `analysis/ab_credit.py --episodes 25 --seeds 8 --eval-seeds 5` -- the
   credit-assignment arms.

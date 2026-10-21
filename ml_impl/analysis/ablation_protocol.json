@@ -1,7 +1,7 @@
 {
-  "out_csv": "results_ablation_parta.csv",
-  "stress": false,
-  "episodes": 25,
+  "out_csv": "results_ablation_stress_partb.csv",
+  "stress": true,
+  "episodes": 6,
   "eval_seeds": 5,
   "seeds": 8
 }
