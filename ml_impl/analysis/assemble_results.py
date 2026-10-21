@@ -88,6 +88,16 @@ def write_token_macros(src, tok, missing):
         esc = name.replace("_", r"\_")
         lines.append(f"\\newcommand{{\\{macro_name(name)[1:]}}}"
                      f"{{\\mbox{{\\textbf{{[pending: {esc}]}}}}}}")
+    # A macro the PROSE uses but the table does not have yet is the
+    # same case: the experiment that measures it has not finished.
+    # Without this the paper would not compile, because an undefined
+    # control sequence is an error, and the error is much harder to
+    # read than a marker.
+    used = set(re.findall(r"\\(tok[A-Za-z]+)", src))
+    defined = {macro_name(n)[1:] for n in tok}
+    for mac in sorted(used - defined):
+        lines.append(f"\\newcommand{{\\{mac}}}"
+                     f"{{\\mbox{{\\textbf{{[pending: {mac}]}}}}}}")
     body = ("\n% The numbers that come from an experiment.  These definitions are\n"
             "% written by analysis/assemble_results.py from the artefact table,\n"
             "% so the prose cannot drift away from the measurement.\n"

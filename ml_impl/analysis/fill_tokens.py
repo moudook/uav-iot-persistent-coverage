@@ -1291,6 +1291,45 @@ def build_tokens():
                     "not claim it.")
 
     # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # the alternative corrected deployment, measured
+    # ------------------------------------------------------------------
+    alt = load_json("alt_deployment.json")
+    if alt:
+        by = {r["arm"]: r for r in alt}
+        a5, r8 = by.get("alt"), by.get("reported")
+        if a5 and r8:
+            tok["ALT_MEASURED_CK"] = f(a5["CK"])
+            tok["ALT_MEASURED_STD"] = f(a5.get("CK_std", 0.0))
+            tok["ALT_REPORTED_CK"] = f(r8["CK"])
+            tok["ALT_REPORTED_STD"] = f(r8.get("CK_std", 0.0))
+            tok["ALT_DELTA"] = f(a5["CK"] - r8["CK"])
+            tok["ALT_SEEDS"] = str(a5.get("seeds", "?"))
+            tok["ALT_EPISODES"] = str(a5.get("episodes", "?"))
+            better = a5["CK"] > r8["CK"]
+            tok["ALT_BETTER"] = "yes" if better else "no"
+            tok["ALT_COMPARISON"] = (
+                "and on this instance the deployment it identifies is the "
+                "better of the two"
+                if better else
+                "and on this instance the deployment it identifies is the "
+                "worse of the two")
+            if better:
+                tok["ALT_VERDICT"] = (
+                    f"the alternative deployment is not merely feasible, it is "
+                    f"BETTER: with five UAVs and a 45 m coverage radius the "
+                    f"learned controller reaches {a5['CK']:.3f} against "
+                    f"{r8['CK']:.3f} for the reported eight-UAV deployment, "
+                    f"a difference of {a5['CK']-r8['CK']:+.3f} on the same "
+                    f"training seeds and the same evaluation scenes")
+            else:
+                tok["ALT_VERDICT"] = (
+                    f"the alternative deployment is feasible but not better: "
+                    f"with five UAVs and a 45 m coverage radius the learned "
+                    f"controller reaches {a5['CK']:.3f} against "
+                    f"{r8['CK']:.3f} for the reported eight-UAV deployment, a "
+                    f"difference of {a5['CK']-r8['CK']:+.3f}")
+
     # the plasticity probe of the trained actor
     # ------------------------------------------------------------------
     dor = load_json("dormancy.json")

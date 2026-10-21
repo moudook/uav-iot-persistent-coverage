@@ -397,6 +397,10 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokVarSceneSe}{0.046}
 \newcommand{\tokVarSeed}{0.030}
 \newcommand{\tokVarSeedSe}{0.013}
+\newcommand{\tokAltComparison}{\mbox{\textbf{[pending: tokAltComparison]}}}
+\newcommand{\tokAltEpisodes}{\mbox{\textbf{[pending: tokAltEpisodes]}}}
+\newcommand{\tokAltSeeds}{\mbox{\textbf{[pending: tokAltSeeds]}}}
+\newcommand{\tokAltVerdict}{\mbox{\textbf{[pending: tokAltVerdict]}}}
 %% END TOKEN MACROS
 
 \begin{document}
@@ -889,8 +893,14 @@ point of reporting it alongside.
 bound) or $N=5$, $K=2$, $R_{\mathrm{cov}}=45$\,m, for which four discs at
 the midpoints of the region's sides and one at its centre cover every point
 of the region at least twice, the worst second-nearest distance being
-$\tokAltNfiveR$\,m against the $45$\,m offered. All trained results in this
-paper use the former.
+$\tokAltNfiveR$\,m against the $45$\,m offered. The second of these is not
+an argument but a measurement: trained and evaluated under the protocol of
+Section~\ref{sec:parameters} --- $\tokAltEpisodes$ episodes and
+$\tokAltSeeds$ training seeds, the same evaluation scenes ---
+$\tokAltVerdict$. The certificate identifies a deployment the original
+configuration could not use, $\tokAltComparison$. All trained results
+below use the reported eight-UAV deployment, and the comparison is
+reported here because the framework produced it.
 
 \emph{Achievability ceiling.} A teleporting placement oracle
 (\texttt{analysis/feasibility.py}) places the $N$ UAVs anywhere, at no
