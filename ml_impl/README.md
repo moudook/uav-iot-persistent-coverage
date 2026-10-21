@@ -35,12 +35,28 @@ protocol:
 
 1. **Training**: 25 episodes x 2000 steps per training run. The base
    comparison trains **5** runs, the component ablation and the observation
-   arms **3**, the learned baselines 3, the energy and credit arms 1-2.
+   arms **3**, the learned baselines 3, the energy and credit arms 3.
 2. **Evaluation**: 5 scenes per policy. A controller's row is the mean over
    its **training** runs, and the reported spread is the seed-to-seed
    spread of those runs. The rule baselines are deterministic, so their
    spread is over the evaluation scenes.
-3. **The evaluation is seeded** (`uav_wireless/seeding.py`). The deployed
+3. **The number of evaluation scenes is part of the protocol**, and a run
+   with three instead of five is a different measurement: a per-seed row is
+   the mean over the evaluation scenes, so it changes. This is not a
+   formality -- a re-run that omitted `--eval-seeds 5` looked like a
+   reproducibility violation, and `analysis/repro_probe.py` and
+   `analysis/train_repro_probe.py` showed that the training and the
+   evaluation are both deterministic. Always pass the whole protocol.
+4. **The device and the thread count are part of the protocol** too. The
+   floating-point kernels differ between the CPU and the GPU, and the order
+   of the reductions differs with the thread count, so two runs of the same
+   configuration that land on different devices are not the same
+   experiment. `UAV_DEVICE` defaults to the CPU, the thread count is
+   pinned in `train.py`, and every artefact records the device it was
+   measured on. The same seed on the GPU and on the CPU gives different
+   weights (about 6e-4 apart after one episode), and it compounds through
+   the updates.
+5. **The evaluation is seeded** (`uav_wireless/seeding.py`). The deployed
    policy *samples*, and the sampling draws from the global torch RNG. If
    that RNG is not seeded, an evaluation is a fresh random draw every time
    it is run: the same policy file, evaluated three times on the same five
@@ -49,12 +65,15 @@ protocol:
    so every controller sees the same stream on the same scene (common
    random numbers) and a comparison between controllers is a comparison
    between policies rather than between the luck of the draw.
-4. **The ablation is paired.** The variants share the training seeds, so a
+6. **The ablation is paired.** The variants share the training seeds, so a
    difference is measured on the same training runs; the table reports the
    paired difference and the seed-to-seed spread.
-5. **The ablation uses the base comparison's budget**, so its "Full" row is
-   the same experiment as the base comparison's MAPPO row.
-6. Every training run's policy is **saved** (`mappo_base_s{seed}.pt`), so
+7. **The ablation uses the base comparison's budget**, so its "Full" row is
+   the same experiment as the base comparison's MAPPO row. The cross-table
+   check in `analysis/final_checks.py` verifies that the observation arm C,
+   the credit arm A, the energy arm A and the ablation's full row agree
+   **to the digit**, because they are one experiment.
+8. Every training run's policy is **saved** (`mappo_base_s{seed}.pt`), so
    every number can be recomputed from a stored artefact.
 
 ---
@@ -259,6 +278,35 @@ a missing artefact is a hard error and never a broken paper. No number that
 comes from an experiment is typed by hand anywhere in the paper: the audit's
 own counts, the size of the test suite and the paper's own limitations are
 tokens too.
+
+**The hand-written prose refers to its numbers by MACRO, not by value.** The
+macro definitions are written from the token table on every assembly, into
+the marked region at the top of the paper:
+
+```
+%% BEGIN TOKEN MACROS
+\newcommand{\tokGap}{0.276}
+...
+%% END TOKEN MACROS
+```
+
+This matters because the assembler fills a *token* by writing its value
+into the source, which consumes the token: the next assembly then has
+nothing left to fill, and a number the artefact has changed keeps the
+value the first assembly found. Every number in the abstract, the
+introduction, the model's parameters, the feasibility section and the
+limitations was a candidate for that, and a macro removes the failure.
+`analysis/final_checks.py` compares the macros the prose uses with the
+ones the token table defines, which is what catches a name that has been
+mangled.
+
+Two LaTeX details cost an hour and are worth recording. A control word
+ends at the first **non-letter**, so `\tokAltN5R` is the control sequence
+`\tokAltN` followed by the characters "5R"; the digits in the macro names
+are spelled out. And a macro's body is expanded where it is *used*, so a
+token's value that quotes another token has to be resolved before the
+definition is written, or the nested token survives into the paper as
+literal text.
 
 ---
 
