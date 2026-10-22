@@ -158,7 +158,8 @@ def stage_base(episodes, train_seeds, eval_seeds, resume=False):
         det = [eval_agent(agent, c, steps=c.episode_len, seed=e,
                            deterministic=True) for e in range(eval_seeds)]
         argmax_runs.append({k: float(np.mean([x[k] for x in det]))
-                             for k in det[0]})
+                             for k in det[0]}
+                            | {"device": str(getattr(agent, "device", "cpu"))})
 
         # the per-seed rows are written as they are produced, so that an
         # interrupted run does not throw away the training it has already done

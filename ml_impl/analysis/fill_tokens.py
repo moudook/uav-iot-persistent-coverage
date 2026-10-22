@@ -145,6 +145,33 @@ def bound_clause(label, mean, half, gap):
             f"excluded)")
 
 
+def _paired_corr(x, y):
+    """The correlation between two arms' per-seed scores.
+
+    The arms share their training seeds, and the paper's justification
+    for pairing is that the seed-to-seed variation cancels.  That
+    justification only holds where the two arms' scores MOVE TOGETHER,
+    and one of them does not: the identity arm's per-seed scores are
+    negatively correlated, so the paired interval is WIDER than the
+    unpaired one.  The correlation is measured here rather than assumed,
+    and the summary says which case it is in.
+    """
+    try:
+        a = [float(v) for v in (x.get("per_seed_CK") or [])]
+        b = [float(v) for v in (y.get("per_seed_CK") or [])]
+    except (TypeError, ValueError):
+        return None
+    if len(a) != len(b) or len(a) < 3:
+        return None
+    ma, mb = sum(a) / len(a), sum(b) / len(b)
+    num = sum((u - ma) * (v - mb) for u, v in zip(a, b))
+    da = sum((u - ma) ** 2 for u in a) ** 0.5
+    db = sum((v - mb) ** 2 for v in b) ** 0.5
+    if da <= 0 or db <= 0:
+        return None
+    return num / (da * db)
+
+
 def paired_stat(a, b):
     """The paired comparison of two arms that share their training seeds.
 
@@ -402,6 +429,7 @@ def build_tokens():
         tok["C_SPREAD"] = f(c["mean_spread_m"], 1)
         # the paired intervals: the three arms share their training seeds
         obs_raw = {}
+        obs_corr = {}
         for key, x, y in (("OBS_B", b, a), ("OBS_C", c, a)):
             if not (x and y):
                 continue
@@ -420,6 +448,7 @@ def build_tokens():
             # values makes the summary's interval differ from the table's
             # in the last digit
             obs_raw[key] = (mean, half)
+            obs_corr[key] = _paired_corr(x, y)
         # the exclusion argument for the observation content
         obs_stats = []
         for key, label in (("OBS_B", "adding the agent identity"),
@@ -482,12 +511,41 @@ def build_tokens():
                     "survives the correction")
                    if "ARMS_BONF_UPPER" in tok else "")
                 + ".")
+        # The pairing is justified by the seed-to-seed variation
+        # cancelling, and that justification only holds where the two
+        # arms' scores move together.  Where they do not, the paired
+        # interval is WIDER than the unpaired one, and the paper has to
+        # say so rather than let the pairing carry the claim.
+        _c = obs_corr.get("OBS_B")
+        if _c is not None and _c < 0:
+            tok["OBS_PAIRING_NOTE"] = (
+                f"The pairing is the paper's justification for comparing "
+                f"the arms on their shared seeds, and it works because the "
+                f"seed-to-seed variation cancels --- except for the "
+                f"identity arm, whose two arms' per-seed scores are "
+                f"negatively correlated (r = {_c:.2f}), so there the paired "
+                f"interval is WIDER than the unpaired one; the exclusion "
+                f"still holds, because the unpaired upper limit is lower "
+                f"still, but the exception is stated rather than assumed")
+        else:
+            tok["OBS_PAIRING_NOTE"] = ""
 
     mr = load_json("ab_map_resolution.json")
     if mr:
         parts = []
         for r in mr:
             parts.append(f"$G={r['grid']}$: {f(r['CK'])}")
+        # the sweep's own budget, disclosed: the map sweep is measured
+        # at 20 episodes and the base comparison at 25, so the sentence
+        # that compares the map's effect with the learner's spread has
+        # to say which measurement the spread comes from.
+        try:
+            _map_ep = int(mr[0].get("episodes", 0))
+        except (TypeError, ValueError):
+            _map_ep = 0
+        tok["MAP_BUDGET_NOTE"] = (
+            f", measured at a {_map_ep}-episode budget rather than the "
+            f"base comparison's 25" if _map_ep and _map_ep != 25 else "")
         # the yardstick for "makes a difference": the LEARNER's own
         # seed-to-seed spread, so that the sentence compares the map's
         # effect with the spread of the thing it is an effect of.  The
@@ -857,6 +915,41 @@ def build_tokens():
                     parts.append(f"{nm} ({r['mean']:+.3f}, 95\\% CI "
                                  f"[{r['mean']-r['half']:+.3f}, "
                                  f"{r['mean']+r['half']:+.3f}])")
+                # The table is a family of paired tests, and the
+                # intervals are unadjusted.  The correction is computed
+                # here, not asserted: with a Bonferroni correction over
+                # the arms of the table, the components whose paired
+                # p-value survives are named separately, because a
+                # component that survives the uncorrected test and not
+                # the corrected one is a different claim.
+                m_arms = len(rows_p)
+                alpha_b = 0.05 / m_arms if m_arms else 0.05
+                survivors = [r for r in sig
+                             if r["p"] == r["p"] and r["p"] < alpha_b]
+                losers = [r for r in sig
+                          if r["p"] == r["p"] and r["p"] >= alpha_b]
+                if m_arms > 1 and survivors:
+                    tok["ABL_BONF_ALPHA"] = f"{alpha_b:.4f}"
+                    tok["ABL_BONF_SURVIVORS"] = ", ".join(
+                        f"{names.get(r['name'], r['name'])} "
+                        f"(p = {r['p']:.4f})" for r in
+                        sorted(survivors, key=lambda x: -abs(x["mean"])))
+                    tok["ABL_BONF_LOSERS"] = ", ".join(
+                        f"{names.get(r['name'], r['name'])} "
+                        f"(p = {r['p']:.4f})" for r in
+                        sorted(losers, key=lambda x: -abs(x["mean"])))
+                    tok["ABL_BONF_NOTE"] = (
+                        f"The table is a family of {m_arms} paired tests and "
+                        f"the intervals above are unadjusted, so the "
+                        f"correction is stated: with a Bonferroni "
+                        f"correction over the table the threshold is "
+                        f"alpha = {alpha_b:.4f}, and the components whose "
+                        f"paired p-value survives it are "
+                        f"{tok['ABL_BONF_SURVIVORS']}"
+                        + (f", while {tok['ABL_BONF_LOSERS']} does not "
+                           f"survive that correction and is therefore "
+                           f"reported as suggestive rather than resolved"
+                           if losers else ""))
                 tok["ABL_SUMMARY"] = (
                     "The paired comparison, in which every variant is "
                     "trained on the same training seeds as the full "
@@ -867,7 +960,7 @@ def build_tokens():
                     "95\\% confidence interval for the paired difference "
                     "excludes zero are "
                     + ", ".join(parts)
-                    + "; every other component's interval includes zero, " "and the worst resolution anywhere in the table is " "$@@ABL_RESOLUTION@@$ of persistent coverage, which is the WIDEST " "arm's resolution: the resolution is per-arm, and each arm's own interval is in the table")
+                    + "; every other component's interval includes zero, " "and the worst resolution anywhere in the table is " "$@@ABL_RESOLUTION@@$ of persistent coverage, which is the WIDEST " "arm's resolution: the resolution is per-arm, and each arm's own interval is in the table @@ABL_BONF_NOTE@@")
             else:
                 tok["ABL_SUMMARY"] = (
                     "Every component's 95\\% confidence interval for the "

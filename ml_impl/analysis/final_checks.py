@@ -148,6 +148,7 @@ def main():
     # arm it is compared against must be on the same one.
     devices = set()
     unrecorded = 0
+    unknown_device = 0
     for name in ("results_main.csv", "results_ablation.csv",
                  "results_ablation_stress.csv", "results_scenarios.csv"):
         p = os.path.join(ML, name)
@@ -160,6 +161,12 @@ def main():
                     devices.add(d)
                 elif not d:
                     unrecorded += 1
+                else:
+                    # a device field that says "?" is neither a device
+                    # nor an absent field: it is a row whose device was
+                    # never recorded, and it used to slip through the
+                    # check as if it had been
+                    unknown_device += 1
     for name in ("ab_observation.json", "ab_credit.json",
                  "ab_energy_management.json", "ab_map_resolution.json",
                  "ab_budget.json"):
@@ -176,10 +183,18 @@ def main():
                 devices.add(d)
             elif not d:
                 unrecorded += 1
+            else:
+                unknown_device += 1
     print(f"   the devices the artefacts record: {sorted(devices) or 'none'}")
     if unrecorded:
         print(f"   {unrecorded} rows record no device (the deterministic "
               "baselines have no trained policy of their own)")
+    if unknown_device:
+        # A row whose device reads "?" is a trained controller whose
+        # device was never written, and the check used to skip it as
+        # if it had been recorded.
+        failures.append(f"{unknown_device} rows record an unknown device "
+                        f"('?') instead of the device they were measured on")
     if len(devices) > 1:
         failures.append(f"the artefacts were produced on more than one "
                         f"device: {sorted(devices)}")
@@ -299,7 +314,11 @@ def main():
         # not in the printed text, so the resolution drops it -- otherwise
         # the checks read "38{} items" and find nothing.
         for name, value in macros.items():
-            text = re.sub(r"\\" + name + r"(\{\})?", value, text)
+            # a lambda, because the macro's value is LaTeX and contains
+            # backslashes that a replacement string would read as
+            # escapes
+            text = re.sub(r"\\" + name + r"(\{\})?", lambda _m, v=value: v,
+                          text)
         return text
 
     resolved = resolve(tex)
@@ -334,14 +353,25 @@ def main():
     # freeze at whatever the first assembly found.  This check finds the
     # ones that are still typed in.
     macros = set(re.findall(r"\\newcommand\{\\(tok[A-Za-z]*)\}", tex))
-    used = set(re.findall(r"\\(tok[A-Za-z]+)", tex))
+    # The USED set is computed OUTSIDE the macro block.  Counting the
+    # definitions themselves made the check an identity -- every defined
+    # macro was "used" by its own definition -- so it could not fail and
+    # it said nothing about the prose.
+    _mb = re.search(r"%% BEGIN TOKEN MACROS(.*?)%% END TOKEN MACROS",
+                    tex, re.S)
+    _body = (tex[:_mb.start(1)] + tex[_mb.end(1):]) if _mb else tex
+    used = set(re.findall(r"\\(tok[A-Za-z]+)", _body))
     undefined = sorted(u for u in used if u not in macros)
-    print(f"   {len(macros)} macros defined, {len(used)} used")
+    print(f"   {len(macros)} macros defined, {len(used)} used in the prose")
     if undefined:
         failures.append(f"the paper uses macros that are not defined: "
                         f"{undefined[:8]}")
     else:
         print("   every macro the prose uses is defined by the token table")
+    _unused = sorted(macros - used)
+    if _unused:
+        print(f"   {len(_unused)} macros the token table computes and the "
+              f"prose does not use")
     # the macro block must be present: without it the paper would not
     # compile, and with a stale one the numbers would be stale
     if "%% BEGIN TOKEN MACROS" not in tex:

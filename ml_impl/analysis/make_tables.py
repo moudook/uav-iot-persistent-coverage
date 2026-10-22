@@ -322,7 +322,7 @@ def table_main(rows, learned=None):
         disp = {"Reactive-local": r"Reactive (local assignment)"}.get(name, name)
         lines.append(_row(
             [disp, ck_cell(r), fmt(r.get('AG')), fmt(r.get('SC')),
-             fmt(r.get('CovIntegral')), fmt(r.get('UnexecutedActions'), 2),
+             fmt(r.get('CovDef')), fmt(r.get('UnexecutedActions'), 2),
              fmt(r.get('Energy'), 0)]))
     if learned:
         # the display names are shortened to fit the column; the full names
