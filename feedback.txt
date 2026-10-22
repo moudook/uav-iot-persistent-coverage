@@ -1,0 +1,154 @@
+This is a **standout research report**—easily in the top tier of undergraduate or master’s-level systems/ML reports, and conceptually mature enough to be polished into a strong workshop or conference paper.
+
+Below is a breakdown of what makes this work genuinely impressive, followed by specific technical, structural, and LaTeX/typographical fixes you should make before final submission.
+
+---
+
+## Part 1: Praise — What This Paper Does Exceptionally Well
+
+1. **Uncompromising Scientific Honesty (Turning a Negative Result into a Contribution):**
+Most student (and many published) MARL papers tweak hyperparameters, cherry-pick random seeds, or cripple baselines until their neural network wins. Instead, when your parameter-shared CTDE MAPPO controller ($CK = 0.662$) lost to a hand-designed unprivileged reactive heuristic ($CK = 0.972$) by $0.309$, you turned the report into a **rigorous diagnostic investigation**. Using paired, seed-matched controlled arms to bound how much of the gap could be explained by observation design, energy constraints, training budget, or local vs. centralized critics—and showing that every single confidence interval falls short of the $0.309$ gap—is first-rate empirical science.
+
+
+2. **The Feasibility-Certified Evaluation Framework (Section III-G):**
+Proving via the packing lemma ($N \ge K \cdot P(A, R_{cov})$) that the original $N=5, K=2, R_{cov}=35\text{ m}$ setup passes the conventional area-surplus check ($\sigma = 1.503 \ge 1$) yet is *provably geometrically infeasible* for covering the region ($N \ge 4K = 8$) is a sharp, clean theoretical contribution. Pairing this with a teleporting placement oracle and exposing the degeneracy of the binary Service Continuity metric ($SC(\pi) \equiv 0$ when $\mathcal{F} = \emptyset$) gives the paper a clear methodological hook.
+
+
+3. **Diagnostic & Negative-Control Discipline:**
+* Catching that INET’s `minSnir` statistic responded to transmit power ($P_{tx}$) across a $117\text{ dB}$ sweep but remained invariant to receiver distance ($10\text{ m}$ to $80\text{ m}$)—and therefore **refusing to claim runtime cross-validation**, limiting the claim to algebraic path-loss equivalence ($0.012\text{ dB}$)—shows rare experimental integrity.
+
+
+* Discovering via the "Distinct actions" and "Stranded UAV" diagnostics that (a) omitting agent IDs caused permutation-symmetry collapse and (b) the safety filter's original energy rule allowed departures on a flat battery (worth $+0.078$ coverage once repaired) demonstrates real systems debugging rather than black-box curve fitting.
+
+
+* The **automated claim audit** (`claim_audit.py`, 38 items) and **plasticity probe** (testing forward-dormant vs. gradient-silent neurons in Table XX) go well beyond standard course expectations.
+
+
+
+
+4. **Up-to-Date, Comparative Literature Survey:**
+Splitting the survey into core foundations (Table I) and explicit "Near-Misses" (Table II, including very recent 2025–2026 works) makes your novelty boundary transparent and defensible.
+
+
+
+---
+
+## Part 2: High-Priority Technical & Structural Feedback
+
+### 1. Resolve the Self-Contradiction Between Section III-F and Section III-G
+
+* **The Issue:** On page 8, the "Feasibility" paragraph at the end of **Section III-F** is left over from an earlier draft. It states: *"Substituting the parameters of Table VII ($A=6400\text{ m}^2, M=20, N=5, K=2$) yields $R_{cov} \ge 28.5\text{ m}$... both satisfied by the chosen $R_{cov}=35\text{ m}$. The resulting surplus ratio $\sigma = 1.50$ leaves margin for movement error and for a single-UAV failure..."* Then, in the very next subsection (**Section III-G**), you prove that $N=5$ is **infeasible**, state that $\sigma = 1.503$ *"certifies nothing,"* and update Table VII to $N=8$!
+
+
+* **The Fix:** Rewrite the end of Section III-F so it introduces $\sigma$ explicitly as the *conventional area-surplus heuristic used in prior work*, and transition directly into Section III-G by showing why that heuristic fails geometrically.
+
+### 2. Missing Broadcast Coverage-Deficit Symbol in Eq. (4) and Table III
+
+* **The Issue:** In Section III-D (page 7), you write: *"A third term—a broadcast summary of where the coverage deficit is—was added a priori... The summary is therefore kept in Eq. (4) and reported as a null result rather than quietly dropped."* You also ablate this map in Tables XIII (`C + identity + map`, $G=0,4,8$) and XV (`no coverage map`). However, **Eq. (4) and Table III do not contain the coverage-map symbol at all**:
+
+
+
+$$o_i(t) = [p_i, v_i, b_i, \mathcal{N}_i, C_i^{local}, \rho_i, \tau_i^{return}, E_i^{pad}, \mathbf{1}_i, \hat{d}_i^{pad}]$$
+
+
+* **The Fix:** Add the broadcast deficit summary symbol (e.g., $M_t^{def}$ or $\bar{u}_t$) into Eq. (4) and add a corresponding row for it in Table III (specifying its grid resolution $G$).
+
+
+
+### 3. Align Contribution #5 with What Is Actually in Section III
+
+* **The Issue:** Contribution #5 (page 3) claims: *"PHY-derived links (Al-Hourani LoS probability, log-distance path loss, shadowing, and an 802.11 MCS table) in place of abstract coverage discs, together with a quantified validity condition showing when the disc approximation is excellent and when it breaks."* However, Section III only defines binary Euclidean discs in Eqs. (7) and (14), Section III-N states that the primary model *"intentionally abstracts stochastic PHY-layer fading"*, and neither the Al-Hourani LoS formula, the 802.11 MCS table, nor the disc-validity condition appears anywhere in the text.
+
+
+* **The Fix:** Either add the brief subsection presenting the Al-Hourani / MCS formulation and disc-validity condition (if it was accidentally cut during editing), or tone down Contribution #5 to match Section VIII-F (i.e., log-distance path-loss equivalence with INET and link-margin verification at $R_{cov}$ and $R_{comm}$).
+
+
+
+### 4. dBW vs. dBm Unit Confusion in Table XIX (Page 28)
+
+* **The Issue:** In Table XIX, you list the transmit powers as:
+* Config A: `0.5 W (-3 dBm)`
+
+* Config B: `1 mW (-30 dBm)`
+
+* Config C: `1 uW (-60 dBm)`
+
+* Config D: `1 pW (-120 dBm)`
+
+
+Those parenthetical numbers are **dBW** (decibels relative to $1\text{ W}$), not **dBm** (decibels relative to $1\text{ mW}$)! Specifically, $0.5\text{ W} = +27\text{ dBm}$ ($-3\text{ dBW}$), $1\text{ mW} = 0\text{ dBm}$ ($-30\text{ dBW}$), $1\ \mu\text{W} = -30\text{ dBm}$ ($-60\text{ dBW}$), and $1\text{ pW} = -90\text{ dBm}$ ($-120\text{ dBW}$).
+
+
+* **The Fix:** Change `dBm` to `dBW` in Table XIX, or update the numbers to `+27 dBm`, `0 dBm`, `-30 dBm`, and `-90 dBm`.
+
+
+
+### 5. Cut Down Verbatim Repetition Across Sections
+
+* Because the paper appears to have been iteratively expanded around the audit findings, several passages are repeated almost word-for-word in 3 to 4 places:
+* The alternative deployment result (`0.770 against 0.662 for the reported eight-UAV deployment, a difference of +0.108 on the same training seeds...`) appears verbatim in Contribution #8 (page 3) and Section III-G (page 9).
+
+
+* The training-budget sweep numbers (`8 episodes: 0.595, 16 episodes: 0.621, 25 episodes: 0.662... +0.026, +0.041; the last of them, +0.041, is 2.8 standard errors from zero...`) are pasted twice in Section VIII (page 21 and page 25) and repeated again in Section IX (page 30).
+
+
+* The list of controlled arms and upper confidence limits appears in the Abstract, Section I (page 2), Fig. 1 caption, Section VIII-A/B, and Section IX (page 29).
+
+
+
+
+* **The Fix:** Keep the high-level summary in Section I/IX and leave the granular standard-error and confidence-interval breakdowns in Section VIII. Trimming this redundancy will cut ~1.5–2 pages and make the paper much punchier.
+
+---
+
+## Part 3: Specific Line-by-Line & LaTeX Bug Checklist
+
+Your automated token-injection script (which pulls numbers and phrases from JSON/CSV artefacts into LaTeX) is a great reproducibility idea, but **LaTeX macros eat trailing spaces** unless terminated with `{}` or `\ ` (e.g., `\numItems{}`), and several multi-word strings were exported without spaces. Here is the exact list of bugs to fix in your `.tex` file:
+
+| Location | Current Text in PDF | Fix To Apply |
+| --- | --- | --- |
+| **Page 1 (Author Block)** | `CS24BT055 @jitdh.ac.in` and `CS23BT076@jitdh.ac.in`<br> | Fix institution domain typo (`jitdh.ac.in` $\rightarrow$ `iitdh.ac.in`) and remove the space before `@` in the first email.
+
+ |
+| **Page 1 (Abstract)** | `(38items, Ofailing)`<br> | Add spaces around macros: `(38 items, 0 failing)`.
+
+ |
+| **Page 3 (Col 1, top)** | `The credit assignment of a shared team reward is the explanation the residual is consistent with The credit assignment of a shared team reward is the explanation the residual is consistent with, and the cheapest test of it does not resolve it.`<br> | Delete the duplicated clause.
+
+ |
+| **Page 12 (Table V)** | `$\lambda_B$ (measured; see below)`<br> | Specify the exact numerical weight used for $\lambda_B$ in Table V (the text below explains $B_t$, but never states the number for $\lambda_B$).
+
+ |
+| **Page 13 (Sec. III-N, Col 1)** | `...the cost of charging contention in (X) is a lower bound.`<br> | Replace the placeholder `(X)` with the actual Section/Table reference (e.g., `Section VIII` or `Table X`).
+
+ |
+| **Page 16 (Col 2) & Page 31 (Ref [30])** | `Huang and Onta n [30]` / `S. Huang and S. Onta 7n`<br> | Fix broken UTF-8 encoding for **S. Ontañón** (`Onta\~n\'on` in LaTeX).
+
+ |
+| **Page 17 (Sec. IV-G, Col 2)** | `126cases` ... `exercised over five training seeds.`<br> | Add space (`126 cases`) and update `five training seeds` to `eight training seeds` to match the rest of the paper.
+
+ |
+| **Page 20 (Table XII Caption)** | `TRAINED TIMES` ... `WITH THE THE SEED-TO-SEED SPREAD`<br> | Fix missing macros and duplicate word: `TRAINED 8 TIMES` ... `WITH $\pm$ THE SEED-TO-SEED SPREAD`. Also fill in or footnote the blank `Unexec.` and `Energy` cells for Independent DQN and Masked PPO.
+
+ |
+| **Page 21 & Page 30** | `everystoredpolicy (thelearnedcontroller)`<br> | Add spaces in the exported token string: `every stored policy (the learned controller)`.
+
+ |
+| **Page 23 (Sec. VIII-A, Col 2)** | `addingtheagentidentity` and `the fullobservationoftheproposedcon figuration`<br> | Fix missing spaces in exported arm-name tokens.
+
+ |
+| **Page 24 (Sec. VIII-B, Col 2)** | `to the the unprivileged reactive rule` (appears twice), `removingtheenergyconstraint`, `removingthethresholdterm`, `thepreviousenergyrule`<br> | Fix duplicate `the the` and add spaces to the exported arm-name tokens.
+
+ |
+| **Page 25 (Sec. VIII-C, Col 1)** | `theunder-coverageterm`, `thewholedesign`<br> | Add spaces to the exported component tokens (`the under-coverage term`, `the whole design`).
+
+ |
+| **Page 27 (Sec. VIII-F, Col 2)** | `Of 38audited items, 34are verified exactly, 4are recorded...`<br> | Add `{}` after your count macros in LaTeX so spaces aren't swallowed: `Of 38 audited items, 34 are verified...`<br> |
+| **Page 30 (Bottom of Col 2, above References)** | `Opt plus .5pt 0pt`<br> | Stray TeX glue text leaked into the document body (likely a broken `\vskip` or `\parskip` command before `\begin{thebibliography}`). Remove it.
+
+ |
+| **Page 31 (Ref [35])** | `[35] "Feasibility ceilings before learning: Sizing and timing bounds for drone-mesh interception," arXiv:2610.20823, Oct. 2026.`<br> | Add the missing author name: **D. Babarytskyi**.
+
+ |
+
+Would you like help rewriting the transition between Sections III-F and III-G, or cleaning up the LaTeX macro definitions so the token spaces render properly?

@@ -128,14 +128,18 @@ def bound_clause(label, mean, half, gap):
     has to be below the gap.  The clause says which of the two happened.
     """
     upper = mean + half
+    # The arm's NAME is prose, and prose in math mode loses every space
+    # -- math mode ignores them -- which is why the paper printed
+    # "addingtheagentidentity".  The name therefore goes in text mode,
+    # and the numbers with it, so that the clause is one font.
     if gap is None or gap != gap:
-        return (f"${label}$ ({mean:+.3f}, 95\\% interval "
+        return (f"{label} ({mean:+.3f}, 95\\% interval "
                 f"[{mean-half:+.3f}, {upper:+.3f}])")
     if upper < gap:
-        return (f"${label}$ ({mean:+.3f}, 95\\% interval "
+        return (f"{label} ({mean:+.3f}, 95\\% interval "
                 f"[{mean-half:+.3f}, {upper:+.3f}], an upper limit below "
                 f"the gap of {gap:.3f})")
-    return (f"${label}$ ({mean:+.3f}, 95\\% interval "
+    return (f"{label} ({mean:+.3f}, 95\\% interval "
             f"[{mean-half:+.3f}, {upper:+.3f}], whose upper limit is NOT "
             f"below the gap of {gap:.3f} and which therefore cannot be "
             f"excluded)")
@@ -638,8 +642,8 @@ def build_tokens():
                     f"{mean:+.3f} on the same training seeds (95\\% interval "
                     f"[{mean-half:+.3f}, {mean+half:+.3f}], which excludes "
                     f"zero), and that is about "
-                    f"{tok.get('ED_SHARE', 'n/a')}\\% of the gap to the "
-                    f"{tok.get('BEST_RULE_NAME', 'strongest rule')}")
+                    f"{tok.get('ED_SHARE', 'n/a')}\\% of the gap to "
+                    f"{tok.get('BEST_RULE_NAME', 'the strongest rule')}")
             else:
                 tok["ED_VERDICT"] = (
                     f"The coverage the repair adds is {mean:+.3f} on the "
@@ -702,8 +706,8 @@ def build_tokens():
                 "they share its training seeds -- so each one is reported "
                 "as an interval rather than as a point, and each "
                 "interval's upper limit is below the gap of "
-                f"{gap:.3f} to the "
-                f"{tok.get('BEST_RULE_NAME', 'strongest rule')}: "
+                f"{gap:.3f} to "
+                f"{tok.get('BEST_RULE_NAME', 'the strongest rule')}: "
                 + "; ".join(clauses)
                 + ".  The energy model is therefore not what accounts for "
                 "the gap, and the paper does not claim that it is.")
@@ -841,7 +845,7 @@ def build_tokens():
                 parts = []
                 for r in sorted(sig, key=lambda x: -abs(x["mean"])):
                     nm = names.get(r["name"], r["name"])
-                    parts.append(f"${nm}$ ({r['mean']:+.3f}, 95\\% CI "
+                    parts.append(f"{nm} ({r['mean']:+.3f}, 95\\% CI "
                                  f"[{r['mean']-r['half']:+.3f}, "
                                  f"{r['mean']+r['half']:+.3f}])")
                 tok["ABL_SUMMARY"] = (
@@ -899,7 +903,7 @@ def build_tokens():
             if moved:
                 parts = []
                 for n, dlt, pmean, pstd in sorted(moved, key=lambda x: -abs(x[1])):
-                    parts.append(f"${names.get(n, n)}$ ({dlt:+.3f})")
+                    parts.append(f"{names.get(n, n)} ({dlt:+.3f})")
                 tok["ABL_SUMMARY"] = (
                     "the components whose difference from the full "
                     "configuration is largest are " + ", ".join(parts)
@@ -1035,7 +1039,7 @@ def build_tokens():
                     pass
         tok["SCEN_TRAIN_SEEDS"] = (str(sorted(scen_seeds)[0])
                                     if len(scen_seeds) == 1 else
-                                    "several")
+                                    ("several" if scen_seeds else "one"))
         tok["SCEN_WORST"] = f"{worst[0]} ({worst[1]:+.3f})"
         tok["SCEN_BEST"] = f"{best[0]} ({best[1]:+.3f})"        # the closing sentence of the section, derived from the matrix
         # The WORD that goes with the extreme is derived from its sign.

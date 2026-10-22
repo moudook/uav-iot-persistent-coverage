@@ -278,7 +278,11 @@ def table_main(rows, learned=None):
                  r"``Unexec.'' is the number of sampled actions that the "
                  r"safety filter or the joint projection did not execute, "
                  r"which is the size of the gap between the policy gradient "
-                 r"and the trajectory.  The two learned baselines are "
+                 r"and the trajectory; the two learned baselines' rows carry "
+                 r"dashes in the last two columns because their artefact "
+                 r"records the coverage, the connectivity and the service "
+                 r"continuity but not the filter's intervention count or the "
+                 r"energy budget.  The two learned baselines are "
                  r"implementations of the method families of "
                  r"Table~\ref{tab:comparison}, not reproductions of the "
                  r"cited papers." + lb_budget + "}")

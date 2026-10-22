@@ -293,8 +293,13 @@ def main():
                              tex))
 
     def resolve(text):
+        # A macro that is followed by a word is written "\\tokX{} word": the
+        # empty group is what stops TeX from swallowing the space that
+        # follows the control word.  The group is a LaTeX artefact and is
+        # not in the printed text, so the resolution drops it -- otherwise
+        # the checks read "38{} items" and find nothing.
         for name, value in macros.items():
-            text = text.replace("\\" + name, value)
+            text = re.sub(r"\\" + name + r"(\{\})?", value, text)
         return text
 
     resolved = resolve(tex)
