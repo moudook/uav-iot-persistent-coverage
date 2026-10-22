@@ -1630,7 +1630,7 @@ def build_tokens():
             f"twice, from scratch, and all {det.get('compared', '?')} of the "
             f"compared values agreed exactly, the largest difference "
             f"between the two runs being "
-            f"{float(det.get('max_abs_difference', 0.0)):g}")
+            f"{float(det.get('max_abs_difference', 0.0)):g}.")
 
     # the plasticity probe of the trained actor
     # ------------------------------------------------------------------
