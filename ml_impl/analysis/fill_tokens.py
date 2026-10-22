@@ -1582,6 +1582,18 @@ def build_tokens():
                 if better else
                 "and on this instance the deployment it identifies is the "
                 "worse of the two for the learned controller")
+            # The short form is for the contribution list, which is a
+            # summary: the full verdict, with its numbers, belongs to the
+            # section that derives it.  Printing the same sentence in both
+            # places was the paper's one exact duplication.
+            tok["ALT_VERDICT_SHORT"] = (
+                f"the alternative deployment is feasible for the learned "
+                f"controller and it does better there, by "
+                f"{a5['CK'] - r8['CK']:+.3f} of persistent coverage"
+                if better else
+                f"the alternative deployment is feasible for the learned "
+                f"controller but does not do better there "
+                f"({a5['CK'] - r8['CK']:+.3f} of persistent coverage)")
             if better:
                 tok["ALT_VERDICT"] = (
                     f"the alternative deployment is feasible for the learned "
