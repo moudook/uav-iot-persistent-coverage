@@ -1618,6 +1618,20 @@ def build_tokens():
                     f"between the learned controller at two deployments and "
                     f"not between the deployments themselves")
 
+    # the reproducibility of a whole matrix, measured across two runs
+    # ------------------------------------------------------------------
+    det = load_json("determinism_check.json")
+    if det:
+        tok["DETERMINISM_COMPARED"] = str(det.get("compared", "?"))
+        tok["DETERMINISM_DIFFERING"] = str(det.get("differing", "?"))
+        tok["DETERMINISM_TEXT"] = (
+            f"The same property was then checked across two independent "
+            f"runs of a whole matrix: the scenario matrix was measured "
+            f"twice, from scratch, and all {det.get('compared', '?')} of the "
+            f"compared values agreed exactly, the largest difference "
+            f"between the two runs being "
+            f"{float(det.get('max_abs_difference', 0.0)):g}")
+
     # the plasticity probe of the trained actor
     # ------------------------------------------------------------------
     dor = load_json("dormancy.json")

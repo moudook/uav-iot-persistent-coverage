@@ -1,0 +1,16 @@
+{
+  "compared": 170,
+  "differing": 0,
+  "max_abs_difference": 0.0,
+  "worst": null,
+  "keys": [
+    "mappo_CK",
+    "mappo_SC",
+    "mappo_AG",
+    "react_CK",
+    "reactlocal_CK"
+  ],
+  "verdict": "the two runs agree exactly",
+  "old": "scen_old.csv",
+  "new": "results_scenarios.csv"
+}

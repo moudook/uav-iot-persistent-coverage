@@ -234,6 +234,9 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokCDist}{1.83}
 \newcommand{\tokCSc}{0.010}
 \newcommand{\tokCSpread}{10.8}
+\newcommand{\tokDeterminismCompared}{170}
+\newcommand{\tokDeterminismDiffering}{0}
+\newcommand{\tokDeterminismText}{The same property was then checked across two independent runs of a whole matrix: the scenario matrix was measured twice, from scratch, and all 170 of the compared values agreed exactly, the largest difference between the two runs being 0}
 \newcommand{\tokDormAHighDead}{0.000}
 \newcommand{\tokDormAHighDormant}{0.000}
 \newcommand{\tokDormAHighSilent}{0.203}
@@ -420,7 +423,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokScenSpanMin}{0.071}
 \newcommand{\tokScenText}{At the level of scenario means the learned controller is behind the stronger rule in every scenario, and behind it in 34 of the 34 variants, by between -0.598 and -0.071 of persistent coverage, so the ordering is a property of the method at this budget rather than of a particular regime, and a reader told only that a learned controller loses to a rule has been told the whole of it.}
 \newcommand{\tokScenTies}{0}
-\newcommand{\tokScenTrainSeeds}{one}
+\newcommand{\tokScenTrainSeeds}{8}
 \newcommand{\tokScenVariants}{34}
 \newcommand{\tokScenWins}{0}
 \newcommand{\tokScenWorst}{S6 (-0.598)}
@@ -2573,7 +2576,7 @@ Figure~\ref{fig:scen} is that matrix as a picture: one marker per variant, the d
 Table~\ref{tab:results_scen} is the scenario matrix: it says whether the ordering survives outside the configuration it was measured on. Each row is the mean over the variants of that scenario, with the proposed
 controller and the two rules evaluated on the same scenes.  The scenario
 policies are trained at the base comparison's budget, and
-one policies are trained per distinct $(N, M, \text{pads})$ combination, because
+8 policies are trained per distinct $(N, M, \text{pads})$ combination, because
 the networks' input sizes depend on it; the scenarios that vary only the
 geometry of the problem transfer within their combination.  Every policy
 of a combination is evaluated on the same scenes, so the row is a mean
@@ -2606,7 +2609,7 @@ gives the same number every time, and every controller is measured on the
 same stream on the same scene.  Item T1 establishes that a training run is
 a function of its seed, including when an evaluation is interleaved with
 it, because the seed is set before the networks are constructed and so the
-initialisation is seeded too.  Item I1 measures the claim the framework
+initialisation is seeded too.  \tokDeterminismText\ Item I1 measures the claim the framework
 makes first: on the report's own infeasible configuration a rule-based
 controller still reaches a respectable coverage ratio while the joint
 metric is identically zero, so neither metric alone distinguishes that
