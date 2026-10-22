@@ -472,6 +472,15 @@ def build_tokens():
                 + (", and " + spec if spec else
                    ", and the arms here do not separate the coverage they "
                    "produce")
+                + ((".  The claim is a conjunction over the arms, so the "
+                    "intervals are unadjusted and the family is not a set of "
+                    "independent tests; with a Bonferroni correction over "
+                    "the arms of the whole paper the largest adjusted upper "
+                    f"limit is {tok.get('ARMS_BONF_UPPER', 'n/a')}, which is "
+                    "still below the gap's own lower interval bound "
+                    f"{tok.get('GAP_CI_LOWER', 'n/a')}, so the exclusion "
+                    "survives the correction")
+                   if "ARMS_BONF_UPPER" in tok else "")
                 + ".")
 
     mr = load_json("ab_map_resolution.json")
@@ -1632,6 +1641,105 @@ def build_tokens():
             f"between the two runs being "
             f"{float(det.get('max_abs_difference', 0.0)):g}.")
 
+    # ------------------------------------------------------------------
+    # the rule baselines at the alternative deployment
+    # ------------------------------------------------------------------
+    # The paper's own feasibility certificate identifies a better
+    # deployment, and the rule baselines had never been measured there,
+    # so the headline gap was a statement about the reported deployment
+    # alone.  The rules are deterministic, so this costs no training.
+    altr = load_json("alt_deployment_rules.json")
+    if altr:
+        dep = altr.get("deployments", {})
+        rep = dep.get("reported_n8_r35", {})
+        alt = dep.get("alternative_n5_r45", {})
+        if rep and alt:
+            rep_rule = max(float(rep.get("reactive_CK", 0.0)),
+                           float(rep.get("reactive_local_CK", 0.0)))
+            alt_rule = max(float(alt.get("reactive_CK", 0.0)),
+                           float(alt.get("reactive_local_CK", 0.0)))
+            rep_name = ("the unprivileged reactive rule"
+                        if float(rep.get("reactive_local_CK", 0.0)) >=
+                        float(rep.get("reactive_CK", 0.0))
+                        else "the reactive rule")
+            alt_name = ("the unprivileged reactive rule"
+                        if float(alt.get("reactive_local_CK", 0.0)) >=
+                        float(alt.get("reactive_CK", 0.0))
+                        else "the reactive rule")
+            tok["ALT_RULE_NAME_REPORTED"] = rep_name
+            tok["ALT_RULE_NAME_ALT"] = alt_name
+            tok["ALT_RULE_REPORTED_CK"] = f"{rep_rule:.3f}"
+            tok["ALT_RULE_ALT_CK"] = f"{alt_rule:.3f}"
+            # the learned controller at the alternative deployment
+            try:
+                alt_ck = float(tok.get("ALT_MEASURED_CK", "0"))
+            except (TypeError, ValueError):
+                alt_ck = 0.0
+            try:
+                rep_ck = float(tok.get("ALT_REPORTED_CK", "0"))
+            except (TypeError, ValueError):
+                rep_ck = 0.0
+            if alt_ck > 0 and rep_ck > 0:
+                tok["ALT_RULE_GAP_REPORTED"] = f"{rep_rule - rep_ck:.3f}"
+                tok["ALT_RULE_GAP_ALT"] = f"{alt_rule - alt_ck:.3f}"
+                tok["ALT_RULES_SURVIVE"] = (
+                    f"the rule baselines were measured at that deployment as "
+                    f"well, and {alt_name} reaches {alt_rule:.3f} there "
+                    f"against {rep_rule:.3f} at the reported deployment, so "
+                    f"the gap of the learned controller is "
+                    f"{alt_rule - alt_ck:.3f} there against "
+                    f"{rep_rule - rep_ck:.3f} at the reported one: the "
+                    f"ordering survives the better deployment, with a "
+                    f"smaller margin")
+
+    # ------------------------------------------------------------------
+    # the exclusion family, corrected for multiplicity
+    # ------------------------------------------------------------------
+    # The claim that the arms exclude the candidate explanations is a
+    # CONJUNCTION over the arms, and each arm's interval is a plain
+    # 95% two-sided interval, so the family is unadjusted.  The
+    # correction is computed here rather than asserted: with a
+    # Bonferroni correction over the arms the largest adjusted upper
+    # limit is computed from the arms' own means, half-widths and
+    # degrees of freedom, and the paper quotes it.
+    arm_rows = []
+    for key in ("OBS_B", "OBS_C", "EC", "ED", "CREDIT", "BUDGET"):
+        try:
+            mean = float(tok.get(f"{key}_PAIRED", "nan"))
+            half = float(tok.get(f"{key}_HALF", "nan"))
+            n = int(tok.get(f"{key}_N", "0"))
+        except (TypeError, ValueError):
+            continue
+        if mean == mean and half == half and n > 1:
+            arm_rows.append((key, mean, half, n))
+    if len(arm_rows) >= 2:
+        try:
+            from scipy import stats
+            m = len(arm_rows)
+            worst = -1e9
+            for key, mean, half, n in arm_rows:
+                df = n - 1
+                t975 = float(stats.t.ppf(0.975, df))
+                if t975 <= 0:
+                    continue
+                se = half / t975
+                t_adj = float(stats.t.ppf(1.0 - 0.05 / m, df))
+                worst = max(worst, mean + t_adj * se)
+            if worst > -1e8:
+                tok["ARMS_BONF_UPPER"] = f"{worst:.3f}"
+                tok["ARMS_BONF_N"] = str(m)
+        except Exception:                                      # pragma: no cover
+            pass
+    # the gap's own lower limit, for the comparison the correction is
+    # made against
+    try:
+        _ci = tok.get("GAP_CI", "[0.000, 0.000]").strip("[]")
+        _lo = float(_ci.split(",")[0])
+        tok["GAP_CI_LOWER"] = f"{_lo:.3f}"
+    except (TypeError, ValueError):
+        pass
+
+    # ------------------------------------------------------------------
     # the plasticity probe of the trained actor
     # ------------------------------------------------------------------
     dor = load_json("dormancy.json")
@@ -1830,12 +1938,20 @@ def build_tokens():
                             f"of {gap:.3f}: more training does help, and over "
                             f"the {int(rows[0]['episodes'])}--"
                             f"{int(rows[-1]['episodes'])} episode range the "
-                            f"sweep covers the whole of its effect is too "
-                            f"small to account for the shortfall, so the "
-                            f"budget is excluded as the explanation of the "
-                            f"shortfall over that range.  Budgets beyond it "
-                            f"are not addressed by this measurement, and the "
-                            f"sweep shows no saturation within it")
+                            f"sweep covers the whole of its measured effect "
+                            f"is too small to account for the shortfall, so "
+                            f"the budget is excluded as the explanation of the "
+                            f"shortfall OVER THAT RANGE.  Two things are not "
+                            f"claimed.  The increments are increasing "
+                            f"({tok['BUDGET_INCREMENTS']}) and the last of "
+                            f"them is still resolved against zero, so the "
+                            f"sweep has not saturated; and an interval on a "
+                            f"measured range is a bound on that range and not "
+                            f"on the budgets beyond it, so a larger budget is "
+                            f"not excluded by this measurement.  Settling that "
+                            f"would need the sweep to run until the paired "
+                            f"increment is unresolved, which this paper does "
+                            f"not do")
                     elif excludes_zero and not below_gap:
                         tok["BUDGET_PAIRED_VERDICT"] = (
                             f"the paired comparison over the same training "

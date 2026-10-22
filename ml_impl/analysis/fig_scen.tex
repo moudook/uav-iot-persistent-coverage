@@ -6,22 +6,22 @@
 \fi
 \begin{tikzpicture}
 \begin{axis}[  width=0.82\columnwidth,height=4.6cm,
-  xmin=0.30, xmax=34.70, ymin=-0.418, ymax=0.075,
+  xmin=0.30, xmax=34.70, ymin=-0.628, ymax=0.075,
   xtick={2,6,10,14,18,22,26,29,32},
   xticklabels={S1,S2,S3,S4,S5,S6,S7,S8,S9},
-  ytick={-0.4,-0.3,-0.2,-0.1,0}, ymajorgrids,
+  ytick={-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,0}, ymajorgrids,
   xlabel={scenario (each marker is one variant)}, ylabel={persistent coverage difference},
   uavaxis,]
-  \draw[uavsep] (axis cs:4.50,-0.418) -- (axis cs:4.50,0.075);
-  \draw[uavsep] (axis cs:8.50,-0.418) -- (axis cs:8.50,0.075);
-  \draw[uavsep] (axis cs:12.50,-0.418) -- (axis cs:12.50,0.075);
-  \draw[uavsep] (axis cs:16.50,-0.418) -- (axis cs:16.50,0.075);
-  \draw[uavsep] (axis cs:20.50,-0.418) -- (axis cs:20.50,0.075);
-  \draw[uavsep] (axis cs:24.50,-0.418) -- (axis cs:24.50,0.075);
-  \draw[uavsep] (axis cs:28.50,-0.418) -- (axis cs:28.50,0.075);
-  \draw[uavsep] (axis cs:30.50,-0.418) -- (axis cs:30.50,0.075);
+  \draw[uavsep] (axis cs:4.50,-0.628) -- (axis cs:4.50,0.075);
+  \draw[uavsep] (axis cs:8.50,-0.628) -- (axis cs:8.50,0.075);
+  \draw[uavsep] (axis cs:12.50,-0.628) -- (axis cs:12.50,0.075);
+  \draw[uavsep] (axis cs:16.50,-0.628) -- (axis cs:16.50,0.075);
+  \draw[uavsep] (axis cs:20.50,-0.628) -- (axis cs:20.50,0.075);
+  \draw[uavsep] (axis cs:24.50,-0.628) -- (axis cs:24.50,0.075);
+  \draw[uavsep] (axis cs:28.50,-0.628) -- (axis cs:28.50,0.075);
+  \draw[uavsep] (axis cs:30.50,-0.628) -- (axis cs:30.50,0.075);
   \addplot[uavlevel, forget plot] coordinates {(0.30,0) (34.70,0)};
-  \addplot[only marks, mark=*, mark size=2.3pt, color=uavblue, mark options={fill=uavblue, draw=white, line width=0.5pt}] coordinates {(1,-0.338) (2,-0.309) (3,-0.353) (4,-0.268) (5,-0.133) (6,-0.145) (7,-0.277) (8,-0.245) (9,-0.228) (10,-0.143) (11,-0.259) (12,-0.339) (13,-0.111) (14,-0.280) (15,-0.261) (16,-0.276) (17,-0.131) (18,-0.212) (19,-0.278) (20,-0.271) (21,-0.388) (22,-0.301) (23,-0.148) (24,-0.100) (25,-0.230) (26,-0.350) (27,-0.270) (28,-0.248) (29,-0.051) (30,-0.153) (31,-0.277) (32,-0.245) (33,-0.172) (34,-0.361)};
+  \addplot[only marks, mark=*, mark size=2.3pt, color=uavblue, mark options={fill=uavblue, draw=white, line width=0.5pt}] coordinates {(1,-0.304) (2,-0.434) (3,-0.344) (4,-0.316) (5,-0.071) (6,-0.183) (7,-0.473) (8,-0.345) (9,-0.437) (10,-0.221) (11,-0.528) (12,-0.400) (13,-0.281) (14,-0.313) (15,-0.441) (16,-0.331) (17,-0.361) (18,-0.361) (19,-0.492) (20,-0.353) (21,-0.598) (22,-0.332) (23,-0.314) (24,-0.173) (25,-0.420) (26,-0.344) (27,-0.468) (28,-0.332) (29,-0.311) (30,-0.519) (31,-0.473) (32,-0.345) (33,-0.177) (34,-0.182)};
   \node[anchor=south east, font=\scriptsize, text=uavmuted] at (axis cs:34.40,0.018) {level with the rule};
   \node[anchor=south west, font=\scriptsize\bfseries, text=uavink] at (axis cs:0.60,0.018) {34 of 34 variants behind};
 \end{axis}

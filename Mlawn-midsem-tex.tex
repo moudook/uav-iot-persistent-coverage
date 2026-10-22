@@ -450,9 +450,9 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \maketitle
 
 \begin{abstract}
-UAV swarms can provide temporary wireless coverage for Internet-of-Things deployments where fixed infrastructure is unavailable, damaged or insufficient, but persistent operation couples coverage, inter-UAV connectivity, battery depletion, charging contention and UAV failures. This paper formulates the problem of maintaining at least $K$ UAVs over every ground sensor while preserving a connected swarm, and models it as a cooperative Decentralized Partially Observable Markov Decision Process (Dec-POMDP). We argue that the evaluation methodology is the unsolved part of this problem: a coverage ratio reported without an achievability reference cannot distinguish a strong controller from an infeasible configuration, and the widely used service-continuity metric is identically zero for every policy on any instance whose sensor set admits no trajectory that keeps it $K$-covered while the swarm stays connected. We therefore introduce a \emph{feasibility-certified evaluation framework} that derives a rigorous lower bound on the fleet size needed for $K$-coverage of a bounded region, supplies a teleporting placement oracle as an achievability ceiling, and replaces the degenerate joint-constraint metric with non-degenerate time-averaged and refresh-time metrics. Applied to a published configuration, the bound shows that configuration to be provably infeasible for the region requirement and for a measured minority of random sensor layouts, and the conventional area-surplus criterion certifies nothing.
+UAV swarms can provide temporary wireless coverage for Internet-of-Things deployments where fixed infrastructure is unavailable, damaged or insufficient, but persistent operation couples coverage, inter-UAV connectivity, battery depletion, charging contention and UAV failures. This paper formulates the problem of maintaining at least $K$ UAVs over every ground sensor while preserving a connected swarm, and models it as a cooperative Decentralized Partially Observable Markov Decision Process (Dec-POMDP). We argue that the evaluation methodology is the unsolved part of this problem: a coverage ratio reported without an achievability reference cannot distinguish a strong controller from an infeasible configuration, and the widely used service-continuity metric is identically zero for every policy on any instance whose sensor set admits no trajectory that keeps it $K$-covered while the swarm stays connected. We therefore introduce a \emph{feasibility-certified evaluation framework} that derives a rigorous lower bound on the fleet size needed for $K$-coverage of a bounded region, supplies a teleporting placement oracle that certifies the instance is coverable --- at the reported configuration the ceiling is 1.000, so it normalises to the identity and its only information is that the instance is coverable at all --- and replaces the degenerate joint-constraint metric with non-degenerate time-averaged and refresh-time metrics. Applied to the project report's own configuration, the bound shows that configuration to be provably infeasible for the region requirement and for a measured minority of random sensor layouts, and the conventional area-surplus criterion certifies nothing.
 
-On the corrected configuration the framework is paired with a centralized-training decentralized-execution MAPPO controller with parameter-shared actors, a hard connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration and PHY-derived links. A hand-designed reactive rule outperforms the learned controller by $\tokGap$ of persistent coverage (95\% interval $\tokGapCi$). Figure~\ref{fig:teaser} is the argument of this paper in one picture. \tokArmsSummaryShort\ \tokCreditResidual\ The residual is also consistent with causes the arms do not test --- the possibility that the rule was tuned against the evaluation scenes, the limit of a decentralised policy class --- and we do not claim to have excluded them. Every quantitative claim about the physical model, the feasibility certificate, the evaluation protocol, the connectivity accounting and the reproducibility of a training run is recomputed by an automated claim audit (\tokAuditItems{} items, \tokAuditFail{} failing), every number in the results is generated from the artefact it is measured in, and the path-loss function of the physical-layer model is shown to match that of an independent standards-faithful simulator to within $\tokPhyDelta$~dB, with a transmit-power negative control that shows why only the algebraic equivalence is claimed.
+On the corrected configuration the framework is paired with a centralized-training decentralized-execution MAPPO controller with parameter-shared actors, a hard connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration and PHY-derived links. A hand-designed reactive rule outperforms the learned controller by $\tokGap$ of persistent coverage (95\% interval $\tokGapCi$). Figure~\ref{fig:teaser} is the argument of this paper in one picture. \tokArmsSummaryShort\ \tokCreditResidual\ The residual is also consistent with causes the arms do not test --- the possibility that the rule was tuned against the evaluation scenes, the limit of a decentralised policy class --- and we do not claim to have excluded them. The paper's physical-model, feasibility, protocol and determinism claims are recomputed by an automated claim audit (\tokAuditItems{} items, \tokAuditFail{} failing), which does not audit the results of Section~VIII, and every number that comes from a measurement is generated from the artefact it is measured in, and the path-loss expression of the physical-layer model is shown to be algebraically the one an independent standards-faithful simulator evaluates --- a constant $\tokPhyDelta$~dB offset at every distance and exponent tested --- with a transmit-power negative control that shows why only the algebraic equivalence is claimed.
 \end{abstract}
 
 \begin{figure*}[!t]
@@ -1012,7 +1012,7 @@ The inter-UAV communication graph is
 G_t=(V_t,E_t),\qquad E_t=\{(i,j):\|\mathbf p_i-\mathbf p_j\|_2\le R_{\mathrm{comm}}\}.
 \label{eq:graph}
 \end{equation}
-The ground data sink is treated as an additional vertex with edges to every UAV within $R_{\mathrm{comm}}$; the swarm is connected when $G_t$ (including the sink) has one connected component. For analysis, the exact articulation-point indicator, where $G_t^{-i}$ denotes $G_t$ with vertex $i$ and its incident edges removed, is
+The ground data sink is not a vertex of the graph: the connectivity the paper measures is the connectivity of the active-UAV graph, and the sink is assumed to stay within $R_{\mathrm{comm}}$ of at least one UAV, which is an assumption and not a guarantee. For analysis, the exact articulation-point indicator, where $G_t^{-i}$ denotes $G_t$ with vertex $i$ and its incident edges removed, is
 \begin{equation}
 \kappa_i(t)=\mathbb 1\left[G_t^{-i}\;\text{is disconnected}\right].
 \label{eq:articulation}
@@ -1478,7 +1478,7 @@ When a failure event is detected, the environment removes the failed UAV from th
 The algorithm is deliberately aligned with the system model. Sensor positions produce the coverage quantities in \eqref{eq:xid}--\eqref{eq:Ut}; neighboring UAV positions produce the communication graph in \eqref{eq:graph}; battery and action information produce the energy state in \eqref{eq:battery}; charging requests enter the assignment problem in \eqref{eq:charging}; and failure indicators activate the recovery process in \eqref{eq:recovery}. Thus, every actor input corresponds to an explicitly defined state quantity and every learned action has a defined environmental effect.
 
 \subsection{Training and Generalization Protocol}
-Training episodes should randomize sensor layouts, initial UAV positions, initial battery levels, charging-pad locations within the allowed region, and failure times. A simple curriculum can be used: first train under no failures, then introduce single failures, and finally introduce simultaneous charging contention and near-disconnection scenarios. The final model should be evaluated on held-out random seeds and scenario configurations not used for parameter tuning.
+Training episodes were planned to randomize sensor layouts, initial UAV positions, initial battery levels, charging-pad locations within the allowed region, and failure times. A simple curriculum can be used: first train under no failures, then introduce single failures, and finally introduce simultaneous charging contention and near-disconnection scenarios. The final model should be evaluated on held-out random seeds and scenario configurations not used for parameter tuning.
 
 A practical implementation can use a multilayer perceptron for the shared actor and centralized critic with normalized numerical features and masked action logits. If fixed-length neighbor features are insufficient, a permutation-invariant pooling operation or a small attention encoder can be added without changing the underlying Dec-POMDP formulation. A recurrent policy should be introduced only if experiments show that instantaneous observations do not provide sufficient temporal information.
 
@@ -1638,8 +1638,9 @@ stored policies.
 
 A learned controller is trained several times and reported as the mean
 over those training runs, with the seed-to-seed spread of the coverage.
-The rule baselines are deterministic and their spread is over the
-evaluation scenes. The two sources of variation are reported separately in
+The rule baselines are deterministic: they have no seed-to-seed spread,
+and their spread over the evaluation scenes is reported separately. The
+two sources of variation are reported separately in
 Section~\ref{sec:results}, because they behave differently: the
 scene-to-scene variation is common to every controller and cancels in
 every difference, while the training-seed variation does not.
@@ -2629,9 +2630,9 @@ built from.} The simulator, the controller, the experiments and the
 artefact that holds every measurement are in the repository that
 accompanies this preprint, under \texttt{ml\_impl/}: the learned baselines,
 the arms, the budget sweep, the ablations and the scenario matrix write
-JSON or CSV artefacts, and every number in this paper --- in the prose, in
-the tables and in the figures --- is generated from those artefacts by a
-single token table, so that a number cannot be quoted here that the
+JSON or CSV artefacts, and every number in this paper that comes from a
+measurement is generated from those artefacts by a single token table, so
+that a number cannot be quoted here that the
 artefacts do not contain.  The claim audit, the unit tests and the
 assembly are runnable from the same tree, and the protocol each artefact
 was measured under --- the number of training runs, the device, the

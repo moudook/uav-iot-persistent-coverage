@@ -433,21 +433,24 @@ def main():
     A(r"\uavmidrule")
     A(r"Test suite & " + str(tok.get("N_TESTS")) + r" cases, all passing. \\")
     A(r"\uavmidrule")
-    A(r"Device & every artefact records the device it was measured on; the "
-      r"device and the thread count are part of the protocol. \\")
+    A(r"Device & the trained rows record the device they were measured on, "
+      r"and the device and the thread count are part of the protocol. \\")
     A(r"\uavbottomrule")
     A(r"\end{tabularx}")
     A("")
 
     # ---------------- the protocol ----------------
     A(r"\section{The measurement protocol}")
-    A(r"Every number in the paper and in this report is produced under one "
-      r"protocol:")
+    A(r"The paper's numbers are produced under one protocol, and the "
+      r"artefacts record the protocol they were measured under:")
     A(r"\begin{enumerate}[leftmargin=*,label=\textcolor{uavblue}"
       r"{\bfseries\arabic*.},itemsep=2pt,topsep=2pt]")
     A(r"\item \textbf{Training}: 25 episodes of 2000 control steps per "
-      r"training run. The base comparison trains five runs; the component "
-      r"ablation and the arms train three.")
+      r"training run, and every table in the paper is a mean over "
+      + str(tok.get("MAPPO_N_SEEDS", "8")) + r" training runs on one device. "
+      r"Two tables are measured at a smaller budget and say so: the stress "
+      r"ablation at 6 episodes, because that scenario is hard enough that a "
+      r"longer run does not finish, and the map-resolution sweep at 20.")
     A(r"\item \textbf{Evaluation}: five scenes per policy, and the number of "
       r"evaluation scenes is part of the protocol --- a run with three is a "
       r"different measurement, because a per-seed row is the mean over the "
@@ -456,8 +459,8 @@ def main():
       r"protocol. The floating-point kernels differ between the CPU and the "
       r"GPU and the order of the reductions differs with the thread count, "
       r"so two runs of the same configuration that land on different devices "
-      r"are not the same experiment. The device is pinned, the thread count "
-      r"is pinned in code, and every artefact records the device.")
+      r"are not the same experiment. The device is pinned and the thread "
+      r"count is pinned in code.")
     A(r"\item \textbf{The evaluation is seeded} from the evaluation seed "
       r"alone, so every controller is measured on the same random stream on "
       r"the same scene --- common random numbers --- and a comparison between "

@@ -18,8 +18,14 @@ classic rules.
 The learned controller does not reach the heuristic.  The strongest
 controller in the table is @@BEST_RULE_NAME@@, at $@@BEST_RULE_CK@@$, and
 the gap to it is $@@GAP@@$ of persistent coverage; the 95\% interval on
-that gap, from the learned controller's spread over its @@GAP_N@@ training
-runs, is $@@GAP_CI@@$.  The scene-to-scene variation does not enter this
+that gap, which is a one-sample interval over the learned controller's
+@@GAP_N@@ training runs with the evaluation scenes held fixed, is
+$@@GAP_CI@@$.  The two sources of variation are reported separately, as
+Section~\ref{sec:metrics} promises: the seed-to-seed spread of the
+learned controller is $@@VAR_SEED@@$ (standard error $@@VAR_SEED_SE@@$) and
+the scene-to-scene spread of a fixed controller is $@@VAR_SCENE@@$ (standard
+error $@@VAR_SCENE_SE@@$), and the interval above is over the first of the
+two.  The scene-to-scene variation does not enter this
 interval, because every controller is evaluated on the same scenes and it
 therefore cancels in the difference --- to the extent that the difficulty
 of a scene enters every controller additively and with the same size,
@@ -56,7 +62,9 @@ The other source is the recovery mechanism: when a UAV's pack empties away
 from a pad it is removed from the active set, and the swarm can be left
 disconnected until the reserve UAV re-seats it at a charging pad and it
 flies back.  The availability below $1.000$ is that mechanism's signature,
-and it is the price of the recovery rather than a failure of the filter.
+and it is the price of a UAV leaving the active set with no re-seating: the
+reserve was never activated in the base configuration, where no failure is
+injected.
 The scope of the probe is narrow and we state it: it drives the swarm with
 @@CONN_POLICY@@, and it establishes that the projection leaves no hole over
 the moves it took; it does not speak for a policy trained with a different
@@ -106,9 +114,11 @@ the reference rule; the first training run's per-episode coverage,
 measured on the training scene, runs from $@@CURVE_MIN@@$ to
 $@@CURVE_MAX@@$ over its @@CURVE_EPISODES@@ episodes, and its mean over
 the first five episodes ($@@CURVE_FIRST@@$) is the same as its mean over
-the last five ($@@CURVE_LAST@@$): the curve has flattened.  The best
-single episode, $@@CURVE_BEST@@$, is on a training scene, and the same
-policy scores $@@CURVE_EVAL@@$ on unseen scenes, so the training-scene
+the last five ($@@CURVE_LAST@@$): that is one run, and it is not evidence
+that the curve has flattened, because the increments between the budgets the
+sweep below covers are still increasing.  The best single episode,
+$@@CURVE_BEST@@$, is on a training scene and was never evaluated off it; the
+final policy of that run scores $@@CURVE_EVAL@@$ on the unseen scenes, so the training-scene
 figure is not an estimate of the deployed performance.  Two things about
 that curve limit what it can support, and both are stated rather than
 assumed: it is a single run, so it carries no seed-to-seed spread and no
@@ -196,8 +206,9 @@ masked reinforcement learning, is not what limits this controller.
 
 The learned controller also burns more energy than the heuristic
 ($@@MAPPO_E@@$~J against $@@REACT_E@@$~J over the same episode) while
-stranding fewer UAVs, which is the signature of a policy that moves
-deliberately rather than one that wanders.  Its connectivity availability is
+stranding more UAVs ($@@MAPPOStranded@@$ against $@@ReactStr@@$ per
+episode), which is the cost of moving deliberately rather than the price of
+wandering.  Its connectivity availability is
 below $1.000$ because UAVs leave the active set when a pack empties away
 from a pad, and not because the safety filter leaks: over $@@EPISODE_STEPS@@$
 steps driven by the learned controller the graph was disconnected on no step in

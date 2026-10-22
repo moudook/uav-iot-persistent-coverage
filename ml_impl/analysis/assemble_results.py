@@ -381,8 +381,14 @@ __BLOCK_SCEN__
          r"variant of every scenario.  It is behind the stronger rule in "
          r"$\tokScenLosses$ of the $\tokScenVariants$ variants, by between "
          r"$\tokScenSpanMin$ and $\tokScenSpanMax$ of persistent coverage, so "
-         r"the ordering is a property of the method at this budget rather "
-         r"than of a particular regime."])
+         r"the ordering holds in every regime the matrix tests.  The 34 cells "
+         r"are not 34 independent measurements: they are 32 distinct "
+         r"(configuration, scene) evaluations of six policy groups, each on a "
+         r"single scene, so the matrix is not on the same measurement basis as "
+         r"the five-scene gap, and a reader told only that a learned "
+         r"controller loses to a rule has been told the ordering and the size "
+         r"of the deficit but not the cause, which the arms bound without "
+         r"resolving."])
 
     # The BLOCKS go in first: a block may itself carry a figure
     # placeholder, and a placeholder substituted before the block is

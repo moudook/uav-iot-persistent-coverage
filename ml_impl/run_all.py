@@ -274,15 +274,20 @@ def main():
 
     quick = args.quick
     episodes = 6 if quick else 25
-    train_seeds = 2 if quick else 5
+    # The default seed count is the PROTOCOL of the paper, not a
+    # convenience: the shipped artefacts are eight training runs wide
+    # everywhere, and a reader who runs the script with no arguments
+    # used to get five (and three for the arms), which is a different
+    # measurement from the one the paper reports.
+    train_seeds = 2 if quick else 8
     eval_seeds = 2 if quick else 5
     # The ablation must use the BASE comparison's budget, or the table
     # measures the budget rather than the component: the "Full" row has to be
     # the same experiment as the MAPPO row of the base comparison.
     abl_episodes = 3 if quick else episodes
-    abl_seeds = 1 if quick else 3
+    abl_seeds = 1 if quick else 8
     stress_episodes = 2 if quick else 6
-    obs_seeds = 2 if quick else 3
+    obs_seeds = 2 if quick else 8
     # the scenario matrix and the learned baselines are the two tables
     # whose rows are not the base comparison's own experiment, so their
     # seed count is their own parameter
