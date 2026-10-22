@@ -615,6 +615,10 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
                            if len(evs) > 1 else 0.0)
             m["train_seeds"] = len(evs)
             m["per_seed_CK"] = ";".join(f"{e['CK']:.6f}" for e in evs)
+            # the device the policies were trained and evaluated on: it is
+            # part of the protocol, and the row has to say which one
+            m["device"] = str(getattr(
+                agents[(c.N, c.M, c.n_pads)][0], "device", "cpu"))
             r = baseline_reactive(c, steps=c.episode_len, seed=c.seed)
             # the UNPRIVILEGED rule is the stronger of the two on the base
             # configuration, and the matrix has to be read against the
@@ -635,6 +639,15 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
                              mappo_CK=m["CK"], mappo_SC=m["SC"],
                              mappo_AG=m["AG"],
                              mappo_CovIntegral=m["CovIntegral"],
+                             # the protocol the row was measured under, and
+                             # the per-training-seed values it came from:
+                             # a row that does not say how it was measured
+                             # cannot be checked
+                             train_seeds=m.get("train_seeds"),
+                             per_seed_CK=m.get("per_seed_CK"),
+                             CK_std=m.get("CK_std"),
+                             device=m.get("device"),
+                             episodes=int(episodes),
                              react_CK=r["CK"], react_SC=r["SC"],
                              react_AG=r["AG"],
                              react_CovIntegral=r["CovIntegral"],
