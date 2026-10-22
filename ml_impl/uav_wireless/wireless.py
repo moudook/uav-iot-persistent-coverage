@@ -42,26 +42,27 @@ from __future__ import annotations
 import numpy as np
 
 # --------------------------------------------------------------------------
-# IEEE 802.11 OFDM MCS sensitivity table (802.11n/ac, 20 MHz, GI 800 ns).
-# Maps required RX SNR (dB) -> PHY rate (Mbit/s).
+# IEEE 802.11n OFDM MCS table, 20 MHz channel, short guard interval.
+# Maps required RX SNR (dB) -> PHY rate (Mbit/s).  The sensitivity
+# column is the standard's, and the table is sorted by it, because the
+# selection below is a search over the threshold.
+#
+# The earlier table in this file was a mixture of rates and thresholds
+# from several PHYs, and its rows above the first never affected a
+# decision: every rate above the minimum is treated alike by the
+# service test, so the gate was exactly "SNR >= 2 dB" and the other
+# fourteen rows were decoration.
 # --------------------------------------------------------------------------
 MCS_TABLE = np.array(
     [
-        [2.0, 6.5],     # MCS 0  BPSK 1/2        (minimum usable rate)
-        [4.0, 9.0],     # MCS 0  duplicate
-        [5.5, 12.0],    # MCS 1  QPSK 1/2
-        [6.5, 13.5],
-        [8.0, 15.0],    # MCS 2  QPSK 3/4
-        [8.5, 18.0],
-        [9.0, 20.0],    # MCS 3  16-QAM 1/2
-        [10.0, 26.0],
-        [11.0, 29.0],   # MCS 4  16-QAM 3/4
-        [12.0, 31.5],
-        [13.0, 34.5],   # MCS 5  64-QAM 2/3
-        [14.0, 38.5],
-        [15.0, 42.0],   # MCS 6  64-QAM 3/4
-        [16.0, 45.0],
-        [17.0, 49.5],   # MCS 7  64-QAM 5/6
+        [2.0, 6.5],     # MCS 0  BPSK 1/2      (the minimum usable rate)
+        [5.0, 13.0],    # MCS 1  QPSK 1/2
+        [8.0, 19.5],    # MCS 2  QPSK 3/4
+        [11.0, 26.0],   # MCS 3  16-QAM 1/2
+        [15.0, 39.0],   # MCS 4  16-QAM 3/4
+        [18.0, 52.0],   # MCS 5  64-QAM 2/3
+        [20.0, 58.5],   # MCS 6  64-QAM 3/4
+        [25.0, 65.0],   # MCS 7  64-QAM 5/6
     ]
 )
 
@@ -143,7 +144,8 @@ class WirelessModel:
     def __init__(
         self,
         f_hz: float = 2.4e9,
-        p_tx: float = 0.5,             # W radiated (<= 1 W EIRP ceiling)
+        p_tx: float = 0.1,             # W radiated by a UAV (20 dBm EIRP)
+        p_tx_sensor: float = 0.02,     # W radiated by a sensor (13 dBm)
         noise_fig_db: float = 7.0,
         bandwidth_hz: float = 20e6,
         alpha_los: float = 2.0,         # path-loss exponent, clear LoS path
@@ -159,6 +161,7 @@ class WirelessModel:
     ):
         self.f_hz = f_hz
         self.p_tx = p_tx
+        self.p_tx_sensor = p_tx_sensor
         self.bandwidth_hz = bandwidth_hz
         self.n_los = float(alpha_los)
         self.n_nlos = float(alpha_nlos)
@@ -216,16 +219,23 @@ class WirelessModel:
         return self.shadow_su_db[:, np.asarray(uav_idx, dtype=int)]
 
     # -- helpers -----------------------------------------------------------
-    def received_w(self, d_3d, los_prob, shadow_db=None, add_fading: bool = False):
+    def received_w(self, d_3d, los_prob, shadow_db=None, add_fading: bool = False,
+                   p_tx: float | None = None):
         """Received power in watts: path loss, plus optional shadow / fading.
 
         With `shadow_db=None` this is the deterministic mean link budget, which
         is what the regression tests assert against.
+
+        `p_tx` is the power of the TRANSMITTING end.  The access link is a
+        sensor uplink, so it is budgeted with the sensor's power; the
+        inter-UAV link with the UAV's.  Using the UAV's power for both
+        handed the sensor an advantage of 7 dB that it does not have.
         """
         pl = path_loss_db(d_3d, los_prob, self.f_hz, self.n_los, self.n_nlos)
         if shadow_db is not None:
             pl = pl + shadow_db
-        rx = self.p_tx * 10.0 ** (-pl / 10.0)
+        tx = self.p_tx if p_tx is None else p_tx
+        rx = tx * 10.0 ** (-pl / 10.0)
         if add_fading or self.use_fading:
             rx = rx * self.rng.gamma(
                 shape=1.0, scale=self.rayleigh_scale, size=np.shape(pl)
@@ -242,10 +252,19 @@ class WirelessModel:
 
     # -- link evaluation ---------------------------------------------------
     def uu_geometry(self, uav_xy):
-        """Slant distance and LoS probability matrices for all UAV pairs."""
+        """Separation and LoS probability for all UAV pairs.
+
+        Every UAV flies at the same altitude, so the slant range between
+        two of them IS their horizontal separation: the old code
+        computed sqrt(d^2 + z0^2) and charged the link 4.4 dB for an
+        altitude the two ends do not differ in.  The air-to-ground
+        LoS probability is not applied to an air-to-air path either;
+        a horizontal link between two UAVs at the same height is a
+        clear path, and the shadowing term carries the randomness.
+        """
         d = np.linalg.norm(uav_xy[:, None, :] - uav_xy[None, :, :], axis=-1)
-        d3 = np.sqrt(d ** 2 + self.z0 ** 2)
-        return d, d3, los_probability(d3, self.z0)
+        ones = np.ones_like(d)
+        return d, d, ones
 
     def access_sinr(self, sensor_xy, uav_xy, uav_idx=None,
                     cochannel: int | None = None, add_fading: bool = False):
@@ -274,7 +293,9 @@ class WirelessModel:
         d3 = np.sqrt(d ** 2 + self.z0 ** 2)
         los = los_probability(d3, self.z0)
         idx = np.arange(k) if uav_idx is None else np.asarray(uav_idx, dtype=int)
-        rx = self.received_w(d3, los, self._shadow_su(idx), add_fading)   # (M, K)
+        # the access link is a SENSOR uplink: the sensor transmits
+        rx = self.received_w(d3, los, self._shadow_su(idx), add_fading,
+                             p_tx=self.p_tx_sensor)                          # (M, K)
 
         cch = self.access_cochannel if cochannel is None else int(cochannel)
         if cch <= 0 or k < 2:
@@ -304,8 +325,8 @@ class WirelessModel:
         P = len(pos)
         # (P, N, 2)
         diff = pos[:, None, :] - uav_xy[None, :, :]
-        d3 = np.sqrt(np.sum(diff ** 2, axis=-1) + self.z0 ** 2)
-        los = los_probability(d3, self.z0)
+        d3 = np.sqrt(np.sum(diff ** 2, axis=-1))
+        los = np.ones_like(d3)
         shadow = None
         if self.shadow_uu_db is not None:
             shadow = self.shadow_uu_db[np.ix_(idx, idx)][k]      # (N,)

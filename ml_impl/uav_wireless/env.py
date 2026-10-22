@@ -49,7 +49,8 @@ class SimConfig:
     P_hover: float = 50.0         # W
     P_move: float = 75.0          # W
     P_elec: float = 5.0           # W  avionics + comms
-    P_tx: float = 0.5             # W  RF transmit
+    P_tx: float = 0.1             # W  RF transmit by a UAV (20 dBm EIRP)
+    P_tx_sensor: float = 0.02     # W  RF transmit by a sensor (13 dBm)
     charge_rate: float = 0.0002   # battery fraction per step
     episode_len: int = 1_000      # steps (report uses 10000 = 2000 s)
     n_pads: int = 2               # S, charging pads
@@ -171,7 +172,8 @@ class UAVIoTEnv:
     def __init__(self, cfg: SimConfig):
         self.cfg = cfg
         self.rng = np.random.default_rng(cfg.seed)
-        self.radio = WirelessModel(z0=cfg.z0, p_tx=cfg.P_tx)
+        self.radio = WirelessModel(z0=cfg.z0, p_tx=cfg.P_tx,
+                                    p_tx_sensor=cfg.P_tx_sensor)
         self.obs_dim = obs_dim(cfg)
         self.state_dim = state_dim(cfg)
         self.reset()
@@ -591,9 +593,19 @@ class UAVIoTEnv:
                     ok = False
             m[a] = ok
 
-        # charge: must be inside a pad service region and energy must be low
+        # charge: must be inside a pad service region, and the pack must
+        # not already be full.
+        #
+        # The old admission test was "E <= return_threshold", and that
+        # trapped the UAV: the departure rule demands
+        # E_after >= pad_energy(destination) + E_reserve, and at a pad
+        # the threshold IS E_reserve, so a UAV that charged above it
+        # could not charge and a UAV that stayed below it could not
+        # leave.  It spent the rest of the episode in a three-step
+        # charge-and-hover cycle at the threshold.  Charging is now
+        # admissible whenever the pack is not full.
         near = np.any(np.linalg.norm(self.pads - self.p[i], axis=1) <= c.pad_service_radius)
-        needs = self.E[i] <= self.return_threshold(i)
+        needs = self.E[i] < c.B_max - 1e-6
         m[A_CHARGE] = bool(near and needs)
         return m
 
