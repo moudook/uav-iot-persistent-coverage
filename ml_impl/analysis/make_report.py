@@ -601,23 +601,32 @@ def main():
     A(r"\uavtoprule")
     A(r"\endhead")
     artefacts = (
-        ("results_main.csv", "the main table: every controller, five "
+        ("results_main.csv", "the main table: every controller, eight "
                              "training seeds for the learned one"),
         ("results_ablation.csv", "the component ablation, twelve variants"),
         ("results_ablation_stress.csv", "the ablation on the combined-"
-                                        "stress scenario"),
+                                        "stress scenario, six episodes"),
         ("results_scenarios.csv", "the nine scenarios and their variants"),
+        ("results_learned_baselines.csv",
+         "the learned baselines: independent DQN and a local-critic "
+         "Masked PPO, eight training runs each"),
+        ("analysis/base_training_seeds.json",
+         "the per-seed rows behind the gap interval and the spread"),
         ("analysis/ab_observation.json", "the observation arms"),
         ("analysis/ab_energy_management.json", "the energy arms"),
         ("analysis/ab_credit.json", "the credit-assignment arm"),
         ("analysis/ab_budget.json", "the training-budget sweep"),
         ("analysis/ab_map_resolution.json", "the map-resolution sweep"),
+        ("analysis/alt_deployment.json",
+         "the alternative corrected deployment"),
         ("analysis/claim_audit.json", "the claim audit, item by item"),
         ("analysis/connectivity_accounting.json",
          "the connectivity accounting"),
-        ("analysis/corner_transfer.json", "the corner certificate's transfer"),
-        ("analysis/alt_deployment.json",
-         "the alternative corrected deployment"))
+        ("analysis/corner_transfer.json",
+         "the corner certificate's transfer"),
+        ("analysis/determinism_check.json",
+         "the determinism check: two independent runs of the scenario "
+         "matrix agree exactly"))
     k = 0
     for name, what in artefacts:
         p = os.path.join(ML, name)
