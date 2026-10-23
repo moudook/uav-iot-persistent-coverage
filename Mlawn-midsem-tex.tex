@@ -20,6 +20,13 @@
 \pgfplotsset{compat=1.18}
 \usetikzlibrary{positioning,arrows.meta,shapes.geometric,fit,calc,backgrounds,matrix,3d}
 \usepackage{balance}
+% arXiv lists the paper from the PDF's metadata, so it has to carry the
+% title and the author.  Without it the listing shows the file name.
+\usepackage{hyperref}
+\hypersetup{pdftitle={Persistent and Fault-Tolerant UAV-IoT Coverage: A Multi-Agent Reinforcement Learning Framework for Joint Coverage, Connectivity, and Energy Management},
+            pdfauthor={Himanshu Nagwanshi, Surya Prakash S, Harsh Varshney, Gaddam Viswaijeth},
+            pdfsubject={Persistent UAV-IoT coverage, feasibility-certified evaluation, multi-agent reinforcement learning},
+            pdfkeywords={multi-agent reinforcement learning, UAV, wireless sensor networks, persistent coverage, connectivity, energy management, fault tolerance}}
 % dblfloatfix lets a double-column float be placed on the FIRST page:
 % without it the wide teaser figure is pushed to the second page and the
 % title page is left without the picture that is meant to sell the paper.
