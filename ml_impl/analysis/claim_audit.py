@@ -567,9 +567,16 @@ def main():
         print("[SKIP] model equivalence: run analysis/phy_equivalence.py\n")
 
     # --- OMNeT++ Phase 2 actually ran ------------------------------------
-    sca = os.path.join(
-        os.path.dirname(HERE), "..", "Simulation", "UAV_IoT_Demo", "results",
-        "phy_validation_0.sca")
+    # The .sca file is shipped with the artefacts so that the audit runs
+    # from the artefact tree alone.  The sibling Simulation/ directory is
+    # still tried first, so a reader who has the full project tree gets
+    # the original file; otherwise the copy beside this script is used.
+    sca_candidates = [
+        os.path.join(os.path.dirname(HERE), "..", "Simulation",
+                     "UAV_IoT_Demo", "results", "phy_validation_0.sca"),
+        os.path.join(HERE, "phy_validation_0.sca"),
+    ]
+    sca = next((p for p in sca_candidates if os.path.exists(p)), sca_candidates[0])
     check("PH5", "the OMNeT++/INET PHY scenario produced a scalar result "
                  "file (Phase 2 executed)",
           os.path.exists(sca),
