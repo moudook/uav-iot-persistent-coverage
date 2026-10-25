@@ -16,7 +16,7 @@
 - numba: (to check)
 
 ## OMNeT++ / INET
-- IN PROGRESS (2026-10-25): opp_env + OMNeT++ 6.4.0 downloading via WSL2 Ubuntu 26.04 (tmux session omnet_install). Download ~24% complete. Source extracted to ~/omnetpp_ws/omnetpp-6.4.0. Build (configure + make -j4) pending.
+- IN PROGRESS (2026-10-25): opp_env + OMNeT++ 6.4.0 downloading via WSL2 Ubuntu 26.04 (tmux session omnet_install). Download ~30% complete and climbing. Source partial. Build (configure + make -j4) pending.
 - Install plan: follow https://omnetpp.org/download/ and https://inet.omnetpp.org (ai docs at https://ai.omnetpp.org).
 
 ## OMNeT++ AI docs
