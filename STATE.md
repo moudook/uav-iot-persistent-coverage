@@ -1,6 +1,6 @@
 # STATE — current sprint state
 
-Last update: 2026-10-25 13:00 local
+Last update: 2026-10-25 20:15 local
 
 ## Current gate / milestone
 G0 — setup and trust (Oct 24–25). In progress.
