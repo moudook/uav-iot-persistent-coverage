@@ -206,7 +206,7 @@ masked reinforcement learning, is not what limits this controller.
 
 The learned controller also burns more energy than the heuristic
 ($@@MAPPO_E@@$~J against $@@REACT_E@@$~J over the same episode) while
-stranding more UAVs ($@@MAPPOStranded@@$ against $@@ReactStr@@$ per
+stranding more UAVs ($@@MAPPO_STRANDED@@$ against $@@REACT_STR@@$ per
 episode), which is the cost of moving deliberately rather than the price of
 wandering.  Its connectivity availability is
 below $1.000$ because UAVs leave the active set when a pack empties away
@@ -353,7 +353,7 @@ arms below are measured at @@ABL_SEEDS@@ training seeds, and the paired
 interval is what makes the number they report mean something.  The
 paired interval does not have that failure mode, and it also reports the
 resolution of the measurement, which is the number a reader actually
-needs.  @@ABL_SUMMARY@@.
+needs.  @@ABL_SUMMARY@@
 
 What the intervals do and do not say is worth stating precisely, because a
 null result of this width is a statement about the resolution of the

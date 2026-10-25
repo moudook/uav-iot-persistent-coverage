@@ -67,7 +67,7 @@
     "id": "D1",
     "claim": "the DEVICE changes a training run: the same configuration and the same seed give different weights on the GPU and on the CPU, so the device has to be recorded with every artefact",
     "status": "PASS",
-    "measured": "over 2 episodes the weights differ by at most 1.20e-03 and the coverage by 0.012608 between the GPU and the CPU",
+    "measured": "over 2 episodes the weights differ by at most 1.20e-03 and the coverage by 0.009492 between the GPU and the CPU",
     "expected": "the weights differ",
     "note": "a run on the GPU and a run on the CPU are not the same experiment, which is why the device is part of the protocol and is recorded with every artefact."
   },
@@ -83,7 +83,7 @@
     "id": "A1",
     "claim": "the alternative corrected deployment (N = 5, R_cov = 45 m) is FEASIBLE and is measured, not only argued",
     "status": "PASS",
-    "measured": "the learned controller reaches 0.770 on the alternative against 0.662 on the reported deployment, over 8 training seeds and 25 episodes",
+    "measured": "the learned controller reaches 0.757 on the alternative against 0.674 on the reported deployment, over 8 training seeds and 25 episodes",
     "expected": "the coverage is substantial",
     "note": "the certificate identified a deployment the original configuration could not use, and on this instance it is the better of the two."
   },
@@ -211,14 +211,14 @@
     "id": "C6",
     "claim": "the connectivity constraint is live in the deployed regime",
     "status": "PASS",
-    "measured": "mean node degree 3.63 of a possible 7; the graph was complete in 12.0% of steps; 22.6% of UAV-steps left a node of degree <= 1",
+    "measured": "mean node degree 3.63 of a possible 7; the graph was complete in 12.1% of steps; 22.6% of UAV-steps left a node of degree <= 1",
     "expected": "< 7.00 (the graph must not be complete throughout)",
     "note": "measured on a 2000-step flight in the clustered deployment, the configuration the experiments use. The graph is not complete throughout, so a single UAV can be critical and the H-step feasibility mask and the reserve mechanism are load-bearing rather than decorative.",
     "data": {
-      "mean_degree": 3.629212611288083,
+      "mean_degree": 3.628863968795709,
       "max_degree": 7,
-      "frac_complete": 0.12006861063464837,
-      "frac_leaves": 0.22620068610634647
+      "frac_complete": 0.12059158134243458,
+      "frac_leaves": 0.22618031854379977
     }
   },
   {
@@ -273,7 +273,7 @@
     "id": "R1",
     "claim": "the evaluation of a sampled policy is a function of (policy, scene) and does not depend on the ambient state of the global RNG; the sampling stream is seeded from the evaluation seed alone, so every controller is measured on the same stream on the same scene",
     "status": "PASS",
-    "measured": "CK=1.0 and Energy=3559.0 and Distance=179.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3559.0 and Distance=179.0 and CovIntegral=0.0",
+    "measured": "CK=1.0 and Energy=3284.8 and Distance=164.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3284.8 and Distance=164.0 and CovIntegral=0.0",
     "expected": "identical",
     "note": "the policy samples, so the sampling stream is seeded from the evaluation seed; every controller therefore sees the same stream on the same scene"
   },
@@ -289,7 +289,7 @@
     "id": "C8",
     "claim": "no disconnection of the communication graph is left by a policy action: the safety filter and the joint projection maintain connectivity across every action",
     "status": "PASS",
-    "measured": "6 transitions into a disconnected graph over the whole evaluation matrix, of which 0 are attributable to a policy action and the rest to a UAV leaving the active set",
+    "measured": "4 transitions into a disconnected graph over the whole evaluation matrix, of which 0 are attributable to a policy action and the rest to a UAV leaving the active set",
     "expected": "0 attributable to a policy action",
     "note": "the guarantee is about actions; the availability below 1.000 is the recovery mechanism's signature, and the accounting counts transitions, because a graph that is already disconnected stays disconnected"
   },

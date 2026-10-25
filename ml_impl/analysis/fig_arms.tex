@@ -4,8 +4,9 @@
   \IfFileExists{theme.tex}{\input{theme.tex}}{%
   \errmessage{the figures need ml_impl/analysis/theme.tex}}}
 \fi
+\resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}
-\begin{axis}[  width=0.48\columnwidth,height=4.9cm,
+\begin{axis}[  width=0.82\columnwidth,height=4.9cm,
   xmin=-0.200, xmax=0.419, ymin=0.35, ymax=6.65,
   xtick={-0.2,0,0.2,0.4}, xmajorgrids,
   ytick={6,5,4,3,2,1},
@@ -13,14 +14,14 @@
   xlabel={difference in persistent coverage},
   uavaxis,
   uavlegend, legend columns=3, legend style={font=\tiny},]
-  \addplot[uavband] coordinates {(0.260,0.35) (0.358,0.35) (0.358,6.65) (0.260,6.65)} \closedcycle;
-  \addplot[uavlevel, forget plot] coordinates {(0.309,0.35) (0.309,6.65)};
-  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(0.015,6) +- (0.145,0)};
-  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(0.023,5) +- (0.038,0)};
-  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(0.023,4) +- (0.058,0)};
-  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(-0.001,3) +- (0.029,0)};
-  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(-0.078,2) +- (0.040,0)};
-  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(-0.022,1) +- (0.058,0)};
+  \addplot[uavband] coordinates {(0.248,0.35) (0.349,0.35) (0.349,6.65) (0.248,6.65)} \closedcycle;
+  \addplot[uavlevel, forget plot] coordinates {(0.298,0.35) (0.298,6.65)};
+  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(0.008,6) +- (0.129,0)};
+  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(0.034,5) +- (0.067,0)};
+  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(0.010,4) +- (0.066,0)};
+  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(-0.018,3) +- (0.029,0)};
+  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(-0.050,2) +- (0.065,0)};
+  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(-0.035,1) +- (0.044,0)};
   \draw[uavsep] (axis cs:-0.200,4.50) -- (axis cs:0.419,4.50);
   \draw[uavsep] (axis cs:-0.200,1.50) -- (axis cs:0.419,1.50);
   \addlegendimage{color=uavblue, line width=2.6pt, line cap=round}
@@ -28,12 +29,13 @@
   \addlegendimage{only marks, mark=*, mark size=2.4pt, color=uavblue, mark options={fill=uavblue,draw=white,line width=0.5pt}}
   \addlegendimage{draw=uavink, line width=0.9pt}
   \addlegendimage{area legend, fill=uavband, draw=uavband}
-  \legend{{below the gap},{past the gap},{paired mean},{the gap 0.309},{gap 95\% CI}}
-  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:0.015,6.19) {$+0.015$};
-  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:0.023,5.19) {$+0.023$};
-  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:0.023,4.19) {$+0.023$};
-  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:-0.001,3.19) {$-0.001$};
-  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:-0.078,2.19) {$-0.078$};
-  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:-0.022,1.19) {$-0.022$};
+  \legend{{below the gap},{past the gap},{paired mean},{the gap \tokGap},{gap 95\% CI}}
+  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:0.008,6.19) {$+0.008$};
+  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:0.034,5.19) {$+0.034$};
+  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:0.010,4.19) {$+0.010$};
+  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:-0.018,3.19) {$-0.018$};
+  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:-0.050,2.19) {$-0.050$};
+  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:-0.035,1.19) {$-0.035$};
 \end{axis}
-\end{tikzpicture}
+\end{tikzpicture}%
+}

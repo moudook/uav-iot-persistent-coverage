@@ -13,11 +13,11 @@
   uavaxis,
   uavlegend, legend columns=2,]
   \addplot[draw=uavref, line width=1.3pt] coordinates {(5.00,0.972) (29.50,0.972)};
-  \addplot[color=uavblue, line width=1.1pt, mark=*, mark size=2.3pt, mark options={fill=uavblue, draw=white, line width=0.5pt}, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.8pt, color=uavblue}, error bars/error mark=|, error bars/error mark options={rotate=90, mark size=2.4pt, line width=0.8pt, color=uavblue}] coordinates {(8,0.595) +- (0,0.0830) (16,0.621) +- (0,0.0673) (25,0.662) +- (0,0.0584)};
+  \addplot[color=uavblue, line width=1.1pt, mark=*, mark size=2.3pt, mark options={fill=uavblue, draw=white, line width=0.5pt}, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.8pt, color=uavblue}, error bars/error mark=|, error bars/error mark options={rotate=90, mark size=2.4pt, line width=0.8pt, color=uavblue}] coordinates {(8,0.588) +- (0,0.060) (16,0.624) +- (0,0.060) (25,0.674) +- (0,0.079)};
   \legend{{the strongest rule},{the learned controller}}
-  \draw[uavink, line width=0.8pt, <->] (axis cs:26.40,0.662) -- (axis cs:26.40,0.972);
-  \node[rotate=90, anchor=south, font=\scriptsize\bfseries, text=uavink] at (axis cs:28.10,0.662) {gap 0.309};
-  \node[anchor=south west, font=\scriptsize, text=uavmuted] at (axis cs:5.40,0.984) {the unprivileged reactive rule (0.972)};
-  \node[anchor=north west, font=\scriptsize, align=left, text=uavink, fill=uavwhite, inner sep=2pt, draw=none] at (axis cs:5.40,0.942) {training over 8--25 episodes: $\Delta=+0.067$\\95\% CI [+0.017, +0.118] --- 22\% of the gap\\bars: $\pm 1$ s.d. over the 8 training seeds};
+  \draw[uavink, line width=0.8pt, <->] (axis cs:26.40,0.674) -- (axis cs:26.40,0.972);
+  \node[rotate=90, anchor=south, font=\scriptsize\bfseries, text=uavink] at (axis cs:28.10,0.674) {gap \tokBudgetGap};
+  \node[anchor=south west, font=\scriptsize, text=uavmuted] at (axis cs:5.40,0.984) {the unprivileged reactive rule (\tokReactCk)};
+  \node[anchor=north west, font=\scriptsize, align=left, text=uavink, fill=uavwhite, inner sep=2pt, draw=none] at (axis cs:5.40,0.942) {training over 8--25 episodes: $\Delta=\tokBudgetPaired$\\95\% CI \tokBudgetPairedCi{} --- \tokBudgetFrac\% of the gap\\bars: $\pm 1$ s.d. over the 8 training seeds};
 \end{axis}
 \end{tikzpicture}

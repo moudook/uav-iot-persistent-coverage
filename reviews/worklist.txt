@@ -1,0 +1,117 @@
+458	1.000	UAV swarms can provide temporary wireless coverage for Internet-of-Things deployments where fixed in
+506	0.008	\item A \emph{measured specification of what a shared policy's observation must contain}: the agent'
+506	-0.121	\item A \emph{measured specification of what a shared policy's observation must contain}: the agent'
+506	0.137	\item A \emph{measured specification of what a shared policy's observation must contain}: the agent'
+582	33.33	A separate search over the same 2023--2026 corpus was conducted for the specific claims that the fra
+1303	1.09	$30{,}000/50=600$~s (10~min); the power ratio $P_{\mathrm{move}}/P_{\mathrm{hover}}=1.5$ is conserva
+1303	3.6	$30{,}000/50=600$~s (10~min); the power ratio $P_{\mathrm{move}}/P_{\mathrm{hover}}=1.5$ is conserva
+1308	0.93	\resizebox{0.93\textwidth}{!}{%
+1347	4.2	Parameter sharing is appropriate when (i) the environment is equivariant to agent permutations---ide
+1544	4.3	Phases 1 and 2 have been executed; Phase 3 is scaffolded but not yet run with the learned policy. Ph
+1819	-0.019	$0.953$, $1.000$ and $0.753$.  The privileged version is in fact slightly WORSE than the unprivilege
+1830	1.000	$0$ are unexplained --- each of them is a UAV whose pack emptied away from a charging pad, and none 
+1902	0.588	restate the curve: 8 episodes: 0.588, 16 episodes: 0.624, 25 episodes: 0.674, and the coverage moves
+1902	0.624	restate the curve: 8 episodes: 0.588, 16 episodes: 0.624, 25 episodes: 0.674, and the coverage moves
+1902	0.674	restate the curve: 8 episodes: 0.588, 16 episodes: 0.624, 25 episodes: 0.674, and the coverage moves
+1902	0.086	restate the curve: 8 episodes: 0.588, 16 episodes: 0.624, 25 episodes: 0.674, and the coverage moves
+1902	0.298	restate the curve: 8 episodes: 0.588, 16 episodes: 0.624, 25 episodes: 0.674, and the coverage moves
+1902	0.036	restate the curve: 8 episodes: 0.588, 16 episodes: 0.624, 25 episodes: 0.674, and the coverage moves
+1902	0.050	restate the curve: 8 episodes: 0.588, 16 episodes: 0.624, 25 episodes: 0.674, and the coverage moves
+1902	4.8	restate the curve: 8 episodes: 0.588, 16 episodes: 0.624, 25 episodes: 0.674, and the coverage moves
+1902	0.010	restate the curve: 8 episodes: 0.588, 16 episodes: 0.624, 25 episodes: 0.674, and the coverage moves
+1908	0.086	question, and the arm that settles it is the paired one: the paired comparison over the same trainin
+1908	0.036	question, and the arm that settles it is the paired one: the paired comparison over the same trainin
+1908	0.135	question, and the arm that settles it is the paired one: the paired comparison over the same trainin
+1908	0.298	question, and the arm that settles it is the paired one: the paired comparison over the same trainin
+1908	0.050	question, and the arm that settles it is the paired one: the paired comparison over the same trainin
+2143	0.008	The arms share their training seeds, so the comparisons are paired: adding the agent identity (+0.00
+2143	-0.121	The arms share their training seeds, so the comparisons are paired: adding the agent identity (+0.00
+2143	0.137	The arms share their training seeds, so the comparisons are paired: adding the agent identity (+0.00
+2143	0.298	The arms share their training seeds, so the comparisons are paired: adding the agent identity (+0.00
+2143	0.034	The arms share their training seeds, so the comparisons are paired: adding the agent identity (+0.00
+2143	-0.033	The arms share their training seeds, so the comparisons are paired: adding the agent identity (+0.00
+2143	0.102	The arms share their training seeds, so the comparisons are paired: adding the agent identity (+0.00
+2143	1.84	The arms share their training seeds, so the comparisons are paired: adding the agent identity (+0.00
+2143	2.43	The arms share their training seeds, so the comparisons are paired: adding the agent identity (+0.00
+2145	0.640	The resolution of the summary makes no difference to the coverage: $G=0$: 0.640, $G=4$: 0.643, $G=8$
+2145	0.643	The resolution of the summary makes no difference to the coverage: $G=0$: 0.640, $G=4$: 0.643, $G=8$
+2145	0.651	The resolution of the summary makes no difference to the coverage: $G=0$: 0.640, $G=4$: 0.643, $G=8$
+2145	0.011	The resolution of the summary makes no difference to the coverage: $G=0$: 0.640, $G=4$: 0.643, $G=8$
+2145	0.060	The resolution of the summary makes no difference to the coverage: $G=0$: 0.640, $G=4$: 0.643, $G=8$
+2145	9.0	The resolution of the summary makes no difference to the coverage: $G=0$: 0.640, $G=4$: 0.643, $G=8$
+2145	10.6	The resolution of the summary makes no difference to the coverage: $G=0$: 0.640, $G=4$: 0.643, $G=8$
+2145	10.3	The resolution of the summary makes no difference to the coverage: $G=0$: 0.640, $G=4$: 0.643, $G=8$
+2264	0.050	The coverage the repair adds is +0.050 on the same training seeds (95\% interval [-0.015, +0.115], w
+2264	-0.015	The coverage the repair adds is +0.050 on the same training seeds (95\% interval [-0.015, +0.115], w
+2264	0.115	The coverage the repair adds is +0.050 on the same training seeds (95\% interval [-0.015, +0.115], w
+2286	0.298	The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The 
+2286	0.010	The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The 
+2286	-0.056	The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The 
+2286	0.075	The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The 
+2286	-0.018	The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The 
+2286	-0.047	The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The 
+2286	0.011	The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The 
+2286	-0.050	The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The 
+2286	-0.115	The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The 
+2286	0.015	The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The 
+2353	0.097	needs.  The paired comparison, in which every variant is trained on the same training seeds as the f
+2353	0.020	needs.  The paired comparison, in which every variant is trained on the same training seeds as the f
+2353	0.174	needs.  The paired comparison, in which every variant is trained on the same training seeds as the f
+2366	0.086	configuration: the coverage moves by +0.086 over the range the sweep covers, which is about 29\% of 
+2366	0.298	configuration: the coverage moves by +0.086 over the range the sweep covers, which is about 29\% of 
+2366	0.036	configuration: the coverage moves by +0.086 over the range the sweep covers, which is about 29\% of 
+2366	0.050	configuration: the coverage moves by +0.086 over the range the sweep covers, which is about 29\% of 
+2366	4.8	configuration: the coverage moves by +0.086 over the range the sweep covers, which is about 29\% of 
+2366	0.010	configuration: the coverage moves by +0.086 over the range the sweep covers, which is about 29\% of 
+2367	0.086	the paired comparison over the same training seeds does resolve a real gain, +0.086 with a 95\% inte
+2367	0.036	the paired comparison over the same training seeds does resolve a real gain, +0.086 with a 95\% inte
+2367	0.135	the paired comparison over the same training seeds does resolve a real gain, +0.086 with a 95\% inte
+2367	0.298	the paired comparison over the same training seeds does resolve a real gain, +0.086 with a 95\% inte
+2367	0.050	the paired comparison over the same training seeds does resolve a real gain, +0.086 with a 95\% inte
+2421	-0.190	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.277	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.104	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.050	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.006	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.094	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.181	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.255	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.107	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.000	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.011	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.010	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.035	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.055	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.000	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.010	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.060	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.039	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.012	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.024	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.004	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.117	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.125	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.016	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.150	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.118	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.007	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	-0.121	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2421	0.136	Table~\ref{tab:results_ablstress} repeats the ablation on the combined-stress scenario, where the re
+2493	-0.079	8 training runs: the difference is not resolved by this arm: the interval is [-0.079, +0.009], and i
+2493	0.009	8 training runs: the difference is not resolved by this arm: the interval is [-0.079, +0.009], and i
+2493	0.298	8 training runs: the difference is not resolved by this arm: the interval is [-0.079, +0.009], and i
+2493	0.079	8 training runs: the difference is not resolved by this arm: the interval is [-0.079, +0.009], and i
+2508	-0.035	We therefore report the result as it stands: The residual is consistent with the credit assignment o
+2508	-0.079	We therefore report the result as it stands: The residual is consistent with the credit assignment o
+2508	0.009	We therefore report the result as it stands: The residual is consistent with the credit assignment o
+2603	-0.598	S6 (-0.598) and the smallest deficit is S2 (-0.080).  At the level of scenario means the learned con
+2603	-0.080	S6 (-0.598) and the smallest deficit is S2 (-0.080).  At the level of scenario means the learned con
+2670	34.9	\emph{The feasibility certificate is audited, not asserted.} The audit re-derives the packing bound 
+2680	0.012	\textbf{0.012~dB} over 24 (distance, exponent) combinations spanning
+2683	61.0	is $+43.2$~dB (access link, 3-D slant range 61.0~m) and $+46.9$~dB
+2684	40.0	(inter-UAV link, 40.0~m), so the geometric feasibility certificate, not the
+2740	27.0	transmit power exactly --- a 27.0~dB reduction of $P_{\mathrm{tx}}$ produces
+2741	27.0	a 27.0~dB reduction of the reported SNR --- so it is not simply a frozen
+2744	13.7	although the configured path loss differs by 13.7~dB between the nearest and
+2746	13.7	distance when the configured path loss requires it to be 13.7~dB lower at
+2755	0.012	0.012~dB. The broader methodological conclusion --- that an instrument must

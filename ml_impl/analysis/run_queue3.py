@@ -57,7 +57,12 @@ def free_memory():
     return m.ullAvailPhys / 1024 ** 3, m.ullAvailPageFile / 1024 ** 3
 
 
-def room(need_phys=3.0, need_page=1.5):
+def room(need_phys=4.5, need_page=4.0):
+    # The page file, not the RAM, is the binding constraint: four
+    # training jobs exhausted it on this machine, and the commit that
+    # was running alongside them failed with a CLR out-of-memory
+    # error.  The rule is therefore conservative: two jobs, and a lot
+    # of headroom on both.
     phys, page = free_memory()
     return phys >= need_phys and page >= need_page
 
@@ -77,7 +82,7 @@ def main() -> int:
 
     running = {}
     pending = list(STAGES)
-    limit = 4
+    limit = 2
     t0 = time.time()
 
     while pending or running:

@@ -18,14 +18,14 @@
 \cmidrule(lr){2-5}
 Model & CK & AG & SC & CovDef\textsuperscript{*} &  &  \\
 \midrule
-Fixed & 0.372 & 1.000 & 0.000 & 0.628 & 257.20 & 178097 \\
-Greedy & 0.786 & 0.964 & 0.066 & 0.214 & 5039.40 & 211199 \\
-Reactive & 0.953 & 1.000 & 0.751 & 0.047 & 1525.60 & 183675 \\
-Reactive (local assignment) & 0.972 & 1.000 & 0.777 & 0.028 & 1620.80 & 185613 \\
-Independent DQN & 0.373\,$\pm$\,0.096 & 0.985 & 0.000 & 0.627 & -- & -- \\
-Masked PPO (local critic) & 0.637\,$\pm$\,0.064 & 0.979 & 0.011 & 0.363 & -- & -- \\
-\tblHl \textbf{MAPPO (proposed)} & \textbf{0.662\,$\pm$\,0.058} & \textbf{0.984} & \textbf{0.010} & \textbf{0.338} & \textbf{0.20} & \textbf{209863} \\
-MAPPO (argmax) & 0.389\,$\pm$\,0.078 & 0.991 & 0.000 & 0.611 & 0.25 & 202984 \\
+Fixed & 0.372 & 1.000 & 0.000 & -- & 249.80 & 176850 \\
+Greedy & 0.784 & 0.965 & 0.066 & -- & 5008.80 & 210802 \\
+Reactive & 0.953 & 1.000 & 0.753 & -- & 1508.80 & 182530 \\
+Reactive (local assignment) & 0.972 & 1.000 & 0.778 & -- & 1624.80 & 184721 \\
+Independent DQN & 0.381\,$\pm$\,0.069 & 0.996 & 0.000 & 0.619 & -- & -- \\
+Masked PPO (local critic) & 0.625\,$\pm$\,0.054 & 0.988 & 0.007 & 0.375 & -- & -- \\
+\tblHl \textbf{MAPPO (proposed)} & \textbf{0.674\,$\pm$\,0.060} & \textbf{0.987} & \textbf{0.010} & \textbf{0.326} & \textbf{0.10} & \textbf{207532} \\
+MAPPO (argmax) & 0.418\,$\pm$\,0.062 & 0.993 & 0.000 & 0.582 & 0.03 & 183926 \\
 \midrule
 Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 & -- & 0 \\
 \bottomrule
@@ -53,18 +53,13 @@ Oracle (ceiling) & 1.000 & 1.000 & 1.000 & 0.000 & -- & 0 \\
 \cmidrule(lr){2-5}
 Variant & CK & AG & SC & CovDef &  &  \\
 \midrule
-\tblHl \textbf{Full (proposed)} & \textbf{0.662\,$\pm$\,0.058} & \textbf{0.984} & \textbf{0.010} & \textbf{0.338} & \textbf{0.8} & \textbf{+0.000} \\
-no-criticality term & 0.662\,$\pm$\,0.061 & 0.985 & 0.018 & 0.338 & 0.7 & -0.000 \\
-no-degraded-service term & 0.661\,$\pm$\,0.049 & 0.977 & 0.009 & 0.339 & 0.8 & +0.001 \\
-no-energy-cost term & 0.663\,$\pm$\,0.053 & 0.976 & 0.010 & 0.337 & 0.8 & -0.001 \\
-no-under-coverage term & 0.568\,$\pm$\,0.103 & 0.993 & 0.007 & 0.432 & 1.0 & +0.094 \\
-no-reserve UAV & 0.662\,$\pm$\,0.058 & 0.984 & 0.010 & 0.338 & 0.8 & +0.000 \\
-no-charging arbitration & 0.663\,$\pm$\,0.054 & 0.976 & 0.013 & 0.337 & 0.8 & -0.001 \\
-no-action mask & 0.660\,$\pm$\,0.049 & 0.983 & 0.005 & 0.340 & 0.5 & +0.002 \\
-no agent identity & 0.667\,$\pm$\,0.070 & 0.975 & 0.016 & 0.333 & 1.4 & -0.005 \\
-no coverage map & 0.661\,$\pm$\,0.054 & 0.978 & 0.013 & 0.339 & 1.1 & +0.002 \\
-no pad bearing & 0.649\,$\pm$\,0.051 & 0.982 & 0.009 & 0.351 & 1.1 & +0.013 \\
-Vanilla MAPPO & 0.627\,$\pm$\,0.046 & 0.986 & 0.001 & 0.373 & 0.8 & +0.036 \\
+\tblHl \textbf{Full (proposed)} & \textbf{0.674\,$\pm$\,0.060} & \textbf{0.987} & \textbf{0.010} & \textbf{0.326} & \textbf{0.6} & \textbf{+0.000} \\
+no-criticality term & 0.649\,$\pm$\,0.055 & 0.987 & 0.005 & 0.351 & 0.6 & +0.025 \\
+no-degraded-service term & 0.664\,$\pm$\,0.050 & 0.988 & 0.007 & 0.336 & 0.5 & +0.010 \\
+no-energy-cost term & 0.670\,$\pm$\,0.045 & 0.982 & 0.012 & 0.330 & 0.5 & +0.004 \\
+no-under-coverage term & 0.577\,$\pm$\,0.128 & 0.998 & 0.006 & 0.423 & 1.0 & +0.097 \\
+no-reserve UAV & 0.674\,$\pm$\,0.060 & 0.987 & 0.010 & 0.326 & 0.6 & +0.000 \\
+no-charging arbitration & 0.661\,$\pm$\,0.050 & 0.985 & 0.006 & 0.339 & 0.6 & +0.013 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -125,15 +120,15 @@ Vanilla MAPPO & 0.484\,$\pm$\,0.036 & 0.996 & 0.000 & 0.516 & 2.0 & -0.181 \\
 \cmidrule(lr){3-5} \cmidrule(lr){6-8}
 ID & Variable & M & R & RL & M & R & RL \\
 \midrule
-S1 & sensor density & 0.615 & 0.892 & 0.965 & 0.015 & 0.263 & 0.727 \\
-\tblHl \textbf{S2} & \textbf{fleet size N} & \textbf{0.489} & \textbf{0.662} & \textbf{0.757} & \textbf{0.001} & \textbf{0.241} & \textbf{0.482} \\
-S3 & battery capacity & 0.550 & 0.869 & 0.946 & 0.004 & 0.362 & 0.704 \\
-S4 & charging pads S & 0.598 & 0.887 & 0.932 & 0.014 & 0.333 & 0.466 \\
-S5 & $R_{\mathrm{comm}}$ & 0.550 & 0.892 & 0.888 & 0.004 & 0.478 & 0.723 \\
-S6 & $R_{\mathrm{cov}}$ & 0.586 & 0.792 & 0.891 & 0.054 & 0.483 & 0.460 \\
-S7 & failure time & 0.597 & 0.905 & 0.988 & 0.003 & 0.481 & 0.962 \\
-S8 & combined stress & 0.252 & 0.499 & 0.667 & 0.000 & 0.000 & 0.189 \\
-S9 & initial deployment & 0.700 & 0.906 & 0.994 & 0.045 & 0.491 & 0.980 \\
+S1 & sensor density & 0.623 & 0.892 & 0.965 & 0.016 & 0.263 & 0.730 \\
+\tblHl \textbf{S2} & \textbf{fleet size N} & \textbf{0.494} & \textbf{0.662} & \textbf{0.756} & \textbf{0.003} & \textbf{0.241} & \textbf{0.482} \\
+S3 & battery capacity & 0.561 & 0.883 & 0.947 & 0.004 & 0.363 & 0.706 \\
+S4 & charging pads S & 0.599 & 0.890 & 0.931 & 0.013 & 0.333 & 0.447 \\
+S5 & $R_{\mathrm{comm}}$ & 0.562 & 0.894 & 0.888 & 0.002 & 0.478 & 0.723 \\
+S6 & $R_{\mathrm{cov}}$ & 0.585 & 0.795 & 0.892 & 0.054 & 0.483 & 0.461 \\
+S7 & failure time & 0.596 & 0.905 & 0.988 & 0.012 & 0.481 & 0.962 \\
+S8 & combined stress & 0.252 & 0.486 & 0.670 & 0.000 & 0.000 & 0.190 \\
+S9 & initial deployment & 0.710 & 0.906 & 0.994 & 0.054 & 0.491 & 0.980 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -158,9 +153,9 @@ S9 & initial deployment & 0.700 & 0.906 & 0.994 & 0.045 & 0.491 & 0.980 \\
 \cmidrule(lr){2-4}
 Observation & CK & AG & SC &  &  \\
 \midrule
-A local only & 0.639\,$\pm$\,0.069 & 0.981 & 0.011 & 1.76 / 8 & 10.7 \\
-B + identity & 0.654\,$\pm$\,0.116 & 0.982 & 0.015 & 2.19 / 8 & 10.0 \\
-\tblHl \textbf{C + identity + map} & \textbf{0.662\,$\pm$\,0.058} & \textbf{0.984} & \textbf{0.010} & \textbf{1.83 / 8} & \textbf{10.8} \\
+A local only & 0.640\,$\pm$\,0.080 & 0.986 & 0.009 & 1.84 / 8 & 11.3 \\
+B + identity & 0.648\,$\pm$\,0.092 & 0.993 & 0.007 & 2.43 / 8 & 11.8 \\
+\tblHl \textbf{C + identity + map} & \textbf{0.674\,$\pm$\,0.060} & \textbf{0.987} & \textbf{0.010} & \textbf{1.85 / 8} & \textbf{11.0} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -185,10 +180,10 @@ B + identity & 0.654\,$\pm$\,0.116 & 0.982 & 0.015 & 2.19 / 8 & 10.0 \\
 \cmidrule(lr){2-4}
 Variant & CK & AG & SC &  &  \\
 \midrule
-A & 0.662 & 0.984 & 0.010 & 0.9 & 623.7 \\
-\tblHl \textbf{B} & \textbf{0.685} & \textbf{1.000} & \textbf{0.016} & \textbf{0.0} & \textbf{0.0} \\
-C & 0.662 & 0.969 & 0.016 & 0.7 & 632.5 \\
-D & 0.584 & 0.967 & 0.005 & 6.3 & 139.7 \\
+A & 0.674 & 0.987 & 0.010 & 0.4 & 543.3 \\
+\tblHl \textbf{B} & \textbf{0.684} & \textbf{1.000} & \textbf{0.029} & \textbf{0.0} & \textbf{0.0} \\
+C & 0.656 & 0.989 & 0.002 & 0.8 & 509.4 \\
+D & 0.624 & 0.957 & 0.004 & 5.7 & 105.3 \\
 \bottomrule
 \end{tabular}
 \tblNote{* A: the proposed configuration; B: + a pack that cannot run out; C: without the threshold term; D: with the previous energy rule.}
@@ -239,8 +234,8 @@ $G=8$ & 0.651 & 0.986 & 0.009 & 10.3 \\
 \cmidrule(lr){2-5}
 Learner & CK & AG & SC & CovIntegral &  \\
 \midrule
-\tblHl \textbf{A} & \textbf{0.662\,$\pm$\,0.058} & \textbf{0.984} & \textbf{0.010} & \textbf{0.338} & \textbf{--} \\
-B & 0.641\,$\pm$\,0.065 & 0.971 & 0.013 & 0.359 & -- \\
+\tblHl \textbf{A} & \textbf{0.674\,$\pm$\,0.060} & \textbf{0.987} & \textbf{0.010} & \textbf{0.326} & \textbf{--} \\
+B & 0.639\,$\pm$\,0.051 & 0.983 & 0.005 & 0.361 & -- \\
 \bottomrule
 \end{tabular}
 \tblNote{* Energy is not recorded in this artefact.}

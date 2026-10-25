@@ -1,24 +1,13 @@
 {
   "policy": "every stored policy (the learned controller)",
   "full": true,
-  "disconnected_steps": 6,
-  "after_active_set_change": 6,
+  "disconnected_steps": 4,
+  "after_active_set_change": 4,
   "after_teleport": 0,
   "unexplained": 0,
   "rows": [
     {
-      "t": 1528,
-      "n_active_before": 8,
-      "n_active_after": 7,
-      "left": true,
-      "teleported": 0,
-      "left_agents": 0,
-      "revived_agents": 1,
-      "policy_seed": 1,
-      "eval_seed": 3
-    },
-    {
-      "t": 1929,
+      "t": 1981,
       "n_active_before": 8,
       "n_active_after": 7,
       "left": true,
@@ -29,7 +18,7 @@
       "eval_seed": 0
     },
     {
-      "t": 1777,
+      "t": 1827,
       "n_active_before": 8,
       "n_active_after": 7,
       "left": true,
@@ -40,18 +29,7 @@
       "eval_seed": 1
     },
     {
-      "t": 1948,
-      "n_active_before": 8,
-      "n_active_after": 7,
-      "left": true,
-      "teleported": 0,
-      "left_agents": 0,
-      "revived_agents": 1,
-      "policy_seed": 2,
-      "eval_seed": 2
-    },
-    {
-      "t": 1708,
+      "t": 1964,
       "n_active_before": 8,
       "n_active_after": 7,
       "left": true,
@@ -62,9 +40,9 @@
       "eval_seed": 3
     },
     {
-      "t": 1874,
-      "n_active_before": 7,
-      "n_active_after": 6,
+      "t": 1974,
+      "n_active_before": 8,
+      "n_active_after": 7,
       "left": true,
       "teleported": 0,
       "left_agents": 0,

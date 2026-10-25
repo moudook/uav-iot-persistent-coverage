@@ -449,6 +449,26 @@ def build_tokens():
             # in the last digit
             obs_raw[key] = (mean, half)
             obs_corr[key] = _paired_corr(x, y)
+        # ABL_ID_CLAUSE is the identity arm's clause used in the
+        # CONTRIB bullet and in the Results section.  It is derived here,
+        # from the observation A/B comparison, rather than from
+        # results_ablation.csv, which does not contain an agent-identity
+        # variant.  Without this the token was never created, and the
+        # prose kept the typed value instead.
+        if "OBS_B" in obs_raw:
+            _m, _h = obs_raw["OBS_B"]
+            tok["ABL_ID_CI"] = f"[{_m - _h:+.3f}, {_m + _h:+.3f}]"
+            tok["ABL_ID_DELTA"] = f"{_m:+.3f}"
+            if abs(_m) > _h:
+                tok["ABL_ID_CLAUSE"] = (
+                    f"the identity is worth {_m:+.3f} persistent "
+                    f"coverage (95\\% interval @@ABL_ID_CI@@)")
+            else:
+                tok["ABL_ID_CLAUSE"] = (
+                    f"the identity changes persistent coverage by {_m:+.3f}, "
+                    f"an interval @@ABL_ID_CI@@ that includes zero, so at "
+                    f"this budget what it demonstrably buys is the ability "
+                    f"to specialise")
         # the exclusion argument for the observation content
         obs_stats = []
         for key, label in (("OBS_B", "adding the agent identity"),
@@ -939,17 +959,48 @@ def build_tokens():
                         f"(p = {r['p']:.4f})" for r in
                         sorted(losers, key=lambda x: -abs(x["mean"])))
                     tok["ABL_BONF_NOTE"] = (
-                        f"The table is a family of {m_arms} paired tests and "
+                        f".  The table is a family of {m_arms} paired tests and "
                         f"the intervals above are unadjusted, so the "
                         f"correction is stated: with a Bonferroni "
                         f"correction over the table the threshold is "
-                        f"alpha = {alpha_b:.4f}, and the components whose "
+                        f"$\\alpha = {alpha_b:.4f}$, and the components whose "
                         f"paired p-value survives it are "
                         f"{tok['ABL_BONF_SURVIVORS']}"
                         + (f", while {tok['ABL_BONF_LOSERS']} does not "
                            f"survive that correction and is therefore "
                            f"reported as suggestive rather than resolved"
                            if losers else ""))
+                # A SUMMARY THAT REFERS TO A NOTE MUST NEVER REFER TO A NOTE
+                # THAT WAS NOT COMPUTED.  The summary below embeds
+                # @@ABL_BONF_NOTE@@ unconditionally, and the assembler writes
+                # a visible [pending: ...] marker for a token it is not
+                # given.  When the paired p-value was unavailable, the
+                # `survivors` branch above did not run, so the note was never
+                # created and the marker sat inside the sentence -- which is
+                # why the prose around it went on quoting typed numbers
+                # instead of the macro.  The note is therefore defined on
+                # every path.
+                if "ABL_BONF_NOTE" not in tok:
+                    _has_p = any(r["p"] == r["p"] for r in rows_p)
+                    if not _has_p:
+                        tok["ABL_BONF_NOTE"] = (
+                            f"The table is a family of {m_arms} paired tests "
+                            f"and the intervals above are unadjusted; the "
+                            f"artefact does not carry the paired p-value the "
+                            f"correction would need, so the multiplicity "
+                            f"correction is not reported for this table.")
+                    elif m_arms > 1:
+                        tok["ABL_BONF_NOTE"] = (
+                            f"The table is a family of {m_arms} paired tests "
+                            f"and the intervals above are unadjusted, so the "
+                            f"correction is stated: with a Bonferroni "
+                            f"correction over the table the threshold is "
+                            f"$\\alpha = {alpha_b:.4f}$, and no component's "
+                            f"paired p-value survives it, so every component "
+                            f"above is reported as suggestive rather than "
+                            f"resolved.")
+                    else:
+                        tok["ABL_BONF_NOTE"] = ""
                 tok["ABL_SUMMARY"] = (
                     "The paired comparison, in which every variant is "
                     "trained on the same training seeds as the full "
@@ -1076,8 +1127,8 @@ def build_tokens():
             tok["ABL_BEST_OBS"] = "the observation terms"
             tok["ABL_BEST_OBS_DELTA"] = "n/a"
             tok["ABL_BEST_OBS_TEXT"] = (
-                "The observation terms are priced individually in the "
-                "table above")
+                "The observation terms are priced individually in "
+                "Table~\\ref{tab:results_obs}.")
         # the fall-back for the components that matter: if the per-seed
         # values are not in the artefact, the unpaired difference is used and
         # is reported as such
@@ -1417,6 +1468,12 @@ def build_tokens():
         # PAIRED against it and not against the base comparison: a reader
         # who does not know the reference cannot tell what the interval
         # is an interval of.
+        # the credit arm is paired against the proposed configuration too,
+        # and it is not part of the loop above because its arm set is
+        # different; name it here so the sentence is complete
+        if refs and "the proposed configuration of the credit experiment" \
+                not in refs:
+            refs.append("the proposed configuration of the credit experiment")
         ref_clause = ""
         if refs:
             ref_clause = (".  Every interval is paired over the same "
@@ -2263,6 +2320,22 @@ def build_tokens():
             # the yardstick of the whole paper: the seed-to-seed spread
             tok["ABL_YARDSTICK"] = f"{s_seed:.3f}"
 
+    # The seed-to-seed spread above was taken from base_seed_rows.jsonl,
+    # which still holds a 3-seed run; the paper's headline is an 8-seed
+    # run, so the authoritative spread is recomputed from the base table's
+    # per-seed CKs.  The scene decomposition (VAR_SCENE) is unaffected,
+    # because it measures per-scene variation of a fixed controller.
+    _base = load_csv("results_main.csv")
+    _mp = next((r for r in _base if r.get("model") == "MAPPO"), None) if _base else None
+    if _mp:
+        _ps = per_seed_ck(_mp)
+        if len(_ps) > 1:
+            _s = float(np.std(_ps, ddof=1))
+            tok["VAR_SEED"] = f"{_s:.3f}"
+            tok["VAR_SEED_SE"] = f"{_s / np.sqrt(len(_ps)):.3f}"
+            tok["VAR_N_SEEDS"] = str(len(_ps))
+            tok["ABL_YARDSTICK"] = f"{_s:.3f}"
+
     # ------------------------------------------------------------------
     # the learning curve of the first training run
     # ------------------------------------------------------------------
@@ -2331,6 +2404,17 @@ def screen(tok):
     if bad:
         print(f"  [screen] {len(bad)} token(s) dropped as unusable: "
               + ", ".join(sorted(bad)))
+    # A token that embeds another token must embed one that exists.  Without
+    # this, a missing sibling becomes a visible [pending: ...] marker sitting
+    # inside the sentence, which is how the ablation summary ended up quoting
+    # typed numbers instead of the macro: the note it referenced was never
+    # computed, and the prose kept the typed value rather than the broken
+    # macro.
+    for _k, _v in list(tok.items()):
+        for _ref in re.findall(r"@@([A-Z_0-9]+)@@", str(_v)):
+            if _ref not in tok:
+                raise RuntimeError(
+                    f"token {_k!r} embeds undefined token {_ref!r}")
     return tok
 
 
@@ -2348,8 +2432,12 @@ def fill(text, tok):
         if not re.search(r"@@[A-Z_0-9]+@@", text):
             break
     # a token with only its opening delimiter is just as wrong as one
-    # with both, so the check looks for the opening delimiter alone
-    missing = sorted(set(re.findall(r"@@+([A-Z_0-9]+)", text)))
+    # with both, so the check looks for the opening delimiter alone.
+    # Token names may be camelCase (e.g. @@MAPPOStranded@@), so the
+    # pattern must accept lower-case letters too; otherwise a token whose
+    # name starts with a capital and continues in lower case is reported
+    # as a missing mixed-case fragment of itself.
+    missing = sorted(set(re.findall(r"@@+([A-Za-z0-9_]+)", text)))
     return text, missing
 
 

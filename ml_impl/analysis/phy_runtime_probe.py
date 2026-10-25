@@ -15,11 +15,11 @@ WHAT IT SHOWS
      reported SNR.  So the statistic is not a pure constant.
   2. It does NOT track the receiver distance: the same value is reported
      for receivers at 10, 30, 50 and 80 m, although the configured path
-     loss differs by 13.7 dB between them.
+     loss differs by 5.3 dB between them (slant range).
   3. The reception decision is distance-independent: the link closes at
      the same transmit power for every receiver distance, although the
      configured path loss implies that the closure boundary at 80 m should
-     be 13.7 dB below the boundary at 10 m.
+     be 5.3 dB below the boundary at 10 m.
 
   The quantity that a cross-validation of the path-loss model needs is the
   SNR AS A FUNCTION OF DISTANCE.  That is precisely what this statistic
@@ -179,7 +179,7 @@ def main():
             check="minSnir tracks the receiver distance",
             ok=spread > 1.0,
             measured=f"spread over 10-80 m = {spread:.4f} dB "
-                     f"(the configured path loss differs by 13.7 dB)",
+                     f"(the configured path loss differs by 5.3 dB)",
             note="FAIL: this is the quantity a path-loss cross-validation "
                  "needs, and the statistic does not report it"))
     closes = [r for r in rows if all(v == 0 for v in r["receptions"].values())]
@@ -192,7 +192,7 @@ def main():
         measured=f"the link is open at {opens[0]['tx_dbm']:.0f} dBm and closed "
                  f"at {closes[0]['tx_dbm']:.0f} dBm, at the SAME threshold for "
                  f"every receiver distance (10, 30, 50, 80 m)",
-        note="FAIL: the configured path loss implies a 13.7 dB spread in the "
+        note="FAIL: the configured path loss implies a 5.3 dB spread in the "
              "closure boundary between 10 m and 80 m"))
     checks.append(dict(
         check="a negative control exists and the observable responds to it",

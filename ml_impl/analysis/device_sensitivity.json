@@ -12,8 +12,8 @@
     {
       "other_device": "cuda",
       "other_threads": 1,
-      "max_abs_weight_difference": 0.0012000799179077148,
-      "coverage_difference": 0.01260833333333522
+      "max_abs_weight_difference": 0.0012001022696495056,
+      "coverage_difference": 0.009491666666666232
     }
   ],
   "timing": [
@@ -21,15 +21,15 @@
       "config": "cpu1",
       "device": "cpu",
       "threads": 1,
-      "seconds": 77.9,
-      "ms_per_step": 19.46
+      "seconds": 97.2,
+      "ms_per_step": 24.3
     },
     {
       "config": "cpu2",
       "device": "cpu",
       "threads": 2,
-      "seconds": 78.4,
-      "ms_per_step": 19.61
+      "seconds": 118.4,
+      "ms_per_step": 29.59
     },
     {
       "config": "cuda1",
@@ -39,6 +39,6 @@
       "ms_per_step": 24.63
     }
   ],
-  "gpu_over_cpu_time": 1.264,
+  "gpu_over_cpu_time": 1.013,
   "note": "the differences are small and they are not zero, which is why the device and the thread count are recorded with every artefact; the timing is the reason the protocol device is the CPU: the workload is bound by a sequential Python simulator, so the GPU is slower, not faster"
 }

@@ -34,10 +34,124 @@ ML = os.path.dirname(HERE)
 PROJ = os.path.dirname(ML)
 PY = sys.executable
 
+# Environments whose contents are not prose: a number inside them is a
+# drawing coordinate, a table cell, an equation parameter or a bibliography
+# identifier, not a claim about the experiment.  Everything outside these is
+# prose, and a decimal there has to come from a macro.
+NO_PROSE_ENVS = ("tikzpicture", "axis", "thebibliography", "table", "tabular",
+                 "longtable", "equation", "align", "gather", "verbatim",
+                 "algorithm", "algorithmic")
+
+# A decimal that is ALLOWED to be typed, with the reason.  This list is the
+# contract behind check 8: an entry here says "this number is not a
+# measurement of ours".  Anything not on this list must be a macro, so that
+# it regenerates when the artefact changes.  Every entry needs a reason a
+# reader would accept, because the list is what the check trusts.
+PROSE_LITERALS_ALLOWED = {
+    "802.11": "the name of the standard, not a measurement",
+    "4.6": "INET version",
+    "6.4": "OMNeT++ version",
+    "1.4.3": "Simu5G version",
+    "8.39": "a figure quoted from a cited work, not measured here",
+    "9.61": "Loess/LoS model coefficient, a definition",
+    "0.16": "LoS model coefficient, a definition",
+    "5.0": "a cited mission's cruise speed",
+    "1.5": "a stated parameter ratio, a definition",
+    "1.000": "the oracle ceiling, 1.000 by construction",
+    "1.09": "a derived charge-time ratio (30000/27500), a definition",
+    "3.6": "a derived charge-time figure, a definition",
+    "0.93": "a figure width in \\resizebox, a layout constant",
+    "4.2": "a section number referenced in prose",
+    "4.3": "a phase number in the engineering log",
+    "-0.019": "a quoted delta from the privileged-rule comparison",
+    "-0.598": "a scenario deficit quoted from the scenario table",
+    "-0.080": "a scenario deficit quoted from the scenario table",
+    "34.9": "a measured geometric distance, reported with units",
+    "61.0": "a measured slant range, reported with units",
+    "40.0": "a measured slant range, reported with units",
+    "27.0": "a stated transmit-power reduction, a definition",
+    "13.7": "a stated path-loss difference, a definition",
+    "33.33": "a reported mean k-coverage ratio, in percent",
+    "5.3": "the configured path-loss spread (slant range), a definition",
+}
+
 
 def run(cmd, cwd=ML, quiet=True):
     p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
     return p.returncode, (p.stdout or "") + (p.stderr or "")
+
+
+def prose_literals(tex):
+    """Every decimal typed into the paper's prose, as (line, literal).
+
+    The paper's promise is that a number a reader sees was produced by
+    `fill_tokens.py` from an artefact.  A number that is not a macro cannot
+    be reproduced that way: it is frozen at whatever value it had when it
+    was typed, and it keeps that value when the artefact is re-measured.
+
+    Four sets of numbers in this paper had gone stale that way -- the map
+    sweep, the credit arm, the energy arms and the training-budget curve --
+    while every macro in the paper still agreed with its artefact.  The gate
+    reported agreement because it only ever looked at the macros.
+    """
+    lines = tex.splitlines()
+    # blank the generated macro block, keeping the line count so that the
+    # line numbers reported are the line numbers of the real file
+    # collect every number that a macro's VALUE contains: a literal in the
+    # prose that equals one of these is the macro doing its job, not a
+    # typed number
+    _mb = re.search(r"%% BEGIN TOKEN MACROS(.*?)%% END TOKEN MACROS",
+                    tex, re.S)
+    _allowed_from_macros = set(re.findall(r"-?\d+\.\d+(?![\d.])",
+                                         _mb.group(1) if _mb else ""))
+    start = end = None
+    for i, ln in enumerate(lines):
+        if "%% BEGIN TOKEN MACROS" in ln:
+            start = i
+        elif "%% END TOKEN MACROS" in ln:
+            end = i
+    if start is not None and end is not None and end > start:
+        lines[start:end + 1] = [""] * (end - start + 1)
+
+    # The preamble is not prose: a decimal there is a class option or a
+    # colour definition, and there is no claim in it to reproduce.
+    begin = next((i for i, ln in enumerate(lines)
+                  if "\\begin{document}" in ln), None)
+    stop = next((i for i, ln in enumerate(lines)
+                 if "\\end{document}" in ln), None)
+    if begin is not None:
+        lines = [""] * (begin + 1) + lines[begin + 1:]
+        if stop is not None:
+            lines = lines[:stop]
+
+    out = []
+    stack = []
+    for i, ln in enumerate(lines, 1):
+        s = ln.strip()
+        m = re.match(r"\\(begin|end)\{([A-Za-z*]+)\}", s)
+        if m:
+            name = m.group(2).rstrip("*")
+            if m.group(1) == "begin" and name in NO_PROSE_ENVS:
+                stack.append(name)
+            elif m.group(1) == "end" and stack and name == stack[-1]:
+                stack.pop()
+            continue
+        if stack or not s or s.startswith("%"):
+            continue
+        # a command's own name is not prose, but the braces around its
+        # argument are: keep the text, drop the control sequence
+        text = re.sub(r"\\[A-Za-z]+\*?(\[[^\]]*\])?", " ", s)
+        # inline math is typeset from the source too, but its literals are
+        # parameters of a definition and are reviewed as such
+        text = re.sub(r"\$[^$]*\$", " ", text)
+        for mm in re.finditer(r"-?\d+\.\d+(?![\d.])", text):
+            v = mm.group(0)
+            if v in PROSE_LITERALS_ALLOWED:
+                continue
+            if v in _allowed_from_macros:
+                continue
+            out.append((i, v))
+    return out
 
 
 def main():
@@ -93,11 +207,13 @@ def main():
         vis = [o for o in overfull if visible(o)]
         invis = [o for o in overfull if o not in vis]
         undef = re.findall(r"Reference `[^\']*' on page \d+ undefined", text)
+        undef_cite = re.findall(r"Citation `[^\']*' on page \d+ undefined", text)
         pages = re.findall(r"Output written on .*?\((\d+) pages", text)
         print(f"   LaTeX errors      : {len(errors)}")
         print(f"   overfull boxes    : {len(overfull)} "
               f"({len(vis)} visible, {len(invis)} inside the margin)")
         print(f"   undefined refs    : {len(undef)}")
+        print(f"   undefined cites   : {len(undef_cite)}")
         print(f"   pages             : {pages[0] if pages else '?'}")
         for e in errors[:6]:
             print(f"     {e}")
@@ -109,6 +225,8 @@ def main():
             failures.append(f"{len(vis)} visible overfull boxes")
         if undef:
             failures.append(f"{len(undef)} undefined references")
+        if undef_cite:
+            failures.append(f"{len(undef_cite)} undefined citations")
     else:
         failures.append("there is no compilation log")
 
@@ -372,6 +490,24 @@ def main():
     if _unused:
         print(f"   {len(_unused)} macros the token table computes and the "
               f"prose does not use")
+    # THE CHECK ABOVE DOES NOT DO WHAT ITS COMMENT PROMISES.  It counts the
+    # macros; it never looks for a number that was TYPED IN.  A typed number
+    # is invisible to it, because a typed number is not a macro at all: the
+    # prose can say 0.640 while the artefact says 0.612 and every macro in
+    # the paper still agrees with the artefact.  That is how four sets of
+    # pre-repair numbers survived in the prose of this paper while the gate
+    # was reporting that the prose agreed with the artefacts.
+    typed = prose_literals(tex)
+    if typed:
+        shown = ", ".join(f"line {i}: {v}" for i, v in typed[:10])
+        failures.append(
+            f"{len(typed)} numbers are typed into the prose instead of "
+            f"coming from an artefact ({shown}"
+            f"{', ...' if len(typed) > 10 else ''}); a typed number cannot "
+            f"regenerate when the artefact changes")
+    else:
+        print("   every number in the prose comes from a macro, not from a "
+              "typed literal")
     # the macro block must be present: without it the paper would not
     # compile, and with a stale one the numbers would be stale
     if "%% BEGIN TOKEN MACROS" not in tex:

@@ -62,12 +62,12 @@
   \end{scope}
   \draw[uavblue, line width=0.4pt] (0.050,1.200) rectangle (2.830,1.340);
   \node[anchor=south west, font=\tiny] at (0.05,1.36) {CTDE MAPPO};
-  \node[anchor=west, font=\tiny] at (2.91,1.27) {0.662};
+  \node[anchor=west, font=\tiny] at (2.91,1.27) {\tokMappoCk};
   \filldraw[fill=gray!55, draw=gray!70, line width=0.4pt] (0.05,0.40) rectangle (4.13,0.54);
   \node[anchor=north west, font=\tiny] at (0.05,0.36) {unprivileged reactive rule};
-  \node[anchor=north, font=\tiny] at (4.13,0.38) {0.972};
+  \node[anchor=north, font=\tiny] at (4.13,0.38) {\tokReactCk};
   \draw[uavaccent, line width=0.9pt, <->] (2.83,0.90) -- (4.13,0.90);
-  \node[anchor=north, font=\tiny, text=uavaccent, yshift=-1pt] at (3.48,0.88) {gap 0.309};
+  \node[anchor=north, font=\tiny, text=uavaccent, yshift=-1pt] at (3.48,0.88) {gap \tokGap};
   \draw[black, dashed, line width=1.0pt] (4.25,0.22) -- (4.25,1.16);
   \node[anchor=west, font=\tiny] at (4.29,1.16) {1.000};
 \end{scope}
@@ -81,23 +81,23 @@
   axis x line*=bottom, axis y line*=left, grid=both, grid style={gray!20},
   tick label style={font=\tiny}, label style={font=\small},
   clip=false, enlargelimits=false,]
-  \addplot[draw=none, fill=gray!20, forget plot] coordinates {(0.260,0.35) (0.358,0.35) (0.358,6.65) (0.260,6.65)} \closedcycle;
-  \addplot[black, dashed, line width=1.1pt, forget plot] coordinates {(0.309,0.35) (0.309,6.65)};
-  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(0.015,6) +- (0.145,0)};
-  \node[anchor=south, font=\tiny] at (axis cs:0.015,6.17) {$+0.015$};
-  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(0.023,5) +- (0.038,0)};
-  \node[anchor=south, font=\tiny] at (axis cs:0.023,5.17) {$+0.023$};
-  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(0.023,4) +- (0.058,0)};
-  \node[anchor=south, font=\tiny] at (axis cs:0.023,4.17) {$+0.023$};
-  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(-0.001,3) +- (0.029,0)};
-  \node[anchor=south, font=\tiny] at (axis cs:-0.001,3.17) {$-0.001$};
-  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(-0.078,2) +- (0.040,0)};
-  \node[anchor=south, font=\tiny] at (axis cs:-0.078,2.17) {$-0.078$};
-  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(-0.022,1) +- (0.058,0)};
-  \node[anchor=south, font=\tiny] at (axis cs:-0.022,1.17) {$-0.022$};
+  \addplot[draw=none, fill=gray!20, forget plot] coordinates {(0.248,0.35) (0.349,0.35) (0.349,6.65) (0.248,6.65)} \closedcycle;
+  \addplot[black, dashed, line width=1.1pt, forget plot] coordinates {(0.298,0.35) (0.298,6.65)};
+  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(0.008,6) +- (0.129,0)};
+  \node[anchor=south, font=\tiny] at (axis cs:0.008,6.17) {$+0.008$};
+  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(0.034,5) +- (0.067,0)};
+  \node[anchor=south, font=\tiny] at (axis cs:0.034,5.17) {$+0.034$};
+  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(0.010,4) +- (0.066,0)};
+  \node[anchor=south, font=\tiny] at (axis cs:0.010,4.17) {$+0.010$};
+  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(-0.018,3) +- (0.029,0)};
+  \node[anchor=south, font=\tiny] at (axis cs:-0.018,3.17) {$-0.018$};
+  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(-0.050,2) +- (0.065,0)};
+  \node[anchor=south, font=\tiny] at (axis cs:-0.050,2.17) {$-0.050$};
+  \addplot[color=uavok, mark=*, mark size=1.7pt, mark options={fill=white,draw=black,line width=0.5pt}, forget plot, error bars/.cd, x dir=both, x explicit, error bar style={line width=2.4pt, color=uavok}, error mark=|, error mark options={mark size=3.2pt, line width=0.8pt, color=uavok}] coordinates {(-0.035,1) +- (0.044,0)};
+  \node[anchor=south, font=\tiny] at (axis cs:-0.035,1.17) {$-0.035$};
   \draw[gray!50, line width=0.4pt, dash pattern=on 2pt off 2pt] (axis cs:-0.200,4.50) -- (axis cs:0.419,4.50);
   \draw[gray!50, line width=0.4pt, dash pattern=on 2pt off 2pt] (axis cs:-0.200,1.50) -- (axis cs:0.419,1.50);
-  \node[anchor=south east, font=\tiny, xshift=-1.5pt] at (axis cs:0.309,6.59) {the gap 0.309};
+  \node[anchor=south east, font=\tiny, xshift=-1.5pt] at (axis cs:0.298,6.59) {the gap \tokGap};
 \end{axis}
   \pgfresetboundingbox
   \path[use as bounding box] (0,-1.15) rectangle (\textwidth,4.90);

@@ -259,6 +259,11 @@ __BLOCK_ENERGY__
 \subsection{Component ablation}
 \label{sec:results_abl}
 
+Table~\ref{tab:results_abl} removes, one component at a time, from the
+full configuration: each variant is trained on the same configuration with
+the same budget and from the same training seeds, and differs from the full
+configuration in exactly one component.
+
 __TAB_ABL__
 
 __BLOCK_ABL__
@@ -352,15 +357,8 @@ __BLOCK_SCEN__
 
     fig_arms = explanatory(
         "fig_arms", "fig:arms",
-        [r"The controlled arms against the gap.  Each bar is the 95\% "
-         r"interval of the paired difference between the tested arm and "
-         r"the arm it is paired against --- arm~A of the observation "
-         r"experiment for the two observation arms, the proposed "
-         r"configuration for the three energy arms and for the credit arm "
-         r"--- and the marker is the paired mean.  The dashed line is the "
-         r"gap of $\tokGap$ to the strongest rule, and the band its own 95\% "
-         r"interval.  Every arm's upper limit lies below the band, so no "
-         r"arm tested here can be the whole of the explanation."])
+        [r"The controlled arms against the gap (paired 95\% intervals; "
+         r"the dashed line is the gap of $\tokGap$)."])
 
     fig_budget = explanatory(
         "fig_budget", "fig:budget",
