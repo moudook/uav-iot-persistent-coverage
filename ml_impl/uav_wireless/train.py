@@ -157,7 +157,7 @@ def agent_obs_dim(agent):
 # ----------------------------------------------------------------------
 def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
                verbose=True, per_agent_adv_norm=False, ent_coef=0.01,
-               value_norm=True, device=None):
+               value_norm=True, device=None, bc_path=None):
     """Train the proposed controller.
 
     THE DEVICE IS A PROTOCOL CHOICE, NOT A RESOURCE ACCIDENT.  The
@@ -215,6 +215,16 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
     agent = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim, state_dim=env.state_dim,
                   per_agent_adv_norm=per_agent_adv_norm, ent_coef=ent_coef,
                   value_norm=value_norm, device=device)
+    if bc_path:
+        if os.path.exists(bc_path):
+            try:
+                sd = torch.load(bc_path, map_location=agent.device, weights_only=True)
+                agent.actor.load_state_dict(sd)
+                if verbose:
+                    print(f"[train] loaded BC actor from {bc_path}")
+            except Exception as e:
+                if verbose:
+                    print(f"[train] BC load failed ({e}); training from scratch")
     hist = []
     for ep in range(episodes):
         B, summ = collect_rollout(env, agent, n_steps)
@@ -404,3 +414,4 @@ def baseline_reactive(cfg: SimConfig, steps=1000, seed=0):
         if done:
             break
     return env.summary()
+
