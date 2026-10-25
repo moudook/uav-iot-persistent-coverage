@@ -1,6 +1,6 @@
 # STATE — current sprint state
 
-Last update: 2026-10-25 13:10 local
+Last update: 2026-10-25 13:20 local
 
 ## Current gate / milestone
 G0 — setup and trust (Oct 24–25). In progress.
@@ -16,7 +16,9 @@ G0 — setup and trust (Oct 24–25). In progress.
 (none running)
 
 ## Finished results
-- Throughput benchmark: 231.8 steps/sec single env, 4.31 ms/step (N=5,M=20, 2000 steps). Logged 2026-10-25.
+- Throughput benchmark: 231.8 steps/sec single env, 4.31 ms/step (N=5,M=20, 2000 steps). At this rate, 2e6 steps/seed ~2.4 h single-threaded; ~2.4 h for 6 parallel seeds. Vectorization (32-128 envs) needed for G1+.
+- SC biconditional fixed in Mlawn-midsem-tex.tex (line 947): F=empty => SC=0 (one-directional). Gate passes.
+- OMNeT++/INET: NOT installed. opp_env + OMNeT++ 6.4 + INET 4.7 needed.
 
 ## Decisions
 - 2026-10-25: Initialized git repo at repo root (was not a git repo before). Committed docs/MASTER_PROMPT.md.
