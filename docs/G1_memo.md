@@ -34,6 +34,29 @@ Reactive rule (unprivileged): 0.972 (deterministic). Oracle ceiling: 1.000.
 - The stress regimes (R6) are now critical: we need regimes where ceiling - best rule >= 0.10 to have a meaningful "main" result. Candidates: sequential/multiple failures, single-pad bottleneck, small battery, low R_comm, clustered sensors, high traffic load, network degradation.
 - The credit-assignment diagnosis (C3) is still a hypothesis, not a finding. Needs ablation at converged budgets.
 
+
+
+## Convergence check (1 seed, 2e6 steps, 6 BLAS threads)
+| Episode | CK | Entropy |
+|---------|-----|---------|
+| 25      | 0.5694 | 1.3829 |
+| 50      | 0.6465 | 1.3869 |
+| 100     | 0.7022 | 1.4335 |
+| 200     | 0.6858 | 1.1881 |
+| 500     | 0.8214 | 1.1192 |
+| 999     | 0.3541 | 0.0143 |
+
+- Entropy collapsed at ep 675 (value 0.0933, below 0.1). Kill criterion violation (R3).
+- CK peaked at ep 500 (0.82) then collapsed to 0.35 by ep 999. Extreme instability (range 0.059-0.943).
+- Mean CK (last 100): 0.3745, worse than midsem 0.674.
+- Policy collapsed to near-deterministic (entropy 0.014). Consistent with credit-assignment hypothesis: team reward -> collapse.
+
+### Updated implications
+- Entropy collapse EXPLAINS the gap: policy collapses, not "none of the arms explains it."
+- C3 (credit-aware reward) is critical: team reward causes collapse; per-agent credit may fix it.
+- Residual/rule-anchored MAPPO (safety net) is essential.
+- Midsem 0.298 gap was not just undertrained -- it was a collapse artifact.
+
 ## Decisions
 - Retain thesis (network-in-the-loop MARL). The G1 result does not invalidate it.
 - Next: G2 (OMNeT++ Steps A+B) to build the information-channel model. INET 4.6 installing in WSL2.
