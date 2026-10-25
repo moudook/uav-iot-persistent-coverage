@@ -1,0 +1,3 @@
+- algorithm=mappo
+- task=vmas/simple_spread
+- experiment.max_n_frames=20000

@@ -1,0 +1,44 @@
+content = '''[General]
+network = UavNetwork
+sim-time-limit = 40s
+
+*.numUavs = 8
+*.numSensors = 20
+
+**.constraintAreaMinX = 0m
+**.constraintAreaMinY = 0m
+**.constraintAreaMinZ = 0m
+**.constraintAreaMaxX = 80m
+**.constraintAreaMaxY = 80m
+**.constraintAreaMaxZ = 0m
+
+**.uav[*].mobility.typename = "BonnMotionMobility"
+**.uav[*].mobility.traceFile = "traces/episode_000.movements"
+**.uav[*].mobility.nodeId = -1
+
+**.sensor[*].mobility.typename = "StationaryMobility"
+**.sensor[*].mobility.initFromDisplayString = false
+**.sensor[*].mobility.initialX = uniform(0m, 80m)
+**.sensor[*].mobility.initialY = uniform(0m, 80m)
+**.sink.mobility.typename = "StationaryMobility"
+**.sink.mobility.initFromDisplayString = false
+**.sink.mobility.initialX = 40m
+**.sink.mobility.initialY = 40m
+
+**.wlan[*].bitrate = 6Mbps
+**.wlan[*].mac.dcf.channelAccess.cwMin = 7
+**.wlan[*].radio.transmitter.power = 0.5W
+**.wlan[*].radio.receiver.sensitivity = -85dBm
+**.wlan[*].radio.receiver.snirThreshold = 4dB
+
+*.configurator.config = xml("<config><interface hosts='**' address='10.0.0.x' netmask='255.255.255.0'/></config>")
+
+**.scalar-recording = true
+**.vector-recording = true
+'''
+# Write to both WSL and project
+wsl_path = "/home/gbust/omnetpp_ws/inet-4.6.0/examples/uav_omnet/omnetpp.ini"
+proj_path = "Simulation/omnet_uav/omnetpp.ini"
+open(wsl_path, "w").write(content)
+open(proj_path, "w").write(content)
+print("done")
