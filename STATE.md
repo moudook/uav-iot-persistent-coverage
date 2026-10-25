@@ -1,6 +1,6 @@
 # STATE — current sprint state
 
-Last update: 2026-10-25 14:30 local
+Last update: 2026-10-25 12:00 local
 
 ## Current gate / milestone
 G0 — setup and trust (Oct 24–25). In progress.
@@ -32,6 +32,8 @@ G0 — setup and trust (Oct 24–25). In progress.
 - Is the existing Project1 simulator vectorized? (need throughput benchmark)
 
 ## BACKLOG (prioritized, >=10 items)
+- Step A basic sim runs (40s sim time, 0.0005s wall). Need to add traffic (beacons, sensor data, PDR/delay measurement).
+- Convergence check running (PID 16544, ~2.2h ETA).
 1. Measure RAM and disk free space.
 2. Check if OMNeT++/INET/opp_env installed; record in docs/ENV.md.
 3. Vectorize the existing UAV env and benchmark steps/sec (G0).
