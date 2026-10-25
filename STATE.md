@@ -1,6 +1,6 @@
 # STATE — current sprint state
 
-Last update: 2026-10-25 14:00 local
+Last update: 2026-10-25 14:30 local
 
 ## Current gate / milestone
 G0 — setup and trust (Oct 24–25). In progress.
@@ -13,6 +13,7 @@ G0 — setup and trust (Oct 24–25). In progress.
 - OS: Windows 11, PowerShell
 
 ## Running jobs
+- Convergence check: 1 seed x 1000 episodes (2e6 steps) running in background. Log: ml_impl/runs/g1/convergence.log. ETA ~2.4h.
 - OMNeT++ 6.4.0 install: tmux session omnet_install in WSL2 Ubuntu. Download in progress. Log: /tmp/opp_build.log
 - G1 budget truth test: 5 seeds (0-4) running in parallel, 200 episodes x 2000 steps = 400k steps/seed. PIDs 10404,2580,16808,18176,2376. Logs: ml_impl/runs/g1/seed_*.log (buffered)
 
