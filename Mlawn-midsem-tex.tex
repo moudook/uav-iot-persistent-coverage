@@ -87,37 +87,41 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 % so the prose cannot drift away from the measurement.
 \newcommand{\tokAblBestObs}{the observation terms}
 \newcommand{\tokAblBestObsDelta}{n/a}
-\newcommand{\tokAblBestObsText}{The observation terms are priced individually in the table above}
+\newcommand{\tokAblBestObsText}{The observation terms are priced individually in Table~\ref{tab:results_obs}.}
+\newcommand{\tokAblBonfNote}{The table is a family of 6 paired tests and the intervals above are unadjusted, so the correction is stated: with a Bonferroni correction over the table the threshold is $\alpha = 0.0083$, and no component's paired p-value survives it, so every component above is reported as suggestive rather than resolved.}
 \newcommand{\tokAblCrit}{2.36}
 \newcommand{\tokAblEpisodes}{25}
 \newcommand{\tokAblEpisodesStress}{6}
+\newcommand{\tokAblIdCi}{[-0.121, +0.137]}
+\newcommand{\tokAblIdClause}{the identity changes persistent coverage by +0.008, an interval [-0.121, +0.137] that includes zero, so at this budget what it demonstrably buys is the ability to specialise}
+\newcommand{\tokAblIdDelta}{+0.008}
 \newcommand{\tokAblNSeeds}{8}
 \newcommand{\tokAblPairs}{the under-coverage term +0.097\,(0.092)}
 \newcommand{\tokAblResolution}{0.042}
 \newcommand{\tokAblResolutionMin}{0.000}
 \newcommand{\tokAblResolutionSd}{0.018}
 \newcommand{\tokAblSeeds}{8}
-\newcommand{\tokAblSummary}{The paired comparison, in which every variant is trained on the same training seeds as the full configuration, separates the components into two groups.  The differences below are the FULL configuration minus the variant, so a positive number is what the component is worth.  The components whose 95\% confidence interval for the paired difference excludes zero are the under-coverage term (+0.097, 95\% CI [+0.020, +0.174]); every other component's interval includes zero, and the worst resolution anywhere in the table is $0.042$ of persistent coverage, which is the WIDEST arm's resolution: the resolution is per-arm, and each arm's own interval is in the table \textbf{[pending: ABL\_BONF\_NOTE]}}
+\newcommand{\tokAblSummary}{The paired comparison, in which every variant is trained on the same training seeds as the full configuration, separates the components into two groups.  The differences below are the FULL configuration minus the variant, so a positive number is what the component is worth.  The components whose 95\% confidence interval for the paired difference excludes zero are the under-coverage term (+0.097, 95\% CI [+0.020, +0.174]); every other component's interval includes zero, and the worst resolution anywhere in the table is $0.042$ of persistent coverage, which is the WIDEST arm's resolution: the resolution is per-arm, and each arm's own interval is in the table The table is a family of 6 paired tests and the intervals above are unadjusted, so the correction is stated: with a Bonferroni correction over the table the threshold is $\alpha = 0.0083$, and no component's paired p-value survives it, so every component above is reported as suggestive rather than resolved.}
 \newcommand{\tokAblYardstick}{0.060}
 \newcommand{\tokAltBetter}{yes}
 \newcommand{\tokAltComparison}{and on this instance the deployment it identifies is the better of the two for the learned controller}
-\newcommand{\tokAltDelta}{0.108}
+\newcommand{\tokAltDelta}{0.083}
 \newcommand{\tokAltEpisodes}{25}
-\newcommand{\tokAltMeasuredCk}{0.770}
-\newcommand{\tokAltMeasuredStd}{0.039}
+\newcommand{\tokAltMeasuredCk}{0.757}
+\newcommand{\tokAltMeasuredStd}{0.041}
 \newcommand{\tokAltNfiveR}{44.72}
-\newcommand{\tokAltReportedCk}{0.662}
-\newcommand{\tokAltReportedStd}{0.055}
-\newcommand{\tokAltRulesSurvive}{the rule baselines were measured at that deployment as well, and the unprivileged reactive rule reaches 0.993 there against 0.972 at the reported deployment, so the gap of the learned controller is 0.223 there against 0.310 at the reported one: the ordering survives the better deployment, with a smaller margin}
+\newcommand{\tokAltReportedCk}{0.674}
+\newcommand{\tokAltReportedStd}{0.057}
+\newcommand{\tokAltRulesSurvive}{the rule baselines were measured at that deployment as well, and the unprivileged reactive rule reaches 0.993 there against 0.972 at the reported deployment, so the gap of the learned controller is 0.236 there against 0.298 at the reported one: the ordering survives the better deployment, with a smaller margin}
 \newcommand{\tokAltRuleAltCk}{0.993}
-\newcommand{\tokAltRuleGapAlt}{0.223}
-\newcommand{\tokAltRuleGapReported}{0.310}
+\newcommand{\tokAltRuleGapAlt}{0.236}
+\newcommand{\tokAltRuleGapReported}{0.298}
 \newcommand{\tokAltRuleNameAlt}{the unprivileged reactive rule}
 \newcommand{\tokAltRuleNameReported}{the unprivileged reactive rule}
 \newcommand{\tokAltRuleReportedCk}{0.972}
 \newcommand{\tokAltSeeds}{8}
-\newcommand{\tokAltVerdict}{the alternative deployment is feasible for the learned controller, and it does better there: with five UAVs and a 45 m coverage radius the learned controller reaches 0.770 against 0.662 for the reported eight-UAV deployment, a difference of +0.108 on the same training seeds and the same evaluation scenes.  The rule baselines were not measured at that operating point, so this establishes feasibility for the learned controller and not the superiority of the deployment}
-\newcommand{\tokAltVerdictShort}{the alternative deployment is feasible for the learned controller and it does better there, by +0.108 of persistent coverage}
+\newcommand{\tokAltVerdict}{the alternative deployment is feasible for the learned controller, and it does better there: with five UAVs and a 45 m coverage radius the learned controller reaches 0.757 against 0.674 for the reported eight-UAV deployment, a difference of +0.083 on the same training seeds and the same evaluation scenes.  The rule baselines were not measured at that operating point, so this establishes feasibility for the learned controller and not the superiority of the deployment}
+\newcommand{\tokAltVerdictShort}{the alternative deployment is feasible for the learned controller and it does better there, by +0.083 of persistent coverage}
 \newcommand{\tokArgAg}{0.993}
 \newcommand{\tokArgCi}{0.582}
 \newcommand{\tokArgCk}{0.418}
@@ -131,10 +135,10 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokArmsBonfN}{5}
 \newcommand{\tokArmsBonfUpper}{0.172}
 \newcommand{\tokArmsMargin}{0.161}
-\newcommand{\tokArmsMarginMax}{0.217}
-\newcommand{\tokArmsSummarySentence}{Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.137, margin +0.161); the full observation of the proposed configuration (upper limit 0.102, margin +0.196); removing the energy constraint (upper limit 0.081, margin +0.217); removing the threshold term (upper limit 0.028, margin +0.270); the previous energy rule (upper limit -0.038, margin +0.336), against a gap of 0.298.  Every arm's upper limit is below the gap, so none of them can be the whole of the explanation, by margins that are small but positive.  Every interval is paired over the same training seeds, against the local-only arm A of the observation experiment and the proposed configuration of the energy experiment.}
+\newcommand{\tokArmsMarginMax}{0.223}
+\newcommand{\tokArmsSummarySentence}{Controlled arms bound how much of the gap each alternative explanation can account for: adding the agent identity (upper limit 0.137, margin +0.161); the full observation of the proposed configuration (upper limit 0.102, margin +0.196); removing the energy constraint (upper limit 0.075, margin +0.223); removing the threshold term (upper limit 0.011, margin +0.287); the previous energy rule (upper limit 0.015, margin +0.283), against a gap of 0.298.  Every arm's upper limit is below the gap, so none of them can be the whole of the explanation, by margins that are small but positive.  Every interval is paired over the same training seeds, against the local-only arm A of the observation experiment and the proposed configuration of the energy experiment and the proposed configuration of the credit experiment.}
 \newcommand{\tokArmsSummaryShort}{Controlled arms bound how much of the gap each alternative explanation can account for, and every arm's upper confidence limit lies below the gap of 0.298 --- by margins that are small but positive, the smallest of them 0.161 --- so none of the explanations the arms test can be the whole of it}
-\newcommand{\tokArmsVerdict}{controlled arms bound how much of the gap the alternative explanations can account for: the content of the observation and the energy model are tested with a single-factor intervention whose upper confidence limit lies below the gap, by margins of 0.161 to 0.217 against a gap of 0.298}
+\newcommand{\tokArmsVerdict}{controlled arms bound how much of the gap the alternative explanations can account for: the content of the observation and the energy model are tested with a single-factor intervention whose upper confidence limit lies below the gap, by margins of 0.161 to 0.223 against a gap of 0.298}
 \newcommand{\tokAuditFail}{0}
 \newcommand{\tokAuditInfo}{4}
 \newcommand{\tokAuditItems}{38}
@@ -148,36 +152,36 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokBestRuleCk}{0.972}
 \newcommand{\tokBestRuleName}{the unprivileged reactive rule}
 \newcommand{\tokBudgetCaveat}{we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap}
-\newcommand{\tokBudgetFirstDelta}{+0.026}
-\newcommand{\tokBudgetFrac}{22}
+\newcommand{\tokBudgetFirstDelta}{+0.036}
+\newcommand{\tokBudgetFrac}{29}
 \newcommand{\tokBudgetGap}{0.298}
-\newcommand{\tokBudgetIncrements}{+0.026, +0.041}
-\newcommand{\tokBudgetLastCi}{[+0.007, +0.075]}
-\newcommand{\tokBudgetLastDelta}{+0.041}
-\newcommand{\tokBudgetLastP}{0.025}
+\newcommand{\tokBudgetIncrements}{+0.036, +0.050}
+\newcommand{\tokBudgetLastCi}{[+0.025, +0.075]}
+\newcommand{\tokBudgetLastDelta}{+0.050}
+\newcommand{\tokBudgetLastP}{0.002}
 \newcommand{\tokBudgetLastResolved}{yes}
-\newcommand{\tokBudgetMax}{0.662}
-\newcommand{\tokBudgetMaxStd}{0.078}
-\newcommand{\tokBudgetMin}{0.595}
+\newcommand{\tokBudgetMax}{0.674}
+\newcommand{\tokBudgetMaxStd}{0.079}
+\newcommand{\tokBudgetMin}{0.588}
 \newcommand{\tokBudgetN}{3}
-\newcommand{\tokBudgetPaired}{+0.067}
-\newcommand{\tokBudgetPairedCi}{[+0.017, +0.118]}
+\newcommand{\tokBudgetPaired}{+0.086}
+\newcommand{\tokBudgetPairedCi}{[+0.036, +0.135]}
 \newcommand{\tokBudgetPairedExcludesGap}{no}
-\newcommand{\tokBudgetPairedHalf}{0.051}
+\newcommand{\tokBudgetPairedHalf}{0.049}
 \newcommand{\tokBudgetPairedN}{8}
-\newcommand{\tokBudgetPairedP}{0.016}
-\newcommand{\tokBudgetPairedUp}{0.118}
-\newcommand{\tokBudgetPairedVerdict}{the paired comparison over the same training seeds does resolve a real gain, +0.067 with a 95\% interval of [+0.017, +0.118], and that interval's upper limit of 0.118 is below the gap of 0.298: more training does help, and over the 8--25 episode range the sweep covers the whole of its measured effect is too small to account for the shortfall, so the budget is excluded as the explanation of the shortfall OVER THAT RANGE.  Two things are not claimed.  The increments are increasing (+0.026, +0.041) and the last of them is still resolved against zero, so the sweep has not saturated; and an interval on a measured range is a bound on that range and not on the budgets beyond it, so a larger budget is not excluded by this measurement.  Settling that would need the sweep to run until the paired increment is unresolved, which this paper does not do}
-\newcommand{\tokBudgetPairedVsGap}{its upper limit of 0.118 is below the gap of 0.298}
+\newcommand{\tokBudgetPairedP}{0.004}
+\newcommand{\tokBudgetPairedUp}{0.135}
+\newcommand{\tokBudgetPairedVerdict}{the paired comparison over the same training seeds does resolve a real gain, +0.086 with a 95\% interval of [+0.036, +0.135], and that interval's upper limit of 0.135 is below the gap of 0.298: more training does help, and over the 8--25 episode range the sweep covers the whole of its measured effect is too small to account for the shortfall, so the budget is excluded as the explanation of the shortfall OVER THAT RANGE.  Two things are not claimed.  The increments are increasing (+0.036, +0.050) and the last of them is still resolved against zero, so the sweep has not saturated; and an interval on a measured range is a bound on that range and not on the budgets beyond it, so a larger budget is not excluded by this measurement.  Settling that would need the sweep to run until the paired increment is unresolved, which this paper does not do}
+\newcommand{\tokBudgetPairedVsGap}{its upper limit of 0.135 is below the gap of 0.298}
 \newcommand{\tokBudgetPairN}{8}
 \newcommand{\tokBudgetRange}{8--25}
-\newcommand{\tokBudgetSe}{0.014}
+\newcommand{\tokBudgetSe}{0.010}
 \newcommand{\tokBudgetSeeds}{8}
-\newcommand{\tokBudgetSpread}{+0.067}
-\newcommand{\tokBudgetSweep}{8 episodes: 0.595, 16 episodes: 0.621, 25 episodes: 0.662}
-\newcommand{\tokBudgetT}{2.83}
+\newcommand{\tokBudgetSpread}{+0.086}
+\newcommand{\tokBudgetSweep}{8 episodes: 0.588, 16 episodes: 0.624, 25 episodes: 0.674}
+\newcommand{\tokBudgetT}{4.78}
 \newcommand{\tokBudgetTrendClause}{the sweep's last increment IS resolved against zero, so the coverage is still rising at the longest budget we ran}
-\newcommand{\tokBudgetVerdict}{the coverage moves by +0.067 over the range the sweep covers, which is about 22\% of the gap of 0.298, and the increments between successive budgets are +0.026, +0.041; the last of them, +0.041, is 2.8 standard errors from zero (the standard error of the difference is 0.014, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers}
+\newcommand{\tokBudgetVerdict}{the coverage moves by +0.086 over the range the sweep covers, which is about 29\% of the gap of 0.298, and the increments between successive budgets are +0.036, +0.050; the last of them, +0.050, is 4.8 standard errors from zero (the standard error of the difference is 0.010, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers}
 \newcommand{\tokBAg}{0.993}
 \newcommand{\tokBCk}{0.648}
 \newcommand{\tokBCkStd}{0.086}
@@ -196,27 +200,27 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokCapR}{5.00}
 \newcommand{\tokCapTwoR}{70}
 \newcommand{\tokConnAllLeaving}{every one of them follows a UAV leaving rather than a move}
-\newcommand{\tokConnAsc}{2}
-\newcommand{\tokConnLeft}{2}
+\newcommand{\tokConnAsc}{4}
+\newcommand{\tokConnLeft}{4}
 \newcommand{\tokConnPolicy}{every stored policy (the learned controller)}
-\newcommand{\tokConnSteps}{2}
+\newcommand{\tokConnSteps}{4}
 \newcommand{\tokConnTele}{0}
 \newcommand{\tokConnUnexplained}{0}
 \newcommand{\tokConnVerdict}{each of them is a UAV whose pack emptied away from a charging pad, and none follows a move, so the projection's guarantee is not violated by any executed move, and the availability below 1.000 is the price of a UAV leaving rather than a hole in the filter}
-\newcommand{\tokCreditACk}{0.662}
+\newcommand{\tokCreditACk}{0.674}
 \newcommand{\tokCreditASc}{0.010}
-\newcommand{\tokCreditBCk}{0.641}
-\newcommand{\tokCreditBSc}{0.013}
-\newcommand{\tokCreditCi}{[-0.080, +0.036]}
-\newcommand{\tokCreditDelta}{-0.022}
-\newcommand{\tokCreditHalf}{0.058}
+\newcommand{\tokCreditBCk}{0.639}
+\newcommand{\tokCreditBSc}{0.005}
+\newcommand{\tokCreditCi}{[-0.079, +0.009]}
+\newcommand{\tokCreditDelta}{-0.035}
+\newcommand{\tokCreditHalf}{0.044}
 \newcommand{\tokCreditN}{8}
-\newcommand{\tokCreditOfGap}{7\%}
-\newcommand{\tokCreditP}{0.404}
-\newcommand{\tokCreditPaired}{-0.022}
-\newcommand{\tokCreditResidual}{The residual is consistent with the credit assignment of a shared team reward, and the cheapest test of that diagnosis does not resolve it: the per-agent local critic's difference is -0.022 of persistent coverage (95\% interval [-0.080, +0.036]), which includes zero}
+\newcommand{\tokCreditOfGap}{12\%}
+\newcommand{\tokCreditP}{0.103}
+\newcommand{\tokCreditPaired}{-0.035}
+\newcommand{\tokCreditResidual}{The residual is consistent with the credit assignment of a shared team reward, and the cheapest test of that diagnosis does not resolve it: the per-agent local critic's difference is -0.035 of persistent coverage (95\% interval [-0.079, +0.009]), which includes zero}
 \newcommand{\tokCreditResidualShort}{The credit assignment of a shared team reward is the explanation the residual is consistent with, and the cheapest test of it does not resolve it}
-\newcommand{\tokCreditVerdict}{the difference is not resolved by this arm: the interval is [-0.080, +0.036], and its best case is 0.036 better, far short of the gap of 0.298, and its worst case is 0.080 worse, so the cheapest modification in the direction the diagnosis points has not been shown to close the gap}
+\newcommand{\tokCreditVerdict}{the difference is not resolved by this arm: the interval is [-0.079, +0.009], and its best case is 0.009 better, far short of the gap of 0.298, and its worst case is 0.079 worse, so the cheapest modification in the direction the diagnosis points has not been shown to close the gap}
 \newcommand{\tokCurveBest}{0.805}
 \newcommand{\tokCurveEpisodes}{25}
 \newcommand{\tokCurveEval}{0.761}
@@ -265,48 +269,48 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokDormSilentMax}{21}
 \newcommand{\tokDormSilentMin}{9}
 \newcommand{\tokDutyCycle}{89}
-\newcommand{\tokEaAg}{0.984}
-\newcommand{\tokEaCk}{0.662}
-\newcommand{\tokEaRet}{624}
+\newcommand{\tokEaAg}{0.987}
+\newcommand{\tokEaCk}{0.674}
+\newcommand{\tokEaRet}{543}
 \newcommand{\tokEaSc}{0.010}
-\newcommand{\tokEaStr}{0.9}
+\newcommand{\tokEaStr}{0.4}
 \newcommand{\tokEbAg}{1.000}
-\newcommand{\tokEbCi}{[-0.035, +0.081]}
-\newcommand{\tokEbCk}{0.685}
-\newcommand{\tokEbHalf}{0.058}
+\newcommand{\tokEbCi}{[-0.056, +0.075]}
+\newcommand{\tokEbCk}{0.684}
+\newcommand{\tokEbHalf}{0.066}
 \newcommand{\tokEbN}{8}
-\newcommand{\tokEbP}{0.380}
-\newcommand{\tokEbPaired}{+0.023}
+\newcommand{\tokEbP}{0.735}
+\newcommand{\tokEbPaired}{+0.010}
 \newcommand{\tokEbRet}{0.0}
-\newcommand{\tokEbSc}{0.016}
-\newcommand{\tokEcAg}{0.969}
-\newcommand{\tokEcCi}{[-0.029, +0.028]}
-\newcommand{\tokEcCk}{0.662}
-\newcommand{\tokEcDelta}{-0.001}
+\newcommand{\tokEbSc}{0.029}
+\newcommand{\tokEcAg}{0.989}
+\newcommand{\tokEcCi}{[-0.047, +0.011]}
+\newcommand{\tokEcCk}{0.656}
+\newcommand{\tokEcDelta}{-0.018}
 \newcommand{\tokEcHalf}{0.029}
 \newcommand{\tokEcN}{8}
-\newcommand{\tokEcP}{0.960}
-\newcommand{\tokEcPaired}{-0.001}
-\newcommand{\tokEcRet}{632.5}
-\newcommand{\tokEcSc}{0.016}
-\newcommand{\tokEcStr}{0.7}
-\newcommand{\tokEdCi}{[-0.118, -0.038]}
-\newcommand{\tokEdCk}{0.584}
-\newcommand{\tokEdDelta}{-0.078}
-\newcommand{\tokEdExcludesZero}{yes}
+\newcommand{\tokEcP}{0.181}
+\newcommand{\tokEcPaired}{-0.018}
+\newcommand{\tokEcRet}{509.4}
+\newcommand{\tokEcSc}{0.002}
+\newcommand{\tokEcStr}{0.8}
+\newcommand{\tokEdCi}{[-0.115, +0.015]}
+\newcommand{\tokEdCk}{0.624}
+\newcommand{\tokEdDelta}{-0.050}
+\newcommand{\tokEdExcludesZero}{no}
 \newcommand{\tokEdGapGap}{0.298}
-\newcommand{\tokEdHalf}{0.040}
+\newcommand{\tokEdHalf}{0.065}
 \newcommand{\tokEdN}{8}
-\newcommand{\tokEdP}{0.003}
-\newcommand{\tokEdPaired}{-0.078}
-\newcommand{\tokEdRet}{140}
-\newcommand{\tokEdRetDelta}{484}
-\newcommand{\tokEdShare}{26}
-\newcommand{\tokEdStr}{6.3}
-\newcommand{\tokEdStrDelta}{5.4}
-\newcommand{\tokEdVerdict}{The repair is not a null: the coverage it adds is +0.078 on the same training seeds (95\% interval [+0.038, +0.118], which excludes zero), and that is about 26\% of the gap to the unprivileged reactive rule}
-\newcommand{\tokEnergyDelta}{0.023}
-\newcommand{\tokEnergySummary}{The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.298 to the unprivileged reactive rule: removing the energy constraint (+0.023, 95\% interval [-0.035, +0.081], an upper limit below the gap of 0.298); removing the threshold term (-0.001, 95\% interval [-0.029, +0.028], an upper limit below the gap of 0.298); the previous energy rule (-0.078, 95\% interval [-0.118, -0.038], an upper limit below the gap of 0.298).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.}
+\newcommand{\tokEdP}{0.111}
+\newcommand{\tokEdPaired}{-0.050}
+\newcommand{\tokEdRet}{105}
+\newcommand{\tokEdRetDelta}{438}
+\newcommand{\tokEdShare}{17}
+\newcommand{\tokEdStr}{5.7}
+\newcommand{\tokEdStrDelta}{5.2}
+\newcommand{\tokEdVerdict}{The coverage the repair adds is +0.050 on the same training seeds (95\% interval [-0.015, +0.115], which includes zero), so the repair's effect on the coverage is not resolved by this arm}
+\newcommand{\tokEnergyDelta}{0.010}
+\newcommand{\tokEnergySummary}{The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.298 to the unprivileged reactive rule: removing the energy constraint (+0.010, 95\% interval [-0.056, +0.075], an upper limit below the gap of 0.298); removing the threshold term (-0.018, 95\% interval [-0.047, +0.011], an upper limit below the gap of 0.298); the previous energy rule (-0.050, 95\% interval [-0.115, +0.015], an upper limit below the gap of 0.298).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.}
 \newcommand{\tokEpisodeSeconds}{400}
 \newcommand{\tokEpisodeSteps}{2000}
 \newcommand{\tokFixedAg}{1.000}
@@ -434,14 +438,10 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokUntestedCauses}{the possibility that the hand-written rule was tuned against the evaluation scenes, the limit of a decentralised policy class, and the state-dependent corrections that the safety filter and the joint projection impose on the executed trajectory}
 \newcommand{\tokVarNScenes}{5}
 \newcommand{\tokVarNSeeds}{8}
-\newcommand{\tokVarScene}{0.118}
-\newcommand{\tokVarSceneSe}{0.053}
+\newcommand{\tokVarScene}{0.098}
+\newcommand{\tokVarSceneSe}{0.044}
 \newcommand{\tokVarSeed}{0.060}
 \newcommand{\tokVarSeedSe}{0.021}
-\newcommand{\tokAblBonfNote}{\mbox{\textbf{[pending: ABL\_BONF\_NOTE]}}}
-\newcommand{\tokAblIdClause}{\mbox{\textbf{[pending: ABL\_ID\_CLAUSE]}}}
-\newcommand{\tokMappos}{\mbox{\textbf{[pending: MAPPOS]}}}
-\newcommand{\tokR}{\mbox{\textbf{[pending: R]}}}
 %% END TOKEN MACROS
 
 \begin{document}
@@ -457,7 +457,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \begin{abstract}
 UAV swarms can provide temporary wireless coverage for Internet-of-Things deployments where fixed infrastructure is unavailable, damaged or insufficient, but persistent operation couples coverage, inter-UAV connectivity, battery depletion, charging contention and UAV failures. This paper formulates the problem of maintaining at least $K$ UAVs over every ground sensor while preserving a connected swarm, and models it as a cooperative Decentralized Partially Observable Markov Decision Process (Dec-POMDP). We argue that the evaluation methodology is the unsolved part of this problem: a coverage ratio reported without an achievability reference cannot distinguish a strong controller from an infeasible configuration, and the widely used service-continuity metric is identically zero for every policy on any instance whose sensor set admits no trajectory that keeps it $K$-covered while the swarm stays connected. We therefore introduce a \emph{feasibility-certified evaluation framework} that derives a rigorous lower bound on the fleet size needed for $K$-coverage of a bounded region, supplies a teleporting placement oracle that certifies the instance is coverable --- at the reported configuration the ceiling is 1.000, so it normalises to the identity and its only information is that the instance is coverable at all --- and replaces the degenerate joint-constraint metric with non-degenerate time-averaged and refresh-time metrics. Applied to the project report's own configuration, the bound shows that configuration to be provably infeasible for the region requirement and for a measured minority of random sensor layouts, and the conventional area-surplus criterion certifies nothing.
 
-On the corrected configuration the framework is paired with a centralized-training decentralized-execution MAPPO controller with parameter-shared actors, a hard connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration and PHY-derived links. A hand-designed reactive rule outperforms the learned controller by $\tokGap$ of persistent coverage (95\% interval $\tokGapCi$). Figure~\ref{fig:teaser} is the argument of this paper in one picture. \tokArmsSummaryShort\ \tokCreditResidual\ The residual is also consistent with causes the arms do not test --- the possibility that the rule was tuned against the evaluation scenes, the limit of a decentralised policy class --- and we do not claim to have excluded them. The paper's physical-model, feasibility, protocol and determinism claims are recomputed by an automated claim audit (\tokAuditItems{} items, \tokAuditFail{} failing), which does not audit the results of Section~VIII, and every number that comes from a measurement is generated from the artefact it is measured in, and the path-loss expression of the physical-layer model is shown to be algebraically the one an independent standards-faithful simulator evaluates --- a constant $\tokPhyDelta$~dB offset at every distance and exponent tested --- with a transmit-power negative control that shows why only the algebraic equivalence is claimed.
+On the corrected configuration the framework is paired with a centralized-training decentralized-execution MAPPO controller with parameter-shared actors, a hard connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration and PHY-derived links. A hand-designed reactive rule outperforms the learned controller by $\tokGap$ of persistent coverage (95\% interval $\tokGapCi$). Figure~\ref{fig:teaser} is the argument of this paper in one picture. \tokArmsSummaryShort\ \tokCreditResidual\ The residual is also consistent with causes that the arms do not test --- the possibility that the rule was tuned against the evaluation scenes, the limit of a decentralised policy class --- and we do not claim to have excluded them. The paper's physical-model, feasibility, protocol and determinism claims are recomputed by an automated claim audit (\tokAuditItems{} items, \tokAuditFail{} failing), which does not audit the results of Section~VIII, and every number that comes from a measurement is generated from the artefact it is measured in, and the path-loss expression of the physical-layer model is shown to be algebraically the one an independent standards-faithful simulator evaluates --- a constant $\tokPhyDelta$~dB offset at every distance and exponent tested --- with a transmit-power negative control that shows why only the algebraic equivalence is claimed.
 \end{abstract}
 
 \begin{figure*}[!t]
@@ -503,7 +503,7 @@ The contributions are:
     \item PHY-derived links --- the Al-Hourani LoS probability, a log-distance path loss with shadowing, and an IEEE 802.11 OFDM MCS table --- that \emph{gate} the abstract coverage and communication discs rather than replacing them, so that a UAV counts as covering a sensor or as adjacent to another UAV only when the link carries a usable service rate, together with a measured validity condition showing when the disc approximation is the binding constraint and when it is not.
     \item A non-degenerate evaluation protocol (time-averaged spatial integral of persistent coverage error, maximum refresh time, and $k$-coverage probability) replacing the degenerate all-simultaneous-constraint service-continuity metric.
 %% BEGIN CONTRIB
-    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are the two terms the controlled comparisons examine, and at 8 training seeds they do not settle the question about the coverage.  In the component ablation, \textbf{[pending: ABL\_ID\_CLAUSE]}, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses.  A broadcast summary of where the coverage deficit is was added a priori and measured to make no difference to the coverage at any resolution tested, while it does change what the policy does; it is reported rather than quietly dropped.
+    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are the two terms the controlled comparisons examine, and at 8 training seeds they do not settle the question about the coverage.  In the component ablation, the identity changes persistent coverage by +0.008, an interval [-0.121, +0.137] that includes zero, so at this budget what it demonstrably buys is the ability to specialise, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses.  A broadcast summary of where the coverage deficit is was added a priori and measured to make no difference to the coverage at any resolution tested, while it does change what the policy does; it is reported rather than quietly dropped.
 %% END CONTRIB
     \item Corrected deployment parameters ($N=8$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$, or $N=5$, $K=2$, $R_{\mathrm{cov}}=45\,\mathrm{m}$) derived from the feasibility certificate, replacing the infeasible $N=5$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$ baseline, and both of them MEASURED under the protocol below rather than argued: \tokAltVerdictShort.
     \item An evaluation protocol that treats a physical-layer claim as requiring a negative control, and reports a measured instance in which the available instrument could not support the claim it was being used for.
@@ -557,7 +557,7 @@ Ref. & Problem addressed & Method & Key findings / contribution & Limitation rel
 \cite{hartuv2018} & Sizing a spare-drone fleet under energy constraints. & Combinatorial scheduling of spare drones. & Sizes a reserve fleet for persistent task performance under energy limits. & No coverage multiplicity and no connectivity criticality. & Near-miss on (iii)+(iv). \\
 \cite{shi2025} & Decentralized UAV swarm communication coverage. & Symmetry-informed MARL with parameter sharing. & Closest published competitor; benchmarks against \cite{liu2018} and \cite{yu2022}. & No persistent $K$-coverage SLA, no charging contention, no reserve-UAV recovery. & Near-miss on (i)+(ii)+(v). \\
 \cite{song2024} & K-coverage lifetime with recharging in IoT. & MILP benchmark evaluated with MPC and MCTS. & Reports MPC and MCTS at 81.0\% and 67.1\% of the MILP optimum, i.e.\ against an achievability reference. & The reference is an optimisation benchmark for a finite instance, not a geometric certificate valid for arbitrary policies. & Near-miss: achievability reference already used in K-coverage. \\
-\cite{fan2026} & Decentralized cooperative UAV deployment. & Communication-aware MARL compared against a MILP upper bound. & Reports 74\% coverage with five UAVs and ten nodes, against an offline MILP upper bound, i.e.\ with an achievability reference. & The bound is an optimisation benchmark, not a geometric $K$-coverage certificate; no $K$-multiplicity. & Near-miss: achievability reference already used. \\
+\cite{fan2026} & Decentralized cooperative UAV deployment. & Communication-aware MARL compared against a MILP upper bound. & Reports 76--79\% coverage with five UAVs and ten nodes, against an offline MILP upper bound, i.e.\ with an achievability reference. & The bound is an optimisation benchmark, not a geometric $K$-coverage certificate; no $K$-multiplicity. & Near-miss: achievability reference already used. \\
 \cite{datta2025} & Ground coverage under positional uncertainty. & Exact radius of robust feasibility. & A rigorous geometric feasibility construct for aerial sensor coverage, embedded as a constraint. & No reinforcement-learning policy is evaluated against it. & Near-miss on feasibility bounds alone. \\
 \cite{viana2026} & Offline RL for UAV relaying. & Candidate-set feasibility upper bound (CS-FUB). & Explicitly separates feasibility limits from control-induced sub-optimality in a learned policy. & UAV relaying, not persistent $K$-coverage; the bound is over a restricted candidate set. & Near-miss: feasibility bound used to evaluate RL. \\
 \cite{ceilings2026} & Drone-mesh interception. & Closed-form feasibility ceilings computed before learning. & Argues that coverage ceilings ``should be computed before any learning experiment and quoted alongside every result''. & Drone-mesh interception, not persistent $K$-coverage in IoT; no redundancy, no charging, no failure recovery. & Closest prior work on the evaluation philosophy. \\
@@ -579,7 +579,7 @@ We are therefore not aware of work coupling all five elements, and specifically 
 The evaluation philosophy proposed here is not unprecedented in the wider literature, and we state the difference precisely rather than claiming a first. Four lines of work are adjacent. \cite{song2024} and \cite{fan2026} already evaluate learned or heuristic controllers against an achievability reference, but the reference is a MILP optimum for a particular finite instance; it certifies nothing about an arbitrary deployment geometry, and it cannot be computed without solving the instance. \cite{datta2025} derives a rigorous geometric feasibility construct, and \cite{viana2026} uses a feasibility upper bound to separate feasibility limits from control-induced sub-optimality in a learned policy; both concern a single coverage requirement, neither concerns $K$-redundancy, and neither is combined with a persistent, energy-constrained, failure-recovering control problem. Most closely, \cite{ceilings2026} argues explicitly that coverage ceilings should be computed before any learning experiment and quoted alongside every result, and evaluates PPO against them --- but for drone-mesh interception, where the quantity being bounded is interception coverage rather than $K$-redundant persistent coverage of a fixed sensor set, and where the bound is closed-form per configuration rather than a covering bound that scales with $N$ and $K$. The distinction claimed here is therefore not ``nobody has ever used a bound''. It is that the bound used must certify the thing being claimed: a covering-theoretic lower bound on $N$ for $K$-redundant coverage of a bounded region, an achievability ceiling computed for the same geometry and the same redundancy requirement, and a metric that stays non-degenerate when the bound says the instance is infeasible. That is what the framework of Section~\ref{sec:feasibility} supplies, and the three elements are used together rather than one at a time.
 
 \paragraph{Three absences that the framework addresses.}
-A separate search over the same 2023--2026 corpus was conducted for the specific claims that the framework makes, and the absences are reported here because they are the substance of the contribution rather than a side observation. First, \emph{no paper in the corpus provides an infeasibility certificate for a persistent-coverage instance} in UAV swarms or mobile sensor networks: the infeasibility-certificate literature that does exist --- for mixed-integer programs and for task-and-motion planning --- is not coverage-specific and does not certify a $K$-redundant covering instance. Second, \emph{no paper in the corpus names the all-constraints-simultaneously binary metric as degenerate}, that is, as uninformative on an infeasible instance. The closest empirical demonstration is in \cite{lee2026}, which reports a feasible rate of 0\% over ten solver executions alongside a mean $k$-coverage ratio of 33.33\%: the binary flag is zero while the graded quantity is substantial, which is exactly the collapse that motivates Section~\ref{sec:feasibility}. That paper does not analyse the degeneracy, and it reports the graded metrics alongside the binary flag rather than relying on the flag alone; we draw the conclusion explicitly instead. Both absences are stated over the corpus of Table~\ref{tab:survey} and Table~\ref{tab:nearmiss} and are bounded by it in the same way as the gap statement above.
+A separate search over the same 2023--2026 corpus was conducted for the specific claims that the framework makes, and the absences are reported here because they are the substance of the contribution rather than a side observation. First, \emph{no paper in the corpus provides an infeasibility certificate for a persistent-coverage instance} in UAV swarms or mobile sensor networks: the infeasibility-certificate literature that does exist --- for mixed-integer programs and for task-and-motion planning --- is not coverage-specific and does not certify a $K$-redundant covering instance. Second, \emph{no paper in the corpus names the all-constraints-simultaneously binary metric as degenerate}, that is, as uninformative on an infeasible instance. The closest empirical demonstration is in \cite{lee2026}, which reports a feasible rate of 0\% over ten solver executions alongside a mean $k$-coverage ratio of 33.33\% in a sensitivity study with a deliberately mis-tuned penalty: the binary flag is zero while the graded quantity is substantial, which is exactly the collapse that motivates Section~\ref{sec:feasibility}. That paper does not analyse the degeneracy, and it reports the graded metrics alongside the binary flag rather than relying on the flag alone; we draw the conclusion explicitly instead. Both absences are stated over the corpus of Table~\ref{tab:survey} and Table~\ref{tab:nearmiss} and are bounded by it in the same way as the gap statement above.
 
 A third absence concerns the mechanism that the results of Section~\ref{sec:results} leave as the leading candidate for the shortfall, the credit assignment of a shared team reward. Explicit per-agent advantage estimators do exist: the counterfactual advantage of COMA~\cite{foerster2018}, the difference-based estimator of DAE~\cite{li2022}, the per-agent value-iteration estimator of GPAE~\cite{kim2026}, and the advantage-decomposition line of HAPPO/HATRPO~\cite{kuba2022}. Their argument against a shared team advantage is the credit-assignment one: COMA observes that a global temporal-difference error ``does not explicitly reason about how that particular agent's actions contribute to that global reward'', and GPAE states the objection in MAPPO's own terms, that the shared team advantage ``ignores the agent-specific impact on the joint outcome''. The limitation must be stated fairly, because the shared team advantage is not known to fail: MAPPO and independent PPO~\cite{dewitt2021} show that a shared reward with a centralised or a local critic can be a strong baseline, and MAPPO's own evidence for that is confined to the standard cooperative benchmarks. The difficulty is that the per-agent estimators have been evaluated overwhelmingly on the SMAC, SMAX and MPE benchmarks rather than on persistent multi-robot coverage, and the closest coverage-specific evidence is \cite{sun2023}, which gives each UAV a wonderful-life-utility difference reward under shared policy parameters --- a per-agent difference utility rather than a modern per-agent advantage estimator, and not a controlled comparison against one. We could not find a published controlled study of per-agent advantage against a shared team advantage on a persistent-coverage task, and the interaction between per-agent advantage and parameter sharing in that setting appears to be an open empirical question. That is the study Section~\ref{sec:results_credit} reports, and we flag it as a bounded search result over the same corpus rather than a claim of absence in the wider literature.
 
@@ -619,6 +619,7 @@ darr/.style={-{Latex[length=2mm]},semithick,dashed,shorten >=1.6pt,shorten <=1.6
 \draw[arr] (energy) -- (env);
 \draw[darr] (env) -- (actor);
 \draw[darr] (env) -- (critic);
+\draw[arr] (actor.west) -- node[above,font=\scriptsize] {$a_i(t)$} (env.east);
 \coordinate (cfb) at ($(env.north)+(0,5mm)$);
 \draw[darr] (critic.north) -- (critic.north |- cfb)
       -- (actor.north |- cfb) -- (actor.north);
@@ -735,7 +736,7 @@ Charge & Request charging when inside a pad service region; pad selection is han
 \end{table}
 where $\Pi_{\Omega}$ projects into the permitted airspace. A charge request is feasible only when the UAV is inside a station neighborhood of a free pad. Table~\ref{tab:actions} gives the effect of each of the six actions. The RL layer does not select a pad as part of its action; pad choice is handled by the arbitration layer in Section~\ref{sec:charging}.
 
-\subsection{Persistent $K$-Coverage}
+\subsection{Persistent \texorpdfstring{$K$}{K}-Coverage}
 \label{sec:coverage}
 A UAV covers sensor $d$ in slot $t$ when
 \begin{equation}
@@ -846,7 +847,7 @@ line cap=round, line join=round
 \label{fig:coupling}
 \end{figure}
 
-\subsection{Feasibility Certificate for $K$-Coverage}
+\subsection{Feasibility Certificate for \texorpdfstring{$K$}{K}-Coverage}
 \label{sec:feasibility}
 
 Before any policy is trained, the configuration must be shown to admit a
@@ -867,12 +868,14 @@ Then $A$ cannot be $K$-covered by fewer than $K\,P(A,R)$ discs of radius
 $R$.  The proof is one line: a disc of radius $R$ contains at most one
 point of $X$, because two such points would be within $2R$; so the discs
 that serve the $K$ coverings of each point of $X$ are pairwise disjoint
-across distinct points, and each point consumes $K$ of them.  This is the
-classical $k$-fold covering argument, and it is the only form of it that
-applies to an arbitrary point set.
+across distinct points, and each point consumes $K$ of them.  This is a
+first-principles covering argument --- no disc covers two corners because
+they are more than $2R_{\mathrm{cov}}$ apart, and each corner must be
+covered $K$ times --- and it is the only form of it that applies to an
+arbitrary point set.
 
 \emph{Region bound.} For $A=\Omega$ and the four corners of the square,
-the corner separations are $80$\,m and the side is $80\,\mathrm{m}>2R_{\mathrm{cov}}=70$\,m, so the four corner discs are pairwise disjoint and $P(\Omega,R_{\mathrm{cov}})=4$: partition $\Omega$ into four $40\times40$ sub-squares, whose diameter $40\sqrt2=56.6$\,m is below $2R_{\mathrm{cov}}$, so no two packed points share a sub-square, and the four corners attain the bound.  By \eqref{eq:packing}, $K$-covering the region therefore requires
+the four corners of the $80\times80$\,m square are $80$\,m apart along a side and $80\sqrt2\approx113$\,m apart on the diagonal, both larger than $2R_{\mathrm{cov}}=70$\,m, so the four corner discs are pairwise disjoint and $P(\Omega,R_{\mathrm{cov}})=4$: partition $\Omega$ into four $40\times40$ sub-squares, whose diameter $40\sqrt2=56.6$\,m is below $2R_{\mathrm{cov}}$, so no two packed points share a sub-square, and the four corners attain the bound.  By \eqref{eq:packing}, $K$-covering the region therefore requires
 \begin{equation}
 N\ \ge\ 4K\ =\ 8 .
 \label{eq:regionbound}
@@ -939,13 +942,13 @@ set of configurations in which every sensor is $K$-covered and the
 communication graph is connected.  The service-continuity metric of
 Table~\ref{tab:metrics} satisfies
 \begin{equation}
-SC(\pi)=0\quad\text{for every policy }\pi
-\quad\Longleftrightarrow\quad
-\mathcal{F}=\varnothing,
+\mathcal{F}=\varnothing \quad\Longrightarrow\quad SC(\pi)=0\ \text{for every policy }\pi,
 \label{eq:scdegenerate}
 \end{equation}
-because $SC(\pi)>0$ exactly when the trajectory visits $\mathcal{F}$ at some
-instant.  The statement is therefore about the best achievable value
+because $SC(\pi)>0$ requires the trajectory to visit $\mathcal{F}$ at some
+instant.  The converse does not hold: a poor policy on a feasible instance
+may also score zero, so observing $SC(\pi)=0$ does not prove infeasibility.
+The statement is therefore about the best achievable value
 $\max_\pi SC(\pi)$ and not about the value any particular policy realises:
 a poor policy on a perfectly feasible instance also scores $SC=0$.  When
 $\mathcal{F}=\varnothing$ the metric is uninformative, and the
@@ -1096,7 +1099,8 @@ lab/.style={font=\scriptsize,fill=white,inner sep=1.5pt}
 \node[state,fill=uavblue!10,draw=uavblue]    (transit) at (4.0,0)   {Transit};
 \node[state,fill=uavorange!10,draw=uavorange] (charge) at (8.0,0)   {Charge};
 \node[state,fill=uavred!8,draw=uavred]       (recover) at (4.0,-2.8) {Recover / reconfigure};
-\draw[arr] (serve)  -- node[lab,above] {$E_i>E_i^{\mathrm{req}}$} (transit);
+\draw[arr] (serve)  -- node[lab,above] {$E_i\le E_i^{\mathrm{req}}$} (transit);
+\draw[arr] (serve.south) -- ++(0,-0.6) -| node[lab,below,pos=0.25] {failure detected} (recover.west);
 \draw[arr] (transit) -- node[lab,above] {pad reached} (charge);
 \coordinate (rt) at ($(charge.east)+(0.9,0)$);
 \coordinate (rb) at ($(rt)+(0,-4.1)$);
@@ -1793,8 +1797,8 @@ that gap, which is a one-sample interval over the learned controller's
 $[0.248, 0.349]$.  The two sources of variation are reported separately, as
 Section~\ref{sec:metrics} promises: the seed-to-seed spread of the
 learned controller is $0.060$ (standard error $0.021$) and
-the scene-to-scene spread of a fixed controller is $0.118$ (standard
-error $0.053$), and the interval above is over the first of the
+the scene-to-scene spread of a fixed controller is $0.098$ (standard
+error $0.044$), and the interval above is over the first of the
 two.  The scene-to-scene variation does not enter this
 interval, because every controller is evaluated on the same scenes and it
 therefore cancels in the difference --- to the extent that the difficulty
@@ -1824,8 +1828,8 @@ connectivity.  The guarantee is about \emph{actions}: the mask evaluates
 the prospective graph for every candidate action, and the joint projection
 restores the previous configuration when a set of individually admissible
 actions would jointly disconnect the swarm.  The step-by-step accounting
-in the artefact tests that claim, and it holds: of the $2$
-transitions into a disconnected graph, $2$ follow a UAV
+in the artefact tests that claim, and it holds: of the $4$
+transitions into a disconnected graph, $4$ follow a UAV
 leaving the active set, $0$ follow a teleport and
 $0$ are unexplained --- each of them is a UAV whose pack emptied away from a charging pad, and none follows a move, so the projection's guarantee is not violated by any executed move, and the availability below 1.000 is the price of a UAV leaving rather than a hole in the filter.
 The other source is the recovery mechanism: when a UAV's pack empties away
@@ -1855,8 +1859,8 @@ It is worth separating the two sources of variation in the headline
 number, because they behave differently.  Across the 8
 training runs of the learned controller the coverage varies by $0.060$
 (the standard error of the mean is $0.021$); across the
-5 evaluation scenes it varies by $0.118$ (the
-standard error of the mean over the scenes is $0.053$).  The
+5 evaluation scenes it varies by $0.098$ (the
+standard error of the mean over the scenes is $0.044$).  The
 scene component is common to every controller in the comparison, because
 they are all evaluated on the same scenes, and it therefore cancels in
 every difference this paper reports; the seed component does not, and it
@@ -1899,13 +1903,13 @@ we do not claim that a larger budget would not change the picture.  The
 sweep behind that statement trains independent runs at each of three
 budgets rather than reading one
 run's curve at different points, so it compares budgets and does not
-restate the curve: 8 episodes: 0.595, 16 episodes: 0.621, 25 episodes: 0.662, and the coverage moves by +0.067 over the range the sweep covers, which is about 22\% of the gap of 0.298, and the increments between successive budgets are +0.026, +0.041; the last of them, +0.041, is 2.8 standard errors from zero (the standard error of the difference is 0.014, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers.  The two
+restate the curve: 8 episodes: 0.588, 16 episodes: 0.624, 25 episodes: 0.674, and the coverage moves by +0.086 over the range the sweep covers, which is about 29\% of the gap of 0.298, and the increments between successive budgets are +0.036, +0.050; the last of them, +0.050, is 4.8 standard errors from zero (the standard error of the difference is 0.010, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers.  The two
 measurements differ in what they can support, and the difference is worth
 stating rather than smoothing over: the curve flattens on the scene the
 policy trains on, while the sweep's last increment IS resolved against zero, so the coverage is still rising at the longest budget we ran.  A flattening training curve is
 therefore not evidence that the budget has stopped mattering, and we do
 not use it as such; we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap.  The sweep is not the end of the
-question, and the arm that settles it is the paired one: the paired comparison over the same training seeds does resolve a real gain, +0.067 with a 95\% interval of [+0.017, +0.118], and that interval's upper limit of 0.118 is below the gap of 0.298: more training does help, and over the 8--25 episode range the sweep covers the whole of its measured effect is too small to account for the shortfall, so the budget is excluded as the explanation of the shortfall OVER THAT RANGE.  Two things are not claimed.  The increments are increasing (+0.026, +0.041) and the last of them is still resolved against zero, so the sweep has not saturated; and an interval on a measured range is a bound on that range and not on the budgets beyond it, so a larger budget is not excluded by this measurement.  Settling that would need the sweep to run until the paired increment is unresolved, which this paper does not do.
+question, and the arm that settles it is the paired one: the paired comparison over the same training seeds does resolve a real gain, +0.086 with a 95\% interval of [+0.036, +0.135], and that interval's upper limit of 0.135 is below the gap of 0.298: more training does help, and over the 8--25 episode range the sweep covers the whole of its measured effect is too small to account for the shortfall, so the budget is excluded as the explanation of the shortfall OVER THAT RANGE.  Two things are not claimed.  The increments are increasing (+0.036, +0.050) and the last of them is still resolved against zero, so the sweep has not saturated; and an interval on a measured range is a bound on that range and not on the budgets beyond it, so a larger budget is not excluded by this measurement.  Settling that would need the sweep to run until the paired increment is unresolved, which this paper does not do.
 
 \begin{figure}[t]
 \centering
@@ -1925,12 +1929,12 @@ question, and the arm that settles it is the paired one: the paired comparison o
   uavaxis,
   uavlegend, legend columns=2,]
   \addplot[draw=uavref, line width=1.3pt] coordinates {(5.00,0.972) (29.50,0.972)};
-  \addplot[color=uavblue, line width=1.1pt, mark=*, mark size=2.3pt, mark options={fill=uavblue, draw=white, line width=0.5pt}, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.8pt, color=uavblue}, error bars/error mark=|, error bars/error mark options={rotate=90, mark size=2.4pt, line width=0.8pt, color=uavblue}] coordinates {(8,0.595) +- (0,0.0830) (16,0.621) +- (0,0.0673) (25,0.662) +- (0,0.0584)};
+  \addplot[color=uavblue, line width=1.1pt, mark=*, mark size=2.3pt, mark options={fill=uavblue, draw=white, line width=0.5pt}, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.8pt, color=uavblue}, error bars/error mark=|, error bars/error mark options={rotate=90, mark size=2.4pt, line width=0.8pt, color=uavblue}] coordinates {(8,0.588) +- (0,0.060) (16,0.624) +- (0,0.060) (25,0.674) +- (0,0.079)};
   \legend{{the strongest rule},{the learned controller}}
-  \draw[uavink, line width=0.8pt, <->] (axis cs:26.40,0.662) -- (axis cs:26.40,0.972);
-  \node[rotate=90, anchor=south, font=\scriptsize\bfseries, text=uavink] at (axis cs:28.10,0.662) {gap 0.309};
-  \node[anchor=south west, font=\scriptsize, text=uavmuted] at (axis cs:5.40,0.984) {the unprivileged reactive rule (0.972)};
-  \node[anchor=north west, font=\scriptsize, align=left, text=uavink, fill=uavwhite, inner sep=2pt, draw=none] at (axis cs:5.40,0.942) {training over 8--25 episodes: $\Delta=+0.067$\\95\% CI [+0.017, +0.118] --- 22\% of the gap\\bars: $\pm 1$ s.d. over the 8 training seeds};
+  \draw[uavink, line width=0.8pt, <->] (axis cs:26.40,0.674) -- (axis cs:26.40,0.972);
+  \node[rotate=90, anchor=south, font=\scriptsize\bfseries, text=uavink] at (axis cs:28.10,0.674) {gap \tokBudgetGap};
+  \node[anchor=south west, font=\scriptsize, text=uavmuted] at (axis cs:5.40,0.984) {the unprivileged reactive rule (\tokReactCk)};
+  \node[anchor=north west, font=\scriptsize, align=left, text=uavink, fill=uavwhite, inner sep=2pt, draw=none] at (axis cs:5.40,0.942) {training over 8--25 episodes: $\Delta=\tokBudgetPaired$\\95\% CI \tokBudgetPairedCi{} --- \tokBudgetFrac\% of the gap\\bars: $\pm 1$ s.d. over the 8 training seeds};
 \end{axis}
 \end{tikzpicture}
 \caption{The training-budget sweep.  The learned controller is trained on the same eight seeds at 8, 16 and 25 episodes and evaluated on the same scenes; the bars are $\pm 1$ standard deviation over the training seeds.  The paired gain over the sweep's range is $\tokBudgetPaired$ (95\% interval $\tokBudgetPairedCi$), about $\tokBudgetFrac$\% of the gap, whose upper limit is below the gap of $\tokBudgetGap$: more training does help, and over the range the sweep covers the whole of its effect is too small to account for the shortfall.}
@@ -1949,7 +1953,7 @@ method's $0.674$ at the base budget, a difference
 of $-0.049$ that is small beside the seed-to-seed spread of the
 learner, and Section~\ref{sec:results_credit} re-measures that same
 local-critic learner at the base budget, where it reaches
-$0.641$, and tests the comparison properly, on paired training
+$0.639$, and tests the comparison properly, on paired training
 seeds.  The Independent DQN arm, at
 $0.381$, is the value-based point of comparison and shows what the
 task costs a controller that does not use the framework's mechanisms at
@@ -2004,7 +2008,7 @@ masked reinforcement learning, is not what limits this controller.
 
 The learned controller also burns more energy than the heuristic
 ($207532$~J against $182530$~J over the same episode) while
-stranding more UAVs ($@@MAPPOStranded@@$ against $@@ReactStr@@$ per
+stranding more UAVs ($0.6$ against $0.4$ per
 episode), which is the cost of moving deliberately rather than the price of
 wandering.  Its connectivity availability is
 below $1.000$ because UAVs leave the active set when a pack empties away
@@ -2144,7 +2148,7 @@ The arms share their training seeds, so the comparisons are paired: adding the a
 
 The resolution of the summary makes no difference to the coverage: $G=0$: 0.640, $G=4$: 0.643, $G=8$: 0.651, and the largest of the differences is 0.011, inside the seed-to-seed spread of the learner (0.060).  What the summary does change is the swarm's behaviour: the spread grows, from 9.0 m without it to 10.6 m and 10.3 m with it, because a policy that follows the deficit spreads the swarm out instead of keeping it together.  The map is therefore neither what makes the controller work nor what stops it working: it is a channel the policy uses to move differently, and the difference it makes is visible in the trajectory rather than in the score.
 
-The observation terms are priced individually in the table above  The reason is easy to see in
+The observation terms are priced individually in Table~\ref{tab:results_obs}.  The reason is easy to see in
 retrospect.  Without a direction to the charger a UAV cannot come home, so
 the swarm drains its packs in the field; and a swarm that has drained its
 packs is not a swarm that can be asked to cover anything.
@@ -2153,7 +2157,7 @@ packs is not a swarm that can be asked to cover anything.
 \label{sec:results_energy}
 
 The step-level diagnostic of the learned policy produced a surprising
-number: under the previous energy rule the policy stranded $6.3$ of the
+number: under the previous energy rule the policy stranded $5.7$ of the
 eight UAVs per episode, while the reactive heuristic stranded $0.4$.  A
 stranded UAV has an empty pack
 away from a charging pad; it can no longer fly, it leaves the swarm, and it
@@ -2185,10 +2189,10 @@ of the safety filter.
 \cmidrule(lr){2-4}
 Variant & CK & AG & SC &  &  \\
 \midrule
-A & 0.662 & 0.984 & 0.010 & 0.9 & 623.7 \\
-\tblHl \textbf{B} & \textbf{0.685} & \textbf{1.000} & \textbf{0.016} & \textbf{0.0} & \textbf{0.0} \\
-C & 0.662 & 0.969 & 0.016 & 0.7 & 632.5 \\
-D & 0.584 & 0.967 & 0.005 & 6.3 & 139.7 \\
+A & 0.674 & 0.987 & 0.010 & 0.4 & 543.3 \\
+\tblHl \textbf{B} & \textbf{0.684} & \textbf{1.000} & \textbf{0.029} & \textbf{0.0} & \textbf{0.0} \\
+C & 0.656 & 0.989 & 0.002 & 0.8 & 509.4 \\
+D & 0.624 & 0.957 & 0.004 & 5.7 & 105.3 \\
 \bottomrule
 \end{tabular}
 \tblNote{* A: the proposed configuration; B: + a pack that cannot run out; C: without the threshold term; D: with the previous energy rule.}
@@ -2203,8 +2207,9 @@ D & 0.584 & 0.967 & 0.005 & 6.3 & 139.7 \\
   \IfFileExists{theme.tex}{\input{theme.tex}}{%
   \errmessage{the figures need ml_impl/analysis/theme.tex}}}
 \fi
+\resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}
-\begin{axis}[  width=0.48\columnwidth,height=4.9cm,
+\begin{axis}[  width=0.82\columnwidth,height=4.9cm,
   xmin=-0.200, xmax=0.419, ymin=0.35, ymax=6.65,
   xtick={-0.2,0,0.2,0.4}, xmajorgrids,
   ytick={6,5,4,3,2,1},
@@ -2212,14 +2217,14 @@ D & 0.584 & 0.967 & 0.005 & 6.3 & 139.7 \\
   xlabel={difference in persistent coverage},
   uavaxis,
   uavlegend, legend columns=3, legend style={font=\tiny},]
-  \addplot[uavband] coordinates {(0.260,0.35) (0.358,0.35) (0.358,6.65) (0.260,6.65)} \closedcycle;
-  \addplot[uavlevel, forget plot] coordinates {(0.309,0.35) (0.309,6.65)};
-  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(0.015,6) +- (0.145,0)};
-  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(0.023,5) +- (0.038,0)};
-  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(0.023,4) +- (0.058,0)};
-  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(-0.001,3) +- (0.029,0)};
-  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(-0.078,2) +- (0.040,0)};
-  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(-0.022,1) +- (0.058,0)};
+  \addplot[uavband] coordinates {(0.248,0.35) (0.349,0.35) (0.349,6.65) (0.248,6.65)} \closedcycle;
+  \addplot[uavlevel, forget plot] coordinates {(0.298,0.35) (0.298,6.65)};
+  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(0.008,6) +- (0.129,0)};
+  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(0.034,5) +- (0.067,0)};
+  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(0.010,4) +- (0.066,0)};
+  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(-0.018,3) +- (0.029,0)};
+  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(-0.050,2) +- (0.065,0)};
+  \addplot[uavintervalx, color=uavblue, forget plot, mark options={fill=uavblue,draw=white,line width=0.5pt}] coordinates {(-0.035,1) +- (0.044,0)};
   \draw[uavsep] (axis cs:-0.200,4.50) -- (axis cs:0.419,4.50);
   \draw[uavsep] (axis cs:-0.200,1.50) -- (axis cs:0.419,1.50);
   \addlegendimage{color=uavblue, line width=2.6pt, line cap=round}
@@ -2227,16 +2232,17 @@ D & 0.584 & 0.967 & 0.005 & 6.3 & 139.7 \\
   \addlegendimage{only marks, mark=*, mark size=2.4pt, color=uavblue, mark options={fill=uavblue,draw=white,line width=0.5pt}}
   \addlegendimage{draw=uavink, line width=0.9pt}
   \addlegendimage{area legend, fill=uavband, draw=uavband}
-  \legend{{below the gap},{past the gap},{paired mean},{the gap 0.309},{gap 95\% CI}}
-  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:0.015,6.19) {$+0.015$};
-  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:0.023,5.19) {$+0.023$};
-  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:0.023,4.19) {$+0.023$};
-  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:-0.001,3.19) {$-0.001$};
-  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:-0.078,2.19) {$-0.078$};
-  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:-0.022,1.19) {$-0.022$};
+  \legend{{below the gap},{past the gap},{paired mean},{the gap \tokGap},{gap 95\% CI}}
+  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:0.008,6.19) {$+0.008$};
+  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:0.034,5.19) {$+0.034$};
+  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:0.010,4.19) {$+0.010$};
+  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:-0.018,3.19) {$-0.018$};
+  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:-0.050,2.19) {$-0.050$};
+  \node[anchor=south, font=\scriptsize, text=uavink] at (axis cs:-0.035,1.19) {$-0.035$};
 \end{axis}
-\end{tikzpicture}
-\caption{The controlled arms against the gap.  Each bar is the 95\% interval of the paired difference between the tested arm and the arm it is paired against --- arm~A of the observation experiment for the two observation arms, the proposed configuration for the three energy arms and for the credit arm --- and the marker is the paired mean.  The dashed line is the gap of $\tokGap$ to the strongest rule, and the band its own 95\% interval.  Every arm's upper limit lies below the band, so no arm tested here can be the whole of the explanation.}
+\end{tikzpicture}%
+}
+\caption{The controlled arms against the gap (paired 95\% intervals; the dashed line is the gap of $\tokGap$).}
 \label{fig:arms}
 \end{figure}
 
@@ -2246,7 +2252,7 @@ The first version of this section told a different story, and the
 difference is worth recording, because it is the clearest example in this
 work of a diagnostic leading to a repair rather than to a conclusion.  The
 step-level diagnostic of the learned policy produced an alarming number:
-with the previous energy rule, the policy stranded $6.3$ of the
+with the previous energy rule, the policy stranded $5.7$ of the
 eight UAVs per episode, while the reactive rules stranded $0.4$.  A
 stranded UAV has an empty pack away from a charging pad; it can no longer
 fly, it leaves the swarm, and it stops covering.  The obvious reading was
@@ -2258,10 +2264,10 @@ than a property of the policy.  The mask's energy test admitted a
 departure with a flat battery, so a UAV could fly until its pack was empty
 away from a pad; the correction is to require a UAV to retain, after the
 move, the energy to reach a charging pad plus the reserve margin.  The
-stranding falls from $6.3$ UAVs per episode to $0.9$, and
-the return-to-charge transitions rise from $140$ to $624$ per
+stranding falls from $5.7$ UAVs per episode to $0.4$, and
+the return-to-charge transitions rise from $105$ to $543$ per
 episode, because the UAVs now come home instead of dying in the field.
-The repair is not a null: the coverage it adds is +0.078 on the same training seeds (95\% interval [+0.038, +0.118], which excludes zero), and that is about 26\% of the gap to the unprivileged reactive rule.  The defect was therefore real and the repair was
+The coverage the repair adds is +0.050 on the same training seeds (95\% interval [-0.015, +0.115], which includes zero), so the repair's effect on the coverage is not resolved by this arm.  The defect was therefore real and the repair was
 correct, and the repair is already part of the proposed configuration: it
 is not a candidate explanation of the residual gap, because the gap is
 measured against a controller that has the repair in it.  What the repair
@@ -2272,8 +2278,8 @@ only the rewards.
 
 It is worth being explicit about what this arm does and does not show.
 It is \emph{not} a statement that the
-energy constraint is inactive: the two rules differ by $5.4$
-stranded UAVs per episode and by $484$ return-to-charge
+energy constraint is inactive: the two rules differ by $5.2$
+stranded UAVs per episode and by $438$ return-to-charge
 transitions, so the test is doing substantial work and the swarm's energy
 behaviour differs markedly between them.  Nor is it a statement that the
 energy mechanism is what the learned controller gets wrong: the
@@ -2283,7 +2289,7 @@ difference of this width is also a statement about the resolution of the
 arm and not about the component, and we report that resolution with the
 interval.
 
-The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.298 to the unprivileged reactive rule: removing the energy constraint (+0.023, 95\% interval [-0.035, +0.081], an upper limit below the gap of 0.298); removing the threshold term (-0.001, 95\% interval [-0.029, +0.028], an upper limit below the gap of 0.298); the previous energy rule (-0.078, 95\% interval [-0.118, -0.038], an upper limit below the gap of 0.298).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.
+The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.298 to the unprivileged reactive rule: removing the energy constraint (+0.010, 95\% interval [-0.056, +0.075], an upper limit below the gap of 0.298); removing the threshold term (-0.018, 95\% interval [-0.047, +0.011], an upper limit below the gap of 0.298); the previous energy rule (-0.050, 95\% interval [-0.115, +0.015], an upper limit below the gap of 0.298).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.
 
 That is the sequence the framework is for.  A coverage comparison on its
 own would have reported that the learned controller mismanages energy, and
@@ -2296,6 +2302,11 @@ neither supported nor refuted by it.
 
 \subsection{Component ablation}
 \label{sec:results_abl}
+
+Table~\ref{tab:results_abl} removes, one component at a time, from the
+full configuration: each variant is trained on the same configuration with
+the same budget and from the same training seeds, and differs from the full
+configuration in exactly one component.
 
 \begin{table}[t]
 % the shared table style: analysis/theme_tables.tex, the file the
@@ -2323,6 +2334,7 @@ no-degraded-service term & 0.664\,$\pm$\,0.050 & 0.988 & 0.007 & 0.336 & 0.5 & +
 no-energy-cost term & 0.670\,$\pm$\,0.045 & 0.982 & 0.012 & 0.330 & 0.5 & +0.004 \\
 no-under-coverage term & 0.577\,$\pm$\,0.128 & 0.998 & 0.006 & 0.423 & 1.0 & +0.097 \\
 no-reserve UAV & 0.674\,$\pm$\,0.060 & 0.987 & 0.010 & 0.326 & 0.6 & +0.000 \\
+no-charging arbitration & 0.661\,$\pm$\,0.050 & 0.985 & 0.006 & 0.339 & 0.6 & +0.013 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2349,7 +2361,7 @@ arms below are measured at 8 training seeds, and the paired
 interval is what makes the number they report mean something.  The
 paired interval does not have that failure mode, and it also reports the
 resolution of the measurement, which is the number a reader actually
-needs.  The paired comparison, in which every variant is trained on the same training seeds as the full configuration, separates the components into two groups.  The differences below are the FULL configuration minus the variant, so a positive number is what the component is worth.  The components whose 95\% confidence interval for the paired difference excludes zero are the under-coverage term (+0.097, 95\% CI [+0.020, +0.174]); every other component's interval includes zero, and the worst resolution anywhere in the table is $0.042$ of persistent coverage, which is the WIDEST arm's resolution: the resolution is per-arm, and each arm's own interval is in the table \textbf{[pending: ABL\_BONF\_NOTE]}.
+needs.  The paired comparison, in which every variant is trained on the same training seeds as the full configuration, separates the components into two groups.  The differences below are the FULL configuration minus the variant, so a positive number is what the component is worth.  The components whose 95\% confidence interval for the paired difference excludes zero are the under-coverage term (+0.097, 95\% CI [+0.020, +0.174]); every other component's interval includes zero, and the worst resolution anywhere in the table is $0.042$ of persistent coverage, which is the WIDEST arm's resolution: the resolution is per-arm, and each arm's own interval is in the table The table is a family of 6 paired tests and the intervals above are unadjusted, so the correction is stated: with a Bonferroni correction over the table the threshold is $\alpha = 0.0083$, and no component's paired p-value survives it, so every component above is reported as suggestive rather than resolved.
 
 What the intervals do and do not say is worth stating precisely, because a
 null result of this width is a statement about the resolution of the
@@ -2362,8 +2374,8 @@ A component can be redundant with another, in which case removing either
 one alone costs nothing while removing both costs a great deal; and a
 component that matters only at a larger budget is invisible at this one.
 The budget sweep above speaks to the second case for the full
-configuration: the coverage moves by +0.067 over the range the sweep covers, which is about 22\% of the gap of 0.298, and the increments between successive budgets are +0.026, +0.041; the last of them, +0.041, is 2.8 standard errors from zero (the standard error of the difference is 0.014, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers; and the paired arm puts a bound on it,
-the paired comparison over the same training seeds does resolve a real gain, +0.067 with a 95\% interval of [+0.017, +0.118], and that interval's upper limit of 0.118 is below the gap of 0.298: more training does help, and over the 8--25 episode range the sweep covers the whole of its measured effect is too small to account for the shortfall, so the budget is excluded as the explanation of the shortfall OVER THAT RANGE.  Two things are not claimed.  The increments are increasing (+0.026, +0.041) and the last of them is still resolved against zero, so the sweep has not saturated; and an interval on a measured range is a bound on that range and not on the budgets beyond it, so a larger budget is not excluded by this measurement.  Settling that would need the sweep to run until the paired increment is unresolved, which this paper does not do.  The arms
+configuration: the coverage moves by +0.086 over the range the sweep covers, which is about 29\% of the gap of 0.298, and the increments between successive budgets are +0.036, +0.050; the last of them, +0.050, is 4.8 standard errors from zero (the standard error of the difference is 0.010, paired over the same 8 training seeds), so the coverage does keep rising with the budget over the range the sweep covers; and the paired arm puts a bound on it,
+the paired comparison over the same training seeds does resolve a real gain, +0.086 with a 95\% interval of [+0.036, +0.135], and that interval's upper limit of 0.135 is below the gap of 0.298: more training does help, and over the 8--25 episode range the sweep covers the whole of its measured effect is too small to account for the shortfall, so the budget is excluded as the explanation of the shortfall OVER THAT RANGE.  Two things are not claimed.  The increments are increasing (+0.036, +0.050) and the last of them is still resolved against zero, so the sweep has not saturated; and an interval on a measured range is a bound on that range and not on the budgets beyond it, so a larger budget is not excluded by this measurement.  Settling that would need the sweep to run until the paired increment is unresolved, which this paper does not do.  The arms
 here are each measured at the single budget the base comparison uses, so
 for the individual components we do not claim budget-independence, and
 we do not extrapolate the sweep past the budgets it covers, and we do not claim that a larger budget would close the gap.
@@ -2474,22 +2486,22 @@ joint-action critic, or a counterfactual baseline.
 \cmidrule(lr){2-5}
 Learner & CK & AG & SC & CovIntegral &  \\
 \midrule
-\tblHl \textbf{A} & \textbf{0.662\,$\pm$\,0.058} & \textbf{0.984} & \textbf{0.010} & \textbf{0.338} & \textbf{--} \\
-B & 0.641\,$\pm$\,0.065 & 0.971 & 0.013 & 0.359 & -- \\
+\tblHl \textbf{A} & \textbf{0.674\,$\pm$\,0.060} & \textbf{0.987} & \textbf{0.010} & \textbf{0.326} & \textbf{--} \\
+B & 0.639\,$\pm$\,0.051 & 0.983 & 0.005 & 0.361 & -- \\
 \bottomrule
 \end{tabular}
 \tblNote{* Energy is not recorded in this artefact.}
 \end{table}
 
-The per-agent arm reaches $0.641$ against $0.662$ for
-the shared one, a difference of $-0.022$ in persistent coverage.
+The per-agent arm reaches $0.639$ against $0.674$ for
+the shared one, a difference of $-0.035$ in persistent coverage.
 Arm~A is the proposed method on the first 8 of the base
 comparison's training runs --- the same policies, not a cheaper experiment
 --- so the two rows of the first table and this table describe the same
 learner.
 The two arms share their training seeds, so the comparison is paired, and
-the 95\% interval on the paired difference is $[-0.080, +0.036]$ over
-8 training runs: the difference is not resolved by this arm: the interval is [-0.080, +0.036], and its best case is 0.036 better, far short of the gap of 0.298, and its worst case is 0.080 worse, so the cheapest modification in the direction the diagnosis points has not been shown to close the gap.  The scope of that
+the 95\% interval on the paired difference is $[-0.079, +0.009]$ over
+8 training runs: the difference is not resolved by this arm: the interval is [-0.079, +0.009], and its best case is 0.009 better, far short of the gap of 0.298, and its worst case is 0.079 worse, so the cheapest modification in the direction the diagnosis points has not been shown to close the gap.  The scope of that
 statement is the one set out above: arm~B
 supplies each agent with its own baseline and unshares the actor, and
 neither of those changes the fact that the reward the gradient sees is the
@@ -2504,7 +2516,7 @@ advantage estimator, so the question on a persistent-coverage task is
 genuinely open.  And it narrows the search: a reader who wants to close
 the gap now knows that the answer is not ``use a local critic''.
 
-We therefore report the result as it stands: The residual is consistent with the credit assignment of a shared team reward, and the cheapest test of that diagnosis does not resolve it: the per-agent local critic's difference is -0.022 of persistent coverage (95\% interval [-0.080, +0.036]), which includes zero, the two
+We therefore report the result as it stands: The residual is consistent with the credit assignment of a shared team reward, and the cheapest test of that diagnosis does not resolve it: the per-agent local critic's difference is -0.035 of persistent coverage (95\% interval [-0.079, +0.009]), which includes zero, the two
 alternatives that the framework's other controlled arms rule out are ruled
 out, and the cheapest available remedy for the credit assignment does not
 close it.  The remedies that change the
@@ -2574,7 +2586,7 @@ S9 & initial deployment & 0.710 & 0.906 & 0.994 & 0.054 & 0.491 & 0.980 \\
   \draw[uavsep] (axis cs:28.50,-0.628) -- (axis cs:28.50,0.075);
   \draw[uavsep] (axis cs:30.50,-0.628) -- (axis cs:30.50,0.075);
   \addplot[uavlevel, forget plot] coordinates {(0.30,0) (34.70,0)};
-  \addplot[only marks, mark=*, mark size=2.3pt, color=uavblue, mark options={fill=uavblue, draw=white, line width=0.5pt}] coordinates {(1,-0.304) (2,-0.434) (3,-0.344) (4,-0.316) (5,-0.071) (6,-0.183) (7,-0.473) (8,-0.345) (9,-0.437) (10,-0.221) (11,-0.528) (12,-0.400) (13,-0.281) (14,-0.313) (15,-0.441) (16,-0.331) (17,-0.361) (18,-0.361) (19,-0.492) (20,-0.353) (21,-0.598) (22,-0.332) (23,-0.314) (24,-0.173) (25,-0.420) (26,-0.344) (27,-0.468) (28,-0.332) (29,-0.311) (30,-0.519) (31,-0.473) (32,-0.345) (33,-0.177) (34,-0.182)};
+  \addplot[only marks, mark=*, mark size=2.3pt, color=uavblue, mark options={fill=uavblue, draw=white, line width=0.5pt}] coordinates {(1,-0.299) (2,-0.383) (3,-0.342) (4,-0.343) (5,-0.080) (6,-0.173) (7,-0.466) (8,-0.329) (9,-0.445) (10,-0.223) (11,-0.485) (12,-0.393) (13,-0.276) (14,-0.313) (15,-0.476) (16,-0.293) (17,-0.340) (18,-0.360) (19,-0.476) (20,-0.330) (21,-0.598) (22,-0.333) (23,-0.327) (24,-0.165) (25,-0.453) (26,-0.316) (27,-0.484) (28,-0.313) (29,-0.307) (30,-0.528) (31,-0.466) (32,-0.329) (33,-0.170) (34,-0.170)};
   \node[anchor=south east, font=\scriptsize, text=uavmuted] at (axis cs:34.40,0.018) {level with the rule};
   \node[anchor=south west, font=\scriptsize\bfseries, text=uavink] at (axis cs:0.60,0.018) {34 of 34 variants behind};
 \end{axis}
@@ -2676,7 +2688,7 @@ $PL(d)=l_{02}+10\alpha\log_{10}(d/d_{\mathrm{bp}})$, which is exactly the
 log-distance form used in Section~\ref{sec:system}. With the parameters
 recorded by the OMNeT++ run ($l_{01}=l_{02}=40.04$~dB, $\alpha=2$,
 $d_{\mathrm{bp}}=1$~m, background noise $-93.99$~dBm) the two agree to
-\textbf{0.012~dB} over 24 (distance, exponent) combinations spanning
+\textbf{\tokPhyDelta{}~dB} over 24 (distance, exponent) combinations spanning
 1--1000~m and $n\in\{2,3.5\}$ (\texttt{analysis/phy\_equivalence.py}). The
 same audit confirms that the link margin at the report's two operating radii
 is $+43.2$~dB (access link, 3-D slant range 61.0~m) and $+46.9$~dB
@@ -2740,7 +2752,7 @@ transmit power exactly --- a 27.0~dB reduction of $P_{\mathrm{tx}}$ produces
 a 27.0~dB reduction of the reported SNR --- so it is not simply a frozen
 constant. Third, and decisively, it does \emph{not} track the receiver
 distance: the same value is reported for receivers at 10, 30, 50 and 80~m,
-although the configured path loss differs by 13.7~dB between the nearest and
+although the configured path loss differs by 5.3~dB between the nearest and
 the farthest of them, and the link-closure threshold is the same at every
 distance when the configured path loss requires it to be 13.7~dB lower at
 80~m. The quantity a path-loss cross-validation needs is the SNR as a
@@ -2751,7 +2763,7 @@ The consequence for this paper is stated plainly. We therefore do
 \emph{not} claim a runtime cross-validation of the physical layer. What we
 do claim is the algebraic equivalence of the two path-loss functions,
 established from INET's own source and its recorded parameters, to
-0.012~dB. The broader methodological conclusion --- that an instrument must
+\tokPhyDelta{}~dB. The broader methodological conclusion --- that an instrument must
 be shown to respond to a control before its readings can be believed --- is
 the part we would ask a reader to carry away, and the probe is included in
 the repository so that the conclusion can be re-checked.
