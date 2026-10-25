@@ -16,7 +16,7 @@
 - numba: (to check)
 
 ## OMNeT++ / INET
-- NOT INSTALLED (as of 2026-10-25). Need opp_env + OMNeT++ 6.4 + INET 4.7 (or 6.2/6.3 + 4.6 if build problems >3h).
+- IN PROGRESS (2026-10-25): opp_env + OMNeT++ 6.4.0 downloading via WSL2 Ubuntu 26.04 (tmux session omnet_install). Download ~24% complete. Source extracted to ~/omnetpp_ws/omnetpp-6.4.0. Build (configure + make -j4) pending.
 - Install plan: follow https://omnetpp.org/download/ and https://inet.omnetpp.org (ai docs at https://ai.omnetpp.org).
 
 ## OMNeT++ AI docs

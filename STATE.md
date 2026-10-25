@@ -13,7 +13,7 @@ G0 — setup and trust (Oct 24–25). In progress.
 - OS: Windows 11, PowerShell
 
 ## Running jobs
-(none running)
+- OMNeT++ 6.4.0 install: tmux session omnet_install in WSL2 Ubuntu. Building omnetpp-6.4.0 (--install + configure + make -j4). Log: /tmp/opp_build.log
 
 ## Finished results
 - Throughput benchmark: 231.8 steps/sec single env, 4.31 ms/step (N=5,M=20, 2000 steps). At this rate, 2e6 steps/seed ~2.4 h single-threaded; ~2.4 h for 6 parallel seeds. Vectorization (32-128 envs) needed for G1+.
