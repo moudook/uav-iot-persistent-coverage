@@ -20,4 +20,3 @@ rec = {"seed": 0, "episodes": 1000, "n_steps": 2000, "seconds": dt, "hist": hist
 with open(out_path, "w") as f:
     json.dump(rec, f)
 print("CONVERGENCE CHECK DONE in " + str(round(dt)) + "s, final CK=" + f"{rec['final_ck']:.4f}")
----
