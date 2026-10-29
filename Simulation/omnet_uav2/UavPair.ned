@@ -31,6 +31,8 @@ network UavPair
         double simSnir @unit(dB) = default(4dB);
         double simInterval @unit(s) = default(0.1s);
         double simBitrate @unit(bps) = default(6Mbps);
+        double simSigma = default(6);  // dB, plain double: LogNormalShadowing.sigma has no unit
+        double simNoise @unit(dBm) = default(-94dBm);
         @display("bgb=800,800");
 
     submodules:
@@ -41,6 +43,16 @@ network UavPair
         }
         radioMedium: Ieee80211ScalarRadioMedium {
             parameters:
+                // Free space plus log-normal shadowing: the deterministic model
+                // gives a step-function PDR(d), which is not a channel anyone can
+                // fit a delivery model to.  sigma = 0 reproduces the step and is
+                // kept as the control.
+                pathLoss.typename = "inet.physicallayer.wireless.common.pathloss.LogNormalShadowing";
+                pathLoss.sigma = parent.simSigma;
+                // Match the Python simulator's noise floor (-174 dBm/Hz + 7 dB NF
+                // over 20 MHz = -94 dBm); INET's default is -110 dBm, 16 dB quieter,
+                // which would inflate every SNIR and flatter the link.
+                backgroundNoise.power = parent.simNoise;
                 @display("p=50,150");
         }
         uav[2]: AdhocHost {

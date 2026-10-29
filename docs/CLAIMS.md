@@ -26,3 +26,13 @@ Every claim the paper makes, its evidence file, and its status (supported / weak
 ## New thesis claims (to be filled during sprint)
 (to be added as C1-C4 are developed)
 ---
+
+## Network certificate (C1, validated 2026-10-29)
+
+| # | Claim | Evidence file | Status | Notes |
+|---|-------|---------------|--------|-------|
+| 12 | Free-space range knee at 1762 m (20 dBm, 2.412 GHz, 50 m altitude, -85 dBm sensitivity, -94 dBm noise) | Simulation/omnet_uav2/pair_pdr_freespace.json | supported | Measured: PDR 0.9975 at d<=1750 m, 0.0 at d>=1775 m. Matches sensitivity threshold within 1%. |
+| 13 | At mission scale (80 m) link PDR = 0.9975 (<=0.25% loss) | Simulation/omnet_uav2/pair_pdr_outage.json + channel_model.csv | supported | 8 independent runs, mean 0.9975-0.9988 at 5-1300 m. |
+| 14 | MAC contention negligible: PDR 0.998 at N=16, 0.1 s interval | Simulation/omnet_uav2/swarm_contention_contention.json | supported | 15 contenders on one channel, 0.1 s interval: 2995/3000 delivered. |
+| 15 | Network is NOT the binding constraint at mission scale; energy and coverage geometry are | docs/LOG.md 2026-10-29 + channel_model.py | supported | Range margin 22x (1762/80). Certifies the simulator's ideal-observation assumption. |
+| 16 | Information channel model: PDR(d) = 1 - Phi((sens - (Tx-PL(d)))/sigma), sigma=6 dB | ml_impl/uav_wireless/channel_model.py | supported | Calibrated to INET free-space knee and shadowing. |

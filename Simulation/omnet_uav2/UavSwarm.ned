@@ -26,6 +26,8 @@ network UavSwarm
         double simSnir @unit(dB) = default(4dB);
         double simInterval @unit(s) = default(0.1s);
         double simBitrate @unit(bps) = default(6Mbps);
+        double simSigma = default(6);  // dB, plain double: LogNormalShadowing.sigma has no unit
+        double simNoise @unit(dBm) = default(-94dBm);
         @display("bgb=1000,1000");
 
     submodules:
@@ -36,6 +38,9 @@ network UavSwarm
         }
         radioMedium: Ieee80211ScalarRadioMedium {
             parameters:
+                pathLoss.typename = "inet.physicallayer.wireless.common.pathloss.LogNormalShadowing";
+                pathLoss.sigma = parent.simSigma;
+                backgroundNoise.power = parent.simNoise;
                 @display("p=50,150");
         }
         uav[simNumUavs]: AdhocHost {
