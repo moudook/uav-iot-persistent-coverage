@@ -83,7 +83,7 @@ def main():
     n_scenarios = 5
     seeds = list(range(n_scenarios))
     print(f"Generating {n_scenarios} trace files...")
-    gen_traces(n_scenarios, seeds)
+    gen_trace(0, 0)
     
     all_results = []
     for i in range(n_scenarios):

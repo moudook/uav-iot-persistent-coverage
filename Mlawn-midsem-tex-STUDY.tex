@@ -1,0 +1,216 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\ge}}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\le}}
+\DeclareUnicodeCharacter{2192}{\ensuremath{\to}}
+\DeclareUnicodeCharacter{03BB}{\ensuremath{\lambda}}
+\DeclareUnicodeCharacter{03C0}{\ensuremath{\pi}}
+\DeclareUnicodeCharacter{03C3}{\ensuremath{\sigma}}
+\DeclareUnicodeCharacter{00B2}{\ensuremath{2}}
+\DeclareUnicodeCharacter{00B7}{\ensuremath{\cdot}}
+\DeclareUnicodeCharacter{2200}{\ensuremath{\forall}}
+\DeclareUnicodeCharacter{2208}{\ensuremath{\in}}
+\DeclareUnicodeCharacter{2211}{\ensuremath{\sum}}
+\DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}
+\DeclareUnicodeCharacter{00B1}{\ensuremath{\pm}}
+\input glyphtounicode
+\pdfgentounicode=1
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,calc}
+\title{STUDY REPORT (best version) --- Persistent UAV-IoT Coverage Project\\
+{\small Read before reporting to senior professor. Dense but explanatory. Hinglish + simple English. Everything covered.}}
+\author{Himanshu Nagwanshi (study copy)}
+\date{October 27, 2026}
+\begin{document}
+\maketitle
+
+\section*{0. One-line summary (pehle yeh padh, 30 sec)}
+UAV swarm ek area mein IoT sensors ko K-cover karta hai, battery finite, drones fail ho sakte hain, swarm connected rehna chahiye. Humne MAPPO (multi-agent RL) banaya, but ek hand-written rule ne usse $0.298$ zyada coverage diya (gap). Paper ka real contribution = feasibility-certified evaluation framework jo batata hai ki koi config possible hai ya nahi, aur reported number meaningful hai ya nahi. Negative result honestly reported with controlled arms + 38-item audit + OMNeT negative control. Methodology contribution, not algorithm win.
+
+% ============================================================
+% PART A: OLD REPORT
+% ============================================================
+\section{PART A --- OLD MIDSEM REPORT (kya tha, kya bolta tha, har section)}
+
+\subsection{A.1 Old report ka framing (10 pages, proposal)}
+Old report title: "Persistent and Fault-Tolerant UAV-IoT Coverage: A Multi-Agent Reinforcement Learning Framework for Joint Coverage, Connectivity, and Energy Management." Authors same (Himanshu, Surya, Harsh, Gaddam). It was a \textbf{proposal}, not a results paper. Abstract says: "Numerical performance claims are intentionally deferred until the proposed experiments are completed." Contributions: (1) unified system model, (2) CTDE MAPPO framework with masks + reserve, (3) literature synthesis, (4) benchmark/metric protocol. No results, no feasibility check, no audit, no OMNeT execution. 10 pages, ~5 figures, 14 references. Tone: optimistic, "we propose, we will do."
+
+\subsection{A.2 Old report ka system model (Section III) --- har equation}
+\textbf{Params (Table VI):} N=5 active UAVs, 1 reserve, M=20 sensors, 80x80 m, Rcov=35 m, Rcomm=40 m, z0=50 m, K=2, dt=0.2s, vmax=5 m/s, dsafe=5 m, Bmax=30000 J, Phover=50 W, Pmove=75 W, Pelec=5 W, Ptx=0.5 W, charge increment 0.0002, T=10000 steps (2000 s).\\
+\textbf{Dec-POMDP:} G=<N,S,{Ai},{Oi},T,R,gamma>. Global state st = (pi,vi,bi,mi,Fi) for all UAVs + sensors + Qt. Local obs oi = [pi, vi, bi, Ni, Clocal\_i, rho\_i, tau\_return, Epad\_i] (8 features). Action space: 6 actions (Hover, +/-x, +/-y, Charge). Joint action 6N. K-coverage: nd(t) = number of active UAVs covering sensor d. Ct = (1/M) sum min(nd/K,1). Ut = under-coverage rate. Connectivity: graph Gt, connected if one component. Articulation point indicator kappa\_i. Crit = avg kappa. Battery: E(t+1) = clip(E - P*dt + Pch*dt). Return threshold Ereq = Epad + Erejoin + Ereserve. Mandatory return when E <= Ereq. Charging: Hungarian assignment, cost = alpha*dist + beta*queue + mu*urgency. Safety: speed, workspace, separation. Mask if violates. Failure/recovery: reserve UAV activated, recovery time tau\_f. Reward: rt = -[lambdaO*Ut + lambdaE*Econs + lambdaD*Ddeg + lambdaW*Wmov + lambdaR*Rrec + lambdaC*Critt]. Weights: lambdaO=1.00, lambdaE=0.10, lambdaD=0.50, lambdaW=0.05, lambdaR=0.30, lambdaC=0.20. Feasibility (old): area counting N*pi*R*R >= K*A → Rcov >= sqrt(KA/piN) = 28.5 m; packing correction → 30.0 m. Both satisfied by 35 m. Surplus sigma = N*pi*R*R/(K*A) = 1.50. "Leaves margin for single-UAV failure (sigma=1.20 after failure)." Bound necessary not sufficient.
+
+\subsection{A.3 Old report ka ML algorithm (Section IV)}
+CTDE MAPPO: parameter-shared actor, centralized critic. GAE, clipped PPO, critic MSE loss. Action feasibility mask: workspace, speed, separation, charge validity, connectivity-preservation. Failure-aware execution: remove failed UAV, activate reserve, update obs. Training protocol: randomize sensors, positions, batteries, pads, failure times; curriculum (no failures → single → contention). Hyperparameters: gamma=0.99, epsilon=0.20, GAE lambda=0.95. Implementation plan: Phase 1 Python (geometric, K-coverage, connectivity, battery, charging, failure, heuristic, MAPPO), Phase 2 OMNeT++/INET (wireless, network metrics), Phase 3 Simu5G (PHY-aware). Same actor interface across phases.
+
+\subsection{A.4 Old report ka comparison + metrics + scenarios (Sections V-VII)}
+Comparison models: Fixed formation+threshold recharge, Greedy lowest-battery, Reactive reconfiguration, MAD-DDQN, POGS-QMIX, MAHPPO-AM, Vanilla MAPPO. Metrics (Table IX): CK, under-coverage, connectivity availability, fragility, service continuity, outage severity, reserve utilization, recovery, energy, charging, movement, safety, scalability, stability. Scenarios S1-S8: sensor density, fleet size, battery, pads, Rcomm, Rcov, failure time/location, combined stress. Conclusion: defines problem, proposes MAPPO+mask+arbitration+reserve. "No performance advantage claimed before experiments." Literature survey: 10 core papers + 4 recent. Gap: no single framework couples all 5 elements.
+
+\subsection{A.5 Old report ka literature survey}
+10 core papers in Table I: [1] energy-efficient coverage DRL, [2] multi-ABS placement DDQN, [4] MAD-DDQN energy, [5] decentralized biconnectivity, [6] fault-tolerant ad hoc, [7] recharging coordination, [8] persistent aerial service, [9] fault-tolerant MARL exploration, [10] robust UAV coverage DRL, [14] energy-aware persistent coverage POGS-QMIX. Gap statement: no single framework models all 5 elements (K-coverage, connectivity criticality, battery+charging, failure recovery, decentralized execution). MAPPO cited separately [3].
+
+% ============================================================
+% PART B: WHAT CHANGED AND WHY
+% ============================================================
+\section{PART B --- What changed in new report and WHY}
+
+\subsection{B.1 Config changes}
+\begin{itemize}
+\item N: 5 → 8. WHY: feasibility certificate proves N=5 infeasible for region (N≥4K=8). Old area-surplus test was wrong.
+\item Episode: 10000 → 2000 steps. WHY: at 400 steps pack never depleted → charging/reserve never fired → three proposed mechanisms never exercised. Sweep shows 2000 steps is where energy binds (213 returns, 0.4 stranding/ep) while mission achievable.
+\item Initial deployment: unspecified → connected corner cluster (3/20 sensors). WHY: centred ring already covers 17/20 → CK≥0.85 for do-nothing controller; clustered makes comparison decidable. Pre-deployed kept as S9.
+\end{itemize}
+
+\subsection{B.2 Reward changes}
+\begin{itemize}
+\item 6 → 7 terms: added λB (Bt = mean fractional shortfall below return threshold). WHY: consumption-only signal gives no reason to turn back (flight to pad = 0.0016 of pack vs late team-level consequence).
+\item Weights: λD 0.50→2.00, λC 0.20→0.50. WHY: energy term numerically inert (≤5e-5 vs coverage ~1); degraded-service and connectivity must not drown under coverage signal. New ordering: λD ≥ λO ≥ λC ≥ λR > λE ≥ λW.
+\end{itemize}
+
+\subsection{B.3 Observation changes (8 → 11 features)}
+\begin{itemize}
+\item Added one-hot identity 1i. WHY: parameter sharing needs symmetry breaking; without it, shared policy collapses to single action, swarm rigid body (measured: 1.84/8 distinct actions, spread 11.3m = cluster radius).
+\item Added pad bearing d-hat-pad. WHY: old obs carried energy cost to pad but not direction; policy cannot express return.
+\item Added G×G deficit summary Mdef (G=4). WHY: agent knows how many it covers, not where deficiency is. Measured: no coverage difference (null, reported) but behaviour changes (spread 9.0→10.6m).
+\end{itemize}
+
+\subsection{B.4 Mask changes}
+\begin{itemize}
+\item Generic connectivity mask → H=3 eccentricity lookahead + joint projection. WHY: individually legal moves can jointly disconnect; projection reverts all to previous config. Also analysis of what rule does/doesn't prevent (ring example: valid topology rejected). Measured: 0.10/16000 actions unexecuted.
+\item Energy mask repair: old admitted departures with flat battery → stranding 5.7/8. New requires E\_i ≥ E\_pad + E\_reserve after the move, one-sided (already-low UAV may still move toward pad). Stranding 5.7→0.4.
+\end{itemize}
+
+\subsection{B.5 New methodology (not in old report)}
+\begin{itemize}
+\item Feasibility certificate (packing bound N≥4K=8). Old used area-surplus (wrong).
+\item Teleporting oracle (achievability ceiling 1.000 at N=8).
+\item Degeneracy theorem for SC (F=empty → SC=0 ∀π).
+\item Non-degenerate metrics (deficit + max refresh time).
+\item Claim audit (38 items, 0 fail).
+\item Determinism protocol (device + thread count part of protocol).
+\item Negative control for PHY (60 dB crush → same frame count → instrument fake).
+\item Plasticity probe (0\% dormant vs 40-45\%).
+\item Exhaustion vs failure distinction.
+\end{itemize}
+
+\subsection{B.6 New implementation fixes (old equations got wrong in practice)}
+\begin{itemize}
+\item Termination vs truncation: old treated end-of-mission as terminal → GAE bootstrapped from zero → biased advantages. Fix: separate flags, tests pin it.
+\item Value normalisation: old asserted present but missing. Fix: running EMA stats, un-normalise at 3 consumer points (TD residual, GAE, bootstrap). One accessor + tests.
+\item Motion step bug: first Phase-1 sim passed all equations/tests but motion step never applied moves → spread never changed. Found by behavioural diagnostic, not tests/loss.
+\item Frame count instrument: MAC frames responded to Ptx? No → 60 dB control caught it.
+\end{itemize}
+
+\subsection{B.7 New literature positioning}
+\begin{itemize}
+\item Old: 14 refs, 1 table, generic gap.
+\item New: 44+ refs, Table I (focused survey) + Table II (near-misses: Trotta [15], IRADA [44], Scherer/Rinner [16], Hartuv [17], Shi [18]) with exactly what each lacks.
+\item Dedicated subsection on closest prior work for evaluation philosophy ([38] drone-mesh ceilings, [39] CS-FUB, [40], [35]/[41] MILP).
+\item Bounded-absence claims: no infeasibility certificate for persistent coverage in corpus; no paper names degenerate binary metric. Stated as bounded search, not universal.
+\item Credit-assignment line: COMA, DAE, GPAE, HAPPO/HATRPO, wonderful-life-utility [26].
+\end{itemize}
+
+\subsection{B.8 New results (none in old report)}
+\begin{itemize}
+\item Base comparison: Fixed 0.372 / Greedy 0.784 / Reactive 0.953 / Reactive-local 0.972 / Indep DQN 0.381 / Masked PPO 0.625 / MAPPO 0.674±0.060 / argmax 0.418 / oracle 1.000.
+\item Gap 0.298 (CI [0.248,0.349]).
+\item Controlled arms (5) with CIs all below gap.
+\item Budget sweep 8/16/25 → 0.588/0.624/0.674.
+\item Component ablation (base + stress S8).
+\item Observation experiment (3 arms).
+\item Credit assignment test (-0.035).
+\item Scenario matrix (9 scenarios, 34/34 variants behind).
+\item Plasticity probe (0\% dormant).
+\end{itemize}
+
+% ============================================================
+% PART C: NEW REPORT (section by section)
+% ============================================================
+\section{PART C --- NEW REPORT (section by section, what it says)}
+
+\subsection{C.1 Abstract (p.1)}
+UAV swarms provide temporary coverage where fixed infra unavailable. Persistent operation couples coverage, connectivity, battery, charging, failures. Formulates maintaining ≥K UAVs over every sensor while preserving connected swarm. Dec-POMDP. Argues evaluation methodology is the unsolved part: coverage ratio without achievability reference can't distinguish strong controller from infeasible config; service-continuity metric identically zero on infeasible instances. Introduces feasibility-certified framework: (i) rigorous lower bound on fleet size, (ii) teleporting placement oracle as ceiling, (iii) non-degenerate time-averaged + refresh-time metrics. Applied to project's own config: provably infeasible for region + minority of random sensor layouts; area-surplus certifies nothing. On corrected config: MAPPO with mask, reserve, arbitration, PHY-derived links. Hand-designed rule outperforms by 0.298 (CI [0.248,0.349]). Figure 1 is the argument in one picture. Arms bound how much each explanation accounts for (all upper limits below gap, smallest 0.161). Residual consistent with credit assignment; cheapest test (-0.035) doesn't resolve. Physical-model, feasibility, protocol, determinism claims recomputed by automated audit (38 items, 0 failing); audit doesn't cover Section VIII results. Every measurement number generated from artefact. Path-loss expression shown algebraically equivalent to independent standards-faithful simulator (constant 0.012 dB offset) with transmit-power negative control.
+
+\subsection{C.2 Introduction (pp.1-2)}
+Motivation (IoT in remote/disaster areas), persistent redundancy requirement, conflicts, joint action space 6N, MARL/CTDE/MAPPO suitability. Research question: can decentralized MAPPO maintain K-coverage + connectivity + energy + charging + failure recovery, and can performance be certified against rigorous achievability bound? 11 contributions listed (model, certificate, ceiling, negative result, MAPPO framework, PHY-derived links, non-degenerate protocol, observation-content spec, corrected deployments, negative-control methodology, literature synthesis).
+
+\subsection{C.3 Literature survey (pp.2-6)}
+Focused survey of 10 core papers (Table I) + near-misses (Table II: Trotta, IRADA, Scherer/Rinner, Hartuv, Shi, Qiu, Liu). Gap: no work couples all 5 elements with learned decentralized policy. Adjacent work on evaluation philosophy ([35],[41] MILP refs, [40] feasibility construct, [39] CS-FUB, [38] drone-mesh ceilings). Three absences: no infeasibility certificate for persistent coverage; no paper names degenerate binary metric; credit-assignment line (COMA, DAE, GPAE, HAPPO, wonderful-life-utility). Bounded search, not universal absence.
+
+\subsection{C.4 System model (pp.6-14)}
+Architecture (N active + 1 reserve + M sensors + sink + S pads). Dec-POMDP. Global state, local obs (11 features). Action space 6. K-coverage with radio gate (Eq. 19). Feasibility certificate (packing bound). Connectivity model (graph, articulation points). Radio model (Al-Hourani, path loss, MCS gate). Battery model (with exhaustion distinction). Charging arbitration. Safety constraints (energy mask one-sided). Failure/recovery (exhaustion vs failure). Primary objective + reward (7 terms, weights). Parameter settings (N=8, T=2000, clustered deployment). Scope (abstracts fading dynamics, obstacles, wind, aging, GPS denial, sensor failures, multi-failure).
+
+\subsection{C.5 ML algorithm (pp.14-18)}
+CTDE MAPPO (shared actor, centralized critic). Value normalisation (EMA, un-normalise at 3 points). Credit assignment analysis (shared team reward → same advantage; per-agent value doesn't repair; redistribution needs per-agent reward/joint-action critic/counterfactual baseline). Truncation vs termination bootstrap fix. Masking at logit level (H=3 eccentricity + joint projection, analysis of what it does/doesn't). Failure-aware execution. Training protocol. Hyperparameters. Implementation plan as audit trail (Phase 1-2 executed, Phase 3 scaffolded). Two cost confessions (motion step bug, frame-count instrument).
+
+\subsection{C.6 Comparison models (pp.18-19)}
+Fixed, Greedy, Reactive, Reactive-local, Independent DQN, Masked PPO local critic, POGS-QMIX (cited, not re-implemented), Vanilla MAPPO. "Evaluated" column. All on same scenes/seeds/constraints. Adaptations documented.
+
+\subsection{C.7 Metrics (pp.19-20)}
+CK, under-coverage, connectivity availability, fragility, SC (degenerate, retained for comparison), time-averaged deficit, max refresh time, outage severity, reserve utilization, recovery, energy, charging, movement, safety, scalability, stability. Which reported and which not (3 not reported: outage severity during recovery, recovery time distribution, inference-time scaling; collision/out-of-bounds prevented not measured).
+
+\subsection{C.8 Scenarios (pp.20)}
+S1-S9 (added S9 initial deployment). Each has two variants, every variant run. Evaluation protocol stated exactly (sampling seeded from eval seed; (policy,scene) function; seed-to-seed vs scene-to-scene variation reported separately; paired arms; resolution reported).
+
+\subsection{C.9 Results (pp.20-31)}
+Base comparison, gap 0.298, privilege test, SC separation, energy/stranding, connectivity accounting, budget sweep, observation experiment, energy arms, component ablation (base + stress), credit assignment, scenario matrix (34/34), claim audit, PHY validation (equivalence + negative control), plasticity probe.
+
+\subsection{C.10 Conclusion (pp.30-31)}
+Central contribution = feasibility-certified evaluation framework. Feasibility certificate (N≥4K=8, tight, sensor-set probabilistic). What framework exposes (negative result 0.298, arms bound explanations, residual consistent with credit assignment). Scope of physical-layer claim (algebraic equivalence 0.012 dB, no runtime cross-validation). Honest limitations (ix). Remedies suggested (per-agent signal) not implemented.
+
+\subsection{C.11 References (pp.32-33)}
+44+ references including near-misses and credit-assignment line.
+
+% ============================================================
+% PART D: GLOSSARY
+% ============================================================
+\section{PART D --- Glossary (34 terms)}
+\begin{description}[style=nextline,leftmargin=1.2em]
+\item[Feasibility certificate] Proof that a config can K-cover region. Packing bound N≥4K=8.
+\item[Teleporting oracle] Upper bound on coverage (drones placed anywhere, no motion/energy).
+\item[Service continuity (SC)] Binary metric, degenerate on infeasible configs.
+\item[Dec-POMDP] Cooperative multi-agent problem with partial obs.
+\item[CTDE MAPPO] Centralized training, decentralized execution, shared actor.
+\item[Feasibility mask] Safety filter: bounds, speed, separation, charge, connectivity.
+\item[Charging arbitration] Hungarian assignment of drones to pads.
+\item[Reserve UAV] Backup drone on failure.
+\item[Credit assignment] Shared reward → same advantage → who helped? Unresolved.
+\item[Stranding] UAV empties pack away from pad → removed from active set.
+\item[Exhaustion vs failure] Exhaustion = out of service, not failed; reserve can re-seat.
+\item[Radio gate] Coverage/adjacency only if link carries ≥6.5 Mbit/s.
+\item[Claim audit] 38 items recomputed from artefacts, 0 fail.
+\item[OMNeT++/INET] Network simulator, Phase 2, 802.11 MAC/PHY.
+\item[BonnMotion] Mobility trace format (.movements).
+\item[Packing number P(A,R)] Max points in A pairwise >2R apart.
+\item[Area surplus sigma] NπR²/(KA); passes but certifies nothing.
+\item[GAE] Generalized advantage estimate.
+\item[PPO clipping] Limits policy update ratio.
+\item[H-step lookahead] Connectivity check H hops.
+\item[Joint projection] Reverts all moves if jointly disconnecting.
+\item[Entropy collapse] Policy loses exploration (ep 675 in long run).
+\item[BC init] Behaviour cloning init (97\% acc) for residual MAPPO.
+\item[Residual MAPPO] BC init + PPO fine-tune (CK 0.819 after 3 ep).
+\item[Stress regimes] single\_pad, small\_battery, low\_comm, failure, multi\_failure.
+\item[Headroom gate] ceiling - best rule ≥ 0.10.
+\item[IQM] Interquartile mean (rliable stats).
+\item[NED] OMNeT network description language.
+\item[Cmdenv/Qtenv] OMNeT command-line / GUI run modes.
+\item[BreakpointPathLoss] INET path-loss model.
+\item[Al-Hourani] LoS probability model for air-to-ground.
+\item[MCS table] 802.11 OFDM modulation/coding rates.
+\item[SNIR] Signal-to-noise-plus-interference ratio.
+\item[Stranded UAV] Out of service (empty pack away from pad).
+\end{description}
+
+\end{document}

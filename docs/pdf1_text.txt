@@ -1,0 +1,1529 @@
+=== PAGE 1 ===
+Persistent and Fault-Tolerant UAV-IoT Coverage: A
+Multi-Agent Reinforcement Learning Framework
+for Joint Coverage, Connectivity, and Energy
+Management
+Himanshu Nagwanshi
+Surya Prakash S
+Harsh Varshney
+Gaddam Viswaijeth
+CS24BT055@iitdh.ac.in
+CS23BT068@iitdh.ac.in
+cs23bt004@iitdh.ac.in
+CS23BT076@iitdh.ac.in
+Department of Computer Science and Engineering
+Indian Institute of Technology Dharwad, Dharwad, India
+Abstract—UAV swarms can provide temporary wireless cover-
+age for Internet-of-Things (IoT) deployments in areas where fixed
+infrastructure is unavailable, damaged, or insufficient. Persistent
+operation is considerably harder than one-shot deployment be-
+cause coverage, inter-UAV connectivity, battery depletion, limited
+charging resources, and UAV failures are tightly coupled. This
+paper formulates the problem of maintaining at least K UAVs
+over every ground sensor while preserving a connected swarm
+and respecting finite energy and safety constraints. The resulting
+decision process is modelled as a cooperative Decentralized Par-
+tially Observable Markov Decision Process (Dec-POMDP). We
+propose a Multi-Agent Proximal Policy Optimization (MAPPO)
+controller under centralized training and decentralized execution
+(CTDE). Each UAV executes a shared policy from local observa-
+tions, while a centralized critic is used only during training. The
+learned controller is combined with an explicit feasibility mask,
+a reserve-UAV recovery mechanism, and a small infrastructure-
+side charging arbitration procedure. A focused survey of ten
+closely related studies shows that coverage, connectivity, energy-
+aware operation, recharge scheduling, and fault recovery have
+largely been studied separately or in different combinations.
+The proposed framework targets their intersection and defines
+an evaluation protocol covering persistent coverage, connectivity
+availability, recovery delay, energy consumption, charging con-
+tention, safety, and scalability. Numerical performance claims
+are intentionally deferred until the proposed experiments are
+completed.
+Index Terms—UAV-IoT networks, persistent coverage, fault
+tolerance, multi-agent reinforcement learning, MAPPO, Dec-
+POMDP, connectivity maintenance, energy-aware coordination.
+I. INTRODUCTION
+The Internet of Things (IoT) increasingly operates in envi-
+ronments such as agricultural fields, disaster-affected regions,
+industrial sites, and remote monitoring areas where fixed
+communication infrastructure may be sparse or temporar-
+ily unavailable. UAVs can provide rapidly deployable aerial
+communication or sensing support because their positions
+can be changed in response to the spatial distribution of
+demand. Energy-efficient UAV control has therefore been stud-
+ied for communication coverage, fairness, and connectivity,
+while aerial-base-station placement has been formulated as a
+learning-based spatial optimization problem [1], [2].
+The practical difficulty changes substantially when the
+network must remain operational for a long mission rather
+than only achieve good coverage at one instant. The sup-
+plied project model considers N UAVs operating over M
+ground sensors, finite batteries, communication links between
+neighboring UAVs, a limited number of charging pads, and
+the possibility that an active UAV fails during the mission.
+The central requirement is persistent redundancy: every sensor
+should remain within coverage range of at least K active
+UAVs. At the same time, the UAV communication graph
+should remain connected so that information can be forwarded
+through the swarm to a ground station or data sink.
+These requirements conflict. A UAV that moves toward an
+uncovered sensor may leave a coverage gap elsewhere. A
+UAV that returns to charge may be the only communication
+bridge between two groups of UAVs. A failure removes
+both its coverage contribution and its communication links,
+requiring the remaining swarm to reconfigure. Charging is
+also a shared resource: several UAVs can become energy-
+critical simultaneously while only a small number of pads are
+available. Persistent service therefore requires a joint decision
+process rather than a sequence of unrelated coverage and
+charging heuristics.
+A centralized controller faces a rapidly growing joint action
+space. In the proposed discrete action model, each UAV selects
+one of six actions: hover, move in one of four cardinal
+directions, or charge. The joint action space consequently
+contains 6N combinations. This growth does not by itself
+make centralized learning impossible for every small swarm,
+but it makes explicit joint-action enumeration and centralized
+policy design progressively less attractive as N increases. A
+decentralized execution architecture is therefore desirable for
+scalability and fault containment.
+Multi-agent reinforcement learning (MARL) provides a
+natural framework for this setting. CTDE allows a central-
+ized critic to use information unavailable to the individual
+UAV during training while retaining decentralized policies
+during deployment. MAPPO is particularly suitable because
+it combines centralized value estimation during training with
+
+
+=== PAGE 2 ===
+a policy-gradient actor that can be executed independently by
+each agent.
+The research question addressed in this work is: Can a
+decentralized MAPPO policy maintain persistent K-coverage
+and swarm connectivity while coordinating finite battery us-
+age, charging, and single-UAV failure recovery without requir-
+ing a centralized trajectory controller?
+The contributions are:
+1) A unified system model coupling persistent K-coverage,
+inter-UAV connectivity, finite battery energy, charging
+contention, and UAV failure recovery.
+2) A CTDE MAPPO framework with parameter-shared
+decentralized actors, a centralized training critic, hard
+action feasibility masks, and an explicit reserve-UAV
+recovery mechanism.
+3) A focused literature synthesis showing the differ-
+ence between existing coverage, connectivity, recharge-
+scheduling, and fault-tolerant approaches and the com-
+bined problem considered here.
+4) A benchmark and metric protocol designed to sepa-
+rate coverage, connectivity, energy, recovery, safety, and
+scalability effects rather than relying only on a single
+aggregate reward.
+The remainder of the paper is organized as follows. Section
+II presents the literature survey and research gap. Section
+III defines the system architecture and mathematical model.
+Section IV presents the proposed MAPPO algorithm. Section
+V specifies the comparison models. Section VI defines the
+performance metrics and evaluation protocol. Section VII
+concludes the paper.
+II. LITERATURE SURVEY
+The survey is restricted to work that is directly related to
+at least one of four components of the target problem: UAV
+coverage/control, inter-agent connectivity, persistent energy-
+aware operation, or fault-tolerant swarm recovery. The ten
+core papers in Table I are discussed comparatively rather
+than as isolated summaries. MAPPO is cited separately as the
+underlying learning method [3].
+A further recent line of work integrates communication and
+control directly within MARL. MAPPO itself is adopted from
+Yu et al. [3]. Sun et al. formulate joint resource allocation and
+3D trajectory control and use action masking for constrained
+hybrid actions [11]. Carvalho and Aguiar address decen-
+tralized multi-agent coverage path planning with parameter
+sharing, CTDE, safety filtering, and zero-shot generalization
+[13]. Zhuang Chen et al. formulate UAV trajectory design
+for emergency communication as a constrained MDP and
+explicitly account for energy and turning behavior [12]. These
+works reinforce the practicality of CTDE, action masking, and
+structured rewards, but their primary objectives differ from
+persistent redundant coverage with explicit failure recovery.
+A. Research Gap
+The literature can be grouped into complementary but
+incomplete directions. Energy-efficient coverage works jointly
+Ground data sink
+/ base station
+Active UAV swarm
+local sensing +
+communication
+Reserve UAV
+fault recovery
+K-coverage
+fixed IoT sensors
+Connectivity
+Gt, bridge risk
+Battery + charging
+finite energy, limited pads
+Simulator / environment
+motion, failures,
+safety, reward
+Shared MAPPO actor
+πθ(ai
+|
+oi)
+Centralized critic
+Vϕ(st) (training only)
+Fig. 1.
+Color-coded system architecture. Active UAVs provide sensor cov-
+erage and maintain a range-limited communication graph. The reserve UAV
+supports post-failure recovery. The shared MAPPO actor is deployed locally,
+while the centralized critic is used only during training.
+address coverage and energy, and some include connectivity,
+but they generally do not treat UAV failure and limited charg-
+ing infrastructure as first-class elements of the same control
+problem [1], [4]. Connectivity research provides decentralized
+graph conditions and topology-repair mechanisms, but does
+not integrate persistent sensor coverage and energy-aware
+learning [5], [6]. Persistent-service studies explicitly model
+recharge schedules and energy limitations, yet typically as-
+sume fixed service locations and a planned fleet or replacement
+process rather than autonomous failure-driven reconfiguration
+[7], [8]. Recent fault-tolerant MARL and persistent-coverage
+MARL move closer to the target setting, but address different
+combinations of health state, outage memory, target assign-
+ment, or coverage objectives [9], [14].
+Based on this surveyed set, we did not identify a sin-
+gle framework that simultaneously models: (i) persistent K-
+coverage of fixed IoT sensors, (ii) explicit swarm-connectivity
+preservation using communication-graph criticality, (iii) finite
+battery operation with contested charging pads, (iv) failure-
+triggered reserve-UAV recovery, and (v) decentralized exe-
+cution of the motion policy. The proposed formulation is
+designed around this intersection. This is a survey-derived gap
+statement, not a claim that no related component has ever
+appeared in the broader literature.
+III. SYSTEM MODEL
+A. System Architecture
+The system contains N active UAVs, one reserve UAV,
+M fixed IoT sensors, a ground data sink/base station, and
+S charging pads distributed within the operating region Ω.
+UAVs provide sensor coverage through a range-limited air-
+to-ground link and form a multi-hop communication network
+among themselves. Sensor data reaches the sink through the
+UAV communication graph whenever the graph is connected.
+For tractability, the UAVs fly at a common nominal altitude
+z0, so the decision process operates in the horizontal plane
+while the altitude remains part of the physical state. Let
+
+
+=== PAGE 3 ===
+TABLE I
+FOCUSED LITERATURE SURVEY OF CLOSELY RELATED STUDIES.
+Ref.
+Problem addressed
+Method
+Key findings / contribution
+Limitation relative to this work
+Relevance
+[1]
+Energy-efficient and fair
+UAV communication
+coverage.
+DRL-based UAV
+control.
+Jointly considers coverage, fairness,
+connectivity, and energy efficiency.
+Does not model explicit UAV-failure
+recovery, charging-pad contention, or a
+persistent K-coverage SLA.
+Baseline for
+coverage–connectivity–energy
+trade-offs.
+[2]
+Multi-aerial-base-station
+placement with irregular
+3D coverage.
+Prioritized-replay
+DDQN and
+two-level
+placement.
+Uses a spatial representation to improve
+multi-ABS placement under terrain/blockage
+effects.
+Primarily a placement problem; no
+persistent battery lifecycle or swarm
+fault recovery.
+Motivates learning-based spatial
+control and size-invariant state
+representations.
+[4]
+Energy-efficiency
+optimization for
+multiple UAVs serving
+static/mobile users.
+Cooperative
+MAD-DDQN.
+Jointly optimizes 3D trajectories and user
+service while accounting for interference.
+Energy efficiency is central; persistent
+K-coverage, charging coordination,
+and failure recovery are not jointly
+modelled.
+Strong value-based MARL
+benchmark.
+[5]
+Decentralized
+biconnectivity in
+multi-robot systems.
+Graph/Laplacian-
+based
+decentralized
+conditions.
+Establishes sufficient conditions for avoiding
+articulation-point failures using
+neighbor-to-neighbor information.
+No UAV coverage objective, finite
+battery, charging process, or learned
+policy.
+Grounds the connectivity-risk
+feature and graph constraints.
+[6]
+Fault-tolerant ad hoc
+robot networks.
+Movement-control
+and
+topology-repair
+algorithms.
+Formalizes self-forming, self-healing, and
+self-organizing communication networks
+after node loss.
+Focuses on network topology rather
+than persistent sensor coverage and
+battery-aware learning.
+Provides the network-level
+motivation for failure recovery.
+[7]
+Recharging coordination
+for persistent
+multi-robot missions.
+Combinatorial
+rendezvous
+planning with
+mobile charging
+robots.
+Couples charging schedules with persistent
+task execution and routing constraints.
+Charging is the main focus; UAV
+coverage/connectivity/failure are not
+unified in the same learned controller.
+Supports explicit charging-resource
+modelling.
+[8]
+Persistent aerial service
+under limited flight and
+recharge times.
+HORR and
+PHeRR scheduling
+schemes.
+Provides fleet-size and recharge scheduling
+models for persistent service under energy
+constraints.
+Service locations are scheduled rather
+than dynamically reconfigured after
+UAV failure.
+Direct motivation for finite-energy
+persistent operation.
+[9]
+Fault-tolerant
+multi-UAV exploration
+with changing UAV
+health.
+Fault-tolerant
+MARL with
+temporal
+information and
+health/topology
+inputs.
+Allows UAV health degradation and faults
+during the mission and learns cooperative
+recovery behavior.
+Exploration is the task; persistent
+sensor K-coverage and charging-pad
+contention are outside the main
+formulation.
+Closest fault-aware MARL
+direction.
+[10]
+Robust UAV wireless
+coverage using
+multi-agent deep RL.
+Centralized and
+decentralized deep
+Q-learning
+variants with a
+shared network.
+Studies decentralized autonomous UAV
+coverage and compares centralized and
+decentralized control.
+Focuses on coverage rather than
+explicit persistent redundancy, graph
+fault tolerance, and charging.
+Recent decentralized
+coverage-learning benchmark.
+[14]
+Energy-aware persistent
+multi-UAV coverage
+with outage history.
+POGS-QMIX with
+priority/outage
+guidance and
+return-energy
+masking.
+Explicitly combines persistent coverage,
+outage memory, battery limits, and periodic
+recharging.
+Uses a centralized online coordination
+layer and does not directly target
+articulation-point preservation plus
+reserve-UAV failure recovery in the
+same formulation.
+Recent persistent-coverage
+benchmark and a key comparison
+model.
+pi(t) = [xi(t), yi(t)]T denote the horizontal position of UAV
+i and qd = [xd, yd]T the position of sensor d.
+B. Dec-POMDP Formulation
+The cooperative control problem is represented as
+G = ⟨N, S, {Ai}, {Oi}, T , R, γ⟩,
+(1)
+where S is the global state space, Ai is the action space of
+UAV i, Oi is its local observation space, T is the transition
+model, R is the shared reward, and γ ∈(0, 1) is the discount
+factor. The training objective is
+max
+π
+Eπ
+"T −1
+X
+t=0
+γtRt
+#
+.
+(2)
+C. Global State
+The state available to the centralized critic during training
+is
+st =
+
+(pi, vi, bi, mi, Fi)N
+i=1, (qd)M
+d=1, Qt
+	
+,
+(3)
+where Vact
+t
+= { i ∈{1, . . . , N} : Fi(t) = 0 } is the set
+of active UAVs, from which any UAV with Fi(t) = 1 is
+removed in all coverage, connectivity and energy sums. vi
+is velocity, bi ∈[0, 1] is normalized battery level, mi ∈
+{serve, return, charge} is operating mode, Fi ∈{0, 1} is
+the failure indicator, and Qt ∈{0, 1}S records charging-pad
+occupancy. A failed UAV is removed from the active set used
+in coverage and connectivity calculations.
+D. Local Observation
+At deployment, UAV i uses only locally available informa-
+tion:
+oi(t) =
+h
+pi, vi, bi, Ni, Clocal
+i
+, ρi, τ return
+i
+, Epad
+i
+i
+.
+(4)
+Here Ni is the set of nearby UAVs, Clocal
+i
+is the number of
+nearby sensors currently covered, ρi is a locally computed
+bridge-risk estimate, τ return
+i
+is the estimated time until the
+return threshold is reached, and Epad
+i
+is the estimated energy
+needed to reach a feasible charging pad.
+Unlike the idealized global articulation-point indicator
+sometimes used in analysis, ρi is intended to be computable
+during execution from neighborhood exchange. The simulator
+
+
+=== PAGE 4 ===
+TABLE II
+LOCAL OBSERVATION VARIABLES AVAILABLE TO EACH DEPLOYED UAV.
+Feature
+Symbol
+Meaning at decision time
+Position
+pi
+Own horizontal location; altitude is fixed for the
+primary study.
+Velocity
+vi
+Current velocity for motion-limit awareness.
+Battery
+bi
+Normalized remaining energy.
+Neighbors
+Ni
+UAVs detected within Rcomm.
+Coverage
+Clocal
+i
+Nearby sensors currently within coverage radius.
+Bridge risk
+ρi
+Local estimate of topology criticality.
+Return
+urgency
+τ return
+i
+Estimated time until the return-energy threshold.
+Pad energy
+Epad
+i
+Estimated energy to the nearest feasible charging
+pad.
+TABLE III
+DISCRETE ACTION SEMANTICS USED BY THE MAPPO ACTOR.
+Action
+Effect
+Hover
+Remain at the current position and continue serving covered sensors.
++x / −x
+Move by one control step along the horizontal x direction.
++y / −y
+Move by one control step along the horizontal y direction.
+Charge
+Request charging when inside a pad service region; pad selection is
+handled by the scheduler.
+may additionally compute the exact articulation-point indicator
+for evaluation and for the centralized critic. This distinction
+avoids assuming that an individual UAV can magically obtain
+the complete global topology.
+E. Discrete Action Space and Motion
+Each active UAV selects one of six actions:
+Ai = {Hover, +x, −x, +y, −y, Charge},
+|Ai| = 6. (5)
+For movement actions,
+pi(t+1) = ΠΩ(pi(t) + vi(t)∆t) ,
+∥vi(t)∥≤vmax, (6)
+where ΠΩprojects into the permitted airspace. A charge
+request is feasible only when the UAV is inside a station
+neighborhood of a free pad. The RL layer does not select a pad
+as part of its action; pad choice is handled by the arbitration
+layer in Section III-I.
+F. Persistent K-Coverage
+A UAV covers sensor d in slot t when
+xid(t) = ⊮[∥pi(t) −qd∥2 ≤Rcov] .
+(7)
+The number of active UAVs covering sensor d is
+nd(t) =
+X
+i∈Vact
+t
+xid(t),
+(8)
+and the instantaneous normalized coverage score is
+Ct = 1
+M
+M
+X
+d=1
+min
+nd(t)
+K
+, 1
+
+.
+(9)
+The instantaneous under-coverage rate is
+Ut = 1
+M
+M
+X
+d=1
+⊮[nd(t) < K].
+(10)
+Rcov
+Rcomm
+U1
+U2
+U3
+U4
+z0
+x
+y
+z
+Fig. 2.
+Coupling between coverage and connectivity in three dimensions.
+The shaded grid is the fixed sensor plane at z = 0, and the translucent blue
+sheet is the UAV operating plane at the common nominal altitude z0; the
+projected x/y/z triad, the ground shadows and the dashed vertical drop lines
+fix the perspective. The green disc on the ground is the horizontal coverage
+footprint Rcov joined to the UAVs by dashed coverage links, whereas the
+cyan edges lying inside the UAV plane are inter-UAV communication links
+of range Rcomm. Removing a topologically critical UAV can reduce both
+service redundancy and network connectivity.
+The primary service condition is nd(t) ≥K for all d whenever
+the geometry and available fleet make it feasible.
+Feasibility. Persistent K-coverage is achievable only when
+the sensing radius is large enough for the available fleet.
+Comparing the area available for coverage with the area
+required gives a necessary condition: N disks of radius Rcov
+supply NπR2
+cov, while K-coverage of a region of area A
+requires KA. Hence Rcov ≥
+p
+KA/(πN). Accounting for
+the δ = π/(2
+√
+3) ≈0.907 packing density of congruent disks
+gives the stricter form Rcov ≥
+p
+KA/(δπN). Substituting the
+parameters of Table VI (A = 6400 m2, M = 20, N = 5, K =
+2) yields Rcov ≥28.5 m by area counting and 30.0 m after the
+packing correction, both satisfied by the chosen Rcov = 35 m.
+The resulting surplus ratio σ = NπR2
+cov/(KA) = 1.50 leaves
+margin for movement error and for a single-UAV failure, after
+which σ = 1.20 still exceeds one. The bound is necessary
+rather than sufficient, since it ignores coverage-disk overlap
+and the discreteness of the sensor layout; scenario S8 of
+Table X therefore sweeps Rcov directly to characterize the
+transition.
+G. Connectivity Model
+The inter-UAV communication graph is
+Gt = (Vt, Et),
+Et = {(i, j) : ∥pi −pj∥2 ≤Rcomm}.
+(11)
+The swarm is connected when Gt has one connected compo-
+nent. For analysis, the exact articulation-point indicator, where
+G−i
+t
+denotes Gt with vertex i and its incident edges removed,
+is
+κi(t) = ⊮
+
+G−i
+t
+is disconnected
+
+.
+(12)
+
+
+=== PAGE 5 ===
+Serve / hover
+Transit
+Charge
+Recover / reconfigure
+Ei > Ereq
+i
+pad reached
+battery restored
+failure detected
+reserve activated
+Fig. 3. Battery and failure state machine. Energy urgency triggers a return-to-
+charge transition; a detected failure transfers the mission to a recovery phase
+in which the reserve UAV can be activated when feasible.
+The average criticality is
+Critt =
+1
+|V act
+t
+|
+X
+i∈V act
+t
+κi(t).
+(13)
+The exact graph quantity is used by the simulator for evalua-
+tion. The actor receives the local proxy ρi rather than the full
+graph.
+H. Battery Model
+Let Bmax
+i
+be the battery capacity in joules and Ei(t) =
+bi(t)Bmax
+i
+the remaining energy. The slot energy update is
+Ei(t + 1) = clip(Ei(t) −Pi(t)∆t + Pch,i(t)∆t, 0, Bmax
+i
+) ,
+(14)
+where the action-dependent consumption is
+Pi(t) = Phover ⊮[ai = Hover]
++ Pmove ⊮[ai ∈{+x, −x, +y, −y}] + Pcomm.
+(15)
+The charge power is zero unless the UAV is physically docked
+and granted service at a pad. A return threshold is defined by
+Ereq
+i
+(t) = Epad
+i
+(t) + Erejoin
+i
+(t) + Ereserve,
+(16)
+and a return is mandatory when Ei(t) ≤Ereq
+i
+(t).
+I. Charging Coordination
+Charging is a scarce resource. Let yis ∈{0, 1} denote
+whether UAV i is assigned to pad s. For a charge request,
+define a local assignment cost
+cis = α ˜dis + β˜qs + µ˜ui,
+(17)
+where ˜dis is normalized distance, ˜qs is normalized queue
+length, and ˜ui is normalized battery urgency. The arbitration
+layer solves
+min
+y
+X
+i
+X
+s
+cisyis
+s.t.
+X
+s
+yis ≤1, ∀i,
+X
+i
+yis ≤1, ∀s,
+yis ∈{0, 1}.
+(18)
+Because only charge requests are handled, this is a small
+scheduling problem rather than a centralized trajectory con-
+troller. A Hungarian-style assignment implementation is suffi-
+cient for the expected fleet size.
+J. Safety Constraints
+The environment enforces
+∥vi(t)∥≤vmax,
+pi(t) ∈Ω,
+∥pi(t) −pj(t)∥≥dsafe, ∀i̸ = j.
+(19)
+An action is masked if it violates a locally predictable hard
+constraint such as workspace bounds, speed, minimum sepa-
+ration, or invalid charging. Connectivity is not assumed to be
+perfectly predictable from one-hop observations; instead, the
+actor receives the local bridge-risk feature ρi and the team
+reward explicitly penalizes connectivity fragility. This avoids
+claiming a global connectivity guarantee from purely local
+information.
+K. Failure and Recovery
+A failure event changes Fi from 0 to 1 at the detection
+instant tf. One reserve UAV is maintained with sufficient
+energy for deployment when feasible. After a detected failure,
+the reserve is activated and the active UAVs continue using
+their decentralized policies. The recovery time is defined as
+τf = inf {τ ≥0 : nd(tf + τ) ≥K, ∀d} ,
+(20)
+when recovery is achieved before the evaluation horizon. If
+recovery is impossible under the available fleet, the event is
+reported as an unrecovered failure rather than assigning an
+artificial recovery time.
+A recovery-time guarantee is therefore conditional: the
+reserve mechanism can reduce the time required for reconfig-
+uration, but it cannot mathematically guarantee restoration for
+arbitrary sensor layouts, fleet sizes, or multiple simultaneous
+failures. This distinction is important for a realistic system
+model.
+L. Primary Objective and Reward Function
+The project formulation adopts a “service first, efficiency
+second” objective. The primary quantity is persistent service
+loss, represented by the fraction of IoT sensors that are below
+the required redundancy level. Let
+Jout(π) = Eπ
+"T −1
+X
+t=0
+γtUt
+#
+,
+(21)
+where Ut is the under-coverage rate in (10). The control
+policy therefore prioritizes minimizing long-horizon service
+loss rather than minimizing energy alone.
+The corresponding multi-objective optimization is
+min
+π
+Jout(π) + λEJE(π) + λDJD(π)
++ λW JW (π) + λRJR(π) + λCJC(π),
+(22)
+subject to the physical constraints in Section III-J. The sec-
+ondary terms represent energy expenditure, degraded-service
+
+
+=== PAGE 6 ===
+TABLE IV
+TEAM REWARD TERMS AND THEIR INITIAL WEIGHTS.
+Term
+Definition
+Weight
+Ut
+Under-coverage rate, (10)
+λO = 1.00
+Econs
+t
+P
+i ∆Ei(t) / (NBmax)
+λE = 0.10
+Ddeg
+t
+1 if any service requirement
+is violated
+λD = 0.50
+W mov
+t
+distance flown / distance
+that changed coverage
+λW = 0.05
+Rrec
+t
+normalized recovery delay
+during recovery
+λR = 0.30
+Critt
+Articulation-point average,
+(13)
+λC = 0.20
+TABLE V
+HARD CONSTRAINTS VERSUS LEARNED TRADE-OFFS.
+Constraint
+Mathematical form
+Enforcement / evaluation
+Speed
+∥vi∥≤vmax
+Built into the action model and feasibility
+mask.
+Workspace
+pi ∈Ω
+Action mask prevents leaving the allowed
+region.
+Separation
+∥pi−pj∥≥dsafe
+Action mask prevents predicted collisions.
+Battery
+reachability
+Ei ≥Ereq
+i
+before
+departure
+Prevents continuation when reaching a
+feasible charger is unsafe.
+Charging
+capacity
+At most one UAV
+per pad
+Explicit pad assignment / scheduler.
+K-coverage
+nd(t) ≥K
+Collective service objective and evaluation
+metric; not guaranteed by a single-agent
+mask.
+Connectivity
+Gt connected
+Topology-aware reward and connectivity
+metric.
+Recovery
+τf ≤τmax when
+feasible
+Measured scenario requirement, not an
+unconditional guarantee.
+time, unnecessary movement, recovery delay, and topology
+criticality, respectively.
+For reinforcement learning, the constrained objective is
+converted into a shared team reward:
+rt = −
+ λOUt + λEEcons
+t
++ λDDdeg
+t
++ λW W mov
+t
++ λRRrec
+t
++ λCCritt
+
+.
+(23)
+Since the learner maximises expected return while the control
+objective of (22) is a minimisation, the team reward of (23)
+is the negated weighted cost, and the two are equivalent up
+to sign. Table IV defines each term and gives the initial
+weights used in this work. The weight λO is chosen to
+dominate the secondary efficiency terms, so that the learned
+controller does not sacrifice persistent service merely to reduce
+energy consumption or flight distance. The individual objective
+components remain separate evaluation metrics rather than
+being hidden inside a single final score.
+All six quantities are dimensionless and lie in [0, 1], so the
+weights are directly comparable; Ut and Critt are already
+normalized in (10) and (13). The values are initial settings
+to be tuned on a validation set; the ordering λO ≫λD ≥
+λR > λC ≥λE ≥λW is the part on which the formulation
+depends.
+M. Parameter Settings and Scope
+Table VI gives the initial simulation configuration derived
+from the project layout. These are implementation parameters
+TABLE VI
+INITIAL SIMULATION PARAMETERS.
+Parameter
+Symbol
+Value
+Active UAVs
+N
+5
+Reserve UAVs
+NR
+1
+IoT sensors
+M
+20
+Operating region
+Ω
+80 × 80 m2
+Coverage radius
+Rcov
+35 m
+Communication radius
+Rcomm
+40 m
+Nominal altitude
+z0
+50 m
+Coverage target
+K
+2
+Control interval
+∆t
+0.2 s
+Maximum speed
+vmax
+5 m/s
+Safety distance
+dsafe
+5 m
+Battery capacity
+Bmax
+30,000 J
+Hover power
+Phover
+50 W
+Move power
+Pmove
+75 W
+Avionics and comms power
+Pelec
+5 W
+RF transmit power
+Ptx
+0.5 W
+Charge increment
+–
+0.0002 battery fraction/step
+Episode length
+T
+10 000 steps (2000 s)
+for the proposed simulator rather than experimentally cali-
+brated real-flight values.
+The control interval is chosen so that the relative displace-
+ment between two consecutive steps, 2vmax∆t = 2 m, is
+smaller than the safety distance dsafe = 5 m; a coarser step
+would allow a closing pair to cross the separation constraint
+between two samples. The charge increment is quoted per step
+and is therefore scaled with ∆t. The resulting charge time
+is shorter than a real constant-current pack of this capacity
+would require, because a real pack would not complete a full
+charge within a tractable episode; this is stated as a modelling
+assumption rather than a physical prediction, and it means
+the cost of charging contention in (IX) is a lower bound.
+The nominal altitude is consistent with the coverage radius: a
+74◦downward sensor at 50 m yields a footprint half-width
+of 37 m. The two power entries are distinct: Pelec is the
+total avionics and communications budget, whereas Ptx is the
+radiated transmit power, which is bounded by the 1 W ceiling
+of IEEE 802.11 and is two orders of magnitude below the
+avionics budget.
+Within scope are spatial K-coverage, range-limited UAV
+connectivity, battery depletion, charging contention, single-
+UAV failure recovery, collision avoidance, and decentralized
+motion-policy execution. The primary model intentionally
+abstracts stochastic PHY-layer fading, detailed aerodynamic
+dynamics, obstacles, wind, battery aging, GPS denial, sensor
+failures, and multiple simultaneous UAV failures. These can
+be introduced as subsequent stress-test layers after the base
+control problem is validated.
+IV. PROPOSED ML ALGORITHM
+A. CTDE MAPPO
+The proposed algorithm uses parameter-shared MAPPO.
+During training, the centralized critic observes st while every
+actor uses oi(t). During deployment, the critic is removed and
+each UAV evaluates the same shared policy:
+ai(t) ∼πθ (ai | oi(t)) .
+(24)
+
+
+=== PAGE 7 ===
+Global simulator state
+st
+Local observation
+oi(t)
+Feasibility mask
+safety, energy, charge
+Shared actor
+πθ(ai|oi)
+Environment step
+motion + topology + battery
+Team reward
+coverage +
+connectivity + energy
+Charging / failure logic
+pad assignment + reserve
+Centralized critic
+Vϕ(st)
+Deployment: critic removed; each
+UAV runs the shared policy locally.
+Fig. 4. MAPPO training and deployment pipeline. Solid arrows represent the environment/control loop. Dashed arrows denote training-only critic feedback
+and transfer of the learned actor to decentralized execution.
+Parameter sharing is appropriate because the active UAVs have
+the same action semantics and physical model. It also avoids
+maintaining a separate actor network for each UAV.
+For a collected rollout, the temporal-difference residual is
+δt = Rt + γVϕ(st+1) −Vϕ(st),
+(25)
+and the generalized advantage estimate (GAE) is
+bAt =
+T −t−1
+X
+l=0
+(γλ)lδt+l.
+(26)
+The probability ratio is
+rt(θ) =
+πθ(at | ot)
+πθold(at | ot).
+(27)
+The clipped PPO objective is
+Lactor(θ) = −Et
+
+min(rt bAt,
+clip(rt, 1 −ϵ, 1 + ϵ) bAt)
+
+.
+(28)
+The critic is trained with
+Lcritic(ϕ) = Et
+h
+( bRt −Vϕ(st))2i
+,
+(29)
+where bRt = bAt + Vϕ(st).
+B. Action Feasibility Mask
+Before the sampled action is executed, the simulator eval-
+uates the predicted next position and applies the following
+checks: workspace bounds, maximum speed, minimum UAV
+separation, charge validity, and connectivity-preservation con-
+straints. If a candidate movement would disconnect the com-
+munication graph, it is masked in normal operation. During
+an active recovery event, the connectivity rule remains a hard
+constraint unless the simulator enters a predefined recovery
+mode in which temporary reconnection is required by the
+recovery objective.
+This separation between policy learning and hard feasibility
+is important. The neural network learns how to trade off
+several feasible actions, while the safety layer prevents the
+network from selecting actions that violate non-negotiable
+physical constraints.
+C. Failure-Aware Execution
+When a failure event is detected, the environment removes
+the failed UAV from the active graph, activates the reserve
+UAV if the reserve is available, and updates the local obser-
+vations. The reserve UAV uses the same shared actor after
+insertion into the mission. The other UAVs also re-evaluate
+their local bridge-risk and coverage information. No prediction
+of the failure event is required; the controller reacts to the
+observed state change.
+D. Mapping from Model to Algorithm
+The algorithm is deliberately aligned with the system model.
+Sensor positions produce the coverage quantities in (7)–(10);
+neighboring UAV positions produce the communication graph
+in (11); battery and action information produce the energy
+state in (14); charging requests enter the assignment problem
+in (18); and failure indicators activate the recovery process
+in (20). Thus, every actor input corresponds to an explicitly
+defined state quantity and every learned action has a defined
+environmental effect.
+E. Training and Generalization Protocol
+Training episodes should randomize sensor layouts, initial
+UAV positions, initial battery levels, charging-pad locations
+within the allowed region, and failure times. A simple curricu-
+lum can be used: first train under no failures, then introduce
+single failures, and finally introduce simultaneous charging
+contention and near-disconnection scenarios. The final model
+should be evaluated on held-out random seeds and scenario
+configurations not used for parameter tuning.
+A practical implementation can use a multilayer perceptron
+for the shared actor and centralized critic with normalized
+numerical features and masked action logits. If fixed-length
+neighbor features are insufficient, a permutation-invariant
+pooling operation or a small attention encoder can be added
+without changing the underlying Dec-POMDP formulation.
+A recurrent policy should be introduced only if experiments
+show that instantaneous observations do not provide sufficient
+temporal information.
+
+
+=== PAGE 8 ===
+Algorithm 1 MAPPO training algorithm
+1: Initialize shared actor πθ and centralized critic Vϕ.
+2: for each training episode do
+3:
+Reset UAV positions, batteries, sensors, charging pads,
+and failure schedule.
+4:
+for t = 0, . . . , T −1 do
+5:
+Construct global state st and each local observation
+oi(t).
+6:
+for each active UAV i do
+7:
+Construct the feasible-action mask from Sec-
+tion III.
+8:
+Sample ai(t) ∼πθ(· | oi(t)) over feasible actions.
+9:
+end for
+10:
+Apply UAV actions and update positions.
+11:
+Recompute coverage and communication graph.
+12:
+Update battery states using (14).
+13:
+if one or more UAVs request charging then
+14:
+Solve the charging assignment in (18).
+15:
+end if
+16:
+if a UAV failure is detected then
+17:
+Activate the reserve UAV if feasible and update
+active-agent states.
+18:
+end if
+19:
+Compute Rt from (23); store rollout transition data.
+20:
+end for
+21:
+Compute GAE advantages from (26).
+22:
+Update θ with the clipped PPO objective.
+23:
+Update ϕ with the critic loss.
+24: end for
+25: return Shared decentralized actor πθ.
+TABLE VII
+INITIAL MAPPO TRAINING CONFIGURATION.
+Parameter
+Symbol
+Initial value
+Active UAVs
+N
+5
+IoT sensors
+M
+20
+Discount factor
+γ
+0.99
+PPO clipping
+ϵ
+0.20
+GAE parameter
+λ
+0.95
+Control interval
+∆t
+0.2 s
+F. Training Hyperparameters
+The initial training configuration follows the values in the
+project presentation. These values are starting points for the
+implementation and can be tuned on a validation set without
+changing the system formulation.
+G. Implementation Plan
+The implementation follows the three-stage validation strat-
+egy presented in the project plan. The objective is to validate
+the swarm-control logic before introducing detailed wireless-
+channel complexity.
+Phase 1 contains geometric UAV motion, persistent K-
+coverage, connectivity, battery dynamics, charging coordi-
+nation, failure/recovery, a heuristic controller, and MAPPO.
+Phase 1 – Python
+Geometric movement, K-
+coverage, connectivity,
+battery, charging, fail-
+ure/recovery, heuristic
+controller, MAPPO
+Phase 2 – OMNeT++ +
+INET
+Wireless communication,
+mobility interaction, network-
+level metrics
+Phase 3 – Simu5G
+PHY-aware communication
+and final integration
+validate control
+add network realism
+Fig. 5.
+Staged implementation plan. Phase 1 validates the control loop;
+Phase 2 adds wireless-network behaviour through OMNeT++/INET; Phase
+3 introduces PHY-aware communication through Simu5G.
+TABLE VIII
+COMPARISON MODELS AND RATIONALE.
+Model
+Type
+Rationale
+Fixed
+formation +
+threshold
+recharge
+Rule-based
+UAVs retain their initial formation and return to
+charge using a fixed battery threshold. Establishes a
+simple reference.
+Greedy
+lowest-battery
+recharge
+Rule-based
+The most energy-critical UAV receives priority for
+charging. Tests energy-first scheduling without
+learned coordination.
+Reactive
+reconfiguration
+Heuristic
+After a failure, remaining UAVs move toward
+uncovered sensor regions using deterministic
+coverage/connectivity rules. Tests fault recovery
+without MARL.
+MAD-
+DDQN [4]
+MARL
+Representative value-based multi-UAV deep
+reinforcement learning benchmark for trajectory
+and energy control.
+POGS-
+QMIX [14]
+MARL
+Recent persistent-coverage approach incorporating
+outage history, finite energy, and return-to-charge
+decisions.
+MAHPPO-
+AM [11]
+MARL
+Recent PPO-family approach using action masking
+for joint UAV communication/control. Tests the
+added value of the proposed state, reward, charging,
+and recovery design.
+Vanilla
+MAPPO [3]
+MARL
+Ablation reference: the same CTDE MAPPO
+learner with the proposed observation terms, reward
+shaping, charging arbitration, reserve-UAV
+mechanism and action mask removed. Isolates the
+contribution of the system design from that of the
+learning method.
+Once these components are stable, Phase 2 introduces wireless
+communication and network-level measurements. Phase 3 then
+adds PHY-aware communication. The same actor observa-
+tion/action interface is retained across phases so that increasing
+simulator fidelity does not require redesigning the learning
+problem.
+V. COMPARISON MODELS
+The comparison design preserves the practical baselines
+from the project presentation and adds recent learning-based
+methods required for a meaningful research comparison. The
+practical baselines test whether any adaptive coordination is
+useful; the MARL baselines test whether the proposed CTDE
+MAPPO design provides advantages over other learning for-
+mulations.
+The fixed, greedy, and reactive controllers correspond di-
+rectly to the practical alternatives already identified in the
+project plan. MAD-DDQN provides a value-based MARL
+comparison,
+while
+POGS-QMIX
+is
+particularly
+relevant
+to persistent coverage and energy-aware return behaviour.
+MAHPPO-AM provides a PPO-family comparison that also
+
+
+=== PAGE 9 ===
+TABLE IX
+PERFORMANCE METRICS AND OBJECTIVES.
+Metric
+Definition and purpose
+Persistent K-
+coverage
+CK =
+1
+T M
+P
+t
+P
+d ⊮[nd(t) ≥K]. Measures the fraction of
+sensor-slot pairs meeting the required redundancy. Higher is better.
+Under-
+coverage
+¯U =
+1
+T
+P
+t Ut. Measures the fraction of sensors below K
+coverage. Lower is better.
+Connectivity
+availability
+AG =
+1
+T
+P
+t ⊮[Gt connected]. Measures time for which the
+swarm is connected. Higher is better.
+Connectivity
+fragility
+Average Critt and number of partition events. Measures exposure to
+articulation-point failures and topology breaks. Lower is better.
+Service con-
+tinuity
+Fraction of mission time for which both the K-coverage and
+connectivity requirements are satisfied. Measures end-to-end
+persistent service.
+Outage
+severity
+Time-integrated under-coverage during degraded and recovery
+intervals. Measures how much service is lost, not only whether a
+recovery eventually occurs.
+Reserve
+uti-
+lization
+Number of reserve activations, activation delay, and reserve mission
+time. Measures whether replacement capacity is used effectively.
+Recovery
+Mean/95th-percentile τf , recovery success rate, and
+unrecovered-failure count. Measures fault tolerance directly.
+Energy
+Total energy consumption, energy per successfully covered
+sensor-slot, minimum battery level, and threshold violations.
+Measures efficiency and safety margin.
+Charging
+Mean wait time, denied requests, number of concurrent requests, and
+pad utilization. Captures contention and scheduling quality.
+Movement
+Total distance flown and unnecessary-movement ratio Wt. Quantifies
+motion overhead.
+Safety
+Collision events, out-of-bounds events, and hard-constraint violations.
+These should ideally be zero.
+Scalability
+Policy inference time and metric degradation as N and M increase.
+Tests the reason for adopting decentralized execution.
+Stability
+Mean and standard deviation across independent random seeds;
+training convergence time/episodes. Measures reproducibility.
+uses explicit action masking. Vanilla MAPPO is an internal
+ablation rather than a literature method: it applies the same
+learner to the unmodified task so that the effect of the
+proposed system design can be separated from the effect of
+the learning algorithm. Because these literature methods solve
+related but not identical tasks, any adaptation to the common
+simulator must be documented rather than presented as an
+exact reproduction.
+All models use the same sensor layouts, initial UAV posi-
+tions, battery conditions, charging pads, failure traces, episode
+durations, and physical safety constraints. Where a literature
+method requires a different input representation or native ac-
+tion space, the adaptation should preserve its decision structure
+as far as possible. Results should be reported on common
+metrics when an exact one-to-one mapping is not available.
+Ablation experiments should additionally remove one
+proposed mechanism at a time: connectivity-criticality in-
+put/reward, reserve-UAV recovery, charging arbitration, and
+action masking. This distinguishes improvements caused by
+the MAPPO learning method from improvements caused by
+the proposed system design.
+VI. PERFORMANCE METRICS
+The evaluation should report separate metrics for service
+quality, connectivity, energy, charging, recovery, movement,
+safety, and scalability.
+TABLE X
+PLANNED EXPERIMENTAL SCENARIOS AND RESEARCH QUESTIONS.
+ID
+Variable
+Research question
+S1
+Sensor density
+How does persistent coverage change as sensing
+demand becomes sparse or clustered?
+S2
+Fleet size N
+Does decentralized execution retain performance as the
+number of UAVs grows?
+S3
+Battery capacity
+How sensitive are coverage and recovery to energy
+scarcity?
+S4
+Charging pads S
+How does pad contention affect waiting time and
+mission continuity?
+S5
+Rcomm
+How robust is the policy when connectivity becomes
+marginal?
+S6
+Rcov
+How does the controller respond to tighter coverage
+geometry?
+S7
+Failure
+time/location
+How quickly can the swarm recover from early/late
+and central/peripheral failures?
+S8
+Combined stress
+Can the policy jointly handle energy scarcity, weak
+connectivity, pad contention, and a failure?
+A. Evaluation Scenarios
+The first experiment varies sensor density while keeping the
+fleet fixed. The second varies fleet size to examine scalability.
+The third varies battery capacity and charge rate. The fourth
+varies the number of charging pads. The fifth varies Rcomm
+and Rcov to create well-connected, marginally connected, and
+difficult coverage geometries. The sixth injects single-UAV
+failures at early, middle, and late mission times and at both
+central and peripheral locations.
+For each scenario, the same random seeds and initial con-
+ditions must be used for all comparison models. At least five
+independent seeds are recommended for each configuration,
+with the mean and sample standard deviation reported. When
+space permits, confidence intervals should also be shown. Raw
+reward curves may be included as supplementary evidence, but
+the principal conclusions should be based on the task-specific
+metrics in Table IX.
+Ablation experiments should separately remove: (i) the
+connectivity-criticality feature/reward term, (ii) the reserve-
+UAV mechanism, (iii) charging arbitration, and (iv) action
+masking. This identifies whether each proposed component
+contributes a measurable effect. In particular, the comparison
+between the full proposed framework and vanilla MAPPO is
+necessary to distinguish improvements caused by MAPPO it-
+self from improvements caused by the domain-specific system
+design.
+VII. EXPERIMENTAL DESIGN MATRIX
+The final evaluation should vary the dominant environmen-
+tal factors independently before combining them. Table X
+maps each experiment to a specific research question.
+VIII. CONCLUSION
+This paper defines a persistent and fault-tolerant UAV-IoT
+coverage problem in which the swarm must jointly man-
+age redundant sensor coverage, inter-UAV connectivity, finite
+battery energy, charging contention, and UAV failures. The
+proposed solution uses MAPPO under centralized training
+
+
+=== PAGE 10 ===
+and decentralized execution, complemented by explicit fea-
+sibility masking, infrastructure-side charging arbitration, and
+a reserve-UAV recovery mechanism.
+The formulation is intentionally implementable. The learned
+actors operate on quantities that a physical UAV can measure
+or estimate locally, while the simulator computes the corre-
+sponding global quantities for training and evaluation. The
+literature survey indicates that the required components exist
+individually across coverage, connectivity, recharge schedul-
+ing, and fault-tolerant MARL studies, but the combined
+problem formulation remains a meaningful integration target.
+The experimental phase should therefore focus on whether
+the proposed combination produces measurable improvements
+in persistent coverage and recovery while keeping energy,
+charging, movement, and safety costs under control.
+No performance advantage is claimed in this report before
+the experiments are executed. Once the implementation is
+complete, the same metric and comparison structure can be
+used to report both absolute results and trade-offs, including
+the possible cost of more conservative movement in exchange
+for improved connectivity robustness or faster recovery.
+REFERENCES
+[1] C. H. Liu, Z. Chen, J. Tang, J. Xu, and C. Piao, “Energy-efficient
+UAV control for effective and fair communication coverage: A deep
+reinforcement learning approach,” IEEE Journal on Selected Areas
+in Communications, vol. 36, no. 9, pp. 2059–2070, Sep. 2018, doi:
+10.1109/JSAC.2018.2864373.
+[2] J. Qiu, J. Lyu, and L. Fu, “Placement optimization of aerial base stations
+with deep reinforcement learning,” arXiv:1911.08111, 2019.
+[3] C. Yu, A. Velu, E. Vinitsky, J. Gao, Y. Wang, A. Bayen, and Y. Wu,
+“The surprising effectiveness of PPO in cooperative multi-agent games,”
+in Advances in Neural Information Processing Systems, 2022.
+[4] B. Omoniwa, B. Galkin, and I. Dusparic, “Optimizing energy efficiency
+in UAV-assisted networks using deep reinforcement learning,” IEEE
+Wireless Communications Letters, vol. 11, no. 8, pp. 1590–1594, Aug.
+2022, doi: 10.1109/LWC.2022.3167568.
+[5] M. Zareh, L. Sabattini, and C. Secchi, “Decentralized biconnectivity
+conditions in multi-robot systems,” in Proc. IEEE Conf. Decision and
+Control (CDC), 2016, pp. 99–104, doi: 10.1109/CDC.2016.7798253.
+[6] P. Basu and J. Redi, “Movement control algorithms for realization of
+fault-tolerant ad hoc robot networks,” IEEE Network, vol. 18, no. 4, pp.
+36–44, Jul.–Aug. 2004, doi: 10.1109/MNET.2004.1316760.
+[7] N. Mathew, S. L. Smith, and S. L. Waslander, “Multi-robot ren-
+dezvous planning for recharging in persistent tasks,” IEEE Trans-
+actions on Robotics, vol. 31, no. 1, pp. 128–142, Feb. 2015, doi:
+10.1109/TRO.2014.2380593.
+[8] E. Arribas, V. Cholvi, and V. Mancuso, “Optimizing UAV resupply
+scheduling for heterogeneous and persistent aerial service,” IEEE Trans-
+actions on Robotics, vol. 39, no. 4, pp. 2639–2653, Aug. 2023, doi:
+10.1109/TRO.2023.3263077.
+[9] Z. Jiang, T. Song, B. Yang, and G. Song, “Fault-tolerant con-
+trol for multi-UAV exploration system via reinforcement learning
+algorithm,” Aerospace, vol. 11, no. 5, p. 372, May 2024, doi:
+10.3390/aerospace11050372.
+[10] M. R. Khan, G. R. V. Premkumar, and B. Van Scoy, “Robust UAV-
+oriented wireless communications via multi-agent deep reinforcement
+learning to optimize user coverage,” Drones, vol. 9, no. 5, p. 321, Apr.
+2025, doi: 10.3390/drones9050321.
+[11] T. Sun, N. Guo, H. Gu, Y. Peng, and Z. Feng, “Integrated commu-
+nication and control for energy-efficient UAV swarms: A multi-agent
+reinforcement learning approach,” arXiv:2509.23905, 2025.
+[12] Z. Chen, Y. Huang, C. Zhu, and W. Zhou, “Multi-agent reinforcement
+learning based trajectory design for UAV-assisted emergency wireless
+communication,” in Proc. 10th Int. Conf. Computer and Communication
+Systems (ICCCS), Chengdu, China, 2025, pp. 856–861, doi: 10.1109/IC-
+CCS65393.2025.11069505.
+[13] J. P. Carvalho and A. P. Aguiar, “Multi-agent reinforcement learning
+for zero-shot coverage path planning with dynamic UAV networks,”
+Robotics and Autonomous Systems, vol. 195, p. 105163, Jan. 2026, doi:
+10.1016/j.robot.2025.105163.
+[14] H. Mei, C. Xu, R. Li, and X. Luo, “Energy-aware persistent multi-UAV
+coverage via reinforcement learning guided by user priority and outage,”
+Drones, vol. 10, no. 9, p. 688, Sep. 2026, doi: 10.3390/drones10090688.

@@ -1,0 +1,27 @@
+[
+  {
+    "scenario": 0,
+    "trace": "stepB_000.movements",
+    "success": false
+  },
+  {
+    "scenario": 1,
+    "trace": "stepB_001.movements",
+    "success": false
+  },
+  {
+    "scenario": 2,
+    "trace": "stepB_002.movements",
+    "success": false
+  },
+  {
+    "scenario": 3,
+    "trace": "stepB_003.movements",
+    "success": false
+  },
+  {
+    "scenario": 4,
+    "trace": "stepB_004.movements",
+    "success": false
+  }
+]
