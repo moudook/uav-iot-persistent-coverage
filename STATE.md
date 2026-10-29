@@ -1,13 +1,13 @@
 # STATE — current sprint state
 
-Last update: 2026-10-29 18:00 local
+Last update: 2026-10-29 19:30 local
 Notes (Oct 29):
 - INET silent ini-override bug found and fixed. Scenario rebuilt as Simulation/omnet_uav2 with network-level params + causal self-test (send interval must scale packet count). NEGATIVE.md, LOG.md, CLAIMS.md updated.
 - Free-space range knee: PDR 0.9975 for d<=1750 m, 0.0 for d>=1775 m (1762 m midpoint). Matches sensitivity threshold within 1%.
 - Shadowing (sigma=6 dB, 8 reps): PDR 0.998 at 5-1300 m, 0.987 at 1800 m. Outage is quasi-static per link.
 - Contention: PDR 0.998 at N=16, 0.1 s interval (15 contenders, one channel).
 - Channel model generated: ml_impl/uav_wireless/channel_model.py + Simulation/omnet_uav2/channel_model.csv. PDR(80 m)=1.000. Network is NOT the binding constraint at mission scale; energy and coverage geometry are.
-- G3 queue running: low_comm seed 0 done (CK=0.367); seeds 1-4 in progress.
+- G3 queue running: low_comm seeds 0-3 done (CK seed0=0.367); seed 4 running.
 - Pair outage curve (reps=8) complete: pair_pdr_outage.json.
 
 
