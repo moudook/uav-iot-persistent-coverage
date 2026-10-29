@@ -1,6 +1,12 @@
 # STATE — current sprint state
 
-Last update: 2026-10-27 12:00 local
+Last update: 2026-10-29 10:00 local
+Notes (Oct 29):
+- INET silent ini-override bug found and fixed. All earlier **.uav[*].mobility.X patterns were ignored; scenario rebuilt as Simulation/omnet_uav2 with network-level params + causal self-test. NEGATIVE.md and LOG.md updated.
+- PDR(d) measurement (shadowing sigma=6 dB, 50 m alt, 20 dBm, -94 dBm noise): PDR=0.9975 to 1300 m, outage onset ~1600 m. At 80 m field scale the swarm is fully connected: the network is a CERTIFIED-reliable layer, not the binding constraint.
+- G3 queue running (low_comm -> failure -> multi_failure -> single_pad c3 -> small_battery c3). low_comm seed 0 in progress.
+- Pair outage curve (reps=8) running in background.
+
 
 ## Current gate / milestone
 G0 — setup and trust (Oct 24–25). In progress.
