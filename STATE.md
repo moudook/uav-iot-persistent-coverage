@@ -1,6 +1,6 @@
 # STATE — current sprint state
 
-Last update: 2026-10-29 16:00 local
+Last update: 2026-10-29 18:00 local
 Notes (Oct 29):
 - INET silent ini-override bug found and fixed. Scenario rebuilt as Simulation/omnet_uav2 with network-level params + causal self-test (send interval must scale packet count). NEGATIVE.md, LOG.md, CLAIMS.md updated.
 - Free-space range knee: PDR 0.9975 for d<=1750 m, 0.0 for d>=1775 m (1762 m midpoint). Matches sensitivity threshold within 1%.
