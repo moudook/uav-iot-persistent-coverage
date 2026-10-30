@@ -96,7 +96,12 @@ def train(
         state = torch.load(ckpt_path, map_location=device)
         agent.actor.load_state_dict(state["actor"])
         agent.critic.load_state_dict(state["critic"])
-        agent.opt.load_state_dict(state["opt"])
+        if "actor_opt" in state:
+            agent.actor_opt.load_state_dict(state["actor_opt"])
+            agent.critic_opt.load_state_dict(state["critic_opt"])
+        elif "opt" in state:
+            agent.actor_opt.load_state_dict(state["opt"])
+            agent.critic_opt.load_state_dict(state["opt"])
         start_it = state["iter"] + 1
         best_ck = state.get("best_ck", -1.0)
         print(f"[resume] {ckpt_path} at iteration {start_it}")
@@ -126,7 +131,8 @@ def train(
             dict(
                 actor=agent.actor.state_dict(),
                 critic=agent.critic.state_dict(),
-                opt=agent.opt.state_dict(),
+                actor_opt=agent.actor_opt.state_dict(),
+                critic_opt=agent.critic_opt.state_dict(),
                 iter=it, best_ck=best_ck,
                 cfg=cfg.dict(),
             ),

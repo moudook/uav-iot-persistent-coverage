@@ -42,6 +42,7 @@ def collect_rollout(env, agent, n_steps, deterministic=False):
         ret=np.zeros((n_steps, n), np.float32),
         states=np.zeros((n_steps, env.state_dim), np.float32),
         values=np.zeros((n_steps, n), np.float32),
+        active=np.zeros((n_steps, n), bool),
     )
 
     t = 0
@@ -78,9 +79,15 @@ def collect_rollout(env, agent, n_steps, deterministic=False):
         B["logp"][t] = logp
         B["states"][t] = state
         B["values"][t] = v
+        B["active"][t] = (~env.failed) & (env.mode != -1)
 
         obs, state, r, done, _ = env.step(acts)
-        B["adv"][t] = r
+        # Per-agent rewards (difference rewards) take precedence when present.
+        ar = getattr(env, "last_agent_rewards", None)
+        if ar is not None:
+            B["adv"][t] = ar
+        else:
+            B["adv"][t] = r
         t += 1
         if done:
             break
@@ -157,7 +164,8 @@ def agent_obs_dim(agent):
 # ----------------------------------------------------------------------
 def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
                verbose=True, per_agent_adv_norm=False, ent_coef=0.01,
-               value_norm=True, device=None, bc_path=None):
+               value_norm=True, device=None, bc_path=None,
+               gamma=0.99, gae_lambda=0.95, epochs=10, n_minibatch=4):
     """Train the proposed controller.
 
     THE DEVICE IS A PROTOCOL CHOICE, NOT A RESOURCE ACCIDENT.  The
@@ -214,7 +222,8 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
                 device = "cpu"
     agent = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim, state_dim=env.state_dim,
                   per_agent_adv_norm=per_agent_adv_norm, ent_coef=ent_coef,
-                  value_norm=value_norm, device=device)
+                  value_norm=value_norm, device=device, clip=0.2, lr=3e-4,
+                  gamma=gamma, gae_lambda=gae_lambda)
     if bc_path:
         if os.path.exists(bc_path):
             try:
@@ -228,7 +237,7 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
     hist = []
     for ep in range(episodes):
         B, summ = collect_rollout(env, agent, n_steps)
-        losses = agent.update(B)
+        losses = agent.update(B, epochs=epochs, n_minibatch=n_minibatch)
         rec = dict(episode=ep, mean_reward=float(B["adv"][:, 0].mean()), **losses)
         rec.update({k: float(v) for k, v in summ.items()})
         # the device is recorded with the training curve, so that every

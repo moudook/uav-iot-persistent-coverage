@@ -33,6 +33,12 @@ class Actor(nn.Module):
         super().__init__()
         self.net = mlp([obs_dim, hidden, hidden], nn.ReLU, None)
         self.head = nn.Linear(hidden, N_ACTIONS)
+        # orthogonal init (MAPPO/CleanRL default) for stability
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.orthogonal_(m.weight, gain=1.0)
+                nn.init.zeros_(m.bias)
+        nn.init.orthogonal_(self.head.weight, gain=0.01)
 
     def forward(self, obs):
         return self.head(self.net(obs))
@@ -43,6 +49,11 @@ class Critic(nn.Module):
         super().__init__()
         self.net = mlp([state_dim, hidden, hidden], nn.ReLU, None)
         self.head = nn.Linear(hidden, 1)
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.orthogonal_(m.weight, gain=1.0)
+                nn.init.zeros_(m.bias)
+        nn.init.orthogonal_(self.head.weight, gain=1.0)
 
     def forward(self, s):
         return self.head(self.net(s)).squeeze(-1)
@@ -75,9 +86,9 @@ class MAPPO:
         self.device = torch.device(device)
         self.actor = Actor(obs_dim, hidden).to(self.device)
         self.critic = Critic(state_dim, hidden).to(self.device)
-        self.opt = torch.optim.Adam(
-            list(self.actor.parameters()) + list(self.critic.parameters()), lr=lr
-        )
+        # Separate optimisers + separate grad clipping (SI feedback 1.3).
+        self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=lr)
+        self.critic_opt = torch.optim.Adam(self.critic.parameters(), lr=lr)
         self.gamma = gamma
         self.lam = gae_lambda
         self.clip = clip
@@ -99,6 +110,13 @@ class MAPPO:
         # distribution; the value is un-normalised at every point of use.
         self.value_norm = value_norm
         self.ret_ema_beta = 0.99
+        # KL anchor attributes (optional; used by residual/BC experiments)
+        self.ref_actor = None
+        self.kl_coef = 0.0
+        self.kl_target = 0.01
+        self.ent_floor = 0.0
+        self.ent_floor_coef = 0.0
+        self._beta = 0.0
         # floor on the standard deviation of the returns, so that a policy
         # with nearly constant returns cannot drive the normalisation to
         # zero and collapse the advantage
@@ -143,7 +161,8 @@ class MAPPO:
             v = v * self._ret_std + self._ret_mean
         return v
 
-    def update(self, batch):
+
+    def update(self, batch, epochs=10, n_minibatch=4, target_kl=0.02):
         obs = torch.as_tensor(batch["obs"], dtype=torch.float32, device=self.device)
         mask = torch.as_tensor(batch["mask"], dtype=torch.bool, device=self.device)
         acts = torch.as_tensor(batch["acts"], dtype=torch.long, device=self.device)
@@ -152,87 +171,148 @@ class MAPPO:
         ret = torch.as_tensor(batch["ret"], dtype=torch.float32, device=self.device)
         states = torch.as_tensor(batch["states"], dtype=torch.float32, device=self.device)
         old_val = torch.as_tensor(batch["values"], dtype=torch.float32, device=self.device)
+        if "active" in batch:
+            active = torch.as_tensor(batch["active"], dtype=torch.bool, device=self.device)
+        else:
+            active = torch.ones_like(mask[:, :, 0], dtype=torch.bool)
 
-        # The critic sees the single global state s_t, but the returns/values
-        # are recorded per agent because the team reward is broadcast. Sample
-        # agent 0 for the value targets and expand the state accordingly, so
-        # the critic loss compares like with like.
         n_agents = acts.shape[1]
-        states_c = states.unsqueeze(1).expand(-1, n_agents, -1).reshape(
-            states.shape[0] * n_agents, -1
-        )
+        T = acts.shape[0]
         ret_c = ret.reshape(-1)
         old_val_c = old_val.reshape(-1)
 
         if self.per_agent_adv_norm:
-            # normalise each agent's advantages over its own time history
             adv = (adv - adv.mean(dim=0, keepdim=True)) / (
                 adv.std(dim=0, keepdim=True) + 1e-8)
         else:
             adv = (adv - adv.mean()) / (adv.std() + 1e-8)
 
-        # ---- clipped PPO actor loss (28) ----------------------------
-        logits = self.masked_logits(obs, mask)
-        logp = torch.log_softmax(logits, dim=-1)
-        logp_a = logp.gather(-1, acts.unsqueeze(-1)).squeeze(-1)
-        ratio = torch.exp(logp_a - old_logp)
-        s1 = ratio * adv
-        s2 = torch.clamp(ratio, 1 - self.clip, 1 + self.clip) * adv
-        actor_loss = -torch.min(s1, s2).mean()
-
-        # ---- entropy bonus (masked actions only) --------------------
-        p = logp.exp() * mask
-        ent = -(p * logp.clamp(min=-1e8)).sum(-1)
-        ent = torch.where(mask.any(-1), ent, torch.zeros_like(ent)).mean()
-
-        # ---- critic loss (29) --------------------------------------
-        new_val = self.critic(states_c)
+        # running value-norm stats updated once per rollout
         if self.value_norm:
-            # MAPPO's value normalisation.  The critic is trained to predict
-            # the RETURNS in a normalised space, using running statistics of
-            # the return distribution; the value is un-normalised wherever it
-            # is used (the TD residual, the GAE recursion and the
-            # bootstrap).  Without it the critic has to fit a target whose
-            # absolute scale drifts with the reward balance, which is one of
-            # the components the MAPPO paper identifies as load-bearing.
             with torch.no_grad():
                 b = self.ret_ema_beta
-                self._ret_mean = (1 - b) * self._ret_mean + b * float(ret_c.mean())
+                # b weights the OLD estimate (smoothing), (1-b) the new batch
+                self._ret_mean = b * self._ret_mean + (1 - b) * float(ret_c.mean())
                 sd = float(ret_c.std())
-                # The standard deviation of the returns is FLOORED.  Without a
-                # floor, a policy whose returns become nearly constant drives
-                # sigma to zero, and the normalised target (R - mu)/sigma then
-                # explodes; the advantage collapses to zero and the policy
-                # gradient vanishes.  That failure mode is self-reinforcing,
-                # and it is a plausible cause of a policy that freezes.
-                self._ret_std = max((1 - b) * self._ret_std + b * sd,
+                self._ret_std = max(b * self._ret_std + (1 - b) * sd,
                                     self.ret_std_floor)
+
+        if self.value_norm:
             target_c = (ret_c - self._ret_mean) / (self._ret_std + 1e-8)
-            critic_loss = ((new_val - target_c) ** 2).mean()
-            # The value-clipping auxiliary term compares the new prediction
-            # with the old one, so both must live in the SAME space.  The
-            # recorded old value is in the original scale, so it has to be
-            # normalised before the comparison.
-            old_val_c = (old_val_c - self._ret_mean) / (self._ret_std + 1e-8)
+            old_val_c_n = (old_val_c - self._ret_mean) / (self._ret_std + 1e-8)
         else:
-            critic_loss = ((new_val - ret_c) ** 2).mean()
-        adv_l2 = ((new_val - old_val_c) ** 2).mean()
+            target_c = ret_c
+            old_val_c_n = old_val_c
 
-        loss = actor_loss + self.ent_coef * ent + self.vf_coef * critic_loss + 0.01 * adv_l2
-        self.opt.zero_grad()
-        loss.backward()
-        nn.utils.clip_grad_norm_(
-            list(self.actor.parameters()) + list(self.critic.parameters()),
-            self.max_grad_norm,
-        )
-        self.opt.step()
-        return dict(
-            actor=float(actor_loss),
-            critic=float(critic_loss),
-            entropy=float(ent),
-            value=float(new_val.mean()),
-        )
+        total = T * n_agents
+        active_flat = active.reshape(-1)
+        last = {}
+        for epoch in range(epochs):
+            perm = torch.randperm(total, device=self.device)
+            kl_accum = 0.0
+            n_mb = 0
+            for mb in torch.chunk(perm, n_minibatch):
+                if mb.numel() == 0:
+                    continue
+                t_idx = mb // n_agents
+                i_idx = mb % n_agents
 
+                mb_obs = obs[t_idx, i_idx]
+                mb_mask = mask[t_idx, i_idx]
+                mb_acts = acts[t_idx, i_idx]
+                mb_old_logp = old_logp[t_idx, i_idx]
+                mb_adv = adv[t_idx, i_idx]
+                mb_target = target_c[mb]
+                mb_old_val = old_val_c_n[mb]
+
+                logits = self.masked_logits(mb_obs, mb_mask)
+                logp = torch.log_softmax(logits, dim=-1)
+                logp_a = logp.gather(-1, mb_acts.unsqueeze(-1)).squeeze(-1)
+                ratio = torch.exp(logp_a - mb_old_logp)
+                s1 = ratio * mb_adv
+                s2 = torch.clamp(ratio, 1 - self.clip, 1 + self.clip) * mb_adv
+                per_sample_actor = -torch.min(s1, s2)
+                w = active_flat[mb].float()
+                if w.sum() < 1:
+                    w = torch.ones_like(w)
+                actor_loss = (per_sample_actor * w).sum() / w.sum()
+
+                # entropy (positive H)
+                p_ = logp.exp() * mb_mask
+                ent = -(p_ * logp.clamp(min=-1e8)).sum(-1)
+                ent = torch.where(mb_mask.any(-1), ent, torch.zeros_like(ent))
+                w_ent = active_flat[mb].float()
+                if w_ent.sum() < 1:
+                    w_ent = torch.ones_like(w_ent)
+                ent = (ent * w_ent).sum() / w_ent.sum()
+
+                # critic (clipped value loss)
+                mb_states = states[t_idx]
+                new_val = self.critic(mb_states)
+                w_c = active_flat[mb].float()
+                if w_c.sum() < 1:
+                    w_c = torch.ones_like(w_c)
+                if self.value_norm:
+                    v_clipped = mb_old_val + torch.clamp(new_val - mb_old_val, -self.clip, self.clip)
+                    v_loss1 = (new_val - mb_target) ** 2
+                    v_loss2 = (v_clipped - mb_target) ** 2
+                    per_c = torch.max(v_loss1, v_loss2)
+                    critic_loss = (per_c * w_c).sum() / w_c.sum()
+                else:
+                    per_c = (new_val - mb_target) ** 2
+                    critic_loss = (per_c * w_c).sum() / w_c.sum()
+
+                # KL anchor to reference actor
+                kl_loss = torch.tensor(0.0, device=self.device)
+                if self.ref_actor is not None:
+                    with torch.no_grad():
+                        ref_logits = self.ref_actor(mb_obs)
+                        ref_logits = ref_logits.masked_fill(~mb_mask, float("-inf"))
+                        ref_logp = torch.log_softmax(ref_logits, dim=-1)
+                    p_ref = ref_logp.exp() * mb_mask
+                    kl = (p_ref * (ref_logp.clamp(min=-1e8) - logp.clamp(min=-1e8))).sum(-1)
+                    kl = torch.where(mb_mask.any(-1), kl, torch.zeros_like(kl)).mean()
+                    kl_loss = self._beta * kl
+                    if kl.item() > 1.5 * self.kl_target:
+                        self._beta = min(self._beta * 2.0, 50.0)
+                    elif kl.item() < 0.5 * self.kl_target:
+                        self._beta = max(self._beta * 0.5, 0.05)
+
+                ent_floor_loss = torch.tensor(0.0, device=self.device)
+                if self.ent_floor_coef > 0 and self.ent_floor > 0:
+                    ent_floor_loss = self.ent_floor_coef * torch.clamp(
+                        self.ent_floor - ent, min=0.0
+                    )
+
+                # entropy sign FIXED: subtract entropy bonus (maximise entropy)
+                loss = (actor_loss - self.ent_coef * ent
+                        + self.vf_coef * critic_loss
+                        + kl_loss + ent_floor_loss)
+
+                self.actor_opt.zero_grad()
+                self.critic_opt.zero_grad()
+                loss.backward()
+                nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
+                nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
+                self.actor_opt.step()
+                self.critic_opt.step()
+
+                with torch.no_grad():
+                    log_ratio = logp_a - mb_old_logp
+                    approx_kl = (torch.exp(log_ratio) - 1 - log_ratio).mean().item()
+                kl_accum += abs(approx_kl)
+                n_mb += 1
+                last = dict(actor=float(actor_loss), critic=float(critic_loss),
+                            entropy=float(ent), value=float(new_val.mean()),
+                            kl=float(kl_loss) if self.ref_actor is not None else 0.0,
+                            beta=float(self._beta) if self.ref_actor is not None else 0.0)
+
+            if n_mb > 0 and (kl_accum / n_mb) > target_kl:
+                break
+
+        if not last:
+            last = dict(actor=0.0, critic=0.0, entropy=0.0, value=0.0, kl=0.0, beta=0.0)
+        return last
     def save(self, path):
         torch.save(
             dict(actor=self.actor.state_dict(), critic=self.critic.state_dict(),

@@ -58,8 +58,10 @@ class SimConfig:
     E_reserve: float = 2_000.0    # J kept in reserve
     failure_enabled: bool = False
     failure_time: int = -1        # -1 = disabled
-    credit_mode: str = "team"   # "team" or "c3"
+    credit_mode: str = "team"   # "team", "c3", or "diff"
     credit_weight: float = 0.10
+    diff_beta: float = 1.00     # weight on per-agent difference reward
+    randomize_layout: bool = False  # resample sensor/pad layout each episode
     # Table IV weights
     lam_O: float = 1.00           # under-coverage
     lam_E: float = 0.10           # energy consumption
@@ -174,6 +176,7 @@ class UAVIoTEnv:
     def __init__(self, cfg: SimConfig):
         self.cfg = cfg
         self.rng = np.random.default_rng(cfg.seed)
+        self._episode_idx = 0
         self.radio = WirelessModel(z0=cfg.z0, p_tx=cfg.P_tx,
                                     p_tx_sensor=cfg.P_tx_sensor)
         self.obs_dim = obs_dim(cfg)
@@ -185,6 +188,8 @@ class UAVIoTEnv:
     # ------------------------------------------------------------------
     def reset(self):
         c = self.cfg
+        if getattr(c, "randomize_layout", False):
+            self.rng = np.random.default_rng(int(c.seed) * 1000003 + self._episode_idx * 999983 + 17)
         self.t = 0
         # Initial deployment must be FEASIBLE. Uniformly random positions left
         # the swarm disconnected on 11/20 seeds, which makes SC>0 unreachable
@@ -218,7 +223,9 @@ class UAVIoTEnv:
         self.prev_cov_score = 0.0
         self.prev_w_dist = 0.0
         self.last_cost = dict(U_t=1.0, E_t=0.0, D_t=1.0, W_t=0.0, R_t=0.0, Crit_t=1.0)
+        self.last_agent_rewards = None
         self.recovery_start = -1
+        self._episode_idx += 1
         self.recovered = True
         self.charging_wait = np.zeros(c.N)
         self.denied_charge = 0
@@ -1254,6 +1261,29 @@ class UAVIoTEnv:
                 r += c.credit_weight * (credit + conn_credit)
             except Exception:
                 pass
+
+        # Difference rewards (SI feedback 3.2): per-agent marginal coverage.
+        # r_i = r_team + beta * D_i, where D_i is the coverage lost if agent i
+        # vanished. Computed for active agents; inactive get the team reward.
+        self.last_agent_rewards = None
+        if getattr(c, "credit_mode", "team") == "diff":
+            beta = getattr(c, "diff_beta", 1.0)
+            n = c.N
+            r_arr = np.full(n, r, dtype=np.float64)
+            act = self._active_idx()
+            ncov_arr = np.asarray(ncov)
+            for i in act:
+                # sensors within R_cov of agent i
+                d_i = 0.0
+                for d in range(c.M):
+                    dist = ((self.p[i, 0] - self.sensors[d, 0]) ** 2 +
+                            (self.p[i, 1] - self.sensors[d, 1]) ** 2) ** 0.5
+                    if dist <= c.R_cov:
+                        nd = int(ncov_arr[d])
+                        marg = min(nd, c.K) - min(nd - 1, c.K)
+                        d_i += marg / max(c.K * c.M, 1)
+                r_arr[i] = r + beta * d_i
+            self.last_agent_rewards = r_arr.astype(np.float32)
 
         self.prev_cov_score = cov_now
         self.prev_w_dist = w_dist
