@@ -12,6 +12,11 @@ import argparse
 import json
 import os
 import sys
+try:
+    import torch
+    torch.set_num_threads(1)
+except Exception:
+    pass
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ml_impl"))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
@@ -29,8 +34,9 @@ from uav_wireless.train import (baseline_fixed, baseline_greedy,
                                 baseline_reactive, baseline_reactive_local)
 from stress_regimes import get_config, REGIMES
 
-RULES = [("Fixed", baseline_fixed), ("Greedy", baseline_greedy),
-         ("Reactive", baseline_reactive), ("Reactive-local", baseline_reactive_local)]
+RULES_ALL = [("Fixed", baseline_fixed), ("Greedy", baseline_greedy),
+            ("Reactive", baseline_reactive), ("Reactive-local", baseline_reactive_local)]
+RULES = None  # set from --rules
 
 
 def eval_learner_on_regime(ckpt_list, cfg, scenes, steps):
@@ -56,14 +62,18 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="exp_ego_eval")
     ap.add_argument("--eval-offset", type=int, default=1000)
-    ap.add_argument("--eval-seeds", type=int, default=10)
+    ap.add_argument("--eval-seeds", type=int, default=5)
     ap.add_argument("--steps", type=int, default=2000)
+    ap.add_argument("--rules", nargs="+",
+                    default=["Fixed", "Reactive-local"])
     a = ap.parse_args()
 
     rundir = os.path.join(os.path.dirname(__file__), "..", "ml_impl", "runs", a.tag)
     ckpts = sorted(__import__("glob").glob(os.path.join(rundir, "seed_*.pt")))
     scenes = list(range(a.eval_offset, a.eval_offset + a.eval_seeds))
     results = {}
+    global RULES
+    RULES = [x for x in RULES_ALL if x[0] in a.rules]
     for regime in REGIMES:
         print("\n=== regime:", regime, "===", flush=True)
         cfg = get_config(regime)
