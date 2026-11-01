@@ -40,6 +40,13 @@ from stress_regimes import get_config, REGIMES
 LEARNER_ANCHOR = dict(ego_sensors=True, n_ego=3,
                       dist_shape_kappa=0.5, use_w_penalty=True)
 
+# Regimes that change the size of the observation or the state cannot
+# load a checkpoint trained on the nominal architecture: the actor and
+# critic input dims are fixed by N, M and n_pads.  Zero-shot
+# evaluation is therefore only defined on the regimes below.
+SAME_DIM_REGIMES = {"nominal", "small_battery", "low_comm",
+                    "failure", "multi_failure", "clustered"}
+
 RULES_ALL = [("Fixed", baseline_fixed), ("Greedy", baseline_greedy),
             ("Reactive", baseline_reactive), ("Reactive-local", baseline_reactive_local)]
 RULES = None  # set from --rules
@@ -97,10 +104,16 @@ def main():
                                   "per_scene": cks}
         best_rule = max(rule_summary.values(), key=lambda v: v["CK"])
         best_name = max(rule_summary, key=lambda k: rule_summary[k]["CK"])
-        # learner (its own anchor config on top of the regime)
-        learner_per_seed = eval_learner_on_regime(ckpts, learner_cfg, scenes, a.steps)
-        learner_mean = float(np.mean(learner_per_seed))
-        learner_sd = float(np.std(learner_per_seed, ddof=1)) if len(learner_per_seed) > 1 else 0.0
+        # learner (its own anchor config on top of the regime); only where
+        # the architecture dims are unchanged
+        if regime in SAME_DIM_REGIMES:
+            learner_per_seed = eval_learner_on_regime(ckpts, learner_cfg, scenes, a.steps)
+        else:
+            learner_per_seed = []
+        learner_mean = (float(np.mean(learner_per_seed))
+                        if learner_per_seed else float("nan"))
+        learner_sd = (float(np.std(learner_per_seed, ddof=1))
+                      if len(learner_per_seed) > 1 else 0.0)
         headroom = 1.0 - rule_summary[best_name]["CK"]
         results[regime] = {
             "rules": rule_summary,
@@ -110,7 +123,8 @@ def main():
             "learner_sd": learner_sd,
             "learner_per_seed": learner_per_seed,
             "headroom": headroom,
-            "learner_minus_rule": learner_mean - rule_summary[best_name]["CK"],
+            "learner_minus_rule": (learner_mean - rule_summary[best_name]["CK"]
+                                   if learner_per_seed else None),
         }
         print("  best rule %-16s CK=%.4f  headroom=%.4f" % (best_name, rule_summary[best_name]["CK"], headroom))
         print("  learner (zero-shot) CK=%.4f (sd %.4f)" % (learner_mean, learner_sd))
