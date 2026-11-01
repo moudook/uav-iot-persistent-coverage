@@ -110,6 +110,24 @@ Launched 21:47. Same protocol, configuration without ego obs / shaping.
     scripts/eval_ckpt.py          evaluate saved .pt on any scene set (no retraining)
     scripts/make_midsem_numbers.py  regenerate midsem_numbers.tex from all artefacts
 
+
+## STRESS REGIMES - zero-shot (2026-11-02, frozen policy, 5 held-out scenes)
+
+learner = exp_ego_eval (5 seeds, mean), rule = Reactive-local, headroom = 1 - rule CK
+
+| regime | rule CK | learner CK | learner - rule | headroom |
+|---|---|---|---|---|
+| nominal | 0.9213 | 0.9475 | +0.0262 | 0.0787 |
+| single_pad | 0.8758 | NA (state dim changes) | -- | 0.1242 |
+| small_battery | 0.8290 | 0.7646 | -0.0644 | 0.1710 |
+| low_comm | 0.8037 | 0.9284 | +0.1246 | 0.1963 |
+| failure | 0.9124 | 0.9462 | +0.0338 | 0.0876 |
+| multi_failure | 0.9104 | 0.9453 | +0.0349 | 0.0896 |
+| clustered (start=unclustered) |  |  |  |  |   <- follow-up running
+
+Learner ahead on 5/6 same-architecture regimes; loses on small_battery.
+Mean diff over same-arch regimes (excl. clustered until follow-up): +0.031.
+
 ## FINAL VERDICT (2026-11-02)
 
     learner (ego+shape)   = 0.9522  (95% CI [0.9392, 0.9653], 5 seeds)
