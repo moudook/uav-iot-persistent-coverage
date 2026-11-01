@@ -135,22 +135,33 @@ def main():
             if not ph:
                 continue
             r[ph + "_RULE"] = "%.3f" % v["best_rule_ck"]
-            r[ph + "_LEARN"] = "%.3f" % v["learner_mean"]
-            r[ph + "_DIFF"] = "%+.3f" % v["learner_minus_rule"]
+            import math
+            if v.get("learner_mean") is None or math.isnan(v["learner_mean"]):
+                r[ph + "_LEARN"] = "NA"
+                r[ph + "_DIFF"] = "--"
+                stress_rows.append("    %-16s & %.3f & NA & -- & %.3f \\\\"
+                                   % (regime, v["best_rule_ck"], v["headroom"]))
+            else:
+                r[ph + "_LEARN"] = "%.3f" % v["learner_mean"]
+                r[ph + "_DIFF"] = "%+.3f" % v["learner_minus_rule"]
+                stress_rows.append("    %-16s & %.3f & %.3f & %+.3f & %.3f \\\\"
+                                   % (regime, v["best_rule_ck"], v["learner_mean"],
+                                      v["learner_minus_rule"], v["headroom"]))
             r[ph + "_HEAD"] = "%.3f" % v["headroom"]
-            stress_rows.append("    %-16s & %.3f & %.3f & %+.3f & %.3f \\\\"
-                               % (regime, v["best_rule_ck"], v["learner_mean"],
-                                  v["learner_minus_rule"], v["headroom"]))
         r["STRESS_ROWS"] = "\n".join(stress_rows)
         # verdict: how many regimes the learner is ahead on, and the mean diff
         import numpy as np
-        diffs = [v["learner_minus_rule"] for v in sd["regimes"].values()]
-        ahead = sum(1 for x in diffs if x > 0)
+        diffs = [v["learner_minus_rule"] for v in sd["regimes"].values()
+                 if v.get("learner_minus_rule") is not None]
         n = len(diffs)
-        r["STRESS_VERDICT"] = ("Zero-shot, the learner is ahead of the best "
-                                "rule on %d of %d regimes, and the mean "
-                                "difference across regimes is %+.3f."
-                                % (ahead, n, float(np.mean(diffs))))
+        if n:
+            ahead = sum(1 for x in diffs if x > 0)
+            r["STRESS_VERDICT"] = ("Zero-shot, the learner is ahead of the best "
+                                    "rule on %d of %d same-architecture regimes, "
+                                    "and the mean difference across them is %+.3f."
+                                    % (ahead, n, float(np.mean(diffs))))
+        else:
+            r["STRESS_VERDICT"] = "(stress evaluation pending)"
     else:
         r["STRESS_VERDICT"] = "(stress evaluation pending)"
 
