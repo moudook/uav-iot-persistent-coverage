@@ -38,8 +38,9 @@ RUNS = os.path.join(ROOT, "ml_impl", "runs")
 #: produces \tokEgoShapeCK, \tokEgoShapeSd, \tokEgoShapeCi, ...
 TAGS = {
     "exp_ego_eval": ("EgoShape", "ego bearing + distance shaping, evaluated"),
+    "bugfix_eval": ("BugFix", "Part-1 bug fixes alone, held-out protocol"),
     "exp_ego_now_eval": ("EgoShapeNoW", "same, without the W_t penalty"),
-    "si_fixed": ("BugFix", "the Part-1 bug fixes alone, training curve"),
+    "si_fixed": ("BugFixTrain", "the Part-1 bug fixes alone, training curve"),
     "exp_ego_shape": ("EgoShapeTrain", "same config, training curve only"),
     "exp_ego_shape_now": ("NoWTrain", "W_t removed, training curve only"),
 }
@@ -178,8 +179,28 @@ def main():
                                                      tex(gap + half)))
         add(r"\newcommand{\tokNewGapN}{%d}" % learner["n"])
         add(r"\newcommand{\tokNewGapRule}{%s}" % best_name)
+        # the same difference read the other way round, which is the way the
+        # corrected section states it: a positive value means the learner is
+        # AHEAD of the rule
+        add(r"\newcommand{\tokLearnerMinusRule}{%s}" % tex(-gap))
+        add(r"\newcommand{\tokLearnerMinusRuleCi}{[%s, %s]}"
+            % (tex(-gap - half), tex(-gap + half)))
         out["gap"] = {"to": best_name, "value": gap,
                       "ci": [gap - half, gap + half], "n": learner["n"]}
+        # whether the interval excludes zero decides the sentence, so the
+        # decision is made here once and the prose reads it
+        out["gap"]["learner_ahead_resolved"] = bool(-gap - half > 0)
+        out["gap"]["rule_ahead_resolved"] = bool(gap - half > 0)
+        if out["gap"]["learner_ahead_resolved"]:
+            add(r"\newcommand{\tokGapVerdict}{the learned controller is ahead "
+                r"of the strongest rule by an interval that excludes zero}")
+        elif out["gap"]["rule_ahead_resolved"]:
+            add(r"\newcommand{\tokGapVerdict}{the strongest rule is ahead of "
+                r"the learned controller by an interval that excludes zero}")
+        else:
+            add(r"\newcommand{\tokGapVerdict}{the two are not separated at "
+                r"this resolution: the interval on the difference includes "
+                r"zero}")
 
     # ---- diagnostic baselines ------------------------------------------
     rb = os.path.join(RUNS, "diag", "random_baseline.json")
