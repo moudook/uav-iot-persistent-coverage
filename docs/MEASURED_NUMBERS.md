@@ -1,6 +1,6 @@
 # MEASURED NUMBERS - canonical, survives context compaction
 
-Last updated: 2026-11-01 22:22 (machine local time)
+Last updated: 2026-11-02 01:20 (machine local time)
 Every number here was produced by the artefact named next to it. If a number
 here disagrees with `midsem_numbers.tex`, the `.tex` is regenerated from the
 artefacts and wins.
@@ -111,9 +111,6 @@ Launched 21:47. Same protocol, configuration without ego obs / shaping.
     scripts/make_midsem_numbers.py  regenerate midsem_numbers.tex from all artefacts
 
 ## FINAL VERDICT (2026-11-02)
-
-Under the corrected protocol (held-out 20 scenes, frozen policy, same scenes for
-rules):
 
     learner (ego+shape)   = 0.9522  (95% CI [0.9392, 0.9653], 5 seeds)
     best rule (Reactive-local) = 0.9233
