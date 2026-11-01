@@ -173,7 +173,7 @@ def main():
     def drop_row(match):
         ph = match.group(1)
         return "" if ph in r and r[ph] else match.group(0)[:0]
-    filled = re.sub(r"[^\n]*\{\{[A-Z0-9_]+(?:_CK|_SD|_N|_RULE|_LEARN|_DIFF|_HEAD)?\}\}[^\n]*\n",
+    filled = re.sub(r"[^\n]*\{\{([A-Z0-9_]+(?:_CK|_SD|_N|_RULE|_LEARN|_DIFF|_HEAD)?)\}\}[^\n]*\n",
                     lambda m: m.group(0) if _row_filled(m, r) else "", tpl)
     # fill remaining placeholders
     def fill(m):
