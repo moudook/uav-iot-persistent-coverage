@@ -123,10 +123,10 @@ learner = exp_ego_eval (5 seeds, mean), rule = Reactive-local, headroom = 1 - ru
 | low_comm | 0.8037 | 0.9284 | +0.1246 | 0.1963 |
 | failure | 0.9124 | 0.9462 | +0.0338 | 0.0876 |
 | multi_failure | 0.9104 | 0.9453 | +0.0349 | 0.0896 |
-| clustered (start=unclustered) |  |  |  |  |   <- follow-up running
+| clustered (start=unclustered) | 0.9970 | 0.9587 | -0.0384 | 0.0030 |
 
-Learner ahead on 5/6 same-architecture regimes; loses on small_battery.
-Mean diff over same-arch regimes (excl. clustered until follow-up): +0.031.
+Learner ahead on 4/6 same-architecture regimes; loses on small_battery and spread start.
+Mean diff over same-arch regimes: +0.0197.
 
 ## FINAL VERDICT (2026-11-02)
 
