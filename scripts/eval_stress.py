@@ -77,6 +77,8 @@ def main():
     ap.add_argument("--eval-offset", type=int, default=1000)
     ap.add_argument("--eval-seeds", type=int, default=5)
     ap.add_argument("--steps", type=int, default=2000)
+    ap.add_argument("--only", nargs="+", default=None,
+                    help="only these regimes")
     ap.add_argument("--rules", nargs="+",
                     default=["Fixed", "Reactive-local"])
     a = ap.parse_args()
@@ -87,7 +89,8 @@ def main():
     results = {}
     global RULES
     RULES = [x for x in RULES_ALL if x[0] in a.rules]
-    for regime in REGIMES:
+    regimes = a.only or list(REGIMES.keys())
+    for regime in regimes:
         print("\n=== regime:", regime, "===", flush=True)
         rule_cfg = get_config(regime)
         rule_cfg.episode_len = a.steps
