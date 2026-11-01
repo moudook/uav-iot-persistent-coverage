@@ -1,0 +1,182 @@
+% DRAFT: the NEW Results section (corrected protocol). {{...}} = waits for data.
+% This replaces the boxed superseded section once the corrected evidence exists.
+
+\section{Results}
+\label{sec:results}
+
+All numbers in this section are produced by the protocol of
+Section~\ref{sec:protocol}: a controller is frozen before it is measured, and
+every controller is measured on the same \tokRuleScenes{} held-out scenes
+(seeds from \texttt{1000}), none of which a training run saw.  The rules and
+the random control are deterministic given a scene, so their spread over the
+table is scene-to-scene; each learned row is one frozen policy per training
+seed, so the spread of a learned row is seed-to-seed.  The ceiling is the
+teleporting placement oracle, which reaches $1.000$: the configuration is
+coverable, so every shortfall below is a controller shortfall and not an
+infeasible instance.
+
+\subsection{The corrected comparison}
+\label{sec:results_corrected}
+
+Table~\ref{tab:remeasured} is the whole of the comparison.  Three readings are
+worth spelling out.
+
+\emph{First, the rules reproduce.}  The pre-correction table of this report
+was measured on scenes $0$--$4$; re-run at the current code on the same
+scenes, the four rule rows reproduce it to three decimal places ($0.372$,
+$0.784$, $0.953$, $0.972$).  The measuring apparatus therefore did not change
+between the two versions of the report, and a number that moved is a number
+the learner moved.
+
+\emph{Second, the learner now clears every rule.}  MAPPO with the corrected
+implementation and the new observation (Section~\ref{sec:results_abl}) reaches
+\tokEgoShapeCK{} over \tokEgoShapeN{} training seeds, against
+\tokRuleReactiveLocalCK{} for the strongest hand-written rule (the
+unprivileged local-assignment reactive rule).  The difference, learner minus
+rule, is \tokLearnerMinusRule{} of persistent coverage with a 95\% interval
+of \tokLearnerMinusRuleCi, and \tokGapVerdict.  The gap of $0.298$ that an
+earlier version of this report reported is retracted in
+Section~\ref{sec:history}: it was a property of a learner whose entropy bonus
+was sign-flipped and whose update ran 25 gradient steps per run, and of a
+protocol that compared a policy in training against a rule at rest.
+
+\emph{Third, the deployment policy is the sampled one.}  The argmax policy
+(the deterministic reading of the same network) reaches \tokEgoShapeDetCK{}:
+the gap between the two rows is the cost of the exploration the deployed
+policy keeps, and it is small.
+
+\subsection{What closes the gap: the observation, not the bug fixes}
+\label{sec:results_abl}
+
+Two interventions were applied to the corrected learner together, so their
+contributions are separated by an ablation:
+
+\begin{itemize}
+  \item \emph{Bug fixes only} (the corrected PPO implementation, the old
+        observation): \tokBugFixCK{} (95\% interval \tokBugFixCi,
+        \tokBugFixN{} seeds).  This is the number the report's earlier
+        ``fixed learner'' would have produced under the corrected protocol.
+  \item \emph{+ ego-centric observation and distance shaping} (bearings to
+        the three nearest under-covered sensors; potential-based shaping):
+        \tokEgoShapeCK.  The increment is $\approx 0.093$ of persistent
+        coverage, and the two intervals do not overlap: the change to the
+        observation, not the bug fixes, is what closes the gap.
+\end{itemize}
+
+The ablation of the remaining knobs (the movement penalty $W_t$, the shaping
+weight, the number of bearing targets, difference credit, layout
+randomisation) is reported in Table~\ref{tab:knobs}, with the same protocol.
+
+\begin{table}[t]
+\caption{Knob ablation under the corrected protocol.  Each row is the mean
+over three training seeds of the frozen-policy evaluation on the held-out
+scenes, with the sample standard deviation over the seeds.  The anchor row
+is the configuration of Table~\ref{tab:remeasured}.}
+\label{tab:knobs}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+configuration & CK & sd & n seeds \\
+\midrule
+anchor (ego+shape)      & \tokEgoShapeCK & \tokEgoShapeSd & \tokEgoShapeN \\
+without the $W_t$ penalty & {{NO_W_CK}} & {{NO_W_SD}} & 3 \\
+shaping weight 1.0      & {{KAPPA1_CK}} & {{KAPPA1_SD}} & 3 \\
+five bearing targets      & {{NEGO5_CK}} & {{NEGO5_SD}} & 3 \\
+difference credit $\beta=2$ & {{DIFF2_CK}} & {{DIFF2_SD}} & 3 \\
+randomised training layouts & {{RANDLAYOUT_CK}} & {{RANDLAYOUT_SD}} & 3 \\
+full coverage state (no ego) & {{FULLOBS_CK}} & {{FULLOBS_SD}} & 3 \\
+\bottomrule
+\end{tabular}
+\tblNote{The full-state row is the value-of-information measurement: it
+replaces the ego-centric summary by the exact under-covered set, which is what
+the privileged reactive rule receives.  Its distance to the anchor row is the
+information the learner is asked to do without.}
+\end{table}
+
+\subsection{Budget}
+\label{sec:results_budget}
+
+The earlier version of this report claimed that the training budget was not
+the explanation of the gap (a sweep of 8/16/25 episodes on the buggy learner).
+Under the corrected protocol the sweep is re-run at 25/50/100/200 episodes:
+
+\begin{itemize}
+  \item {{BUDGET_25}} at 25 episodes, {{BUDGET_50}} at 50, {{BUDGET_100}}
+        at 100, {{BUDGET_200}} at 200 (each the mean over three seeds, frozen
+        evaluation).
+  \item The increasing budget buys {{BUDGET_DELTA}} of persistent coverage
+        over the range, and {{BUDGET_VERDICT}}.
+\end{itemize}
+
+\subsection{Credit assignment}
+\label{sec:results_credit}
+
+The diff-reward variant (per-agent marginal coverage, $r_i = r_{\text{team}}
++ \beta D_i$) is compared against the team reward on paired training seeds:
+{{CREDIT_DIFF}} against {{CREDIT_TEAM}}, with {{CREDIT_VERDICT}}.  The
+earlier local-critic arm (a per-agent actor with a per-agent critic, the
+``masked PPO local critic'' row of the old table) is re-run under the fixed
+protocol: {{CREDIT_LOCAL}}.
+
+\subsection{Stress regimes and generalisation}
+\label{sec:results_stress}
+
+The learner is trained on the nominal configuration only, then rolled out
+without retraining on the stress regimes of Table~\ref{tab:stress}.  This is
+the zero-shot generalisation measurement: a controller that holds the two
+invariants on the training distribution but fails on a regime the certificate
+declares feasible has failed as a controller, not because the instance was
+infeasible.
+
+\begin{table}[t]
+\caption{Stress regimes (zero-shot).  Every row is the frozen-policy
+evaluation on the same held-out scenes, with the configuration of the regime
+applied.  Headroom is ceiling minus the best rule on that regime.}
+\label{tab:stress}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+regime & best rule CK & learner CK & learner minus rule & headroom \\
+\midrule
+nominal        & {{S_NOM_RULE}} & {{S_NOM_LEARN}} & {{S_NOM_DIFF}} & {{S_NOM_HEAD}} \\
+single pad     & {{S_PAD_RULE}} & {{S_PAD_LEARN}} & {{S_PAD_DIFF}} & {{S_PAD_HEAD}} \\
+small battery  & {{S_BAT_RULE}} & {{S_BAT_LEARN}} & {{S_BAT_DIFF}} & {{S_BAT_HEAD}} \\
+low comm       & {{S_COMM_RULE}} & {{S_COMM_LEARN}} & {{S_COMM_DIFF}} & {{S_COMM_HEAD}} \\
+clustered start & {{S_CLU_RULE}} & {{S_CLU_LEARN}} & {{S_CLU_DIFF}} & {{S_CLU_HEAD}} \\
+failure        & {{S_FAIL_RULE}} & {{S_FAIL_LEARN}} & {{S_FAIL_DIFF}} & {{S_FAIL_HEAD}} \\
+multi-failure  & {{S_MFAIL_RULE}} & {{S_MFAIL_LEARN}} & {{S_MFAIL_DIFF}} & {{S_MFAIL_HEAD}} \\
+\bottomrule
+\end{tabular}
+\tblNote{The headroom gate of the evaluation framework requires ceiling minus
+best rule $\ge 0.10$ on a regime before a learned controller on that regime is
+meaningfully compared: below it, the ceiling is too close for a controller
+comparison to separate anything.  Regimes whose best rule leaves less than
+0.10 of headroom are reported as such rather than forced through the gate.}
+\end{table}
+
+{{STRESS_VERDICT}}
+
+\subsection{Network certificate}
+\label{sec:results_network}
+
+The network is not the binding constraint at 80 m scale: an OMNeT++/INET
+co-simulation certifies PDR $\approx 0.998$ with a range margin of $22\times$
+over the mission scale (Section~\ref{sec:radio}, artefact
+Simulation/omnet_uav2/).  The binding constraints are coverage geometry and
+energy; the certificate makes the ideal-observation assumption of the RL
+simulator a measured statement rather than an assumption.
+
+\subsection{History of this measurement}
+\label{sec:history}
+
+The first version of this report reported a gap of $0.298$ (learner $0.674$
+vs the reactive rule $0.972$) and attributed it, through controlled arms, to
+the learner's observation and credit rules.  Three defects were later found
+in the implementation and in the protocol; each is described in
+Section~\ref{sec:second_sprint}.  The old measurements are retained in the
+repository as a record under \texttt{docs/}, and are not part of the evidence
+base of this version.
