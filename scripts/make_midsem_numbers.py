@@ -34,10 +34,14 @@ ROOT = os.path.dirname(HERE)
 RUNS = os.path.join(ROOT, "ml_impl", "runs")
 
 #: tag -> (macro stem, human label)
+#: The stem decides the macro names: tag "exp_ego_eval" with stem "EgoShape"
+#: produces \tokEgoShapeCK, \tokEgoShapeSd, \tokEgoShapeCi, ...
 TAGS = {
-    "exp_ego_shape": ("EgoShape", "ego-centric bearings + distance shaping"),
-    "exp_ego_shape_now": ("EgoShapeNoW", "same, with the W_t penalty removed"),
-    "si_fixed": ("Fixed", "the Part-1 bug fixes alone"),
+    "exp_ego_eval": ("EgoShape", "ego bearing + distance shaping, evaluated"),
+    "exp_ego_now_eval": ("EgoShapeNoW", "same, without the W_t penalty"),
+    "si_fixed": ("BugFix", "the Part-1 bug fixes alone, training curve"),
+    "exp_ego_shape": ("EgoShapeTrain", "same config, training curve only"),
+    "exp_ego_shape_now": ("NoWTrain", "W_t removed, training curve only"),
 }
 
 
@@ -100,8 +104,13 @@ def main():
     add("")
 
     # ---- rule baselines -------------------------------------------------
-    rp = os.path.join(RUNS, "rules", "eval_rules.json")
-    if os.path.exists(rp):
+    rp = ""
+    for cand in ("rules_heldout", "rules"):
+        p = os.path.join(RUNS, cand, "eval_rules.json")
+        if os.path.exists(p):
+            rp = p
+            break
+    if rp:
         with open(rp, encoding="utf-8") as f:
             rules = json.load(f)
         s = rules.get("summary", {})
@@ -155,7 +164,8 @@ def main():
         add("")
 
     # ---- the gap to the best rule --------------------------------------
-    learner = out.get("exp_ego_shape") or out.get("si_fixed")
+    learner = (out.get("exp_ego_eval") or out.get("exp_ego_now_eval")
+               or out.get("exp_ego_shape") or out.get("si_fixed"))
     if learner and "rules" in out:
         best_name = max(out["rules"], key=lambda k: out["rules"][k]["CK"])
         best = out["rules"][best_name]

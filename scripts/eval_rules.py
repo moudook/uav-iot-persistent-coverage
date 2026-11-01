@@ -44,6 +44,10 @@ FIELDS = ("CK", "AG", "SC", "Energy", "Distance", "UnexecutedActions",
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--eval-seeds", type=int, default=10)
+    ap.add_argument("--eval-offset", type=int, default=1000,
+                    help="first scene seed; the default range is disjoint "
+                         "from the training seeds 0.. so that no evaluation "
+                         "scene was ever trained on")
     ap.add_argument("--steps", type=int, default=2000)
     ap.add_argument("--tag", default="rules")
     args = ap.parse_args()
@@ -55,8 +59,9 @@ def main():
 
     cfg = base_config()
     steps = args.steps or cfg.episode_len
-    rec = {"eval_seeds": list(range(args.eval_seeds)), "steps": steps,
-           "rules": {}, "summary": {}}
+    seeds = list(range(args.eval_offset, args.eval_offset + args.eval_seeds))
+    rec = {"eval_seeds": seeds, "eval_offset": args.eval_offset,
+           "steps": steps, "rules": {}, "summary": {}}
     for name, fn in RULES:
         per = []
         for s in rec["eval_seeds"]:

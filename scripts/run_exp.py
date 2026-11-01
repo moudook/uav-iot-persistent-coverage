@@ -61,6 +61,9 @@ def main():
     ap.add_argument("--diff-beta", type=float, default=1.0)
     ap.add_argument("--randomize-layout", action="store_true")
     ap.add_argument("--eval-seeds", type=int, default=10)
+    ap.add_argument("--eval-offset", type=int, default=1000,
+                    help="first scene seed; disjoint from the "
+                         "training seeds")
     ap.add_argument("--tag", default="exp")
     args = ap.parse_args()
 
@@ -89,15 +92,17 @@ def main():
         dt = time.time() - t0
         agent.save(os.path.join(outdir, "seed_%d.pt" % s))
 
+        scenes = list(range(args.eval_offset,
+                            args.eval_offset + args.eval_seeds))
         ev = []
-        for es in range(args.eval_seeds):
+        for es in scenes:
             r = eval_agent(agent, cfg, steps=args.n_steps, seed=es,
                            deterministic=False)
             ev.append({k: float(v) for k, v in r.items()
                        if isinstance(v, (int, float, np.floating))})
         evd = [float(eval_agent(agent, cfg, steps=args.n_steps, seed=es,
                                 deterministic=True)["CK"])
-               for es in range(args.eval_seeds)]
+               for es in scenes]
         cks = [e["CK"] for e in ev]
         rec = {
             "seed": s, "episodes": args.episodes, "n_steps": args.n_steps,
@@ -106,7 +111,7 @@ def main():
             "credit_mode": args.credit_mode, "diff_beta": args.diff_beta,
             "randomize_layout": args.randomize_layout,
             "train_ck": float(hist[-1].get("CK", 0.0)) if hist else None,
-            "eval_seeds": list(range(args.eval_seeds)),
+            "eval_seeds": scenes, "eval_offset": args.eval_offset,
             "eval_ck": float(np.mean(cks)),
             "eval_ck_std": float(np.std(cks, ddof=1)) if len(cks) > 1 else 0.0,
             "eval_per_seed": cks,

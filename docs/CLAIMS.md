@@ -36,3 +36,13 @@ Every claim the paper makes, its evidence file, and its status (supported / weak
 | 14 | MAC contention negligible: PDR 0.998 at N=16, 0.1 s interval | Simulation/omnet_uav2/swarm_contention_contention.json | supported | 15 contenders on one channel, 0.1 s interval: 2995/3000 delivered. |
 | 15 | Network is NOT the binding constraint at mission scale; energy and coverage geometry are | docs/LOG.md 2026-10-29 + channel_model.py | supported | Range margin 22x (1762/80). Certifies the simulator's ideal-observation assumption. |
 | 16 | Information channel model: PDR(d) = 1 - Phi((sens - (Tx-PL(d)))/sigma), sigma=6 dB | ml_impl/uav_wireless/channel_model.py | supported | Calibrated to INET free-space knee and shadowing. |
+
+## Second sprint: learner defects and protocol correction (2026-11-01)
+
+| # | Claim | Evidence file | Status | Notes |
+|---|-------|---------------|--------|-------|
+| 17 | The reported collapse was caused by a sign-flipped entropy term (+c2H in the loss) and by severe under-training (25 gradient steps total, no PPO epochs) | ml_impl/uav_wireless/mappo.py; runs/si_fixed/ | supported | Both fixed; entropy now decays from 1.40 to 1.05 over 200 episodes instead of collapsing. |
+| 18 | "The learned controller scores below a random policy" | runs/diag/random_baseline.json | RETRACTED | The 0.860 figure was measured with `SimConfig` defaults, not with `base_config()`; it is a different instance. Re-measured on the paper's configuration the random policy scores 0.539. The comparison was never like-for-like. |
+| 19 | Training-episode CK is a valid comparison against a rule baseline | - | RETRACTED | It is measured by an exploratory policy on one scene while the policy is still changing. Superseded by the frozen-policy, held-out-scene protocol of Section~\ref{sec:protocol}. |
+| 20 | Rule baselines reproduce at the current HEAD | runs/rules/eval_rules.json | supported | Fixed 0.353, Greedy 0.792, Reactive 0.874, Reactive-local 0.945 over scenes 0-9; over scenes 0-4 they reproduce the report's table exactly (0.372/0.784/0.953/0.972), which shows the table's protocol was 5 scenes. |
+| 21 | Ego-centric sensor bearings + potential-based distance shaping lift the learner above the bug-fixed baseline | runs/exp_ego_eval/ | pending | 5 seeds under the frozen-policy protocol. |

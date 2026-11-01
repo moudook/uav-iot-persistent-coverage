@@ -52,12 +52,14 @@ def run(cfg, seed, steps):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", type=int, default=10)
+    ap.add_argument("--offset", type=int, default=1000)
     ap.add_argument("--steps", type=int, default=2000)
     ap.add_argument("--tag", default="diag")
     a = ap.parse_args()
 
     cfg = base_config()
-    res = [run(cfg, s, a.steps) for s in range(a.seeds)]
+    seeds = list(range(a.offset, a.offset + a.seeds))
+    res = [run(cfg, s, a.steps) for s in seeds]
     cks = [float(r.get("CK", r.get("ck", 0.0))) for r in res]
     mean = float(np.mean(cks))
     sd = float(np.std(cks, ddof=1)) if len(cks) > 1 else 0.0
@@ -69,7 +71,7 @@ def main():
     os.makedirs(outdir, exist_ok=True)
     out = os.path.join(outdir, "random_baseline.json")
     with open(out, "w", encoding="utf-8") as f:
-        json.dump({"cks": cks, "seeds": list(range(a.seeds)),
+        json.dump({"cks": cks, "seeds": seeds,
                    "steps": a.steps, "mean": mean, "sd": sd,
                    "summaries": res}, f, indent=1)
     print("wrote", out)
