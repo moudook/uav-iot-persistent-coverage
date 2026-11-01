@@ -474,7 +474,7 @@ On the corrected configuration the framework is paired with a centralized-traini
 \begin{figure*}[!t]
 \centering
 \input{ml_impl/analysis/fig_teaser}
-\caption{\emph{(a)} The published $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m configuration passes the conventional area-surplus test ($\sigma=1.503\ge 1$) and is nonetheless \emph{provably infeasible} for $K$-covering the region: the corner covering bound requires $N\ge 4K=8$, and neither of the usual metrics says so --- the reactive rule still reaches $\tokInfCk$ persistent coverage on that instance, while the service-continuity metric is identically $\tokInfSc$ for every policy. \emph{(b)} On the corrected, feasible configuration the CTDE MAPPO controller (shared actor, centralized critic, hard connectivity mask with an $H=3$ lookahead, reserve UAV, charging arbitration) is measured against the hand-designed reactive rule and against the teleporting achievability ceiling. \emph{(c)} The hand-designed rule wins by $\tokGap$ of persistent coverage (95\% interval $\tokGapCi$), and the upper confidence limit of every controlled arm lies below that gap, so none of the alternative explanations the arms test can be the whole of it.}
+\caption{\emph{(a)} The published $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m configuration passes the conventional area-surplus test ($\sigma=1.503\ge 1$) and is nonetheless \emph{provably infeasible} for $K$-covering the region: the corner covering bound requires $N\ge 4K=8$, and neither of the usual metrics says so --- the reactive rule still reaches $\tokInfCk$ persistent coverage on that instance, while the service-continuity metric is identically $\tokInfSc$ for every policy. \emph{(b)} On the corrected, feasible configuration the CTDE MAPPO controller (shared actor, centralized critic, hard connectivity mask with an $H=3$ lookahead, reserve UAV, charging arbitration) is measured against the hand-designed reactive rule and against the teleporting achievability ceiling. \emph{(c)} The hand-designed rule wins by $\tokGap$ of persistent coverage (95\% interval $\tokGapCi$), and the upper confidence limit of every controlled arm lies below that gap, so none of the alternative explanations the arms test can be the whole of it.  \emph{Panel (c) is the pre-correction measurement and is retained only for comparison:} the learner defect and the protocol error described in Section~\ref{sec:second_sprint} invalidate the learned controller's numbers in it.  The rule baselines in the same panel reproduce to three decimal places at the current code, so what moved is the learner and not the measurement of the rules.}
 \label{fig:teaser}
 \end{figure*}
 
@@ -1770,7 +1770,10 @@ stop being a record when it turns out to be inconvenient.  They are
 Section~\ref{sec:second_sprint} replaces the learned controller's numbers, the
 rule baselines re-measured there are the ones the abstract quotes, and wherever
 this section's text and that re-measurement disagree, the re-measurement is
-the one to believe.}}
+the one to believe.  Concretely: the learned controller's $0.674$ and the gap
+of $0.298$ that this section quotes are \emph{pre-correction} values, and a
+reader who wants the numbers to cite should read
+Table~\ref{tab:remeasured}.}}
 
 All experiments use the corrected, feasible configuration $N=8$, $K=2$,
 $R_{\mathrm{cov}}=35$\,m on an $80\times80$\,m field
