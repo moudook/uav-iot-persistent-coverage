@@ -443,11 +443,15 @@ def panel_b(d):
     # only 0.1 cm to the right of the bar, so there is no room beside it
     o.append(rf"  \node[anchor=north, font=\tiny] at ({x_rule:.2f},0.38) "
              rf"{{{d['ck_rule']:.3f}}};")
-    # the gap between the two bars, with its label BELOW the arrow
-    o.append(rf"  \draw[{RED}, line width=0.9pt, <->] ({x_ours:.2f},0.90) -- "
-             rf"({x_rule:.2f},0.90);")
-    o.append(rf"  \node[anchor=north, font=\tiny, text={RED}, yshift=-1pt] at "
-             rf"({(x_ours + x_rule) / 2:.2f},0.88) {{gap {d['gap']:.3f}}};")
+    # the difference between the two bars, with its label BELOW the arrow;
+    # the direction is drawn from the sign of the measured difference
+    col = GREEN if d["diff"] >= 0 else RED
+    x_lo, x_hi = min(x_ours, x_rule), max(x_ours, x_rule)
+    o.append(rf"  \draw[{col}, line width=0.9pt, <->] ({x_lo:.2f},0.90) -- "
+             rf"({x_hi:.2f},0.90);")
+    o.append(rf"  \node[anchor=north, font=\tiny, text={col}, yshift=-1pt] at "
+             rf"({(x_ours + x_rule) / 2:.2f},0.88) "
+             rf"{{learner minus rule {d['diff']:+.3f}}};")
     # the achievability ceiling: a dashed line and its number.  What the
     # line IS is said in the caption, not in the picture, so the picture
     # stays clear.
