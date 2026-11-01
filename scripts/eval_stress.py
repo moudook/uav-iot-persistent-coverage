@@ -136,8 +136,16 @@ def main():
     outdir = os.path.join(os.path.dirname(__file__), "..", "ml_impl", "runs", "stress_eval")
     os.makedirs(outdir, exist_ok=True)
     out = os.path.join(outdir, "stress_eval.json")
+    # merge with an existing artifact (the --only runs update single regimes)
+    merged = {}
+    if os.path.exists(out):
+        try:
+            merged = json.load(open(out, encoding="utf-8")).get("regimes", {})
+        except Exception:
+            merged = {}
+    merged.update(results)
     with open(out, "w", encoding="utf-8") as f:
-        json.dump({"regimes": results, "scenes": scenes, "steps": a.steps,
+        json.dump({"regimes": merged, "scenes": scenes, "steps": a.steps,
                    "tag": a.tag, "n_seeds": len(ckpts)}, f, indent=1)
     print("\nwrote", out)
     # summary table
