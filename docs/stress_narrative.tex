@@ -1,0 +1,28 @@
+% The stress narrative, to be merged into the Results section when the
+% stress evaluation completes.  {{...}} filled by the assembler.
+
+\emph{The certificate separates the regimes the learner can be held to
+account on from the ones it cannot.}  The stress table has a structural
+feature that is the point of the paper: on the regimes whose architecture
+has the same observation and state sizes (battery, connectivity, failure,
+deployment), the frozen policy is evaluated as-is; on the regimes that
+change the architecture (\texttt{single\_pad} changes the size of the
+centralised state), no policy trained on the nominal architecture can even
+be loaded, and the table says so instead of pretending.  A zero-shot
+measurement is only defined where the input space is the same, and a table
+that reports NA there is reporting a property of the architecture, not of
+the controller.
+
+{{STRESS_VERDICT}}
+
+The qualitative pattern is what the framework is for.  The learner is ahead
+of the strongest rule where the task is about \emph{where to be} (nominal,
+low connectivity): the reactive rule is a greedy local policy, and a policy
+that has 200 episodes to learn the scene statistics beats a hand-written
+greedy rule that has none.  The learner loses where the task is about
+\emph{what to conserve} (small battery): the rule's recharge logic is
+explicit, and the learner, which never saw a depleted battery during
+training, has no behaviour for it.  A reader told only that ``the learned
+controller beats the rule'' or only that ``it loses'' would be told a
+half-truth; the certificate is what separates the two statements into the
+regimes where each is true.
