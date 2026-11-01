@@ -110,6 +110,24 @@ Launched 21:47. Same protocol, configuration without ego obs / shaping.
     scripts/eval_ckpt.py          evaluate saved .pt on any scene set (no retraining)
     scripts/make_midsem_numbers.py  regenerate midsem_numbers.tex from all artefacts
 
+## FINAL VERDICT (2026-11-02)
+
+Under the corrected protocol (held-out 20 scenes, frozen policy, same scenes for
+rules):
+
+    learner (ego+shape)   = 0.9522  (95% CI [0.9392, 0.9653], 5 seeds)
+    best rule (Reactive-local) = 0.9233
+    learner - rule = +0.0289  (95% CI [+0.0159, +0.0420])  -> excludes zero
+
+    bug fixes only = 0.8594  (95% CI [0.8363, 0.8825], 5 seeds)
+    ablation: +ego/shaping = +0.0928, resolved
+
+    random = 0.5612 (20 scenes)
+
+The 0.298 gap is gone. The learner is ahead of the strongest rule by 0.029,
+resolved. The 0.093 gain comes from the observation change, not from the bug
+fixes alone.
+
 ## Report state
 
 - `Mlawn-midsem-tex.tex` sec:results has a supersession box (added 2026-11-01).
