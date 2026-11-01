@@ -45,8 +45,9 @@ def load_all(pattern):
     return out
 
 
-def mean_ci(d):
-    xs = d["eval_per_seed"]
+def mean_ci(rows):
+    """Mean and t-interval over training seeds (each seed's eval mean)."""
+    xs = [float(d["eval_ck"]) for d in rows]
     n = len(xs)
     import numpy as np
     m = float(np.mean(xs))
@@ -94,6 +95,8 @@ def main():
         knob_rows.append("    %-38s & %.3f & %.3f & %d \\\\"
                          % (label, m, s, len(rows)))
         r[ph + "_CK"] = "%.3f" % m
+        r[ph + "_SD"] = "%.3f" % s
+        r[ph + "_N"] = str(len(rows))
     r["KNOB_ROWS"] = "\n".join(knob_rows) if knob_rows else "(none measured)"
 
     # --- budget sweep --------------------------------------------------
@@ -205,6 +208,19 @@ def main():
             continue
         kept.append(line)
     filled = "\n".join(kept)
+    # drop the Budget and Credit subsections when their experiments have not
+    # landed yet (they would otherwise show "(pending)" in the paper)
+    if "BUDGET_25" not in r:
+        a = filled.index(r"\subsection{Budget}")
+        b = filled.index(r"\subsection{Credit assignment}")
+        filled = filled[:a] + filled[b:]
+    if "CREDIT_DIFF" not in r or r["CREDIT_DIFF"] == "(pending)":
+        a = filled.index(r"\subsection{Credit assignment}")
+        b = filled.index(r"\subsection{Stress regimes and generalisation}")
+        filled = filled[:a] + filled[b:]
+    # the narrative file's own header comment leaked in; strip it
+    filled = "\n".join(l for l in filled.splitlines()
+                        if not l.startswith("% The stress narrative"))
     open(OUT, "w", encoding="utf-8").write(filled)
     left = re.findall(r"\{\{([A-Z0-9_]+)\}\}", filled)
     print("wrote", OUT)

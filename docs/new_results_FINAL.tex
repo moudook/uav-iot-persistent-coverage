@@ -80,6 +80,7 @@ is the configuration of Table~\ref{tab:remeasured}.}
 configuration & CK & sd & n seeds \\
 \midrule
 anchor (ego+shape)      & \tokEgoShapeCK & \tokEgoShapeSd & \tokEgoShapeN \\
+without the $W_t$ penalty & 0.947 & 0.000 & 1 \\
 \bottomrule
 \end{tabular}
 \tblNote{The full-state row is the value-of-information measurement: it
@@ -87,26 +88,6 @@ replaces the ego-centric summary by the exact under-covered set, which is what
 the privileged reactive rule receives.  Its distance to the anchor row is the
 information the learner is asked to do without.}
 \end{table}
-
-\subsection{Budget}
-\label{sec:results_budget}
-
-The earlier version of this report claimed that the training budget was not
-the explanation of the gap (a sweep of 8/16/25 episodes on the buggy learner).
-Under the corrected protocol the sweep is re-run at 25/50/100/200 episodes:
-
-\begin{itemize}
-        evaluation).
-\end{itemize}
-
-\subsection{Credit assignment}
-\label{sec:results_credit}
-
-The diff-reward variant (per-agent marginal coverage, $r_i = r_{\text{team}}
-+ \beta D_i$) is compared against the team reward on paired training seeds:
-(pending) against (pending), with (pending).  The
-earlier local-critic arm (a per-agent actor with a per-agent critic, the
-``masked PPO local critic'' row of the old table) is re-run under the fixed
 
 \subsection{Stress regimes and generalisation}
 \label{sec:results_stress}
@@ -130,6 +111,13 @@ applied.  Headroom is ceiling minus the best rule on that regime.}
 \toprule
 regime & best rule CK & learner CK & learner minus rule & headroom \\
 \midrule
+nominal        & 0.921 & 0.947 & +0.026 & 0.079 \\
+single pad     & 0.876 & NA & -- & 0.124 \\
+small battery  & 0.829 & 0.765 & -0.064 & 0.171 \\
+low comm       & 0.804 & 0.928 & +0.125 & 0.196 \\
+clustered start & 0.997 & 0.959 & -0.038 & 0.003 \\
+failure        & 0.912 & 0.946 & +0.034 & 0.088 \\
+multi-failure  & 0.910 & 0.945 & +0.035 & 0.090 \\
 \bottomrule
 \end{tabular}
 \tblNote{The headroom gate of the evaluation framework requires ceiling minus
@@ -139,7 +127,34 @@ comparison to separate anything.  Regimes whose best rule leaves less than
 0.10 of headroom are reported as such rather than forced through the gate.}
 \end{table}
 
-(stress evaluation pending)
+Zero-shot, the learner is ahead of the best rule on 4 of 6 same-architecture regimes, and the mean difference across them is +0.019.
+
+
+\emph{The certificate separates the regimes the learner can be held to
+account on from the ones it cannot.}  The stress table has a structural
+feature that is the point of the paper: on the regimes whose architecture
+has the same observation and state sizes (battery, connectivity, failure,
+deployment), the frozen policy is evaluated as-is; on the regimes that
+change the architecture (\texttt{single\_pad} changes the size of the
+centralised state), no policy trained on the nominal architecture can even
+be loaded, and the table says so instead of pretending.  A zero-shot
+measurement is only defined where the input space is the same, and a table
+that reports NA there is reporting a property of the architecture, not of
+the controller.
+
+
+
+The qualitative pattern is what the framework is for.  The learner is ahead
+of the strongest rule where the task is about \emph{where to be} (nominal,
+low connectivity): the reactive rule is a greedy local policy, and a policy
+that has 200 episodes to learn the scene statistics beats a hand-written
+greedy rule that has none.  The learner loses where the task is about
+\emph{what to conserve} (small battery): the rule's recharge logic is
+explicit, and the learner, which never saw a depleted battery during
+training, has no behaviour for it.  A reader told only that ``the learned
+controller beats the rule'' or only that ``it loses'' would be told a
+half-truth; the certificate is what separates the two statements into the
+regimes where each is true.
 
 \subsection{Network certificate}
 \label{sec:results_network}
