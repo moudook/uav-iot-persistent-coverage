@@ -122,6 +122,13 @@ def main():
                                    "evaluation coverage moves by %s" % (lo, hi, r["BUDGET_DELTA"]))
 
     # --- stress --------------------------------------------------------
+    narr = ""
+    np_ = os.path.join(ROOT, "docs", "stress_narrative.tex")
+    if os.path.exists(np_):
+        # drop the {{...}} placeholder line in the narrative itself
+        narr = open(np_, encoding="utf-8").read()
+        narr = re.sub(r"\{\{[A-Z0-9_]+\}\}", "", narr)
+    r["STRESS_NARRATIVE"] = narr.strip()
     sp = os.path.join(RUNS, "stress_eval", "stress_eval.json")
     if os.path.exists(sp):
         sd = json.load(open(sp, encoding="utf-8"))
