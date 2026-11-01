@@ -8,7 +8,7 @@ REGIMES = {
     "single_pad": {"n_pads": 1},
     "small_battery": {"B_max": 15000.0, "E_reserve": 1000.0},
     "low_comm": {"R_comm": 25.0},
-    "clustered": None,  # handled specially
+    "clustered": {"start_clustered": False},
     "failure": {"failure_enabled": True, "failure_time": 500},
     "multi_failure": {"failure_enabled": True, "failure_time": 300},
 }
