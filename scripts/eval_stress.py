@@ -34,6 +34,12 @@ from uav_wireless.train import (baseline_fixed, baseline_greedy,
                                 baseline_reactive, baseline_reactive_local)
 from stress_regimes import get_config, REGIMES
 
+# the learner checkpoints were trained in this configuration (ego
+# bearings + distance shaping); this must be applied on top of every
+# regime override when the learner is evaluated.
+LEARNER_ANCHOR = dict(ego_sensors=True, n_ego=3,
+                      dist_shape_kappa=0.5, use_w_penalty=True)
+
 RULES_ALL = [("Fixed", baseline_fixed), ("Greedy", baseline_greedy),
             ("Reactive", baseline_reactive), ("Reactive-local", baseline_reactive_local)]
 RULES = None  # set from --rules
@@ -76,19 +82,23 @@ def main():
     RULES = [x for x in RULES_ALL if x[0] in a.rules]
     for regime in REGIMES:
         print("\n=== regime:", regime, "===", flush=True)
-        cfg = get_config(regime)
-        cfg.episode_len = a.steps
+        rule_cfg = get_config(regime)
+        rule_cfg.episode_len = a.steps
+        learner_cfg = get_config(regime)
+        for _k, _v in LEARNER_ANCHOR.items():
+            setattr(learner_cfg, _k, _v)
+        learner_cfg.episode_len = a.steps
         # rules
         rule_summary = {}
         for name, fn in RULES:
-            cks = [float(fn(cfg, steps=a.steps, seed=s)["CK"]) for s in scenes]
+            cks = [float(fn(rule_cfg, steps=a.steps, seed=s)["CK"]) for s in scenes]
             rule_summary[name] = {"CK": float(np.mean(cks)),
                                   "sd": float(np.std(cks, ddof=1)),
                                   "per_scene": cks}
         best_rule = max(rule_summary.values(), key=lambda v: v["CK"])
         best_name = max(rule_summary, key=lambda k: rule_summary[k]["CK"])
-        # learner
-        learner_per_seed = eval_learner_on_regime(ckpts, cfg, scenes, a.steps)
+        # learner (its own anchor config on top of the regime)
+        learner_per_seed = eval_learner_on_regime(ckpts, learner_cfg, scenes, a.steps)
         learner_mean = float(np.mean(learner_per_seed))
         learner_sd = float(np.std(learner_per_seed, ddof=1)) if len(learner_per_seed) > 1 else 0.0
         headroom = 1.0 - rule_summary[best_name]["CK"]
