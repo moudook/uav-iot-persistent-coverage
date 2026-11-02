@@ -80,7 +80,9 @@ is the configuration of Table~\ref{tab:remeasured}.}
 configuration & CK & sd & n seeds \\
 \midrule
 anchor (ego+shape)      & \tokEgoShapeCK & \tokEgoShapeSd & \tokEgoShapeN \\
-without the $W_t$ penalty & 0.947 & 0.000 & 1 \\
+without the $W_t$ penalty & 0.940 & 0.009 & 3 \\
+difference credit $\beta=2$ & 0.959 & 0.001 & 3 \\
+full coverage state (no ego) & 0.862 & 0.025 & 3 \\
 \bottomrule
 \end{tabular}
 \tblNote{The full-state row is the value-of-information measurement: it
@@ -88,6 +90,30 @@ replaces the ego-centric summary by the exact under-covered set, which is what
 the privileged reactive rule receives.  Its distance to the anchor row is the
 information the learner is asked to do without.}
 \end{table}
+
+\subsection{Budget}
+\label{sec:results_budget}
+
+The earlier version of this report claimed that the training budget was not
+the explanation of the gap (a sweep of 8/16/25 episodes on the buggy learner).
+Under the corrected protocol the sweep is re-run at 25/50/100/200 episodes:
+
+\begin{itemize}
+  \item      25 episodes: $0.830$ ($n=3$) at 25 episodes,      50 episodes: $0.868$ ($n=3$) at 50,     100 episodes: $0.933$ ($n=3$)
+        at 100,     200 episodes: $0.947$ ($n=3$) at 200 (each the mean over three seeds, frozen
+        evaluation).
+  \item The increasing budget buys +0.117 of persistent coverage
+        over the range, and over the range 25 to 200 episodes the mean evaluation coverage moves by +0.117.
+\end{itemize}
+
+\subsection{Credit assignment}
+\label{sec:results_credit}
+
+The diff-reward variant (per-agent marginal coverage, $r_i = r_{\text{team}}
++ \beta D_i$) is compared against the team reward on paired training seeds:
+$0.959$ (95\% interval $[0.956, 0.963]$) against $0.952$, with the difference-credit arm is not separated from the team reward at this resolution.  The
+earlier local-critic arm (a per-agent actor with a per-agent critic, the
+``masked PPO local critic'' row of the old table) is re-run under the fixed
 
 \subsection{Stress regimes and generalisation}
 \label{sec:results_stress}

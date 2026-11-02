@@ -62,6 +62,10 @@ class SimConfig:
     credit_weight: float = 0.10
     diff_beta: float = 1.00     # weight on per-agent difference reward
     randomize_layout: bool = False  # resample sensor/pad layout each episode
+    ego_sensors: bool = False       # ego-centric bearings to nearest deficient sensors
+    n_ego: int = 3                 # number of nearest deficient sensors to report
+    use_w_penalty: bool = True      # enable unnecessary-movement penalty W_t
+    dist_shape_kappa: float = 0.0   # potential-based distance shaping coefficient
     # Table IV weights
     lam_O: float = 1.00           # under-coverage
     lam_E: float = 0.10           # energy consumption
@@ -143,6 +147,8 @@ def obs_dim(cfg: SimConfig) -> int:
     base += cfg.N if cfg.use_agent_id else 0
     base += cfg.map_grid ** 2 if cfg.map_grid else 0
     base += 3 if cfg.use_pad_bearing else 0
+    if getattr(cfg, "ego_sensors", False):
+        base += getattr(cfg, "n_ego", 3) * 3 + 2   # (dx,dy,dist) per sensor + repulsion (x,y)
     return base
 
 
@@ -224,6 +230,7 @@ class UAVIoTEnv:
         self.prev_w_dist = 0.0
         self.last_cost = dict(U_t=1.0, E_t=0.0, D_t=1.0, W_t=0.0, R_t=0.0, Crit_t=1.0)
         self.last_agent_rewards = None
+        self._prev_phi = 0.0
         self.recovery_start = -1
         self._episode_idx += 1
         self.recovered = True
@@ -967,6 +974,33 @@ class UAVIoTEnv:
                 ident = np.zeros(c.N, dtype=np.float32)
                 ident[i] = 1.0
                 row = np.concatenate([row, ident])
+            if getattr(c, "ego_sensors", False):
+                # ego-centric bearings to the nearest deficient sensors
+                # (n_d < K) plus a neighbour-repulsion vector.
+                k = getattr(c, "n_ego", 3)
+                deficient = [d for d in range(c.M) if ncov[d] < c.K]
+                # sort by distance to agent i
+                def _dist(d):
+                    return float(np.linalg.norm(self.sensors[d] - self.p[i]))
+                deficient.sort(key=_dist)
+                feats = np.zeros(k * 3 + 2, dtype=np.float32)
+                for kk, d in enumerate(deficient[:k]):
+                    vec = self.sensors[d] - self.p[i]
+                    dn = float(np.linalg.norm(vec))
+                    if dn > 1e-9:
+                        feats[kk*3 + 0] = vec[0] / dn
+                        feats[kk*3 + 1] = vec[1] / dn
+                    feats[kk*3 + 2] = dn / (1.414 * c.side)
+                # neighbour repulsion: away from centroid of nearby UAVs
+                near_js = [j for j in act if j != i]
+                if near_js:
+                    cent = np.mean(self.p[near_js], axis=0)
+                    rep = self.p[i] - cent
+                    rn = float(np.linalg.norm(rep))
+                    if rn > 1e-9:
+                        feats[k*3 + 0] = rep[0] / rn
+                        feats[k*3 + 1] = rep[1] / rn
+                row = np.concatenate([row, feats])
             rows.append(row)
 
         obs = np.stack(rows).astype(np.float32)
@@ -1210,7 +1244,7 @@ class UAVIoTEnv:
         # distance that did not improve the covered-sensor count.
         cov_now = float(np.mean(ncov >= c.K))
         newly_covered = max(cov_now - self.prev_cov_score, 0.0)
-        if w_dist > 1e-9:
+        if getattr(c, "use_w_penalty", True) and w_dist > 1e-9:
             W_t = float(np.clip(1.0 - newly_covered / (w_dist + 1e-9), 0.0, 1.0))
         else:
             W_t = 0.0
@@ -1238,6 +1272,30 @@ class UAVIoTEnv:
             B_t=B_t,
         )
         r = self.reward_from_terms(self.last_cost)
+
+        # Potential-based distance shaping (SI-1): telescopic, policy-invariant.
+        kappa = getattr(c, "dist_shape_kappa", 0.0)
+        if kappa and kappa > 0:
+            def _phi(positions):
+                # mean over agents of -min distance to nearest deficient sensor / L
+                vals = []
+                for i in range(c.N):
+                    if self.failed[i]:
+                        continue
+                    defd = [d for d in range(c.M) if ncov[d] < c.K]
+                    if not defd:
+                        vals.append(0.0)
+                        continue
+                    ds = [float(np.linalg.norm(self.sensors[d]-positions[i])) for d in defd]
+                    vals.append(-min(ds) / max(c.side * 1.414, 1.0))
+                return float(np.mean(vals)) if vals else 0.0
+            phi_before = _phi(self.p.copy()) if False else None
+            # phi_before should use previous positions; we approximate with current pre-move not stored.
+            # Use a stored previous phi instead.
+            phi_after = _phi(self.p)
+            prev_phi = getattr(self, "_prev_phi", phi_after)
+            r = r + kappa * (prev_phi - 0.99 * phi_after)
+            self._prev_phi = phi_after
 
         # C3: per-agent counterfactual credit (optional)
         if getattr(c, "credit_mode", "team") == "c3":

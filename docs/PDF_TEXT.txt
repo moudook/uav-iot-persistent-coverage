@@ -386,10 +386,10 @@ planning — is not coverage-specific and does not certify a K-         life-uti
 redundant covering instance. Second, no paper in the corpus           — a per-agent difference utility rather than a modern per-
 names the all-constraints-simultaneously binary metric as de-         agent advantage estimator, and not a controlled comparison
 generate, that is, as uninformative on an infeasible instance.        against one. We could not find a published controlled study
-The closest empirical demonstration is in [42], which reports         of per-agent advantage against a shared team advantage on
-a feasible rate of 0% over ten solver executions alongside a          a persistent-coverage task, and the interaction between per-
-mean k-coverage ratio of 33.33% in a sensitivity study with           agent advantage and parameter sharing in that setting appears
-a deliberately mis-tuned penalty: the binary flag is zero while       to be an open empirical question. That is the study Section ??
+The closest empirical demonstration is in [42], which reports         of per-agent advantage against a shared team advantage on a
+a feasible rate of 0% over ten solver executions alongside a          persistent-coverage task, and the interaction between per-agent
+mean k-coverage ratio of 33.33% in a sensitivity study with           advantage and parameter sharing in that setting appears to be
+a deliberately mis-tuned penalty: the binary flag is zero while       an open empirical question. That is the study Section VIII-D
 the graded quantity is substantial, which is exactly the collapse     reports, and we flag it as a bounded search result over the same
 that motivates Section III-G. That paper does not analyse the         corpus rather than a claim of absence in the wider literature.
 degeneracy, and it reports the graded metrics alongside the              Finally, graded persistent-coverage metrics do have prece-
@@ -1124,13 +1124,13 @@ explicitly reason about how that particular agent’s actions            because
 contribute to that global reward”, and GPAE [24] states the            of the graph with it. Second, the filter excludes configurations
 objection in MAPPO’s own terms, that the shared team advan-            that a covering argument would admit: the 8-node ring is
 tage “ignores the agent-specific impact on the joint outcome”.         connected, has no articulation point, and is a valid covering
-We state the limitation rather than the conclusion, because the        family, but its eccentricity is 4, so the H = 3 rule rejects every
-limitation is not a failure: a shared team advantage is a strong       move that would preserve it. The safety filter thus shrinks the
-baseline on the standard cooperative benchmarks [3], [27].             reachable configuration set, and a controller that needs to move
-What the literature does not contain is an evaluation of the           into a rejected family is stuck; we report this as a property
-question on a persistent-coverage task, and Section ?? reports         of the filter and not as a property of the task. This is the
-one: the same learner with the advantage made per-agent, and           mechanism that Huang and Ontañón [30] show to correspond
-nothing else changed.                                                  to a valid policy-gradient update rather than a biased surrogate:
+We state the limitation rather than the conclusion, because            family, but its eccentricity is 4, so the H = 3 rule rejects every
+the limitation is not a failure: a shared team advantage is a          move that would preserve it. The safety filter thus shrinks the
+strong baseline on the standard cooperative benchmarks [3],            reachable configuration set, and a controller that needs to move
+[27]. What the literature does not contain is an evaluation of         into a rejected family is stuck; we report this as a property
+the question on a persistent-coverage task, and Section VIII-D         of the filter and not as a property of the task. This is the
+reports one: the same learner with the advantage made per-             mechanism that Huang and Ontañón [30] show to correspond
+agent, and nothing else changed.                                       to a valid policy-gradient update rather than a biased surrogate:
                                                                        masking is implemented as a state-dependent differentiable
 B. Action Feasibility Mask
                                                                        transformation of the action-probability distribution, which is
@@ -1402,7 +1402,7 @@ pre-specified; Section VIII states what the arms do and do not       0.042], and
 exclude.                                                             rule by an interval that excludes zero. The gap of 0.298
                                                                      that an earlier version of this report reported is retracted in
            VII. E XPERIMENTAL D ESIGN M ATRIX
-                                                                     Section VIII-E: it was a property of a learner whose entropy
+                                                                     Section VIII-G: it was a property of a learner whose entropy
   The evaluation varies the dominant environmental factors           bonus was sign-flipped and whose update ran 25 gradient steps
 independently before combining them. Table XI maps each              per run, and of a protocol that compared a policy in training
 experiment to a specific research question; every row is run,        against a rule at rest.
@@ -1412,281 +1412,301 @@ and the results are reported in Section VIII.                           Third, t
   All numbers in this section are produced by the protocol of
                                                                      exploration the deployed policy keeps, and it is small.
 Section IV-E: a controller is frozen before it is measured, and
-                           TABLE XII                                                         Zero-shot, the learner is ahead of the best rule on 4 of
-K NOB ABLATION UNDER THE CORRECTED PROTOCOL . E ACH ROW IS THE                            6 same-architecture regimes, and the mean difference across
-     MEAN OVER THREE TRAINING SEEDS OF THE FROZEN - POLICY
-EVALUATION ON THE HELD - OUT SCENES , WITH THE SAMPLE STANDARD                            them is +0.019.
-DEVIATION OVER THE SEEDS . T HE ANCHOR ROW IS THE CONFIGURATION                              The certificate separates the regimes the learner can be held
-                         OF TABLE XIV.                                                    to account on from the ones it cannot. The stress table has a
-                   configuration                CK    sd    n seeds
-                                                                                          structural feature that is the point of the paper: on the regimes
-                                                                                          whose architecture has the same observation and state sizes
-                   anchor (ego+shape)     0.952 0.010            5
-                   without the Wt penalty 0.947 0.000            1                        (battery, connectivity, failure, deployment), the frozen policy
-The full-state row is the value-of-information measurement: it replaces the ego-centric   is evaluated as-is; on the regimes that change the architecture
-summary by the exact under-covered set, which is what the privileged reactive rule        (single_pad changes the size of the centralised state),
-receives. Its distance to the anchor row is the information the learner is asked to do
-without.                                                                                  no policy trained on the nominal architecture can even be
-                                                                                          loaded, and the table says so instead of pretending. A zero-
-                             TABLE XIII                                                   shot measurement is only defined where the input space is the
-  S TRESS REGIMES ( ZERO - SHOT ). E VERY ROW IS THE FROZEN - POLICY                      same, and a table that reports NA there is reporting a property
-       EVALUATION ON THE SAME HELD - OUT SCENES , WITH THE
-CONFIGURATION OF THE REGIME APPLIED . H EADROOM IS CEILING MINUS
-                                                                                          of the architecture, not of the controller.
-                 THE BEST RULE ON THAT REGIME .                                              The qualitative pattern is what the framework is for. The
-                                                                                          learner is ahead of the strongest rule where the task is about
-      regime            best rule CK learner CK learner minus rule headroom               where to be (nominal, low connectivity): the reactive rule is
-      nominal              0.921        0.947           +0.026          0.079             a greedy local policy, and a policy that has 200 episodes to
-      single pad           0.876         NA                –            0.124
-      small battery        0.829        0.765           -0.064          0.171             learn the scene statistics beats a hand-written greedy rule that
-      low comm             0.804        0.928           +0.125          0.196             has none. The learner loses where the task is about what to
-      clustered start      0.997        0.959           -0.038          0.003
-      failure              0.912        0.946           +0.034          0.088             conserve (small battery): the rule’s recharge logic is explicit,
-      multi-failure        0.910        0.945           +0.035          0.090             and the learner, which never saw a depleted battery during
-The headroom gate of the evaluation framework requires ceiling minus best rule ≥ 0.10     training, has no behaviour for it. A reader told only that “the
-on a regime before a learned controller on that regime is meaningfully compared: below
-it, the ceiling is too close for a controller comparison to separate anything. Regimes    learned controller beats the rule” or only that “it loses” would
-whose best rule leaves less than 0.10 of headroom are reported as such rather than        be told a half-truth; the certificate is what separates the two
-forced through the gate.
-                                                                                          statements into the regimes where each is true.
-                                                                                          D. Network certificate
+                           TABLE XII                                                                                   TABLE XIII
+K NOB ABLATION UNDER THE CORRECTED PROTOCOL . E ACH ROW IS THE                              S TRESS REGIMES ( ZERO - SHOT ). E VERY ROW IS THE FROZEN - POLICY
+     MEAN OVER THREE TRAINING SEEDS OF THE FROZEN - POLICY                                       EVALUATION ON THE SAME HELD - OUT SCENES , WITH THE
+EVALUATION ON THE HELD - OUT SCENES , WITH THE SAMPLE STANDARD                            CONFIGURATION OF THE REGIME APPLIED . H EADROOM IS CEILING MINUS
+DEVIATION OVER THE SEEDS . T HE ANCHOR ROW IS THE CONFIGURATION                                            THE BEST RULE ON THAT REGIME .
+                         OF TABLE XIV.
+                                                                                               regime            best rule CK learner CK learner minus rule headroom
+                 configuration                  CK       sd     n seeds
+                                                                                               nominal              0.921        0.947          +0.026           0.079
+                 anchor (ego+shape)             0.952   0.010     5                            single pad           0.876         NA               –             0.124
+                 without the Wt penalty         0.940   0.009     3                            small battery        0.829        0.765          -0.064           0.171
+                 difference credit β = 2        0.959   0.001     3                            low comm             0.804        0.928          +0.125           0.196
+                 full coverage state (no ego)   0.862   0.025     3                            clustered start      0.997        0.959          -0.038           0.003
+                                                                                               failure              0.912        0.946          +0.034           0.088
+The full-state row is the value-of-information measurement: it replaces the ego-centric        multi-failure        0.910        0.945          +0.035           0.090
+  summary by the exact under-covered set, which is what the privileged reactive rule
+ receives. Its distance to the anchor row is the information the learner is asked to do     The headroom gate of the evaluation framework requires ceiling minus best rule
+                                         without.                                            ≥ 0.10 on a regime before a learned controller on that regime is meaningfully
+                                                                                           compared: below it, the ceiling is too close for a controller comparison to separate
+                                                                                          anything. Regimes whose best rule leaves less than 0.10 of headroom are reported as
+                                                                                                                such rather than forced through the gate.
 B. What closes the gap: the observation, not the bug fixes
-                                                                                             The network is not the binding constraint at 80 m scale: an
-  Two interventions were applied to the corrected learner                                 OMNeT++/INET co-simulation certifies PDR ≈ 0.998 with a
-together, so their contributions are separated by an ablation:                            range margin of 22× over the mission scale (Section III-I, arte-
-  • Bug fixes only (the corrected PPO implementation, the                                 fact Simulation/omnet_uav2/). The binding constraints
-      old observation): 0.859 (95% interval [0.836, 0.882], 5                             are coverage geometry and energy; the certificate makes the
-      seeds). This is the number the report’s earlier “fixed                              ideal-observation assumption of the RL simulator a measured
-      learner” would have produced under the corrected pro-                               statement rather than an assumption.
-      tocol.
-  • + ego-centric observation and distance shaping (bearings                              E. History of this measurement
-      to the three nearest under-covered sensors; potential-                                 The first version of this report reported a gap of 0.298
-      based shaping): 0.952. The increment is ≈ 0.093 of                                  (learner 0.674 vs the reactive rule 0.972) and attributed it,
-      persistent coverage, and the two intervals do not overlap:                          through controlled arms, to the learner’s observation and credit
-      the change to the observation, not the bug fixes, is what                           rules. Three defects were later found in the implementation
-      closes the gap.                                                                     and in the protocol; each is described in Section IX. The old
-  The ablation of the remaining knobs (the movement penalty                               measurements are retained in the repository as a record under
-Wt , the shaping weight, the number of bearing targets, differ-                           docs/, and are not part of the evidence base of this version.
-ence credit, layout randomisation) is reported in Table XII,
-                                                                                                  IX. T HE CORRECTED PROTOCOL , AND THE
-with the same protocol.
-                                                                                                             RE - MEASUREMENT
-C. Stress regimes and generalisation                                                         This section exists because the first version of the results
-   The learner is trained on the nominal configuration only,                              was wrong, and because the way it was wrong is more
-then rolled out without retraining on the stress regimes of                               instructive than the result it replaced. Three defects were found
-Table XIII. This is the zero-shot generalisation measurement:                             by reading the implementation. None of them is visible in a
-a controller that holds the two invariants on the training                                plot of the coverage curve, and each is the kind of defect that
-distribution but fails on a regime the certificate declares                               a reader of the reported numbers cannot detect.
-feasible has failed as a controller, not because the instance                                (1) The entropy term had the wrong sign. The PPO loss
-was infeasible.                                                                           carried + c2 H[π] where the objective is to maximise entropy,
-so the gradient step minimised it: the bonus that exists to                                        TABLE XIV
-keep a policy exploring acted as a penalty that drove it to a             R E - MEASURED COMPARISON ON THE CORRECTED PROTOCOL OF
+  Two interventions were applied to the corrected learner
+together, so their contributions are separated by an ablation:                            E. Stress regimes and generalisation
+  • Bug fixes only (the corrected PPO implementation, the                                    The learner is trained on the nominal configuration only,
+      old observation): 0.859 (95% interval [0.836, 0.882], 5                             then rolled out without retraining on the stress regimes of
+      seeds). This is the number the report’s earlier “fixed                              Table XIII. This is the zero-shot generalisation measurement:
+      learner” would have produced under the corrected pro-                               a controller that holds the two invariants on the training
+      tocol.                                                                              distribution but fails on a regime the certificate declares
+  • + ego-centric observation and distance shaping (bearings                              feasible has failed as a controller, not because the instance
+      to the three nearest under-covered sensors; potential-                              was infeasible.
+      based shaping): 0.952. The increment is ≈ 0.093 of                                     Zero-shot, the learner is ahead of the best rule on 4 of
+      persistent coverage, and the two intervals do not overlap:                          6 same-architecture regimes, and the mean difference across
+      the change to the observation, not the bug fixes, is what                           them is +0.019.
+      closes the gap.                                                                        The certificate separates the regimes the learner can be held
+  The ablation of the remaining knobs (the movement penalty                               to account on from the ones it cannot. The stress table has a
+Wt , the shaping weight, the number of bearing targets, differ-                           structural feature that is the point of the paper: on the regimes
+ence credit, layout randomisation) is reported in Table XII,                              whose architecture has the same observation and state sizes
+with the same protocol.                                                                   (battery, connectivity, failure, deployment), the frozen policy
+                                                                                          is evaluated as-is; on the regimes that change the architecture
+C. Budget                                                                                 (single_pad changes the size of the centralised state),
+   The earlier version of this report claimed that the training                           no policy trained on the nominal architecture can even be
+budget was not the explanation of the gap (a sweep of 8/16/25                             loaded, and the table says so instead of pretending. A zero-
+episodes on the buggy learner). Under the corrected protocol                              shot measurement is only defined where the input space is the
+the sweep is re-run at 25/50/100/200 episodes:                                            same, and a table that reports NA there is reporting a property
+   • 25 episodes: 0.830 (n = 3) at 25 episodes, 50 episodes:
+                                                                                          of the architecture, not of the controller.
+     0.868 (n = 3) at 50, 100 episodes: 0.933 (n = 3) at 100,                                The qualitative pattern is what the framework is for. The
+     200 episodes: 0.947 (n = 3) at 200 (each the mean over                               learner is ahead of the strongest rule where the task is about
+     three seeds, frozen evaluation).                                                     where to be (nominal, low connectivity): the reactive rule is
+   • The increasing budget buys +0.117 of persistent coverage
+                                                                                          a greedy local policy, and a policy that has 200 episodes to
+     over the range, and over the range 25 to 200 episodes the                            learn the scene statistics beats a hand-written greedy rule that
+     mean evaluation coverage moves by +0.117.                                            has none. The learner loses where the task is about what to
+                                                                                          conserve (small battery): the rule’s recharge logic is explicit,
+D. Credit assignment                                                                      and the learner, which never saw a depleted battery during
+   The diff-reward variant (per-agent marginal coverage, ri =                             training, has no behaviour for it. A reader told only that “the
+rteam + βDi ) is compared against the team reward on paired                               learned controller beats the rule” or only that “it loses” would
+training seeds: 0.959 (95% interval [0.956, 0.963]) against                               be told a half-truth; the certificate is what separates the two
+0.952, with the difference-credit arm is not separated from                               statements into the regimes where each is true.
+the team reward at this resolution. The earlier local-critic arm
+                                                                                          F. Network certificate
+(a per-agent actor with a per-agent critic, the “masked PPO
+local critic” row of the old table) is re-run under the fixed                              The network is not the binding constraint at 80 m scale: an
+                                                                                          OMNeT++/INET co-simulation certifies PDR ≈ 0.998 with a
+range margin of 22× over the mission scale (Section III-I, arte-                                   TABLE XIV
+fact Simulation/omnet_uav2/). The binding constraints                     R E - MEASURED COMPARISON ON THE CORRECTED PROTOCOL OF
                                                                       S ECTION IV-E. E VERY ROW IS EVALUATED ON THE SAME 20 HELD - OUT
-deterministic corner. On the recorded runs the policy entropy         SCENES ( SEEDS FROM 1000), NONE OF WHICH ANY TRAINING RUN SAW.
-fell to zero within the first tens of episodes, and what the first    T HE RULE AND RANDOM ROWS ARE DETERMINISTIC GIVEN A SCENE , SO
-version of this report called a “collapse” is that descent.              THEIR SPREAD IS SCENE - TO - SCENE ; THE LEARNED ROWS ARE ONE
+are coverage geometry and energy; the certificate makes the           SCENES ( SEEDS FROM 1000), NONE OF WHICH ANY TRAINING RUN SAW.
+ideal-observation assumption of the RL simulator a measured           T HE RULE AND RANDOM ROWS ARE DETERMINISTIC GIVEN A SCENE , SO
+statement rather than an assumption.                                     THEIR SPREAD IS SCENE - TO - SCENE ; THE LEARNED ROWS ARE ONE
                                                                      FROZEN POLICY PER TRAINING SEED , SO THEIR SPREAD IS SEED - TO - SEED ,
-   (2) The update was under-trained by two orders of magni-            AND THE ROW GIVES THE MEAN OF THOSE PER - SEED MEANS WITH THE
-tude. A run of 25 episodes performed 25 gradient steps in total,       SAMPLE STANDARD DEVIATION ACROSS SEEDS . A COVERAGE NUMBER
-one per episode, with no PPO epochs and no minibatches. The                PRODUCED BY A TRAINING LOOP IS NOT IN THIS TABLE : IT IS A
+                                                                       AND THE ROW GIVES THE MEAN OF THOSE PER - SEED MEANS WITH THE
+G. History of this measurement
+                                                                       SAMPLE STANDARD DEVIATION ACROSS SEEDS . A COVERAGE NUMBER
+   The first version of this report reported a gap of 0.298                PRODUCED BY A TRAINING LOOP IS NOT IN THIS TABLE : IT IS A
                                                                        LEARNING CURVE , AND S ECTION IV-E SAYS WHY IT IS NOT A RESULT.
-clipped surrogate objective that gives the method its sample
-efficiency was never exercised: one pass per rollout is not PPO,            Controller                                       CK     spread    unit
-and a coverage curve that is flat over such a run says that the             Fixed formation                                 0.364   0.110    scenes
-optimiser had not started, not that the objective is unlearnable.           Greedy recharge                                 0.713   0.124    scenes
-                                                                            Reactive (global coverage state)                0.832   0.143    scenes
-   (3) The evaluation was not a comparison. The learner’s                   Reactive (local assignment)                     0.923   0.078    scenes
-number was the coverage of its last training episode: measured              Uniform random, feasible actions                0.561   0.125    scenes
-while the policy was still changing, on that episode’s scene,               MAPPO, bug fixes only                       0.859       0.019    seeds
-by the exploratory policy. The rule baselines were measured                 MAPPO, with the new observation and shaping 0.952       0.010    seeds
-                                                                            MAPPO, argmax of the same policy            0.950         –      seeds
-on five fixed scenes. Those are two different protocols, and
-                                                                            Oracle (teleporting placement)                  1.000     –        –
-nothing in a table that puts them in the same column says so.
-                                                                     The two learned rows differ only in the observation and in the shaping term; both use
-Section IV-E now fixes the protocol, freezes the policy before       the same architecture, budget and evaluation. The argmax row is reported because the
-measuring it, and draws the evaluation scenes from a seed             sampled policy of Eq. (30) is what is deployed, and the gap between the two rows is
-                                                                                     the cost of the exploration the deployed policy keeps.
-range that training never touches.
-   What was fixed in the code. The entropy term is subtracted;
-the actor and the critic have separate optimisers with separate         What this does to the rest of the results section. The
-gradient clipping; the update runs ten PPO epochs over four          controlled arms of Section VIII were run against the broken
-minibatches with an early stop on the approximate KL diver-          learner, so they bound the explanation of a gap that no longer
-gence; the value loss uses the clipped form; the initialisation      exists. They are not evidence about the corrected controller,
-is orthogonal; a UAV that has left the active set is masked out      and we do not use them as such. What survives from them
-of the loss instead of contributing a zero-reward transition;        is the measurement of the rule baselines and the observation
-and the direction of the reward normaliser’s moving average          that the local-assignment rule is not worse than the global one,
-is corrected. Two changes to the observation are the subject of      both of which reproduce at the current code.
-the ablation rather than of the bug list: the local observation         Thesis status. The paper’s thesis is no longer “learning beats
-now reports the bearing and distance of the three nearest            the rule”. It is that a coverage number is not a result until the
-under-covered sensors, and the reward carries a potential-based      instance is certified feasible, the protocol is fixed, and the rule
-distance-shaping term whose contribution telescopes over an          baselines are measured under that same protocol, and that the
-episode and therefore does not change the optimal policy.            framework of this paper is what makes the difference between
-   The control that makes the table readable. Every rule base-       a weak learner and a broken one decidable. The first version of
-line in Table XIV was re-evaluated at the current code before        this report had a broken learner and read it as a failed method.
-the learned rows were looked at. On the pre-correction scenes        The framework is what let us tell the two apart.
-they reproduce the pre-correction table to three decimal places,
-and on the held-out scenes they reproduce the ordering. The                                        X. C ONCLUSION
-measuring apparatus therefore did not change, so a number               This paper defines a persistent and fault-tolerant UAV-IoT
-that moved is a number the learner moved, and not a number           coverage problem in which the swarm must jointly manage
-the harness moved.                                                   redundant sensor coverage, inter-UAV connectivity, finite bat-
-   What the corrected measurement says. Two things changed           tery energy, charging contention, and UAV failures. Its central
-at once, and Table XIV separates them. Fixing the implemen-          contribution is a feasibility-certified evaluation framework:
-tation alone moves the learner from the pre-correction 0.674         a rigorous lower bound on the fleet size required for K-
-to 0.859 (95% interval [0.836, 0.882], 5 seeds). Changing            coverage of a bounded region, a teleporting placement oracle
-the observation and adding the shaping term moves it to              as an achievability ceiling against which every policy is
-0.952 ([0.939, 0.965], 5 seeds). The strongest hand-written          normalised, and a non-degenerate replacement for the all-
-rule, the unprivileged local-assignment reactive rule, reaches       constraints-simultaneously service-continuity metric.
-0.923. The difference, learner minus rule, is 0.029 of persistent       Feasibility certificate. The original N = 5, K = 2, Rcov =
-coverage with a 95% interval of [0.016, 0.042], and the learned      35 m configuration is provably infeasible for K-covering the
-controller is ahead of the strongest rule by an interval that        region: the four corner K-coverage discs are pairwise disjoint,
-excludes zero. The gap of 0.298 that the first version of this       so the general packing bound N ≥ K P (Ω, Rcov ) gives
-report reported is therefore not a property of the method class;     N ≥ 4K = 8, and the bound is tight at these parameters.
-it was the learner.                                                  For the sensor requirement the corner argument does not
-transfer, and the packing bound applied to the realised sensor       intervals on the difference; the knob and budget sweeps that
-set excludes N = 5 for a measured 13% of random draws;               would extend the comparison are reported where measured
-we report that rather than the convenient unconditional claim.       and omitted where not, rather than filled in. A knob that is
-All trained results use the corrected, feasible configuration        redundant at this resolution is invisible to the comparison,
-N = 8, K = 2, Rcov = 35 m, for which the same construction           and a budget beyond the measured range is not claimed.
-shows that every sensor is K-covered for every layout. The           (iii) The reactive heuristic is given the exact set of under-
-conventional area-surplus criterion, which exceeds one for the       covered sensors, which corresponds to an unbounded broad-
-very same configuration, does not certify feasibility, and the       cast, while the learned policy receives a fixed-size summary;
-two facts are consistent because an area is not a covering.          part of the gap might therefore be a difference of information
-   What the framework exposes. The framework is not only             and not of control. The arm reported in the first table, in
-a certificate; it is an instrument that can tell a reader why        which the same rule runs without the global coverage state,
-a controller behaves as it does, and on this configuration it        measures that, and the measurement does not support the
-says something uncomfortable. Under the corrected protocol           caveat. (iv) The evaluation seed determines both the scene
-the same comparison runs the other way: MAPPO with the               and the action-sampling stream, so the spread reported for a
-corrected implementation and the new observation reaches             controller does not separate the scene-to-scene variation from
-0.952 over 5 training seeds against 0.923 for the strongest          the action-sampling variation. The two are common to every
-hand-written rule, a difference of 0.029 (95% interval [0.016,       controller and cancel in the comparisons this paper draws,
-0.042]), and the learned controller is ahead of the strongest        but they both enter the absolute numbers. (v) The comparison
-rule by an interval that excludes zero. The earlier 0.298 gap        is not compute-matched in the sense that a hand-designed
-is retracted; it was the learner, not the method class. On the       rule embeds a human’s solution while the learner receives a
-pre-correction learner the arms of Section VIII bound a gap          fixed training budget, and the learned controller’s margin over
-that no longer exists, and we do not use them as evidence            the other learned arms is small compared with the seed-to-
-about the corrected controller. What survives from them is the       seed spread, so the differences between the learned methods
-measurement of the rule baselines and the observation that           should be read with that spread in mind. A learning curve
-the local-assignment rule is not worse than the global one,          and a budget sweep are what would speak to the first point,
-both of which reproduce at the current code. The regime table        and they are the two convergence measurements we report.
-of Section VIII-C is what the framework exposes next: the            The four candidate explanations of Section VII are the ones
-same frozen policy, measured on the regimes the certificate          the framework’s own mechanisms suggest, and they do not
-admits, beats the strongest hand-written rule where the task         exhaust the possibilities; the explanation that survives them
-is about where to be (nominal, low connectivity, failure), and       was not pre-specified, so a study that had tested a different set
-loses where the task is about what to conserve or how to             of arms could have reached a different conclusion. (vi) The
-deploy (small battery, spread start). A single “does learning        OMNeT++ Phase-2 scenario ran and its negative control is
-beat the rule” number would have hidden that split; the              reported, but the runtime instrument cannot support a path-loss
-certificate is what makes the split visible. The controlled arms     cross-validation, so the equivalence is established from INET’s
-of the first version of this report are retracted with the learner   source rather than from a running simulation. (vii) Phase-3
-that produced them, and are not used as evidence about the           (Simu5G PHY) is scaffolded but not executed with the learned
-corrected controller; the rule-baseline measurements on which        policy. (viii) The joint connectivity projection leaves no hole:
-they stood reproduce at the current code.                            in a probe that drives the swarm with every stored policy
-   Scope of the physical-layer claim. The Python reference           (the learned controller), 4 transitions into a disconnected graph
-PHY and INET’s BreakpointPathLoss are the same                       occurred, all 4 of them after a UAV left the active set, 0 after
-function, to 0.012 dB over 24 (distance, exponent) points.           a teleport and 0 unexplained, so every one of them follows a
-We deliberately do not claim a runtime cross-validation, and         UAV leaving rather than a move. The probe drives the swarm
-the reason is measured rather than asserted: a transmit-power        with the stored policies, so it speaks for the deployed controller
-sweep shows that the available per-receiver SNR statistic            on those runs; it does not speak for a policy trained with a
-tracks the transmit power exactly but is independent of the          different observation or a different budget, and the projection’s
-receiver’s distance, so it cannot support a path-loss cross-         own revision count on the deployed configuration is 0.10 per
-validation. A physical-layer claim that has not been subjected       episode. The per-agent mask proved sufficient on the config-
-to a negative control is not a measurement, and this is the one      urations tested, and the ablation measures the components’
-we would most like a reader to carry away.                           effects rather than asserting them. (ix) The degenerate service-
-   Honest limitations. (i) All results are on 2000-step episodes     continuity metric is retained for comparison but supplemented
-(400 s of flight); the report’s 10 000-step target may change        by the non-degenerate alternatives.
-conclusions, and in particular the credit-assignment limita-            Correction and re-measurement (Nov 2026). A super-
-tion may be partly a budget artefact; the two convergence            intelligent review identified a sign-flipped entropy term (+c2 H
-measurements bound that possibility but do not resolve it.           instead of −c2 H) and severe under-training (25 gradient
-(ii) The learned rows are measured with 5 training seeds,            steps total, no PPO epochs) in the learner, which together
-and the pairwise differences reported are accompanied by 95%         explain the reported collapse at episode 675 and the flat
-budget curve. Part-1 fixes are applied (entropy sign, separate                    [15] A. Trotta, M. Di Felice, F. Montori, K. R. Chowdhury, and L. Bononi,
-optimisers and grad clipping, 10 PPO epochs with KL early                              “Joint coverage, connectivity, and charging strategies for distributed
-                                                                                       UAV networks,” IEEE Transactions on Robotics, vol. 34, no. 4, pp.
-stop, clipped value loss, orthogonal init, active-agent masking,                       883–900, Aug. 2018, doi: 10.1109/TRO.2018.2839087.
-EMA direction). Re-measured under the corrected protocol of                       [16] J. Scherer and B. Rinner, “Persistent multi-UAV surveillance with energy
-Section IV-E the learner reaches 0.952 over 5 seeds against                            and communication constraints,” in Proc. 16th Int. Conf. Emerging
-                                                                                       Technologies and Factory Automation (ETFA), IEEE, 2016, pp. 1225–
-0.923 for the strongest rule, a difference of 0.029 (95% interval                      1230, doi: 10.1109/COASE.2016.7743546.
-[0.016, 0.042]), and the learned controller is ahead of the                       [17] E. Hartuv, N. Agmon, and S. Kraus, “Scheduling spare drones for
-strongest rule by an interval that excludes zero. The earlier                          persistent task performance under energy constraints,” in Proc. 16th
-                                                                                       Conf. Autonomous Agents and MultiAgent Systems (AAMAS), 2018, pp.
-“credit assignment drives collapse” reading and the 0.860                              532–540.
-random-baseline figure are retracted; the latter was measured                     [18] R. Shi, X. Yu, Y. Wang, Y. Tian, Z. Liu, W. Wu, X.-P. Zhang, and M. M.
-with the wrong configuration. The network is not the binding                           Veloso, “Symmetry-informed MARL: A decentralized and cooperative
-                                                                                       UAV swarm control approach for communication coverage,” IEEE
-constraint at 80 m scale (PDR ≈ 0.998, range margin 22×).                              Transactions on Mobile Computing, vol. 24, no. 9, pp. 8039–8056, Sep.
-The paper’s thesis is being reframed from “learning beats the                          2025, doi: 10.1109/TMC.2025.3553285.
-rule” to “certifying where learning does not help,” with the                      [19] D. Datsko, F. Nekovar, R. Penicka, and M. Saska, “Energy-aware multi-
-                                                                                       UAV coverage mission planning with optimal speed of flight,” IEEE
-feasibility-certification methodology (C4) as the centrepiece                          Robotics and Automation Letters, vol. 9, no. 3, pp. 2893–2900, 2024,
-contribution.                                                                          doi: 10.1109/LRA.2024.3358581.
-                                                                                  [20] M. A. Luna, M. S. Ale Isaac, A. R. Ragab, P. Campoy, P. Flores
-                              R EFERENCES                                              Peña, and M. Molina, “Fast multi-UAV path planning for optimal area
- [1] C. H. Liu, Z. Chen, J. Tang, J. Xu, and C. Piao, “Energy-efficient                coverage in aerial sensing applications,” Sensors, vol. 22, no. 6, p. 2297,
-     UAV control for effective and fair communication coverage: A deep                 2022, doi: 10.3390/s22062297.
-     reinforcement learning approach,” IEEE Journal on Selected Areas             [21] J. Foerster, S. K. H. Phan, and A. F. T. Ho, “Learning to communicate
-     in Communications, vol. 36, no. 9, pp. 2059–2070, Sep. 2018, doi:                 with deep multi-agent reinforcement learning,” in Proc. 15th Conf.
-     10.1109/JSAC.2018.2864373.                                                        Autonomous Agents and MultiAgent Systems (AAMAS), 2016, pp. 3–11.
- [2] J. Qiu, J. Lyu, and L. Fu, “Placement optimization of aerial base stations   [22] J. Foerster, T. Farquhar, F. Afouras, S. Nardelli, and S. Whiteson, “Coun-
-     with deep reinforcement learning,” arXiv:1911.08111, 2019.                        terfactual multi-agent policy gradients,” in Proc. 32nd AAAI Conf. Arti-
- [3] C. Yu, A. Velu, E. Vinitsky, J. Gao, Y. Wang, A. Bayen, and Y. Wu,                ficial Intelligence, 2018, pp. 3502–3511, doi: 10.1609/aaai.v32i1.11682.
-     “The surprising effectiveness of PPO in cooperative multi-agent games,”      [23] W. Li, L. Xie, and H. Lu, “Difference advantage estimation for multi-
-     in Advances in Neural Information Processing Systems, 2022.                       agent policy gradients,” in Proc. 39th Int. Conf. Machine Learning
- [4] B. Omoniwa, B. Galkin, and I. Dusparic, “Optimizing energy efficiency             (ICML), 2022, pp. 306–324, arXiv:2206.08300.
-     in UAV-assisted networks using deep reinforcement learning,” IEEE            [24] J. Kim, J. Park, S. Kim, M. Jeon, S. Han, and B. Sung, “Generalized
-     Wireless Communications Letters, vol. 11, no. 8, pp. 1590–1594, Aug.              per-agent advantage estimation for multi-agent policy optimization,” in
-     2022, doi: 10.1109/LWC.2022.3167568.                                              Proc. Int. Conf. Autonomous Agents and MultiAgent Systems (AAMAS),
- [5] M. Zareh, L. Sabattini, and C. Secchi, “Decentralized biconnectivity              2026, doi: 10.65109/OBIA4073, arXiv:2603.02654.
-     conditions in multi-robot systems,” in Proc. IEEE Conf. Decision and         [25] J. G. Kuba, R. Cecil, E. Parisotto, and J. S. Šafránek, “Trust region
-     Control (CDC), 2016, pp. 99–104, doi: 10.1109/CDC.2016.7798253.                   policy optimisation in multi-agent reinforcement learning,” in Proc.
- [6] P. Basu and J. Redi, “Movement control algorithms for realization of              39th Int. Conf. Machine Learning (ICML), 2022, pp. 21586–21610,
-     fault-tolerant ad hoc robot networks,” IEEE Network, vol. 18, no. 4, pp.          arXiv:2106.07490.
-     36–44, Jul.–Aug. 2004, doi: 10.1109/MNET.2004.1316760.                       [26] Z. Sun, N. Wang, H. Lin, and X. Zhou, “Persistent coverage
- [7] N. Mathew, S. L. Smith, and S. L. Waslander, “Multi-robot ren-                    of UAVs based on deep reinforcement learning with wonderful
-     dezvous planning for recharging in persistent tasks,” IEEE Trans-                 life utility,” Neurocomputing, vol. 521, pp. 137–145, 2023, doi:
-     actions on Robotics, vol. 31, no. 1, pp. 128–142, Feb. 2015, doi:                 10.1016/j.neucom.2022.11.091.
-     10.1109/TRO.2014.2380593.                                                    [27] C. S. de Witt, J. K. G. Farquhar, A. S. K. Foerster, A. E. L. Fellowes,
- [8] E. Arribas, V. Cholvi, and V. Mancuso, “Optimizing UAV resupply                   and S. Whiteson, “Is independent learning all you need in the StarCraft
-     scheduling for heterogeneous and persistent aerial service,” IEEE Trans-          multi-agent challenge?” in Proc. Int. Conf. Learning Representations
-     actions on Robotics, vol. 39, no. 4, pp. 2639–2653, Aug. 2023, doi:               (ICLR), 2021, arXiv:2011.09533.
-     10.1109/TRO.2023.3263077.                                                    [28] H. Fu, H. Yu, T. Xu, H. Yang, and W. Wu, “Revisiting some com-
- [9] Z. Jiang, T. Song, B. Yang, and G. Song, “Fault-tolerant con-                     mon practices in cooperative multi-agent reinforcement learning,” in
-     trol for multi-UAV exploration system via reinforcement learning                  Proc. 39th Int. Conf. Machine Learning (ICML), 2022, pp. 7013–7026,
-     algorithm,” Aerospace, vol. 11, no. 5, p. 372, May 2024, doi:                     arXiv:2206.07505.
-     10.3390/aerospace11050372.                                                   [29] J. Qiu, J. Lyu, and L. Fu, “Placement optimization of aerial base stations
-[10] M. R. Khan, G. R. V. Premkumar, and B. Van Scoy, “Robust UAV-                     with deep reinforcement learning,” in Proc. IEEE Int. Conf. Communi-
-     oriented wireless communications via multi-agent deep reinforcement               cations (ICC), 2020, pp. 1–6, doi: 10.1109/ICC40277.2020.9149258.
-     learning to optimize user coverage,” Drones, vol. 9, no. 5, p. 321, Apr.     [30] S. Huang and S. Ontañón, “A closer look at invalid action masking in
-     2025, doi: 10.3390/drones9050321.                                                 policy gradient algorithms,” in Proc. Int. FLAIRS Conf., vol. 35, 2022,
-[11] T. Sun, N. Guo, H. Gu, Y. Peng, and Z. Feng, “Integrated commu-                   doi: 10.32473/flairs.v35i.130584.
-     nication and control for energy-efficient UAV swarms: A multi-agent          [31] A. Al-Hourani, S. Kandeepan, and S. Lardner, “Optimal LAP altitude
-     reinforcement learning approach,” arXiv:2509.23905, 2025.                         for maximum coverage,” in IEEE Wireless Communications Letters, vol.
-[12] Z. Chen, Y. Huang, C. Zhu, and W. Zhou, “Multi-agent reinforcement                3, no. 6, pp. 569–572, Dec. 2014, doi: 10.1109/LWC.2014.2342736.
-     learning based trajectory design for UAV-assisted emergency wireless         [32] 3GPP, “Study on enhanced LTE support for aerial vehicles,” 3GPP TR
-     communication,” in Proc. 10th Int. Conf. Computer and Communication               36.777, Rel. 15, 2017.
-     Systems (ICCCS), Chengdu, China, 2025, pp. 856–861, doi: 10.1109/IC-         [33] IEEE, IEEE Standard for Information Technology—Telecommunications
-     CCS65393.2025.11069505.                                                           and information exchange between systems—Local and metropolitan
-[13] J. P. Carvalho and A. P. Aguiar, “Multi-agent reinforcement learning              area networks—Specific requirements—Part 11: Wireless LAN Medium
-     for zero-shot coverage path planning with dynamic UAV networks,”                  Access Control (MAC) and Physical Layer (PHY) Specifications, IEEE
-     Robotics and Autonomous Systems, vol. 195, p. 105163, Jan. 2026, doi:             Std 802.11-2016, Dec. 2016.
-     10.1016/j.robot.2025.105163.                                                 [34] F. Pardo, A. Tavakoli, V. Levdik, and P. Kormushev, “Time limits in
-[14] H. Mei, C. Xu, R. Li, and X. Luo, “Energy-aware persistent multi-UAV              reinforcement learning,” in Proc. 35th Int. Conf. Machine Learning
-     coverage via reinforcement learning guided by user priority and outage,”          (ICML), 2018, pp. 4042–4051.
-     Drones, vol. 10, no. 9, p. 688, Sep. 2026, doi: 10.3390/drones10090688.
-[35] Z. Song, K.-W. Chin, C. Yang, and M. Ros, “Methods to assign UAVs                2026.
-     for K-coverage and recharging in IoT networks,” IEEE Transactions           [40] V. Datta and C. Nahak, “Radius of robust feasibility for ground coverage
-     on Mobile Computing, vol. 23, no. 4, pp. 2504–2519, 2024, doi:                   in aerial sensor networks,” arXiv:2510.20213, 2025.
-     10.1109/TMC.2023.3259461.                                                   [41] E. Fan, Y. Chen, Z. Shan, M. Caesar, and J. Kim, “Communication-
-[36] D. Rizvi and D. Boyle, “Multi-agent reinforcement learning with action           aware multi-agent reinforcement learning for decentralized cooperative
-     masking for UAV-enabled mobile communications,” IEEE Transactions                UAV deployment,” arXiv:2603.16141, 2026.
-     on Machine Learning in Communications and Networking, vol. 3, pp.           [42] H. Lee, S. Jeong, N. Y. Kim, and J. Seo, “Quantum-based k-
-     117–132, 2025, doi: 10.1109/TMLCN.2024.3521876.                                  coverage optimization for UAV-aided search and rescue missions,”
-[37] W. Qiu, Z. He, W. Zhao, and H. Masui, “PRIME: Plasticity recovery in             arXiv:2609.01930, 2026.
-     multi-agent environments for UAV-assisted emergency communication           [43] B. Wang, Y. Wang, and S. Huang, “Priority-aware persistent coverage
-     networks,” arXiv:2607.17922, 2026.                                               with unbalanced revisit period constraints,” in Proc. 6th Int. Conf.
-[38] D. Babarytskyi, “Feasibility ceilings before learning: Sizing and timing         Computer, Control and Robotics (ICCCR), 2026, pp. 406–411.
-     bounds for drone-mesh interception,” arXiv:2610.20823, Oct. 2026.           [44] C. Zhang, C. Xu, G. Li, and B. He, “A distributed task allocation ap-
-[39] J. Viana, V. R. Balaji, B. Galkin, L. Ho, and H. Claussen, “Learn-               proach for multi-UAV persistent monitoring in dynamic environments,”
-     ing compact terrain-context representations for feasibility-aware offline        Scientific Reports, vol. 15, art. 6437, 2025, doi: 10.1038/s41598-025-
-     reinforcement learning in UAV relaying networks,” arXiv:2604.00224,              89787-3.
+(learner 0.674 vs the reactive rule 0.972) and attributed it,
+through controlled arms, to the learner’s observation and credit
+                                                                            Controller                                       CK     spread    unit
+rules. Three defects were later found in the implementation
+                                                                            Fixed formation                                 0.364   0.110    scenes
+and in the protocol; each is described in Section IX. The old               Greedy recharge                                 0.713   0.124    scenes
+measurements are retained in the repository as a record under               Reactive (global coverage state)                0.832   0.143    scenes
+                                                                            Reactive (local assignment)                     0.923   0.078    scenes
+docs/, and are not part of the evidence base of this version.               Uniform random, feasible actions                0.561   0.125    scenes
+
+        IX. T HE CORRECTED PROTOCOL , AND THE                               MAPPO, bug fixes only                       0.859       0.019    seeds
+                                                                            MAPPO, with the new observation and shaping 0.952       0.010    seeds
+                   RE - MEASUREMENT                                         MAPPO, argmax of the same policy            0.950         –      seeds
+
+   This section exists because the first version of the results             Oracle (teleporting placement)                  1.000     –        –
+was wrong, and because the way it was wrong is more                  The two learned rows differ only in the observation and in the shaping term; both use
+                                                                     the same architecture, budget and evaluation. The argmax row is reported because the
+instructive than the result it replaced. Three defects were found     sampled policy of Eq. (30) is what is deployed, and the gap between the two rows is
+by reading the implementation. None of them is visible in a                          the cost of the exploration the deployed policy keeps.
+plot of the coverage curve, and each is the kind of defect that
+a reader of the reported numbers cannot detect.
+   (1) The entropy term had the wrong sign. The PPO loss             now reports the bearing and distance of the three nearest
+carried + c2 H[π] where the objective is to maximise entropy,        under-covered sensors, and the reward carries a potential-based
+so the gradient step minimised it: the bonus that exists to          distance-shaping term whose contribution telescopes over an
+keep a policy exploring acted as a penalty that drove it to a        episode and therefore does not change the optimal policy.
+deterministic corner. On the recorded runs the policy entropy           The control that makes the table readable. Every rule base-
+fell to zero within the first tens of episodes, and what the first   line in Table XIV was re-evaluated at the current code before
+version of this report called a “collapse” is that descent.          the learned rows were looked at. On the pre-correction scenes
+   (2) The update was under-trained by two orders of magni-          they reproduce the pre-correction table to three decimal places,
+tude. A run of 25 episodes performed 25 gradient steps in total,     and on the held-out scenes they reproduce the ordering. The
+one per episode, with no PPO epochs and no minibatches. The          measuring apparatus therefore did not change, so a number
+clipped surrogate objective that gives the method its sample         that moved is a number the learner moved, and not a number
+efficiency was never exercised: one pass per rollout is not PPO,     the harness moved.
+and a coverage curve that is flat over such a run says that the         What the corrected measurement says. Two things changed
+optimiser had not started, not that the objective is unlearnable.    at once, and Table XIV separates them. Fixing the implemen-
+   (3) The evaluation was not a comparison. The learner’s            tation alone moves the learner from the pre-correction 0.674
+number was the coverage of its last training episode: measured       to 0.859 (95% interval [0.836, 0.882], 5 seeds). Changing
+while the policy was still changing, on that episode’s scene,        the observation and adding the shaping term moves it to
+by the exploratory policy. The rule baselines were measured          0.952 ([0.939, 0.965], 5 seeds). The strongest hand-written
+on five fixed scenes. Those are two different protocols, and         rule, the unprivileged local-assignment reactive rule, reaches
+nothing in a table that puts them in the same column says so.        0.923. The difference, learner minus rule, is 0.029 of persistent
+Section IV-E now fixes the protocol, freezes the policy before       coverage with a 95% interval of [0.016, 0.042], and the learned
+measuring it, and draws the evaluation scenes from a seed            controller is ahead of the strongest rule by an interval that
+range that training never touches.                                   excludes zero. The gap of 0.298 that the first version of this
+   What was fixed in the code. The entropy term is subtracted;       report reported is therefore not a property of the method class;
+the actor and the critic have separate optimisers with separate      it was the learner.
+gradient clipping; the update runs ten PPO epochs over four             What this does to the rest of the results section. The
+minibatches with an early stop on the approximate KL diver-          controlled arms of Section VIII were run against the broken
+gence; the value loss uses the clipped form; the initialisation      learner, so they bound the explanation of a gap that no longer
+is orthogonal; a UAV that has left the active set is masked out      exists. They are not evidence about the corrected controller,
+of the loss instead of contributing a zero-reward transition;        and we do not use them as such. What survives from them
+and the direction of the reward normaliser’s moving average          is the measurement of the rule baselines and the observation
+is corrected. Two changes to the observation are the subject of      that the local-assignment rule is not worse than the global one,
+the ablation rather than of the bug list: the local observation      both of which reproduce at the current code.
+   Thesis status. The paper’s thesis is no longer “learning beats     loses where the task is about what to conserve or how to
+the rule”. It is that a coverage number is not a result until the     deploy (small battery, spread start). A single “does learning
+instance is certified feasible, the protocol is fixed, and the rule   beat the rule” number would have hidden that split; the
+baselines are measured under that same protocol, and that the         certificate is what makes the split visible. The controlled arms
+framework of this paper is what makes the difference between          of the first version of this report are retracted with the learner
+a weak learner and a broken one decidable. The first version of       that produced them, and are not used as evidence about the
+this report had a broken learner and read it as a failed method.      corrected controller; the rule-baseline measurements on which
+The framework is what let us tell the two apart.                      they stood reproduce at the current code.
+                                                                         Scope of the physical-layer claim. The Python reference
+                       X. C ONCLUSION
+                                                                      PHY and INET’s BreakpointPathLoss are the same
+   This paper defines a persistent and fault-tolerant UAV-IoT         function, to 0.012 dB over 24 (distance, exponent) points.
+coverage problem in which the swarm must jointly manage               We deliberately do not claim a runtime cross-validation, and
+redundant sensor coverage, inter-UAV connectivity, finite bat-        the reason is measured rather than asserted: a transmit-power
+tery energy, charging contention, and UAV failures. Its central       sweep shows that the available per-receiver SNR statistic
+contribution is a feasibility-certified evaluation framework:         tracks the transmit power exactly but is independent of the
+a rigorous lower bound on the fleet size required for K-              receiver’s distance, so it cannot support a path-loss cross-
+coverage of a bounded region, a teleporting placement oracle          validation. A physical-layer claim that has not been subjected
+as an achievability ceiling against which every policy is             to a negative control is not a measurement, and this is the one
+normalised, and a non-degenerate replacement for the all-             we would most like a reader to carry away.
+constraints-simultaneously service-continuity metric.                    Honest limitations. (i) All results are on 2000-step episodes
+   Feasibility certificate. The original N = 5, K = 2, Rcov =         (400 s of flight); the report’s 10 000-step target may change
+35 m configuration is provably infeasible for K-covering the          conclusions, and in particular the credit-assignment limita-
+region: the four corner K-coverage discs are pairwise disjoint,       tion may be partly a budget artefact; the two convergence
+so the general packing bound N ≥ K P (Ω, Rcov ) gives                 measurements bound that possibility but do not resolve it.
+N ≥ 4K = 8, and the bound is tight at these parameters.               (ii) The learned rows are measured with 5 training seeds,
+For the sensor requirement the corner argument does not               and the pairwise differences reported are accompanied by 95%
+transfer, and the packing bound applied to the realised sensor        intervals on the difference; the knob and budget sweeps that
+set excludes N = 5 for a measured 13% of random draws;                would extend the comparison are reported where measured
+we report that rather than the convenient unconditional claim.        and omitted where not, rather than filled in. A knob that is
+All trained results use the corrected, feasible configuration         redundant at this resolution is invisible to the comparison,
+N = 8, K = 2, Rcov = 35 m, for which the same construction            and a budget beyond the measured range is not claimed.
+shows that every sensor is K-covered for every layout. The            (iii) The reactive heuristic is given the exact set of under-
+conventional area-surplus criterion, which exceeds one for the        covered sensors, which corresponds to an unbounded broad-
+very same configuration, does not certify feasibility, and the        cast, while the learned policy receives a fixed-size summary;
+two facts are consistent because an area is not a covering.           part of the gap might therefore be a difference of information
+   What the framework exposes. The framework is not only              and not of control. The arm reported in the first table, in
+a certificate; it is an instrument that can tell a reader why         which the same rule runs without the global coverage state,
+a controller behaves as it does, and on this configuration it         measures that, and the measurement does not support the
+says something uncomfortable. Under the corrected protocol            caveat. (iv) The evaluation seed determines both the scene
+the same comparison runs the other way: MAPPO with the                and the action-sampling stream, so the spread reported for a
+corrected implementation and the new observation reaches              controller does not separate the scene-to-scene variation from
+0.952 over 5 training seeds against 0.923 for the strongest           the action-sampling variation. The two are common to every
+hand-written rule, a difference of 0.029 (95% interval [0.016,        controller and cancel in the comparisons this paper draws,
+0.042]), and the learned controller is ahead of the strongest         but they both enter the absolute numbers. (v) The comparison
+rule by an interval that excludes zero. The earlier 0.298 gap         is not compute-matched in the sense that a hand-designed
+is retracted; it was the learner, not the method class. On the        rule embeds a human’s solution while the learner receives a
+pre-correction learner the arms of Section VIII bound a gap           fixed training budget, and the learned controller’s margin over
+that no longer exists, and we do not use them as evidence             the other learned arms is small compared with the seed-to-
+about the corrected controller. What survives from them is the        seed spread, so the differences between the learned methods
+measurement of the rule baselines and the observation that            should be read with that spread in mind. A learning curve
+the local-assignment rule is not worse than the global one,           and a budget sweep are what would speak to the first point,
+both of which reproduce at the current code. The regime table         and they are the two convergence measurements we report.
+of Section VIII-E is what the framework exposes next: the             The four candidate explanations of Section VII are the ones
+same frozen policy, measured on the regimes the certificate           the framework’s own mechanisms suggest, and they do not
+admits, beats the strongest hand-written rule where the task          exhaust the possibilities; the explanation that survives them
+is about where to be (nominal, low connectivity, failure), and        was not pre-specified, so a study that had tested a different set
+of arms could have reached a different conclusion. (vi) The                        [5] M. Zareh, L. Sabattini, and C. Secchi, “Decentralized biconnectivity
+OMNeT++ Phase-2 scenario ran and its negative control is                               conditions in multi-robot systems,” in Proc. IEEE Conf. Decision and
+                                                                                       Control (CDC), 2016, pp. 99–104, doi: 10.1109/CDC.2016.7798253.
+reported, but the runtime instrument cannot support a path-loss                    [6] P. Basu and J. Redi, “Movement control algorithms for realization of
+cross-validation, so the equivalence is established from INET’s                        fault-tolerant ad hoc robot networks,” IEEE Network, vol. 18, no. 4, pp.
+source rather than from a running simulation. (vii) Phase-3                            36–44, Jul.–Aug. 2004, doi: 10.1109/MNET.2004.1316760.
+                                                                                   [7] N. Mathew, S. L. Smith, and S. L. Waslander, “Multi-robot ren-
+(Simu5G PHY) is scaffolded but not executed with the learned                           dezvous planning for recharging in persistent tasks,” IEEE Trans-
+policy. (viii) The joint connectivity projection leaves no hole:                       actions on Robotics, vol. 31, no. 1, pp. 128–142, Feb. 2015, doi:
+in a probe that drives the swarm with every stored policy                              10.1109/TRO.2014.2380593.
+                                                                                   [8] E. Arribas, V. Cholvi, and V. Mancuso, “Optimizing UAV resupply
+(the learned controller), 4 transitions into a disconnected graph                      scheduling for heterogeneous and persistent aerial service,” IEEE Trans-
+occurred, all 4 of them after a UAV left the active set, 0 after                       actions on Robotics, vol. 39, no. 4, pp. 2639–2653, Aug. 2023, doi:
+a teleport and 0 unexplained, so every one of them follows a                           10.1109/TRO.2023.3263077.
+                                                                                   [9] Z. Jiang, T. Song, B. Yang, and G. Song, “Fault-tolerant con-
+UAV leaving rather than a move. The probe drives the swarm                             trol for multi-UAV exploration system via reinforcement learning
+with the stored policies, so it speaks for the deployed controller                     algorithm,” Aerospace, vol. 11, no. 5, p. 372, May 2024, doi:
+on those runs; it does not speak for a policy trained with a                           10.3390/aerospace11050372.
+                                                                                  [10] M. R. Khan, G. R. V. Premkumar, and B. Van Scoy, “Robust UAV-
+different observation or a different budget, and the projection’s                      oriented wireless communications via multi-agent deep reinforcement
+own revision count on the deployed configuration is 0.10 per                           learning to optimize user coverage,” Drones, vol. 9, no. 5, p. 321, Apr.
+episode. The per-agent mask proved sufficient on the config-                           2025, doi: 10.3390/drones9050321.
+                                                                                  [11] T. Sun, N. Guo, H. Gu, Y. Peng, and Z. Feng, “Integrated commu-
+urations tested, and the ablation measures the components’                             nication and control for energy-efficient UAV swarms: A multi-agent
+effects rather than asserting them. (ix) The degenerate service-                       reinforcement learning approach,” arXiv:2509.23905, 2025.
+continuity metric is retained for comparison but supplemented                     [12] Z. Chen, Y. Huang, C. Zhu, and W. Zhou, “Multi-agent reinforcement
+                                                                                       learning based trajectory design for UAV-assisted emergency wireless
+by the non-degenerate alternatives.                                                    communication,” in Proc. 10th Int. Conf. Computer and Communication
+   Correction and re-measurement (Nov 2026). A super-                                  Systems (ICCCS), Chengdu, China, 2025, pp. 856–861, doi: 10.1109/IC-
+intelligent review identified a sign-flipped entropy term (+c2 H                       CCS65393.2025.11069505.
+                                                                                  [13] J. P. Carvalho and A. P. Aguiar, “Multi-agent reinforcement learning
+instead of −c2 H) and severe under-training (25 gradient                               for zero-shot coverage path planning with dynamic UAV networks,”
+steps total, no PPO epochs) in the learner, which together                             Robotics and Autonomous Systems, vol. 195, p. 105163, Jan. 2026, doi:
+explain the reported collapse at episode 675 and the flat                              10.1016/j.robot.2025.105163.
+                                                                                  [14] H. Mei, C. Xu, R. Li, and X. Luo, “Energy-aware persistent multi-UAV
+budget curve. Part-1 fixes are applied (entropy sign, separate                         coverage via reinforcement learning guided by user priority and outage,”
+optimisers and grad clipping, 10 PPO epochs with KL early                              Drones, vol. 10, no. 9, p. 688, Sep. 2026, doi: 10.3390/drones10090688.
+stop, clipped value loss, orthogonal init, active-agent masking,                  [15] A. Trotta, M. Di Felice, F. Montori, K. R. Chowdhury, and L. Bononi,
+                                                                                       “Joint coverage, connectivity, and charging strategies for distributed
+EMA direction). Re-measured under the corrected protocol of                            UAV networks,” IEEE Transactions on Robotics, vol. 34, no. 4, pp.
+Section IV-E the learner reaches 0.952 over 5 seeds against                            883–900, Aug. 2018, doi: 10.1109/TRO.2018.2839087.
+0.923 for the strongest rule, a difference of 0.029 (95% interval                 [16] J. Scherer and B. Rinner, “Persistent multi-UAV surveillance with energy
+                                                                                       and communication constraints,” in Proc. 16th Int. Conf. Emerging
+[0.016, 0.042]), and the learned controller is ahead of the                            Technologies and Factory Automation (ETFA), IEEE, 2016, pp. 1225–
+strongest rule by an interval that excludes zero. The earlier                          1230, doi: 10.1109/COASE.2016.7743546.
+“credit assignment drives collapse” reading and the 0.860                         [17] E. Hartuv, N. Agmon, and S. Kraus, “Scheduling spare drones for
+                                                                                       persistent task performance under energy constraints,” in Proc. 16th
+random-baseline figure are retracted; the latter was measured                          Conf. Autonomous Agents and MultiAgent Systems (AAMAS), 2018, pp.
+with the wrong configuration. The network is not the binding                           532–540.
+constraint at 80 m scale (PDR ≈ 0.998, range margin 22×).                         [18] R. Shi, X. Yu, Y. Wang, Y. Tian, Z. Liu, W. Wu, X.-P. Zhang, and M. M.
+                                                                                       Veloso, “Symmetry-informed MARL: A decentralized and cooperative
+The paper’s thesis is being reframed from “learning beats the                          UAV swarm control approach for communication coverage,” IEEE
+rule” to “certifying where learning does not help,” with the                           Transactions on Mobile Computing, vol. 24, no. 9, pp. 8039–8056, Sep.
+feasibility-certification methodology (C4) as the centrepiece                          2025, doi: 10.1109/TMC.2025.3553285.
+                                                                                  [19] D. Datsko, F. Nekovar, R. Penicka, and M. Saska, “Energy-aware multi-
+contribution.                                                                          UAV coverage mission planning with optimal speed of flight,” IEEE
+                                                                                       Robotics and Automation Letters, vol. 9, no. 3, pp. 2893–2900, 2024,
+                              R EFERENCES                                              doi: 10.1109/LRA.2024.3358581.
+ [1] C. H. Liu, Z. Chen, J. Tang, J. Xu, and C. Piao, “Energy-efficient           [20] M. A. Luna, M. S. Ale Isaac, A. R. Ragab, P. Campoy, P. Flores
+     UAV control for effective and fair communication coverage: A deep                 Peña, and M. Molina, “Fast multi-UAV path planning for optimal area
+     reinforcement learning approach,” IEEE Journal on Selected Areas                  coverage in aerial sensing applications,” Sensors, vol. 22, no. 6, p. 2297,
+     in Communications, vol. 36, no. 9, pp. 2059–2070, Sep. 2018, doi:                 2022, doi: 10.3390/s22062297.
+     10.1109/JSAC.2018.2864373.                                                   [21] J. Foerster, S. K. H. Phan, and A. F. T. Ho, “Learning to communicate
+ [2] J. Qiu, J. Lyu, and L. Fu, “Placement optimization of aerial base stations        with deep multi-agent reinforcement learning,” in Proc. 15th Conf.
+     with deep reinforcement learning,” arXiv:1911.08111, 2019.                        Autonomous Agents and MultiAgent Systems (AAMAS), 2016, pp. 3–11.
+ [3] C. Yu, A. Velu, E. Vinitsky, J. Gao, Y. Wang, A. Bayen, and Y. Wu,           [22] J. Foerster, T. Farquhar, F. Afouras, S. Nardelli, and S. Whiteson, “Coun-
+     “The surprising effectiveness of PPO in cooperative multi-agent games,”           terfactual multi-agent policy gradients,” in Proc. 32nd AAAI Conf. Arti-
+     in Advances in Neural Information Processing Systems, 2022.                       ficial Intelligence, 2018, pp. 3502–3511, doi: 10.1609/aaai.v32i1.11682.
+ [4] B. Omoniwa, B. Galkin, and I. Dusparic, “Optimizing energy efficiency        [23] W. Li, L. Xie, and H. Lu, “Difference advantage estimation for multi-
+     in UAV-assisted networks using deep reinforcement learning,” IEEE                 agent policy gradients,” in Proc. 39th Int. Conf. Machine Learning
+     Wireless Communications Letters, vol. 11, no. 8, pp. 1590–1594, Aug.              (ICML), 2022, pp. 306–324, arXiv:2206.08300.
+     2022, doi: 10.1109/LWC.2022.3167568.                                         [24] J. Kim, J. Park, S. Kim, M. Jeon, S. Han, and B. Sung, “Generalized
+                                                                                       per-agent advantage estimation for multi-agent policy optimization,” in
+                                                                                       Proc. Int. Conf. Autonomous Agents and MultiAgent Systems (AAMAS),
+                                                                                       2026, doi: 10.65109/OBIA4073, arXiv:2603.02654.
+[25] J. G. Kuba, R. Cecil, E. Parisotto, and J. S. Šafránek, “Trust region           (ICML), 2018, pp. 4042–4051.
+     policy optimisation in multi-agent reinforcement learning,” in Proc.         [35] Z. Song, K.-W. Chin, C. Yang, and M. Ros, “Methods to assign UAVs
+     39th Int. Conf. Machine Learning (ICML), 2022, pp. 21586–21610,                   for K-coverage and recharging in IoT networks,” IEEE Transactions
+     arXiv:2106.07490.                                                                 on Mobile Computing, vol. 23, no. 4, pp. 2504–2519, 2024, doi:
+[26] Z. Sun, N. Wang, H. Lin, and X. Zhou, “Persistent coverage                        10.1109/TMC.2023.3259461.
+     of UAVs based on deep reinforcement learning with wonderful                  [36] D. Rizvi and D. Boyle, “Multi-agent reinforcement learning with action
+     life utility,” Neurocomputing, vol. 521, pp. 137–145, 2023, doi:                  masking for UAV-enabled mobile communications,” IEEE Transactions
+     10.1016/j.neucom.2022.11.091.                                                     on Machine Learning in Communications and Networking, vol. 3, pp.
+[27] C. S. de Witt, J. K. G. Farquhar, A. S. K. Foerster, A. E. L. Fellowes,           117–132, 2025, doi: 10.1109/TMLCN.2024.3521876.
+     and S. Whiteson, “Is independent learning all you need in the StarCraft      [37] W. Qiu, Z. He, W. Zhao, and H. Masui, “PRIME: Plasticity recovery in
+     multi-agent challenge?” in Proc. Int. Conf. Learning Representations              multi-agent environments for UAV-assisted emergency communication
+     (ICLR), 2021, arXiv:2011.09533.                                                   networks,” arXiv:2607.17922, 2026.
+[28] H. Fu, H. Yu, T. Xu, H. Yang, and W. Wu, “Revisiting some com-               [38] D. Babarytskyi, “Feasibility ceilings before learning: Sizing and timing
+     mon practices in cooperative multi-agent reinforcement learning,” in              bounds for drone-mesh interception,” arXiv:2610.20823, Oct. 2026.
+     Proc. 39th Int. Conf. Machine Learning (ICML), 2022, pp. 7013–7026,          [39] J. Viana, V. R. Balaji, B. Galkin, L. Ho, and H. Claussen, “Learn-
+     arXiv:2206.07505.                                                                 ing compact terrain-context representations for feasibility-aware offline
+[29] J. Qiu, J. Lyu, and L. Fu, “Placement optimization of aerial base stations        reinforcement learning in UAV relaying networks,” arXiv:2604.00224,
+     with deep reinforcement learning,” in Proc. IEEE Int. Conf. Communi-              2026.
+     cations (ICC), 2020, pp. 1–6, doi: 10.1109/ICC40277.2020.9149258.            [40] V. Datta and C. Nahak, “Radius of robust feasibility for ground coverage
+[30] S. Huang and S. Ontañón, “A closer look at invalid action masking in            in aerial sensor networks,” arXiv:2510.20213, 2025.
+     policy gradient algorithms,” in Proc. Int. FLAIRS Conf., vol. 35, 2022,      [41] E. Fan, Y. Chen, Z. Shan, M. Caesar, and J. Kim, “Communication-
+     doi: 10.32473/flairs.v35i.130584.                                                 aware multi-agent reinforcement learning for decentralized cooperative
+[31] A. Al-Hourani, S. Kandeepan, and S. Lardner, “Optimal LAP altitude                UAV deployment,” arXiv:2603.16141, 2026.
+     for maximum coverage,” in IEEE Wireless Communications Letters, vol.         [42] H. Lee, S. Jeong, N. Y. Kim, and J. Seo, “Quantum-based k-
+     3, no. 6, pp. 569–572, Dec. 2014, doi: 10.1109/LWC.2014.2342736.                  coverage optimization for UAV-aided search and rescue missions,”
+[32] 3GPP, “Study on enhanced LTE support for aerial vehicles,” 3GPP TR                arXiv:2609.01930, 2026.
+     36.777, Rel. 15, 2017.                                                       [43] B. Wang, Y. Wang, and S. Huang, “Priority-aware persistent coverage
+[33] IEEE, IEEE Standard for Information Technology—Telecommunications                 with unbalanced revisit period constraints,” in Proc. 6th Int. Conf.
+     and information exchange between systems—Local and metropolitan                   Computer, Control and Robotics (ICCCR), 2026, pp. 406–411.
+     area networks—Specific requirements—Part 11: Wireless LAN Medium             [44] C. Zhang, C. Xu, G. Li, and B. He, “A distributed task allocation ap-
+     Access Control (MAC) and Physical Layer (PHY) Specifications, IEEE                proach for multi-UAV persistent monitoring in dynamic environments,”
+     Std 802.11-2016, Dec. 2016.                                                       Scientific Reports, vol. 15, art. 6437, 2025, doi: 10.1038/s41598-025-
+[34] F. Pardo, A. Tavakoli, V. Levdik, and P. Kormushev, “Time limits in               89787-3.
+     reinforcement learning,” in Proc. 35th Int. Conf. Machine Learning
 
