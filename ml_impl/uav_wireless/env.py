@@ -62,6 +62,7 @@ class SimConfig:
     credit_weight: float = 0.10
     diff_beta: float = 1.00     # weight on per-agent difference reward
     randomize_layout: bool = False  # resample sensor/pad layout each episode
+    adversarial_layout: bool = False  # worst-case corner-clustered sensors
     ego_sensors: bool = False       # ego-centric bearings to nearest deficient sensors
     n_ego: int = 3                 # number of nearest deficient sensors to report
     use_w_penalty: bool = True      # enable unnecessary-movement penalty W_t
@@ -213,8 +214,22 @@ class UAVIoTEnv:
         self.pad_queue = np.zeros(c.n_pads, dtype=int)
         self.pad_occupied_by = np.full(c.n_pads, -1, dtype=int)
 
-        self.sensors = self.rng.uniform(0, c.side, size=(c.M, 2))
-        self.pads = self.rng.uniform(0.15 * c.side, 0.85 * c.side, size=(c.n_pads, 2))
+        if getattr(c, "adversarial_layout", False):
+            # Innovation 9: worst-case layout - sensors clustered in the
+            # four corners, pads placed centrally.  Harder for a
+            # coverage policy than a uniform draw.
+            corners = [(0.1*c.side, 0.1*c.side), (0.9*c.side, 0.1*c.side),
+                       (0.1*c.side, 0.9*c.side), (0.9*c.side, 0.9*c.side)]
+            self.sensors = np.array(
+                [corners[i % 4] + self.rng.normal(0, 3.0, 2)
+                 for i in range(c.M)], dtype=float)
+            self.sensors = np.clip(self.sensors, 0, c.side)
+            self.pads = self.rng.uniform(0.4*c.side, 0.6*c.side,
+                                       size=(c.n_pads, 2))
+        else:
+            self.sensors = self.rng.uniform(0, c.side, size=(c.M, 2))
+            self.pads = self.rng.uniform(0.15 * c.side, 0.85 * c.side,
+                                       size=(c.n_pads, 2))
 
         # Draw the episode's propagation environment once. Seeded from the
         # episode seed but fed through a separate stream, so shadowing draws

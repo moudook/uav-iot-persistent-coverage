@@ -33,6 +33,7 @@ def main():
     ap.add_argument("--credit-mode", default="team")
     ap.add_argument("--diff-beta", type=float, default=1.0)
     ap.add_argument("--randomize-layout", action="store_true")
+    ap.add_argument("--adversarial", action="store_true")
     ap.add_argument("--curriculum", action="store_true")
     ap.add_argument("--rf-at", type=int, default=None)
     ap.add_argument("--lr-decay", type=float, default=0.5)
@@ -71,6 +72,7 @@ def main():
         cfg.intrinsic_beta = args.intrinsic_beta
         cfg.use_w_penalty = not args.no_w
         cfg.randomize_layout = args.randomize_layout
+        cfg.adversarial_layout = args.adversarial
 
         t0 = time.time()
         agent, hist = train_mappo(cfg, episodes=args.episodes,
