@@ -81,7 +81,8 @@ def main():
                                   curriculum=args.curriculum,
                                   rf_at=args.rf_at, lr_decay=args.lr_decay,
                                   attn=args.attn,
-                                  action_repeat=args.action_repeat)
+                                  action_repeat=args.action_repeat,
+                                  ckpt_dir=outdir, ckpt_every=25)
         dt = time.time() - t0
         agent.save(os.path.join(outdir, "seed_%d.pt" % s))
 

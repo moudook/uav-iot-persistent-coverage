@@ -173,7 +173,8 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
                value_norm=True, device=None, bc_path=None,
                gamma=0.99, gae_lambda=0.95, epochs=10, n_minibatch=4,
                curriculum=False, rf_at=None, lr_decay=1.0,
-               attn=False, action_repeat=1):
+               attn=False, action_repeat=1,
+               ckpt_dir=None, ckpt_every=25):
     """Train the proposed controller.
 
     THE DEVICE IS A PROTOCOL CHOICE, NOT A RESOURCE ACCIDENT.  The
@@ -269,6 +270,14 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
         # artefact says which device produced it
         rec["device"] = str(agent.device)
         hist.append(rec)
+        # intermediate checkpoint (survives power cuts)
+        if ckpt_dir and (ep % ckpt_every == 0 or ep == episodes - 1):
+            os.makedirs(ckpt_dir, exist_ok=True)
+            agent.save(os.path.join(ckpt_dir, "latest.pt"))
+            with open(os.path.join(ckpt_dir, "partial.json"), "w") as _f:
+                json.dump({"ep": ep, "episodes": episodes,
+                           "train_ck": float(hist[-1].get("CK", 0.0)),
+                           "hist": hist}, _f)
         if verbose and (ep % log_every == 0 or ep == episodes - 1):
             print(
                 f"[MAPPO ep {ep:3d}] R={rec['mean_reward']:+.4f} "
