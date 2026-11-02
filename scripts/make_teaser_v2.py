@@ -149,7 +149,7 @@ def panel_a():
 
 
 def panel_b():
-    """Corrected comparison: learner (0.952) vs rule (0.923) vs oracle (1)."""
+    """Corrected comparison: learner (0.951) vs rule (0.923) vs oracle (1)."""
     ck_ours = num("tokEgoShapeCK")
     ck_rule = num("tokRuleReactiveLocalCK")
     ck_oracle = 1.0

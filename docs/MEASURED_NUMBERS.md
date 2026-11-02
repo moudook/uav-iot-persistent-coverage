@@ -132,7 +132,7 @@ Mean diff over same-arch regimes: +0.0197.
 
 | config | CK | sd | n | vs anchor |
 |---|---|---|---|---|
-| anchor (ego+shape) | 0.9522 | 0.0105 | 5 | -- |
+| anchor (ego+shape) | 0.9512 | 0.0105 | 5 | -- |
 | without W_t penalty | 0.9399 | 0.0070 | 3 | -0.0123 |
 | diff credit beta=2 | 0.9592 | 0.0011 | 3 | +0.0070 |
 | full coverage state (no ego) | 0.8625 | 0.0205 | 3 | -0.0897 |
@@ -158,7 +158,7 @@ This RETRACTS the old claim 'budget is excluded as the explanation'.
 
 | innovation | config | regime | CK | vs anchor | vs rule |
 |---|---|---|---|---|---|
-| anchor (ego+shape) | base | nominal | 0.9522 | -- | +0.029 (resolved) |
+| anchor (ego+shape) | base | nominal | 0.9512 | -- | +0.028 (resolved) |
 | anchor (ego+shape) | base | small_battery | 0.7646 | -- | -0.064 |
 | Innov 1+2+4 (curriculum+energy+R&F) | +curriculum+energy+R&F | small_battery | 0.8309 | +0.066 | +0.002 (tied) |
 | Innov 6 (graph attention) | +attn | small_battery | 0.7530 | -0.012 | -0.076 |
@@ -181,12 +181,12 @@ KEY FINDINGS:
 
 ## FINAL VERDICT (2026-11-02)
 
-    learner (ego+shape)   = 0.9522  (95% CI [0.9392, 0.9653], 5 seeds)
+    learner (ego+shape)   = 0.9512  (95% CI [0.9381, 0.9643], 5 seeds, 20 held-out scenes)
     best rule (Reactive-local) = 0.9233
-    learner - rule = +0.0289  (95% CI [+0.0159, +0.0420])  -> excludes zero
+    learner - rule = +0.0279  (95% CI [+0.0149, +0.0410])  -> excludes zero
 
     bug fixes only = 0.8594  (95% CI [0.8363, 0.8825], 5 seeds)
-    ablation: +ego/shaping = +0.0928, resolved
+    ablation: +ego/shaping = +0.0918, resolved
 
     random = 0.5612 (20 scenes)
 
@@ -201,3 +201,12 @@ fixes alone.
 - `midsem_numbers.tex` is generated; report inputs it after the token macros.
 - `docs/second_sprint_draft.tex` holds the new section; {{VERDICT}} and
   {{WHAT_SURVIVES}} are the only unwritten parts, both waiting on exp_ego_eval.
+
+## PROTOCOL NOTE (2026-11-03)
+
+The per-seed `exp_ego_eval/seed_*.json` records carry an in-run eval on
+scenes 0-9 that predates the corrected protocol; the headline numbers are
+now read from `exp_ego_eval/eval_heldout.json` (5 frozen checkpoints x 20
+held-out scenes, seeds 1000-1019), which is the evaluation the report
+describes.  Nominal: 0.9512 [0.9381, 0.9643]; diff vs Reactive-local
+0.9233 = +0.0279 [+0.0149, +0.0410], excludes zero.

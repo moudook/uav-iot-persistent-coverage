@@ -515,7 +515,6 @@ The contributions are:
     \item A non-degenerate evaluation protocol (time-averaged spatial integral of persistent coverage error, maximum refresh time, and $k$-coverage probability) replacing the degenerate all-simultaneous-constraint service-continuity metric.
 %% BEGIN CONTRIB
     \item A \emph{measured specification of what a shared policy's observation must contain}: an ego-centric summary of the coverage deficit --- unit bearings and normalised distances to the $k=3$ nearest under-covered sensors, plus a neighbour-repulsion vector --- is what the evaluated controller receives, and it is sufficient: replacing it by the exact global under-covered set costs $-0.090$ (Table~\ref{tab:knobs}), so more information hurts at this budget, and the one-hot identity and pad bearing of the earlier design are not part of the evaluated configuration.
-CONTRIB
     \item Corrected deployment parameters ($N=8$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$, or $N=5$, $K=2$, $R_{\mathrm{cov}}=45\,\mathrm{m}$) derived from the feasibility certificate, replacing the infeasible $N=5$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$ baseline.  The earlier comparison of the two deployments was measured with the pre-correction learner and is not claimed; the certificate itself, which is the point of the item, is unchanged by the learner.
     \item An evaluation protocol that treats a physical-layer claim as requiring a negative control, and reports a measured instance in which the available instrument could not support the claim it was being used for.
     \item A focused literature synthesis showing the difference between existing coverage, connectivity, recharge-scheduling, and fault-tolerant approaches and the combined problem considered here.
@@ -665,23 +664,21 @@ where $\mathcal{V}_t^{\mathrm{act}}=\{\,i\in\{1,\dots,N\}:F_i(t)=0\,\}$ is the s
 The critic sees the joint state, so it is a function of the coverage deficit and can represent it; but the state does not carry the per-sensor coverage counts $n_d(t)$ directly, so the critic has to infer the deficit from the geometry of the UAV and sensor positions. That distinction matters for the credit assignment: a critic that could read $n_d(t)$ would face a different problem from one that must reconstruct it, and the difference is not visible in the reward. The same asymmetry appears on the actor's side, and it is the reason the broadcast summary of the deficit is part of the observation model.
 
 \subsection{Local Observation}
-At deployment, UAV $i$ uses only locally available information, plus three
-broadcast quantities:
+At deployment, UAV $i$ uses only locally available information:
 \begin{equation}
 \begin{split}
 \mathbf o_i(t)=\bigl[&\mathbf p_i,\mathbf v_i,b_i,\mathcal N_i,C_i^{\mathrm{local}},\rho_i,\tau_i^{\mathrm{return}},\\
-&E_i^{\mathrm{pad}},\mathbf 1_i,\hat{\mathbf d}_i^{\mathrm{pad}},\mathbf M_t^{\mathrm{def}}\bigr].
+&E_i^{\mathrm{pad}},\{\hat{\mathbf u}_{i,j},d_{i,j}\}_{j=1}^{k},\mathbf r_i\bigr].
 \end{split}
 \label{eq:obs}
 \end{equation}
-Here $\mathcal N_i$ is the set of nearby UAVs, $C_i^{\mathrm{local}}$ is the number of nearby sensors currently covered, $
-ho_i$ is a locally computed bridge-risk estimate, $	au_i^{\mathrm{return}}$ is the estimated time until the return threshold is reached, and $E_i^{\mathrm{pad}}$ is the estimated energy needed to reach a feasible charging pad.  The final block is the ego-centric deficit summary: for the $k=3$ sensors nearest to $i$ whose coverage is below the required level ($n_d(t)<K$), the agent receives the unit bearing $\hat{\mathbf u}_{i,j}$ and the normalised distance $d_{i,j}$; $\mathbf r_i$ is a repulsion vector away from the centroid of the UAVs in communication range, which keeps a shared policy from collapsing all agents onto the same deficit.  Both are computable from local information under the communication model of Section~
-ef{sec:radio}, so the observation is decentralised and has fixed size independent of $M$.Two properties of this observation are not cosmetic, and both are load-bearing for the shared-parameter design of Section~\ref{sec:mappo}. The first is the identitThree design alternatives to this observation were considered and measured.
-A broadcast $G	imes G$ deficit grid $\mathbf M_t^{\mathrm{def}}$ --- a cell
+Here $\mathcal N_i$ is the set of nearby UAVs, $C_i^{\mathrm{local}}$ is the number of nearby sensors currently covered, $\rho_i$ is a locally computed bridge-risk estimate, $\tau_i^{\mathrm{return}}$ is the estimated time until the return threshold is reached, and $E_i^{\mathrm{pad}}$ is the estimated energy needed to reach a feasible charging pad.  The final block is the ego-centric deficit summary: for the $k=3$ sensors nearest to $i$ whose coverage is below the required level ($n_d(t)<K$), the agent receives the unit bearing $\hat{\mathbf u}_{i,j}$ and the normalised distance $d_{i,j}$; $\mathbf r_i$ is a repulsion vector away from the centroid of the UAVs in communication range, which keeps a shared policy from collapsing all agents onto the same deficit.  Both are computable from local information under the communication model of Section~\ref{sec:radio}, so the observation is decentralised and has fixed size independent of $M$.
+
+Three design alternatives to this observation were considered and measured.
+A broadcast $G\times G$ deficit grid $\mathbf M_t^{\mathrm{def}}$ --- a cell
 summary of the share of under-covered sensors --- was the original summary
 term; it is not part of the evaluated configuration, and the value-of-
-information row of Table~
-ef{tab:knobs} prices exactly the information it
+information row of Table~\ref{tab:knobs} prices exactly the information it
 would have supplied: replacing the ego-centric summary by the exact
 under-covered set costs $-0.090$, so the summary is neither free nor
 decisive.  A one-hot agent identity is likewise not in the evaluated
@@ -1358,7 +1355,7 @@ The proposed algorithm uses parameter-shared MAPPO. During training, the central
 a_i(t)\sim\pi_{\theta}\left(a_i\mid\mathbf o_i(t)\right).
 \label{eq:policy}
 \end{equation}
-Parameter sharing is appropriate when (i) the environment is equivariant to agent permutations---identical observation and action spaces and identical transition/reward structure---and (ii) each agent's own observation \emph{breaks the permutation symmetry}, so that a shared network can still specialise (Foerster et al. \cite{foerster2016}). Condition~(ii) does not require a literal index: relative coordinates to the other agents break the symmetry just as well, because they distinguish the agents. What it does require is that no two agents in the same physical situation receive the same observation, and the consequence is a statement about the hypothesis class rather than about optimisation: if $\mathbf o_i=\mathbf o_j$ then a shared policy is a function and $\pi_\theta(\cdot|\mathbf o_i)=\pi_\theta(\cdot|\mathbf o_j)$, so no amount of training can make the two agents differ. The first version of $\mathbf o_i$ did not satisfy condition~(ii) --- it distinguished the agents only through their individual position, battery and mode, which in a symmetric deployment are nearly identical across the swarm --- and the measured consequence was that the deterministic policy chose nearly the same action for every UAV and the swarm moved as a rigid body, so the shared-parameter claim could not be sustained on the evidence. We therefore treat $\mathbf 1_i$ as part of the model rather than as an implementation detail, and Section~\ref{sec:results} reports the controlled comparison. The known limitation (Fu et al. \cite{fu2022}, Theorem 4.2) is that a shared policy provably cannot learn an optimal policy for non-symmetric tasks such as the XOR game; this does not apply here because the swarm is homogeneous. If grounded or docked UAVs with heterogeneous roles are introduced, parameters must not be shared.
+Parameter sharing is appropriate when (i) the environment is equivariant to agent permutations---identical observation and action spaces and identical transition/reward structure---and (ii) each agent's own observation \emph{breaks the permutation symmetry}, so that a shared network can still specialise (Foerster et al. \cite{foerster2016}). Condition~(ii) does not require a literal index: relative coordinates to the other agents break the symmetry just as well, because they distinguish the agents. What it does require is that no two agents in the same physical situation receive the same observation, and the consequence is a statement about the hypothesis class rather than about optimisation: if $\mathbf o_i=\mathbf o_j$ then a shared policy is a function and $\pi_\theta(\cdot|\mathbf o_i)=\pi_\theta(\cdot|\mathbf o_j)$, so no amount of training can make the two agents differ. The first version of $\mathbf o_i$ did not satisfy condition~(ii) --- it distinguished the agents only through their individual position, battery and mode, which in a symmetric deployment are nearly identical across the swarm --- and the measured consequence was that the deterministic policy chose nearly the same action for every UAV and the swarm moved as a rigid body, so the shared-parameter claim could not be sustained on the evidence. We therefore rely on the ego-centric terms of Eq.~\eqref{eq:obs}, which depend on the agent's own position relative to the deficit and so already identify agents; a one-hot identity is not needed and is not part of the evaluated configuration.  Section~\ref{sec:results} reports the value-of-information comparison that prices giving the policy the exact global coverage state instead. The known limitation (Fu et al. \cite{fu2022}, Theorem 4.2) is that a shared policy provably cannot learn an optimal policy for non-symmetric tasks such as the XOR game; this does not apply here because the swarm is homogeneous. If grounded or docked UAVs with heterogeneous roles are introduced, parameters must not be shared.
 
 For a collected rollout, the temporal-difference residual is
 \begin{equation}
@@ -1773,6 +1770,50 @@ infeasible instance.
 \subsection{The corrected comparison}
 \label{sec:results_corrected}
 
+\begin{table}[t]
+% the shared table style: analysis/theme_tables.tex
+\ifdefined\tbltheme\else
+  \IfFileExists{ml_impl/analysis/theme_tables.tex}{\input{ml_impl/analysis/theme_tables.tex}}{%
+  \IfFileExists{theme_tables.tex}{\input{theme_tables.tex}}{%
+  \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
+\fi
+\caption{Re-measured comparison on the corrected protocol of
+Section~\ref{sec:protocol}.  Every row is evaluated on the same
+\tokRuleScenes{} held-out scenes (seeds from \texttt{1000}), none of which any
+training run saw.  The rule and random rows are deterministic given a scene,
+so their spread is scene-to-scene; the learned rows are one frozen policy per
+training seed, so their spread is seed-to-seed, and the row gives the mean of
+those per-seed means with the sample standard deviation across seeds.  A
+coverage number produced by a training loop is not in this table: it is a
+learning curve, and Section~\ref{sec:protocol} says why it is not a result.}
+\label{tab:remeasured}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Controller & CK & spread & unit \\
+\midrule
+Fixed formation & \tokRuleFixedCK & \tokRuleFixedSd & scenes \\
+Greedy recharge & \tokRuleGreedyCK & \tokRuleGreedySd & scenes \\
+Reactive (global coverage state) & \tokRuleReactiveCK & \tokRuleReactiveSd & scenes \\
+Reactive (local assignment) & \tokRuleReactiveLocalCK & \tokRuleReactiveLocalSd & scenes \\
+Uniform random, feasible actions & \tokRandomCK & \tokRandomSd & scenes \\
+\midrule
+MAPPO, bug fixes only & \tokBugFixCK & \tokBugFixSd & seeds \\
+MAPPO, with the new observation and shaping & \tokEgoShapeCK & \tokEgoShapeSd & seeds \\
+MAPPO, argmax of the same policy & \tokEgoShapeDetCK & -- & seeds \\
+\midrule
+Oracle (teleporting placement) & 1.000 & -- & -- \\
+\bottomrule
+\end{tabular}
+\par\vspace{2.5pt}{\scriptsize\itshape The two learned rows differ only in the observation and in the
+shaping term; both use the same architecture, budget and evaluation.  The
+argmax row is reported because the sampled policy of Eq.~\eqref{eq:policy} is
+what is deployed, and the gap between the two rows is the cost of the
+exploration the deployed policy keeps.}
+\end{table}
+
 Table~\ref{tab:remeasured} is the whole of the comparison.  Three readings are
 worth spelling out.
 
@@ -1813,7 +1854,7 @@ contributions are separated by an ablation:
         ``fixed learner'' would have produced under the corrected protocol.
   \item \emph{+ ego-centric observation and distance shaping} (bearings to
         the three nearest under-covered sensors; potential-based shaping):
-        \tokEgoShapeCK.  The increment is $\approx 0.093$ of persistent
+        \tokEgoShapeCK.  The increment is $\approx 0.092$ of persistent
         coverage, and the two intervals do not overlap: the change to the
         observation, not the bug fixes, is what closes the gap.
 \end{itemize}
@@ -1867,7 +1908,7 @@ Under the corrected protocol the sweep is re-run at 25/50/100/200 episodes:
 
 The diff-reward variant (per-agent marginal coverage, $r_i = r_{\text{team}}
 + \beta D_i$) is compared against the team reward on paired training seeds:
-$0.959$ (95\% interval $[0.956, 0.963]$) against $0.952$: the difference-credit arm is not separated from the team reward at this resolution.  The
+$0.959$ (95\% interval $[0.956, 0.963]$) against $0.951$: the difference-credit arm is not separated from the team reward at this resolution.  The
 earlier local-critic arm (a per-agent actor with a per-agent critic, the
 ``masked PPO local critic'' row of the old table) was measured with the
 pre-correction learner and has not been re-run under the corrected protocol,
@@ -1943,7 +1984,7 @@ regimes where each is true.
 \subsection{Innovations: closing the small-battery and spread-start gaps}
 \label{sec:results_innov}
 
-The base configuration's learner beats the rule by $+0.029$; the stress
+The base configuration's learner beats the rule by $+0.028$; the stress
 table shows it loses on two regimes.  The innovations below target those two.
 
 \begin{table}[t]
@@ -1992,7 +2033,7 @@ coverage reward already provides a dense enough signal.
 
 \emph{Innovation 5 (difference credit).}
 Difference credit is a small positive on the nominal configuration
-($0.959$ vs $0.952$, $+0.007$, not resolved) but \emph{hurts} on
+($0.959$ vs $0.951$, $+0.008$, not resolved) but \emph{hurts} on
 small-battery ($0.816$ vs $0.831$, $-0.015$).  Per-agent marginal credit
 interferes with the team-level energy management the curriculum teaches.
 
@@ -2117,49 +2158,7 @@ reproduce the ordering.  The measuring apparatus therefore did not change, so
 a number that moved is a number the learner moved, and not a number the
 harness moved.
 
-\begin{table}[t]
-% the shared table style: analysis/theme_tables.tex
-\ifdefined\tbltheme\else
-  \IfFileExists{ml_impl/analysis/theme_tables.tex}{\input{ml_impl/analysis/theme_tables.tex}}{%
-  \IfFileExists{theme_tables.tex}{\input{theme_tables.tex}}{%
-  \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
-\fi
-\caption{Re-measured comparison on the corrected protocol of
-Section~\ref{sec:protocol}.  Every row is evaluated on the same
-\tokRuleScenes{} held-out scenes (seeds from \texttt{1000}), none of which any
-training run saw.  The rule and random rows are deterministic given a scene,
-so their spread is scene-to-scene; the learned rows are one frozen policy per
-training seed, so their spread is seed-to-seed, and the row gives the mean of
-those per-seed means with the sample standard deviation across seeds.  A
-coverage number produced by a training loop is not in this table: it is a
-learning curve, and Section~\ref{sec:protocol} says why it is not a result.}
-\label{tab:remeasured}
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-Controller & CK & spread & unit \\
-\midrule
-Fixed formation & \tokRuleFixedCK & \tokRuleFixedSd & scenes \\
-Greedy recharge & \tokRuleGreedyCK & \tokRuleGreedySd & scenes \\
-Reactive (global coverage state) & \tokRuleReactiveCK & \tokRuleReactiveSd & scenes \\
-Reactive (local assignment) & \tokRuleReactiveLocalCK & \tokRuleReactiveLocalSd & scenes \\
-Uniform random, feasible actions & \tokRandomCK & \tokRandomSd & scenes \\
-\midrule
-MAPPO, bug fixes only & \tokBugFixCK & \tokBugFixSd & seeds \\
-MAPPO, with the new observation and shaping & \tokEgoShapeCK & \tokEgoShapeSd & seeds \\
-MAPPO, argmax of the same policy & \tokEgoShapeDetCK & -- & seeds \\
-\midrule
-Oracle (teleporting placement) & 1.000 & -- & -- \\
-\bottomrule
-\end{tabular}
-\par\vspace{2.5pt}{\scriptsize\itshape The two learned rows differ only in the observation and in the
-shaping term; both use the same architecture, budget and evaluation.  The
-argmax row is reported because the sampled policy of Eq.~\eqref{eq:policy} is
-what is deployed, and the gap between the two rows is the cost of the
-exploration the deployed policy keeps.}
-\end{table}
+
 
 \emph{What the corrected measurement says.}  Two things changed at once, and Table~\ref{tab:remeasured} separates them.  Fixing the implementation alone moves the learner from the pre-correction $0.674$ to \tokBugFixCK{} (95\% interval \tokBugFixCi, \tokBugFixN{} seeds).  Changing the observation and adding the shaping term moves it to \tokEgoShapeCK{} (\tokEgoShapeCi, \tokEgoShapeN{} seeds).  The strongest hand-written rule, the unprivileged local-assignment reactive rule, reaches \tokRuleReactiveLocalCK.  The difference, learner minus rule, is \tokLearnerMinusRule{} of persistent coverage with a 95\% interval of \tokLearnerMinusRuleCi, and \tokGapVerdict.  The gap of $0.298$ that the first version of this report reported is therefore not a property of the method class; it was the learner.
 

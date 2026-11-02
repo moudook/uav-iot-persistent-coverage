@@ -145,6 +145,27 @@ def main():
         summ = summarise(d["rows"], d["kind"])
         if summ is None:
             continue
+        # Prefer the corrected-protocol held-out artefact when it exists:
+        # eval_heldout.json evaluates each frozen checkpoint on the same
+        # held-out scenes (seeds 1000+), which is the measurement the paper
+        # reports.  The seed-json eval_ck may predate that protocol.
+        hout = os.path.join(RUNS, tag, "eval_heldout.json")
+        if d["kind"] == "eval" and os.path.exists(hout):
+            with open(hout, encoding="utf-8") as f:
+                h = json.load(f)
+            per = [float(v["mean"]) for v in h.get("per_checkpoint", {}).values()]
+            if per:
+                summ["per_seed"] = per
+                summ["n"] = len(per)
+                summ["mean"] = float(np.mean(per))
+                summ["sd"] = float(np.std(per, ddof=1)) if len(per) > 1 else 0.0
+                summ["half"] = t_half(per)
+                summ["se"] = summ["sd"] / np.sqrt(len(per)) if len(per) > 1 else 0.0
+                det = [float(v["det_mean"]) for v in h.get("per_checkpoint", {}).values()
+                       if v.get("det_mean") is not None]
+                summ["det"] = float(np.mean(det)) if det else None
+                scenes = h.get("eval_seeds", 0)
+                summ["scenes"] = int(scenes) if isinstance(scenes, int) else len(scenes)
         out[tag] = {"label": label, "kind": d["kind"], **summ}
         add(r"\newcommand{\tok%sN}{%d}" % (stem, summ["n"]))
         add(r"\newcommand{\tok%sCK}{%s}" % (stem, tex(summ["mean"])))
@@ -152,13 +173,19 @@ def main():
         lo, hi = summ["mean"] - summ["half"], summ["mean"] + summ["half"]
         add(r"\newcommand{\tok%sCi}{[%s, %s]}" % (stem, tex(lo), tex(hi)))
         if d["kind"] == "eval":
-            ds = [float(r["eval_det_ck"]) for r in d["rows"]
-                  if r.get("eval_det_ck") is not None]
-            if ds:
-                add(r"\newcommand{\tok%sDetCK}{%s}"
-                    % (stem, tex(float(np.mean(ds)))))
-            scenes = d["rows"][0].get("eval_seeds", [])
-            add(r"\newcommand{\tok%sScenes}{%d}" % (stem, len(scenes)))
+            if summ.get("det") is not None:
+                add(r"\newcommand{\tok%sDetCK}{%s}" % (stem, tex(summ["det"])))
+            elif "det" in summ:
+                ds = [float(r["eval_det_ck"]) for r in d["rows"]
+                      if r.get("eval_det_ck") is not None]
+                if ds:
+                    add(r"\newcommand{\tok%sDetCK}{%s}"
+                        % (stem, tex(float(np.mean(ds)))))
+            if "scenes" in summ:
+                add(r"\newcommand{\tok%sScenes}{%d}" % (stem, summ["scenes"]))
+            else:
+                scenes = d["rows"][0].get("eval_seeds", [])
+                add(r"\newcommand{\tok%sScenes}{%d}" % (stem, len(scenes)))
         ep = d["rows"][0].get("episodes")
         if ep:
             add(r"\newcommand{\tok%sEpisodes}{%d}" % (stem, int(ep)))
