@@ -28,6 +28,7 @@ def main():
     ap.add_argument("--n-ego", type=int, default=3)
     ap.add_argument("--shape", type=float, default=0.0)
     ap.add_argument("--energy-kappa", type=float, default=0.0)
+    ap.add_argument("--intrinsic-beta", type=float, default=0.0)
     ap.add_argument("--no-w", action="store_true")
     ap.add_argument("--credit-mode", default="team")
     ap.add_argument("--diff-beta", type=float, default=1.0)
@@ -67,6 +68,7 @@ def main():
         cfg.n_ego = args.n_ego
         cfg.dist_shape_kappa = args.shape
         cfg.energy_shape_kappa = args.energy_kappa
+        cfg.intrinsic_beta = args.intrinsic_beta
         cfg.use_w_penalty = not args.no_w
         cfg.randomize_layout = args.randomize_layout
 

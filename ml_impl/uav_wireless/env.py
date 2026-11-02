@@ -67,6 +67,7 @@ class SimConfig:
     use_w_penalty: bool = True      # enable unnecessary-movement penalty W_t
     dist_shape_kappa: float = 0.0   # potential-based distance shaping coefficient
     energy_shape_kappa: float = 0.0  # potential-based ENERGY shaping coefficient
+    intrinsic_beta: float = 0.0     # count-based intrinsic motivation weight
     # Table IV weights
     lam_O: float = 1.00           # under-coverage
     lam_E: float = 0.10           # energy consumption
@@ -233,6 +234,7 @@ class UAVIoTEnv:
         self.last_agent_rewards = None
         self._prev_phi = 0.0
         self._prev_phi_e = 0.0
+        self._visit_counts = {}
         self.recovery_start = -1
         self._episode_idx += 1
         self.recovered = True
@@ -1307,6 +1309,17 @@ class UAVIoTEnv:
             prev_phi_e = getattr(self, "_prev_phi_e", phi_e)
             r = r + kappa_e * (prev_phi_e - 0.99 * phi_e)
             self._prev_phi_e = phi_e
+
+        # Innovation 7: count-based intrinsic motivation.  The state key is
+        # a coarse hash of the swarm's coverage vector; novel states get a
+        # bonus that decays as 1/sqrt(count).  Telescoping is not required
+        # because this is an exploration bonus, not a shaping on the value.
+        ib = getattr(c, "intrinsic_beta", 0.0)
+        if ib and ib > 0:
+            key = tuple(int(x) for x in (ncov >= c.K).astype(int).tolist())
+            cnt = self._visit_counts.get(key, 0) + 1
+            self._visit_counts[key] = cnt
+            r = r + ib * (1.0 / (cnt ** 0.5))
 
         # C3: per-agent counterfactual credit (optional)
         if getattr(c, "credit_mode", "team") == "c3":
