@@ -56,38 +56,36 @@ steps per run, and from a protocol that compared a policy                 These 
 in training against a rule at rest. The paper’s physical-model,        uncovered sensor may leave a coverage gap elsewhere. A
 feasibility, protocol and determinism claims are recomputed by
                                                                        UAV that returns to charge may be the only communication
-                           the two criteria disagree
-                 3                                                                                                                                                                  +0.026
-                                                                                     obs. oi         shared actor πθ      action ai
-                                                                                                                                                        nominal
-                                                corrected N = 8
-                                                                                                                                                                       −0.064
-                                                                                                                                                    small battery
+                 3        the two criteria disagree                                                                                                                                  +0.026
+                                                                                      obs. oi         shared actor πθ      action ai
+                                                                                                                                                         nominal
+                                                 corrected N = 8
+                                                                                                                                                                        −0.064
+                                                                                                                                                     small battery
 area surplus σ
 
-
-                                                                                                                       connectivity mask
-                 2                                                                                                       reserve UAV                                                              +0.125
-                                                                                  critic Vϕ (st )                          charging
-                                                                                                                          not learned                 low comm
-
+                                                                                                                        connectivity mask
+                 2                                                                                                        reserve UAV                                                              +0.125
+                                                                                   critic Vϕ (st )                          charging
+                                                                                                                           not learned                 low comm
 
 
 
-                                                             N ≥ 4K = 8
-                                                                                                                                                                           −0.038
+
+                                                              N ≥ 4K = 8
+                                                                                                                                                                            −0.038
                          σ = 1
-                                            published                               CTDE MAPPO                                                       spread start
-                                            σ = 1.503                                                                         0.951                                                     +0.034
-                 1                                                                                                                         1.000
-                                                                                                                                                          failure
-                                                                                                                        learner minus rule +0.029                                       +0.035
-                                                                                                                                                    multi-failure
-                                                                                    unprivileged reactive rule                   0.923
+                                            published                                CTDE MAPPO                                                       spread start
+                                            σ = 1.503                                                                          0.951                                                     +0.034
+                 1                                                                                                                          1.000
+                                                                                                                                                           failure
+                                                                                                                         learner minus rule +0.029                                       +0.035
+                                                                                                                                                     multi-failure
+                                                                                     unprivileged reactive rule                   0.923
                  0
-                     3        4         5         6     7                 8   9                                                                                     −0.1            0            0.1       0.2
+                     3        4         5         6      7                 8   9                                                                                     −0.1            0            0.1       0.2
 
-                                        fleet size N                                                                                                         learner minus best rule (persistent coverage)
+                                        fleet size N                                                                                                          learner minus best rule (persistent coverage)
 
 
 Fig. 1. (a) The published N = 5, K = 2, Rcov = 35 m configuration passes the conventional area-surplus test (σ = 1.503 ≥ 1) and is nonetheless
@@ -100,97 +98,98 @@ spread start). The split is the argument of the paper: a single “does learning
 
 
 
-bridge between two groups of UAVs. A failure removes                                                              achievability reference—which is what the existing litera-
-both its coverage contribution and its communication links,                                                       ture does, and which is meaningless when the configuration
-requiring the remaining swarm to reconfigure. Charging is                                                         is infeasible—the framework (i) derives a rigorous lower
-also a shared resource: several UAVs can become energy-                                                           bound on the number of UAVs required for K-coverage of a
-critical simultaneously while only a small number of pads are                                                     bounded region, (ii) uses a teleporting placement oracle as an
-available. Persistent service therefore requires a joint decision                                                 achievability ceiling against which any policy is normalised,
-process rather than a sequence of unrelated coverage and                                                          and (iii) replaces the degenerate “all constraints satisfied
-charging heuristics.                                                                                              simultaneously” service-continuity metric with non-degenerate
-   A centralized controller faces a rapidly growing joint action                                                  time-averaged and refresh-time metrics. The framework is the
-space. In the proposed discrete action model, each UAV selects                                                    difference between a number and a measurement.
-one of six actions: hover, move in one of four cardinal                                                              The framework earns its keep in a second way that is easy
-directions, or charge. The joint action space consequently                                                        to overlook, and which this paper demonstrates rather than
-contains 6N combinations. This growth does not by itself                                                          asserts. A framework that says whether a coverage number is
-make centralized learning impossible for every small swarm,                                                       meaningful also says why a controller produces the number
-but it makes explicit joint-action enumeration and centralized                                                    it does, because the same reference points — the ceiling, the
-policy design progressively less attractive as N increases. A                                                     non-degenerate metrics, and the controlled ablations — apply
-decentralized execution architecture is therefore desirable for                                                   to the controller and not only to the configuration. Applied
-scalability and fault containment.                                                                                to a controlled experimental setup, the first version of this
-   Multi-agent reinforcement learning (MARL) provides a                                                           work reported that a hand-designed reactive rule outperforms
-natural framework for this setting. CTDE allows a central-                                                        parameter-shared CTDE MAPPO on this task, and it bounded
-ized critic to use information unavailable to the individual                                                      the reason with controlled arms. That number is retracted in
-UAV during training while retaining decentralized policies                                                        Section IX: it came from a learner whose entropy bonus was
-during deployment. MAPPO is particularly suitable because                                                         sign-flipped and whose update ran 25 gradient steps per run,
-it combines centralized value estimation during training with                                                     and from a protocol that compared a policy in training against
-a policy-gradient actor that can be executed independently by                                                     a rule at rest. Under the corrected protocol the learner is ahead
-each agent.                                                                                                       of the strongest rule by 0.028 (95% interval [0.015, 0.041]),
-   The research question addressed in this work is: Can a                                                         and the learned controller is ahead of the strongest rule by
-decentralized MAPPO policy maintain persistent K-coverage                                                         an interval that excludes zero. Reporting that sequence — the
-and swarm connectivity while coordinating finite battery us-                                                      failure, its cause, and the correction — is more useful to a
-age, charging, and single-UAV failure recovery, and can                                                           reader than a favourable number whose provenance has not
-its performance be certified against a rigorous achievability                                                     been examined.
-bound rather than reported as an unscaled coverage ratio?                                                            The contributions are:
-   The central invention of this work is a feasibility-certified                                                     1) A unified system model coupling persistent K-coverage,
-evaluation framework for persistent K-coverage UAV net-                                                                  inter-UAV connectivity, finite battery energy, charging
-works. Instead of reporting coverage numbers with no                                                                     contention, and UAV failure recovery.
-2) A feasibility certificate: a rigorous covering bound on the           the coverage deficit — unit bearings and normalised
-   number of UAVs required for K-coverage, in the general                distances to the k = 3 nearest under-covered sensors,
-   form N ≥ K P (A, Rcov ), where P is the packing                       plus a neighbour-repulsion vector — is what the eval-
-   number of the set to be covered. Its region instance                  uated controller receives, and it is sufficient: replacing
-   is N ≥ 4K and is tight at the reported parameters;                    it by the exact global under-covered set costs −0.090
-   its sensor-set instance is computed per layout, and                   (Table XIII), so more information hurts at this budget,
-   it excludes the reported N = 5 configuration for a                    and the one-hot identity and pad bearing of the earlier
-   measured 13% of random draws. The bound identifies                    design are not part of the evaluated configuration.
+bridge between two groups of UAVs. A failure removes                                                               ture does, and which is meaningless when the configuration
+both its coverage contribution and its communication links,                                                        is infeasible—the framework (i) derives a rigorous lower
+requiring the remaining swarm to reconfigure. Charging is                                                          bound on the number of UAVs required for K-coverage of a
+also a shared resource: several UAVs can become energy-                                                            bounded region, (ii) uses a teleporting placement oracle as an
+critical simultaneously while only a small number of pads are                                                      achievability ceiling against which any policy is normalised,
+available. Persistent service therefore requires a joint decision                                                  and (iii) replaces the degenerate “all constraints satisfied
+process rather than a sequence of unrelated coverage and                                                           simultaneously” service-continuity metric with non-degenerate
+charging heuristics.                                                                                               time-averaged and refresh-time metrics. The framework is the
+   A centralized controller faces a rapidly growing joint action                                                   difference between a number and a measurement.
+space. In the proposed discrete action model, each UAV selects                                                        The framework earns its keep in a second way that is easy
+one of six actions: hover, move in one of four cardinal                                                            to overlook, and which this paper demonstrates rather than
+directions, or charge. The joint action space consequently                                                         asserts. A framework that says whether a coverage number is
+contains 6N combinations. This growth does not by itself                                                           meaningful also says why a controller produces the number
+make centralized learning impossible for every small swarm,                                                        it does, because the same reference points — the ceiling, the
+but it makes explicit joint-action enumeration and centralized                                                     non-degenerate metrics, and the controlled ablations — apply
+policy design progressively less attractive as N increases. A                                                      to the controller and not only to the configuration. Applied
+decentralized execution architecture is therefore desirable for                                                    to a controlled experimental setup, the first version of this
+scalability and fault containment.                                                                                 work reported that a hand-designed reactive rule outperforms
+   Multi-agent reinforcement learning (MARL) provides a                                                            parameter-shared CTDE MAPPO on this task, and it bounded
+natural framework for this setting. CTDE allows a central-                                                         the reason with controlled arms. That number is retracted in
+ized critic to use information unavailable to the individual                                                       Section IX: it came from a learner whose entropy bonus was
+UAV during training while retaining decentralized policies                                                         sign-flipped and whose update ran 25 gradient steps per run,
+during deployment. MAPPO is particularly suitable because                                                          and from a protocol that compared a policy in training against
+it combines centralized value estimation during training with                                                      a rule at rest. Under the corrected protocol the learner is ahead
+a policy-gradient actor that can be executed independently by                                                      of the strongest rule by 0.028 (95% interval [0.015, 0.041]),
+each agent.                                                                                                        and the learned controller is ahead of the strongest rule by
+   The research question addressed in this work is: Can a                                                          an interval that excludes zero. Reporting that sequence — the
+decentralized MAPPO policy maintain persistent K-coverage                                                          failure, its cause, and the correction — is more useful to a
+and swarm connectivity while coordinating finite battery us-                                                       reader than a favourable number whose provenance has not
+age, charging, and single-UAV failure recovery, and can                                                            been examined.
+its performance be certified against a rigorous achievability                                                         The contributions are:
+bound rather than reported as an unscaled coverage ratio?                                                             1) A unified system model coupling persistent K-coverage,
+   The central invention of this work is a feasibility-certified                                                          inter-UAV connectivity, finite battery energy, charging
+evaluation framework for persistent K-coverage UAV net-                                                                   contention, and UAV failure recovery.
+works. Instead of reporting coverage numbers with no                                                                  2) A feasibility certificate: a rigorous covering bound on the
+achievability reference—which is what the existing litera-                                                                number of UAVs required for K-coverage, in the general
+   form N ≥ K P (A, Rcov ), where P is the packing                      plus a neighbour-repulsion vector — is what the eval-
+   number of the set to be covered. Its region instance                 uated controller receives, and it is sufficient: replacing
+   is N ≥ 4K and is tight at the reported parameters;                   it by the exact global under-covered set costs −0.090
+   its sensor-set instance is computed per layout, and                  (Table XIII), so more information hurts at this budget,
+   it excludes the reported N = 5 configuration for a                   and the one-hot identity and pad bearing of the earlier
+   measured 13% of random draws. The bound identifies                   design are not part of the evaluated configuration.
    the instances on which no controller can achieve the              9) Corrected deployment parameters (N = 8, K = 2,
-   requirement, and the joint service-continuity metric is               Rcov = 35 m, or N = 5, K = 2, Rcov = 45 m)
-   identically zero for every policy on the instances where              derived from the feasibility certificate, replacing the
-   that is so, which is why it must be replaced.                         infeasible N = 5, K = 2, Rcov = 35 m baseline.
-3) An achievability ceiling: a teleporting placement oracle              The earlier comparison of the two deployments was
-   that upper-bounds any policy’s coverage, separating “the              measured with the pre-correction learner and is not
-   policy is weak” from “the task is infeasible” and nor-                claimed; the certificate itself, which is the point of the
-   malising reported performance as achieved divided by                  item, is unchanged by the learner.
+   requirement, and the joint service-continuity metric is              Rcov = 35 m, or N = 5, K = 2, Rcov = 45 m)
+   identically zero for every policy on the instances where             derived from the feasibility certificate, replacing the
+   that is so, which is why it must be replaced.                        infeasible N = 5, K = 2, Rcov = 35 m baseline.
+3) An achievability ceiling: a teleporting placement oracle             The earlier comparison of the two deployments was
+   that upper-bounds any policy’s coverage, separating “the             measured with the pre-correction learner and is not
+   policy is weak” from “the task is infeasible” and nor-               claimed; the certificate itself, which is the point of the
+   malising reported performance as achieved divided by                 item, is unchanged by the learner.
    oracle. The separation is measured rather than asserted:         10) An evaluation protocol that treats a physical-layer claim
-   on the report’s own infeasible N = 5 configuration a                  as requiring a negative control, and reports a measured
-   rule-based controller still reaches a respectable coverage            instance in which the available instrument could not
-   ratio with full connectivity while the joint metric is                support the claim it was being used for.
+   on the report’s own infeasible N = 5 configuration a                 as requiring a negative control, and reports a measured
+   rule-based controller still reaches a respectable coverage           instance in which the available instrument could not
+   ratio with full connectivity while the joint metric is               support the claim it was being used for.
    identically zero, so neither metric alone distinguishes          11) A focused literature synthesis showing the differ-
-   that instance from a feasible one, and it is the certificate          ence between existing coverage, connectivity, recharge-
-   that makes the reading decidable (Section VIII).                      scheduling, and fault-tolerant approaches and the com-
-4) A measured result, corrected: on the configuration the                bined problem considered here.
+   that instance from a feasible one, and it is the certificate         ence between existing coverage, connectivity, recharge-
+   that makes the reading decidable (Section VIII).                     scheduling, and fault-tolerant approaches and the com-
+4) A measured result, corrected: on the configuration the               bined problem considered here.
    paper’s own certificate declares feasible, the first version      The remainder of the paper is organized as follows. Sec-
    of this work reported that a hand-designed reactive rule       tion II presents the literature survey and the research gap.
    outperforms parameter-shared CTDE MAPPO by 0.298               Section III defines the system architecture and mathematical
    of persistent coverage (95% interval [0.248, 0.349]).          model, including the feasibility certificate. Section IV presents
-   That number is retracted; under the corrected protocol         the proposed MAPPO algorithm. Section V specifies the
-   the learner is ahead of the strongest rule by 0.028 (95%       comparison models, Section VI the performance metrics and
-   interval [0.015, 0.041]), and the learned controller is        the evaluation protocol, and Section VII the experimental
-   ahead of the strongest rule by an interval that excludes       design matrix. Section VIII reports the results and the claim
-   zero. The four single-factor arms bound how much of            audit, and Section IX concludes the paper.
-   the pre-correction gap each of them can account for, and
-   are not evidence about the corrected controller.                                 II. L ITERATURE S URVEY
-5) A CTDE MAPPO framework with parameter-shared                      The survey is restricted to work that is directly related to
-   decentralized actors, a centralized training critic, hard      at least one of four components of the target problem: UAV
-   action feasibility masks with an H-step connectivity           coverage/control, inter-agent connectivity, persistent energy-
-   lookahead, and an explicit reserve-UAV recovery mech-          aware operation, or fault-tolerant swarm recovery. The ten
-   anism.                                                         core papers in Table I are discussed comparatively rather
-6) PHY-derived links — the Al-Hourani LoS probability,            than as isolated summaries. MAPPO is cited separately as the
-   a log-distance path loss with shadowing, and an IEEE           underlying learning method [3].
-   802.11 OFDM MCS table — that gate the abstract                    A further recent line of work integrates communication and
-   coverage and communication discs rather than replacing         control directly within MARL. MAPPO itself is adopted from
-   them, so that a UAV counts as covering a sensor or as          Yu et al. [3]. Sun et al. formulate joint resource allocation and
-   adjacent to another UAV only when the link carries a           3D trajectory control and use action masking for constrained
-   usable service rate, together with a measured validity         hybrid actions [11]. Carvalho and Aguiar address decen-
-   condition showing when the disc approximation is the           tralized multi-agent coverage path planning with parameter
-   binding constraint and when it is not.                         sharing, CTDE, safety filtering, and zero-shot generalization
-7) A non-degenerate evaluation protocol (time-averaged            [13]. Zhuang Chen et al. formulate UAV trajectory design
-   spatial integral of persistent coverage error, maxi-           for emergency communication as a constrained MDP and
-   mum refresh time, and k-coverage probability) replac-          explicitly account for energy and turning behavior [12]. These
-   ing the degenerate all-simultaneous-constraint service-        works reinforce the practicality of CTDE, action masking, and
-   continuity metric.                                             structured rewards, but their primary objectives differ from
-8) A measured specification of what a shared policy’s             persistent redundant coverage with explicit failure recovery.
-   observation must contain: an ego-centric summary of
+   That number is retracted; under the corrected protocol         the proposed MAPPO algorithm. Section V specifies the com-
+   the learner is ahead of the strongest rule by 0.028 (95%       parison models, Section VI the performance metrics and the
+   interval [0.015, 0.041]), and the learned controller is        evaluation protocol, and Section VII the experimental design
+   ahead of the strongest rule by an interval that excludes       matrix. Section VIII reports the results and the claim audit,
+   zero. The four single-factor arms bound how much of            Section IX details the protocol correction and re-measurement,
+   the pre-correction gap each of them can account for, and       and Section X concludes the paper.
+   are not evidence about the corrected controller.
+5) A CTDE MAPPO framework with parameter-shared                                     II. L ITERATURE S URVEY
+   decentralized actors, a centralized training critic, hard         The survey is restricted to work that is directly related to
+   action feasibility masks with an H-step connectivity           at least one of four components of the target problem: UAV
+   lookahead, and an explicit reserve-UAV recovery mech-          coverage/control, inter-agent connectivity, persistent energy-
+   anism.                                                         aware operation, or fault-tolerant swarm recovery. The ten
+6) PHY-derived links — the Al-Hourani LoS probability,            core papers in Table I are discussed comparatively rather
+   a log-distance path loss with shadowing, and an IEEE           than as isolated summaries. MAPPO is cited separately as the
+   802.11 OFDM MCS table — that gate the abstract                 underlying learning method [3].
+   coverage and communication discs rather than replacing            A further recent line of work integrates communication and
+   them, so that a UAV counts as covering a sensor or as          control directly within MARL. MAPPO itself is adopted from
+   adjacent to another UAV only when the link carries a           Yu et al. [3]. Sun et al. formulate joint resource allocation and
+   usable service rate, together with a measured validity         3D trajectory control and use action masking for constrained
+   condition showing when the disc approximation is the           hybrid actions [11]. Carvalho and Aguiar address decen-
+   binding constraint and when it is not.                         tralized multi-agent coverage path planning with parameter
+7) A non-degenerate evaluation protocol (time-averaged            sharing, CTDE, safety filtering, and zero-shot generalization
+   spatial integral of persistent coverage error, maxi-           [13]. Zhuang Chen et al. formulate UAV trajectory design
+   mum refresh time, and k-coverage probability) replac-          for emergency communication as a constrained MDP and
+   ing the degenerate all-simultaneous-constraint service-        explicitly account for energy and turning behavior [12]. These
+   continuity metric.                                             works reinforce the practicality of CTDE, action masking, and
+8) A measured specification of what a shared policy’s             structured rewards, but their primary objectives differ from
+   observation must contain: an ego-centric summary of            persistent redundant coverage with explicit failure recovery.
+   the coverage deficit — unit bearings and normalised
+   distances to the k = 3 nearest under-covered sensors,
                                                                                TABLE I
                                                         F OCUSED LITERATURE SURVEY OF CLOSELY RELATED STUDIES .
 
@@ -454,7 +453,7 @@ UAV and sensor positions. That distinction matters for the             shared ne
 credit assignment: a critic that could read nd (t) would face a        to the charging pad is also not in the evaluated observation;
 different problem from one that must reconstruct it, and the           the return decision is driven by the energy features above.
 difference is not visible in the reward. The same asymmetry               Unlike the idealized global articulation-point indicator
-appears on the actor’s side, and it is the reason the broadcast        sometimes used in analysis, ρi is intended to be computable
+appears on the actor’s side, and it is the reason the ego-centric      sometimes used in analysis, ρi is intended to be computable
 summary of the deficit is part of the observation model.               during execution from neighborhood exchange. The simulator
                                                                        may additionally compute the exact articulation-point indicator
 D. Local Observation
