@@ -1,9 +1,0 @@
-1510: the same scenes with the same seeds, and the rule baselines             Independent DQN               0.381 ± 0.069   0.996   0.000    0.619          
-1511: and the learned controllers are trained on the same budget.             Masked PPO (local critic)     0.625 ± 0.054   0.988   0.007    0.375          
-1513: The teleporting placement oracle reaches CK = 1.000 on this             MAPPO (argmax)                0.418 ± 0.062   0.993   0.000    0.582         0
-1663: a centralised critic. It reaches 0.625 at a 20-episode budget,      not a paired comparison at all. The device and the thread count
-1668: 0.639, and tests the comparison properly, on paired training        well, and the difference is large: the argmax policy reaches
-1669: seeds. The Independent DQN arm, at 0.381, is the value-based        0.418 against 0.674 for the sampled one, although it travels
-2026: B         0.639 ± 0.051 0.983 0.005      0.361           –                                             S3   battery capacity     0.561   0.883    0.94
-2027: S4   charging pads S      0.599   0.890    0.931   0.013   0.333   0.447
-2057: The per-agent arm reaches 0.639 against 0.674 for the                                                                         scenario (each marker is

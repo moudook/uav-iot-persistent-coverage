@@ -1,8 +1,0 @@
-171: outperforms parameter-shared CTDE MAPPO by 0.298                      ence between existing coverage, connectivity, recharge-
-1421: exclude.                                                             rule by an interval that excludes zero. The gap of 0.298
-1483: to the three nearest under-covered sensors; potential-                                 The first version of this report reported a gap of 0.298
-1484: based shaping): 0.952. The increment is ≈ 0.093 of                                  (learner 0.674 vs the reactive rule 0.972) and attributed it,
-1556: tation alone moves the learner from the pre-correction 0.674         a rigorous lower bound on the fleet size required for K-
-1564: excludes zero. The gap of 0.298 that the first version of this       so the general packing bound N ≥ K P (Ω, Rcov ) gives
-1586: rule by an interval that excludes zero. The earlier 0.298 gap        is not compute-matched in the sense that a hand-designed
-1636: “credit assignment drives collapse” reading and the 0.860                              532–540.
