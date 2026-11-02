@@ -25,7 +25,7 @@ from .mappo import MAPPO
 # ----------------------------------------------------------------------
 # Rollout buffer
 # ----------------------------------------------------------------------
-def collect_rollout(env, agent, n_steps, deterministic=False):
+def collect_rollout(env, agent, n_steps, deterministic=False, action_repeat=1):
     """
     Roll out one episode, recording per-agent transitions for the MAPPO update.
     Shared (team) reward is broadcast to every agent (Dec-POMDP, eq. 23).
@@ -81,7 +81,13 @@ def collect_rollout(env, agent, n_steps, deterministic=False):
         B["values"][t] = v
         B["active"][t] = (~env.failed) & (env.mode != -1)
 
-        obs, state, r, done, _ = env.step(acts)
+        # Innovation 8: action repeat.
+        r_acc = 0.0; done_acc = False
+        for _ in range(action_repeat):
+            obs, state, r, done, _ = env.step(acts)
+            r_acc += r
+            done_acc = done_acc or done
+            if done: break
         # Per-agent rewards (difference rewards) take precedence when present.
         ar = getattr(env, "last_agent_rewards", None)
         if ar is not None:
@@ -89,7 +95,7 @@ def collect_rollout(env, agent, n_steps, deterministic=False):
         else:
             B["adv"][t] = r
         t += 1
-        if done:
+        if done_acc:
             break
     # Distinguish a genuine terminal state from a truncation.
     #
@@ -167,7 +173,7 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
                value_norm=True, device=None, bc_path=None,
                gamma=0.99, gae_lambda=0.95, epochs=10, n_minibatch=4,
                curriculum=False, rf_at=None, lr_decay=1.0,
-               attn=False):
+               attn=False, action_repeat=1):
     """Train the proposed controller.
 
     THE DEVICE IS A PROTOCOL CHOICE, NOT A RESOURCE ACCIDENT.  The
@@ -255,7 +261,7 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
                 opt.state.clear()
             if verbose:
                 print(f"[train] R&F at ep {ep}: lr x{lr_decay}")
-        B, summ = collect_rollout(env, agent, n_steps)
+        B, summ = collect_rollout(env, agent, n_steps, action_repeat=action_repeat)
         losses = agent.update(B, epochs=epochs, n_minibatch=n_minibatch)
         rec = dict(episode=ep, mean_reward=float(B["adv"][:, 0].mean()), **losses)
         rec.update({k: float(v) for k, v in summ.items()})

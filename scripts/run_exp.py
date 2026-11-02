@@ -39,6 +39,7 @@ def main():
     ap.add_argument("--eval-offset", type=int, default=1000)
     ap.add_argument("--tag", default="exp")
     ap.add_argument("--attn", action="store_true")
+    ap.add_argument("--action-repeat", type=int, default=1)
     ap.add_argument("--regime", default="nominal",
                     help="stress regime name (nominal, small_battery, "
                          "low_comm, failure, etc.)")
@@ -75,7 +76,8 @@ def main():
                                   log_every=20, epochs=10, n_minibatch=4,
                                   curriculum=args.curriculum,
                                   rf_at=args.rf_at, lr_decay=args.lr_decay,
-                                  attn=args.attn)
+                                  attn=args.attn,
+                                  action_repeat=args.action_repeat)
         dt = time.time() - t0
         agent.save(os.path.join(outdir, "seed_%d.pt" % s))
 
