@@ -2,7 +2,7 @@
 
 Status: 2026-11-02 21:00. Target: research-level publishable paper.
 
-## RESULTS SO FAR
+## RESULTS SO FAR (canonical, survives compaction)
 
 | innovation | config | regime | CK | vs anchor | vs rule |
 |---|---|---|---|---|---|
