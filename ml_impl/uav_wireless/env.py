@@ -66,6 +66,7 @@ class SimConfig:
     n_ego: int = 3                 # number of nearest deficient sensors to report
     use_w_penalty: bool = True      # enable unnecessary-movement penalty W_t
     dist_shape_kappa: float = 0.0   # potential-based distance shaping coefficient
+    energy_shape_kappa: float = 0.0  # potential-based ENERGY shaping coefficient
     # Table IV weights
     lam_O: float = 1.00           # under-coverage
     lam_E: float = 0.10           # energy consumption
@@ -231,6 +232,7 @@ class UAVIoTEnv:
         self.last_cost = dict(U_t=1.0, E_t=0.0, D_t=1.0, W_t=0.0, R_t=0.0, Crit_t=1.0)
         self.last_agent_rewards = None
         self._prev_phi = 0.0
+        self._prev_phi_e = 0.0
         self.recovery_start = -1
         self._episode_idx += 1
         self.recovered = True
@@ -1296,6 +1298,15 @@ class UAVIoTEnv:
             prev_phi = getattr(self, "_prev_phi", phi_after)
             r = r + kappa * (prev_phi - 0.99 * phi_after)
             self._prev_phi = phi_after
+
+        # Potential-based ENERGY shaping (Innovation 2): telescoping
+        # potential on the minimum battery fraction.
+        kappa_e = getattr(c, "energy_shape_kappa", 0.0)
+        if kappa_e and kappa_e > 0:
+            phi_e = float(np.min(self.E) / max(c.B_max, 1.0))
+            prev_phi_e = getattr(self, "_prev_phi_e", phi_e)
+            r = r + kappa_e * (prev_phi_e - 0.99 * phi_e)
+            self._prev_phi_e = phi_e
 
         # C3: per-agent counterfactual credit (optional)
         if getattr(c, "credit_mode", "team") == "c3":

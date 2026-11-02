@@ -165,7 +165,9 @@ def agent_obs_dim(agent):
 def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
                verbose=True, per_agent_adv_norm=False, ent_coef=0.01,
                value_norm=True, device=None, bc_path=None,
-               gamma=0.99, gae_lambda=0.95, epochs=10, n_minibatch=4):
+               gamma=0.99, gae_lambda=0.95, epochs=10, n_minibatch=4,
+               curriculum=False, rf_at=None, lr_decay=1.0,
+               attn=False):
     """Train the proposed controller.
 
     THE DEVICE IS A PROTOCOL CHOICE, NOT A RESOURCE ACCIDENT.  The
@@ -223,7 +225,7 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
     agent = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim, state_dim=env.state_dim,
                   per_agent_adv_norm=per_agent_adv_norm, ent_coef=ent_coef,
                   value_norm=value_norm, device=device, clip=0.2, lr=3e-4,
-                  gamma=gamma, gae_lambda=gae_lambda)
+                  gamma=gamma, gae_lambda=gae_lambda, attn=attn)
     if bc_path:
         if os.path.exists(bc_path):
             try:
@@ -235,7 +237,24 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
                 if verbose:
                     print(f"[train] BC load failed ({e}); training from scratch")
     hist = []
+    base_bmax = cfg.B_max
     for ep in range(episodes):
+        # Innovation 1: curriculum over battery stress.  B_max ramps from
+        # 2x down to 1x of the base over the first half of training, so the
+        # policy sees depletion gradually instead of never (the cause of the
+        # small_battery failure).
+        if curriculum:
+            frac = min(1.0, ep / max(1, episodes // 2))
+            mult = 2.0 - frac  # 2.0 -> 1.0
+            env.cfg.B_max = base_bmax * mult
+        # Innovation 4: Reset-and-Finetune (ORCHID): at rf_at, reset the
+        # optimiser state and decay the learning rate.
+        if rf_at is not None and ep == rf_at:
+            for opt in (agent.actor_opt, agent.critic_opt):
+                opt.param_groups[0]["lr"] *= lr_decay
+                opt.state.clear()
+            if verbose:
+                print(f"[train] R&F at ep {ep}: lr x{lr_decay}")
         B, summ = collect_rollout(env, agent, n_steps)
         losses = agent.update(B, epochs=epochs, n_minibatch=n_minibatch)
         rec = dict(episode=ep, mean_reward=float(B["adv"][:, 0].mean()), **losses)

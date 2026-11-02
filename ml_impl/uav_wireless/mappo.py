@@ -76,6 +76,7 @@ class MAPPO:
         per_agent_adv_norm=False,
         value_norm=True,
         device="cpu",
+        attn=False,
     ):
         # Dimensions are configuration-dependent (they scale with N, M and
         # n_pads). Falling back to the reference-config constants keeps old
@@ -84,7 +85,8 @@ class MAPPO:
         obs_dim = UAVIoTEnv.OBS_DIM if obs_dim is None else obs_dim
         state_dim = UAVIoTEnv.STATE_DIM if state_dim is None else state_dim
         self.device = torch.device(device)
-        self.actor = Actor(obs_dim, hidden).to(self.device)
+        from .attn_actor import make_actor
+        self.actor = make_actor(obs_dim, hidden, attn=attn).to(self.device)
         self.critic = Critic(state_dim, hidden).to(self.device)
         # Separate optimisers + separate grad clipping (SI feedback 1.3).
         self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=lr)
@@ -105,6 +107,7 @@ class MAPPO:
         # estimation, Kim et al., AAMAS 2026, addresses the same problem for
         # the multi-agent case.)
         self.per_agent_adv_norm = per_agent_adv_norm
+        self.attn = attn
         # MAPPO's value normalisation.  The critic predicts the returns in a
         # normalised space defined by running statistics of the return
         # distribution; the value is un-normalised at every point of use.
