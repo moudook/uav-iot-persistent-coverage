@@ -87,7 +87,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 % so the prose cannot drift away from the measurement.
 \newcommand{\tokAblBestObs}{the observation terms}
 \newcommand{\tokAblBestObsDelta}{n/a}
-\newcommand{\tokAblBestObsText}{The observation terms are priced individually in Table~\ref{tab:results_obs}.}
+\newcommand{\tokAblBestObsText}{The observation terms are priced individually in Table~\ref{tab:knobs}.}
 \newcommand{\tokAblBonfNote}{The table is a family of 6 paired tests and the intervals above are unadjusted, so the correction is stated: with a Bonferroni correction over the table the threshold is $\alpha = 0.0083$, and no component's paired p-value survives it, so every component above is reported as suggestive rather than resolved.}
 \newcommand{\tokAblCrit}{2.36}
 \newcommand{\tokAblEpisodes}{25}
@@ -310,7 +310,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokEdStrDelta}{5.2}
 \newcommand{\tokEdVerdict}{The coverage the repair adds is +0.050 on the same training seeds (95\% interval [-0.015, +0.115], which includes zero), so the repair's effect on the coverage is not resolved by this arm}
 \newcommand{\tokEnergyDelta}{0.010}
-\newcommand{\tokEnergySummary}{The energy model is not what accounts for the gap, and Table~\ref{tab:results_energy} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.298 to the unprivileged reactive rule: removing the energy constraint (+0.010, 95\% interval [-0.056, +0.075], an upper limit below the gap of 0.298); removing the threshold term (-0.018, 95\% interval [-0.047, +0.011], an upper limit below the gap of 0.298); the previous energy rule (-0.050, 95\% interval [-0.115, +0.015], an upper limit below the gap of 0.298).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.}
+\newcommand{\tokEnergySummary}{The energy model is not what accounts for the gap, and Table~\ref{tab:knobs} says so.  The three interventions are paired with the proposed configuration -- they share its training seeds -- so each one is reported as an interval rather than as a point, and each interval's upper limit is below the gap of 0.298 to the unprivileged reactive rule: removing the energy constraint (+0.010, 95\% interval [-0.056, +0.075], an upper limit below the gap of 0.298); removing the threshold term (-0.018, 95\% interval [-0.047, +0.011], an upper limit below the gap of 0.298); the previous energy rule (-0.050, 95\% interval [-0.115, +0.015], an upper limit below the gap of 0.298).  The energy model is therefore not what accounts for the gap, and the paper does not claim that it is.}
 \newcommand{\tokEpisodeSeconds}{400}
 \newcommand{\tokEpisodeSteps}{2000}
 \newcommand{\tokFixedAg}{1.000}
@@ -468,7 +468,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \begin{abstract}
 UAV swarms can provide temporary wireless coverage for Internet-of-Things deployments where fixed infrastructure is unavailable, damaged or insufficient, but persistent operation couples coverage, inter-UAV connectivity, battery depletion, charging contention and UAV failures. This paper formulates the problem of maintaining at least $K$ UAVs over every ground sensor while preserving a connected swarm, and models it as a cooperative Decentralized Partially Observable Markov Decision Process (Dec-POMDP). We argue that the evaluation methodology is the unsolved part of this problem: a coverage ratio reported without an achievability reference cannot distinguish a strong controller from an infeasible configuration, and the widely used service-continuity metric is identically zero for every policy on any instance whose sensor set admits no trajectory that keeps it $K$-covered while the swarm stays connected. We therefore introduce a \emph{feasibility-certified evaluation framework} that derives a rigorous lower bound on the fleet size needed for $K$-coverage of a bounded region, supplies a teleporting placement oracle that certifies the instance is coverable --- at the reported configuration the ceiling is 1.000, so it normalises to the identity and its only information is that the instance is coverable at all --- and replaces the degenerate joint-constraint metric with non-degenerate time-averaged and refresh-time metrics. Applied to the project report's own configuration, the bound shows that configuration to be provably infeasible for the region requirement and for a measured minority of random sensor layouts, and the conventional area-surplus criterion certifies nothing.
 
-On the corrected configuration the framework is paired with a centralized-training decentralized-execution MAPPO controller with parameter-shared actors, a hard connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration and PHY-derived links.  Every controller, learned or hand-written, is frozen and rolled out on the same \tokRuleScenes{} held-out scenes (Section~\ref{sec:protocol}).  The strongest hand-written rule, the unprivileged local-assignment reactive rule, reaches =\tokRuleReactiveLocalCK$; MAPPO with the corrected implementation and an observation that reports the bearing of the nearest under-covered sensors reaches $\tokEgoShapeCK$ over \tokEgoShapeN{} training seeds (95\% interval \tokEgoShapeCi).  The difference, learner minus rule, is \tokLearnerMinusRule{} (95\% interval \tokLearnerMinusRuleCi), and \tokGapVerdict.  The gap of .298$ that an earlier version of this work reported is retracted: it came from a learner whose entropy bonus was sign-flipped and whose update ran 25 gradient steps per run, and from a protocol that compared a policy in training against a rule at rest.  The paper's physical-model, feasibility, protocol and determinism claims are recomputed by an automated claim audit (\tokAuditItems{} items, \tokAuditFail{} failing), which does not audit the results of Section~VIII, and every number that comes from a measurement is generated from the artefact it is measured in, and the path-loss expression of the physical-layer model is shown to be algebraically the one an independent standards-faithful simulator evaluates --- a constant $\tokPhyDelta$~dB offset at every distance and exponent tested --- with a transmit-power negative control that shows why only the algebraic equivalence is claimed.
+On the corrected configuration the framework is paired with a centralized-training decentralized-execution MAPPO controller with parameter-shared actors, a hard connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration and PHY-derived links.  Every controller, learned or hand-written, is frozen and rolled out on the same \tokRuleScenes{} held-out scenes (Section~\ref{sec:protocol}).  The strongest hand-written rule, the unprivileged local-assignment reactive rule, reaches $\tokRuleReactiveLocalCK$; MAPPO with the corrected implementation and an observation that reports the bearing of the nearest under-covered sensors reaches $\tokEgoShapeCK$ over \tokEgoShapeN{} training seeds (95\% interval \tokEgoShapeCi).  The difference, learner minus rule, is \tokLearnerMinusRule{} (95\% interval \tokLearnerMinusRuleCi), and \tokGapVerdict.  The gap of $0.298$ that an earlier version of this work reported is retracted: it came from a learner whose entropy bonus was sign-flipped and whose update ran 25 gradient steps per run, and from a protocol that compared a policy in training against a rule at rest.  The paper's physical-model, feasibility, protocol and determinism claims are recomputed by an automated claim audit (\tokAuditItems{} items, \tokAuditFail{} failing), which does not audit the results of Section~VIII, and every number that comes from a measurement is generated from the artefact it is measured in, and the path-loss expression of the physical-layer model is shown to be algebraically the one an independent standards-faithful simulator evaluates --- a constant $\tokPhyDelta$~dB offset at every distance and exponent tested --- with a transmit-power negative control that shows why only the algebraic equivalence is claimed.
 \end{abstract}
 
 \begin{figure*}[!t]
@@ -514,8 +514,8 @@ The contributions are:
     \item PHY-derived links --- the Al-Hourani LoS probability, a log-distance path loss with shadowing, and an IEEE 802.11 OFDM MCS table --- that \emph{gate} the abstract coverage and communication discs rather than replacing them, so that a UAV counts as covering a sensor or as adjacent to another UAV only when the link carries a usable service rate, together with a measured validity condition showing when the disc approximation is the binding constraint and when it is not.
     \item A non-degenerate evaluation protocol (time-averaged spatial integral of persistent coverage error, maximum refresh time, and $k$-coverage probability) replacing the degenerate all-simultaneous-constraint service-continuity metric.
 %% BEGIN CONTRIB
-    \item A \emph{measured specification of what a shared policy's observation must contain}: the agent's own identity and a bearing to the charging pad are the two terms the controlled comparisons examine, and at 8 training seeds they do not settle the question about the coverage.  In the component ablation, the identity changes persistent coverage by +0.008, an interval [-0.121, +0.137] that includes zero, so at this budget what it demonstrably buys is the ability to specialise, and without it the deterministic policy nearly collapses to a single action and the swarm barely disperses.  A broadcast summary of where the coverage deficit is was added a priori and measured to make no difference to the coverage at any resolution tested, while it does change what the policy does; it is reported rather than quietly dropped.
-%% END CONTRIB
+    \item A \emph{measured specification of what a shared policy's observation must contain}: an ego-centric summary of the coverage deficit --- unit bearings and normalised distances to the $k=3$ nearest under-covered sensors, plus a neighbour-repulsion vector --- is what the evaluated controller receives, and it is sufficient: replacing it by the exact global under-covered set costs $-0.090$ (Table~\ref{tab:knobs}), so more information hurts at this budget, and the one-hot identity and pad bearing of the earlier design are not part of the evaluated configuration.
+CONTRIB
     \item Corrected deployment parameters ($N=8$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$, or $N=5$, $K=2$, $R_{\mathrm{cov}}=45\,\mathrm{m}$) derived from the feasibility certificate, replacing the infeasible $N=5$, $K=2$, $R_{\mathrm{cov}}=35\,\mathrm{m}$ baseline.  The earlier comparison of the two deployments was measured with the pre-correction learner and is not claimed; the certificate itself, which is the point of the item, is unchanged by the learner.
     \item An evaluation protocol that treats a physical-layer claim as requiring a negative control, and reports a measured instance in which the available instrument could not support the claim it was being used for.
     \item A focused literature synthesis showing the difference between existing coverage, connectivity, recharge-scheduling, and fault-tolerant approaches and the combined problem considered here.
@@ -674,19 +674,21 @@ broadcast quantities:
 \end{split}
 \label{eq:obs}
 \end{equation}
-Here $\mathcal N_i$ is the set of nearby UAVs, $C_i^{\mathrm{local}}$ is the number of nearby sensors currently covered, $\rho_i$ is a locally computed bridge-risk estimate, $\tau_i^{\mathrm{return}}$ is the estimated time until the return threshold is reached, $E_i^{\mathrm{pad}}$ is the estimated energy needed to reach a feasible charging pad, $\mathbf 1_i\in\{0,1\}^{N}$ is the agent's own identity, and $\hat{\mathbf d}_i^{\mathrm{pad}}$ is the unit bearing to the nearest charging pad (whose range is carried by $E_i^{\mathrm{pad}}$). The last term, $\mathbf M_t^{\mathrm{def}}\in\mathbb R^{G^2}$, is the broadcast deficit summary: a $G\times G$ grid over the region in which cell $(g_x,g_y)$ holds the share of all $M$ sensors that lie in that cell and are currently under-covered, $n_d(t)<K$. Normalising by $M$ rather than by the cell population makes the value global, so the agent learns both where the deficit is and how large it is, and the encoding is independent of $M$. The base configuration uses $G=4$, and the resolution sweep of Section~\ref{sec:results_obs} measures $G\in\{0,4,8\}$.
-
-Two properties of this observation are not cosmetic, and both are load-bearing for the shared-parameter design of Section~\ref{sec:mappo}. The first is the identity. Parameter sharing is sound only when each agent's own observation identifies it, so that a shared network can still specialise~\cite{foerster2016}; the first version of $\mathbf o_i$ did not satisfy this condition, and the consequence was measurable rather than theoretical: in a symmetric deployment every agent received an almost identical input, the deterministic policy collapsed to nearly the same action for all of them, and the swarm translated as a rigid body without ever dispersing. The implication is specific to an action space of displacements, which is the one used here: identical displacements translate the configuration rigidly and so freeze its shape. In an action space whose symbols index agent-local targets, the same symbol would send different agents to different places, and dispersion would be possible after all. The second is the bearing to the charger. Without it the observation carries the \emph{cost} of the flight to a pad but not its \emph{direction}, and a learned policy cannot express the return at all. We assume that the infrastructure which owns the charging pads also broadcasts their positions, which is a communication assumption rather than an oracle.
-
-A third term --- a broadcast summary of where the coverage deficit is ---
-was added a priori, on the argument that an agent which knows how many
-sensors it covers but not which are deficient has no gradient signal for
-deployment. The measurement of Section~\ref{sec:results_obs} does not
-settle that argument for the better: \tokMapModelSentence.  The summary
-is therefore kept in Eq.~\eqref{eq:obs} and reported as a null result
-rather than quietly dropped, and we keep the argument in the record
-because it was reasonable, and because the measurement is more useful to a
-reader than the argument would have been.
+Here $\mathcal N_i$ is the set of nearby UAVs, $C_i^{\mathrm{local}}$ is the number of nearby sensors currently covered, $
+ho_i$ is a locally computed bridge-risk estimate, $	au_i^{\mathrm{return}}$ is the estimated time until the return threshold is reached, and $E_i^{\mathrm{pad}}$ is the estimated energy needed to reach a feasible charging pad.  The final block is the ego-centric deficit summary: for the $k=3$ sensors nearest to $i$ whose coverage is below the required level ($n_d(t)<K$), the agent receives the unit bearing $\hat{\mathbf u}_{i,j}$ and the normalised distance $d_{i,j}$; $\mathbf r_i$ is a repulsion vector away from the centroid of the UAVs in communication range, which keeps a shared policy from collapsing all agents onto the same deficit.  Both are computable from local information under the communication model of Section~
+ef{sec:radio}, so the observation is decentralised and has fixed size independent of $M$.Two properties of this observation are not cosmetic, and both are load-bearing for the shared-parameter design of Section~\ref{sec:mappo}. The first is the identitThree design alternatives to this observation were considered and measured.
+A broadcast $G	imes G$ deficit grid $\mathbf M_t^{\mathrm{def}}$ --- a cell
+summary of the share of under-covered sensors --- was the original summary
+term; it is not part of the evaluated configuration, and the value-of-
+information row of Table~
+ef{tab:knobs} prices exactly the information it
+would have supplied: replacing the ego-centric summary by the exact
+under-covered set costs $-0.090$, so the summary is neither free nor
+decisive.  A one-hot agent identity is likewise not in the evaluated
+observation; the ego terms depend on the agent's own position relative to the
+deficit, so a parameter-shared network still receives agent-specific inputs.
+The bearing to the charging pad is also not in the evaluated observation; the
+return decision is driven by the energy features above.
 
 Unlike the idealized global articulation-point indicator sometimes used in analysis, $\rho_i$ is intended to be computable during execution from neighborhood exchange. The simulator may additionally compute the exact articulation-point indicator for evaluation and for the centralized critic. This distinction avoids assuming that an individual UAV can magically obtain the complete global topology. Table~\ref{tab:obs} lists the observation variables each agent actually receives, and which of them are for the actor and which for the critic.
 
@@ -708,9 +710,8 @@ Coverage & $C_i^{\mathrm{local}}$ & Nearby sensors currently within coverage rad
 Bridge risk & $\rho_i$ & Local estimate of topology criticality. \\
 Return urgency & $\tau_i^{\mathrm{return}}$ & Estimated time until the return-energy threshold. \\
 Pad energy & $E_i^{\mathrm{pad}}$ & Estimated energy to the nearest feasible charging pad. \\
-Identity & $\mathbf 1_i$ & One-hot agent index; required for a shared network to specialise. \\
-Pad bearing & $\hat{\mathbf d}_i^{\mathrm{pad}}$ & Unit vector to the nearest charging pad; required to fly home. \\
-Deficit summary & $\mathbf M_t^{\mathrm{def}}$ & Broadcast $G\times G$ grid of the under-covered share of each cell; $G=4$ in the base configuration, and $G=0$ removes it. \\
+Deficit bearings & $\{\hat{\mathbf u}_{i,j},d_{i,j}\}_{j=1}^{k}$ & Unit bearing and normalised distance to the $k=3$ nearest under-covered sensors; decentralised, fixed size. \\
+Repulsion & $\mathbf r_i$ & Away from the centroid of nearby UAVs; prevents the swarm from collapsing onto one deficit. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -1194,6 +1195,8 @@ r_t=-\big(&\lambda_O U_t+\lambda_E E_t^{\mathrm{cons}}+
 \end{aligned}
 \label{eq:reward}
 \end{equation}
+Two potential-based shaping terms are added to the reward of \eqref{eq:reward}: a distance potential and an energy potential.  With potential $\Phi$, a shaping term of the form $\kappa(\Phi(s_t)-\gamma\Phi(s_{t+1}))$ is telescoping and therefore does not change the set of optimal policies; it only changes how fast they are found.  The distance potential is the mean over agents of the negative distance to the nearest under-covered sensor, normalised by the field diagonal, and is active with coefficient $\kappa=0.5$ in the evaluated configuration; it gives the policy a dense gradient towards the deficit before any coverage reward arrives.  The energy potential is the minimum battery fraction of the swarm, active with coefficient $\kappa_e=0.3$ only in the curriculum runs of Section~\ref{sec:results_innov}; it biases exploration towards recharging before a battery failure.  Both terms are computed from state alone, so the policy-invariance argument applies to each.
+
 Since the learner maximises expected return while the control objective of \eqref{eq:multiobjective} is a minimisation, the team reward of \eqref{eq:reward} is the negated weighted cost, and the two are equivalent up to sign. Table~\ref{tab:reward} defines each term and gives the initial weights used in this work. The weight $\lambda_O$ is chosen to dominate the secondary efficiency terms, so that the learned controller does not sacrifice persistent service merely to reduce energy consumption or flight distance. The individual objective components remain separate evaluation metrics rather than being hidden inside a single final score.  One consequence is worth stating because it bears on how the results should be read: $\frac1T\sum_t U_t = 1-\mathrm{CK}$ exactly, so the coverage term of the reward \emph{is} the headline coverage metric.  A learned controller that loses the comparison has therefore lost on the largest term of its own training objective, which locates the shortfall in the part of the objective the reward prices most heavily.  It does not by itself attribute the shortfall to the learning pipeline: the objective also prices energy, distance and connectivity, the oracle establishes that the instance is coverable but says nothing about what a decentralised policy class can achieve on it, and a hand-designed rule with access to the simulator's state is not a compute-matched opponent.  The consequence for the results is that the components that are not in the reward --- the joint service-continuity flag, the refresh time, the energy, the stranding count --- carry the diagnostic weight in Section~\ref{sec:results}.
 
 \begin{table}[t]
@@ -1295,7 +1298,7 @@ Initial deployment & -- & connected cluster in a corner \\
 \end{tabular}
 \end{table}
 
-The control interval is chosen so that the relative displacement between two consecutive steps, $2 v_{\max}\Delta t = 2$ m, is smaller than the safety distance $d_{\mathrm{safe}} = 5$ m; a coarser step would allow a closing pair to cross the separation constraint between two samples. The charge increment is quoted per step and is therefore scaled with $\Delta t$. The resulting charge time is shorter than a real constant-current pack of this capacity would require, because a real pack would not complete a full charge within a tractable episode; this is stated as a modelling assumption rather than a physical prediction, and it means the cost of charging contention in the energy results of Section~\ref{sec:results_energy} is a lower bound. The nominal altitude is consistent with the coverage radius: a $74^\circ$ downward sensor at 50 m yields a footprint half-width of 37 m. The two power entries are distinct: $P_{\mathrm{elec}}$ is the total avionics and communications budget, whereas $P_{\mathrm{tx}}$ is the radiated transmit power, which is bounded by the 1 W (30 dBm) regulatory ceiling and is two orders of magnitude below the avionics budget. The chosen $v_{\max}=5$~m/s is conservative but not arbitrary: Luna et al.~\cite{luna2022} report a real three-UAV coverage mission flown at 5~m/s cruise and 20~m altitude, and Datsko et al.~\cite{datsko2024} measure a range-optimal cruise speed of 8.39~m/s for the airframe they study.
+The control interval is chosen so that the relative displacement between two consecutive steps, $2 v_{\max}\Delta t = 2$ m, is smaller than the safety distance $d_{\mathrm{safe}} = 5$ m; a coarser step would allow a closing pair to cross the separation constraint between two samples. The charge increment is quoted per step and is therefore scaled with $\Delta t$. The resulting charge time is shorter than a real constant-current pack of this capacity would require, because a real pack would not complete a full charge within a tractable episode; this is stated as a modelling assumption rather than a physical prediction, and it means the cost of charging contention in the small-battery stress regime (Table~\ref{tab:stress}) is a lower bound. The nominal altitude is consistent with the coverage radius: a $74^\circ$ downward sensor at 50 m yields a footprint half-width of 37 m. The two power entries are distinct: $P_{\mathrm{elec}}$ is the total avionics and communications budget, whereas $P_{\mathrm{tx}}$ is the radiated transmit power, which is bounded by the 1 W (30 dBm) regulatory ceiling and is two orders of magnitude below the avionics budget. The chosen $v_{\max}=5$~m/s is conservative but not arbitrary: Luna et al.~\cite{luna2022} report a real three-UAV coverage mission flown at 5~m/s cruise and 20~m altitude, and Datsko et al.~\cite{datsko2024} measure a range-optimal cruise speed of 8.39~m/s for the airframe they study.
 
 \paragraph{The initial deployment and the episode length are experimental choices,
 and they are stated as such.}
@@ -1852,11 +1855,11 @@ the explanation of the gap (a sweep of 8/16/25 episodes on the buggy learner).
 Under the corrected protocol the sweep is re-run at 25/50/100/200 episodes:
 
 \begin{itemize}
-  \item      25 episodes: $0.830$ ($n=3$) at 25 episodes,      50 episodes: $0.868$ ($n=3$) at 50,     100 episodes: $0.933$ ($n=3$)
-        at 100,     200 episodes: $0.947$ ($n=3$) at 200 (each the mean over three seeds, frozen
-        evaluation).
-  \item The increasing budget buys +0.117 of persistent coverage
-        over the range, and over the range 25 to 200 episodes the mean evaluation coverage moves by +0.117.
+  \item 25 episodes: $0.830$ ($n=3$); 50 episodes: $0.868$ ($n=3$);
+        100 episodes: $0.933$ ($n=3$); 200 episodes: $0.947$ ($n=3$);
+        each the mean over three training seeds of the frozen-policy evaluation.
+  \item The budget is load-bearing: the mean evaluation coverage moves by
+        $+0.117$ over the range 25 to 200 episodes, monotonically.
 \end{itemize}
 
 \subsection{Credit assignment}
@@ -1864,10 +1867,11 @@ Under the corrected protocol the sweep is re-run at 25/50/100/200 episodes:
 
 The diff-reward variant (per-agent marginal coverage, $r_i = r_{\text{team}}
 + \beta D_i$) is compared against the team reward on paired training seeds:
-$0.959$ (95\% interval $[0.956, 0.963]$) against $0.952$, with the difference-credit arm is not separated from the team reward at this resolution.  The
+$0.959$ (95\% interval $[0.956, 0.963]$) against $0.952$: the difference-credit arm is not separated from the team reward at this resolution.  The
 earlier local-critic arm (a per-agent actor with a per-agent critic, the
-``masked PPO local critic'' row of the old table) is re-run under the fixed
-
+``masked PPO local critic'' row of the old table) was measured with the
+pre-correction learner and has not been re-run under the corrected protocol,
+so it is not claimed as evidence about the corrected controller.
 \subsection{Stress regimes and generalisation}
 \label{sec:results_stress}
 
@@ -1880,8 +1884,8 @@ infeasible.
 
 \begin{table}[t]
 \caption{Stress regimes (zero-shot).  Every row is the frozen-policy
-evaluation on the same held-out scenes, with the configuration of the regime
-applied.  Headroom is ceiling minus the best rule on that regime.}
+evaluation on the same 5 held-out scenes (seeds 1000--1004), with the
+configuration of the regime applied.  Headroom is ceiling minus the best rule on that regime.}
 \label{tab:stress}
 \centering
 \scriptsize
@@ -1894,7 +1898,7 @@ nominal        & 0.921 & 0.947 & +0.026 & 0.079 \\
 single pad     & 0.876 & NA & -- & 0.124 \\
 small battery  & 0.829 & 0.765 & -0.064 & 0.171 \\
 low comm       & 0.804 & 0.928 & +0.125 & 0.196 \\
-clustered start & 0.997 & 0.959 & -0.038 & 0.003 \\
+spread start & 0.997 & 0.959 & -0.038 & 0.003 \\
 failure        & 0.912 & 0.946 & +0.034 & 0.088 \\
 multi-failure  & 0.910 & 0.945 & +0.035 & 0.090 \\
 \bottomrule
@@ -1954,10 +1958,11 @@ regime.}
 \toprule
 configuration & CK & sd & n seeds \\
 \midrule
-anchor (ego+shape) & 0.765 & -- & 5 \\
+anchor (ego+shape) & 0.765 & 0.081 & 5 \\
 + curriculum + energy shaping + R\&F & 0.831 & 0.095 & 1 \\
 + attention + curriculum + energy + R\&F & 0.753 & 0.128 & 1 \\
 + intrinsic + curriculum + energy + R\&F & 0.834 & 0.068 & 1 \\
++ difference credit + curriculum + energy + R\&F & 0.816 & 0.131 & 1 \\
 \bottomrule
 \end{tabular}
 \par\vspace{2.5pt}{\scriptsize\itshape The anchor value is the zero-shot evaluation of the nominal-trained
@@ -2012,86 +2017,6 @@ framework is what makes the split visible: a single ``does learning beat
 the rule'' number would have hidden it, and the same framework is what
 caught the three defects (sign-flipped entropy, 25 gradient steps,
 train-CK evaluation) that made the original number wrong.
-
-% INNOVATION RESULTS - merged into the Results section.
-
-\subsection{Innovations: closing the small-battery and spread-start gaps}
-\label{sec:results_innov}
-
-The base configuration's learner beats the rule by $+0.029$; the stress
-table shows it loses on two regimes.  The innovations below target those two.
-
-\begin{table}[t]
-\caption{Innovation ablation on the small-battery regime (zero-shot, 10 held-out
-scenes).  Anchor is the corrected learner (ego+shape) evaluated on the same
-regime.}
-\label{tab:innov_smallbat}
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-configuration & CK & sd & n seeds \\
-\midrule
-anchor (ego+shape) & 0.765 & -- & 5 \\
-+ curriculum + energy shaping + R\&F & 0.831 & 0.095 & 1 \\
-+ attention + curriculum + energy + R\&F & 0.753 & 0.128 & 1 \\
-+ intrinsic + curriculum + energy + R\&F & 0.834 & 0.068 & 1 \\
-\bottomrule
-\end{tabular}
-\par\vspace{2.5pt}{\scriptsize\itshape The anchor value is the zero-shot evaluation of the nominal-trained
-learner on the small-battery regime (0.7646).  A configuration that closes
-the $-0.064$ gap to the rule (0.8290) is a publishable algorithmic result.
-The innovations are reported on one seed each; the curriculum+energy run
-on three seeds (0.831, 0.830, 0.831) confirms the single-seed reading.}
-\end{table}
-
-\emph{Innovation 1 + 2 + 4 (curriculum + energy shaping + R\&F).}
-Curriculum over battery stress lifts the small-battery evaluation from
-$0.765$ to $0.831$ (three seeds: $0.831$, $0.830$, $0.831$), essentially
-tying the rule ($0.829$).  The gain is $+0.066$ and is the largest single
-improvement found; it is the only innovation that closes the energy gap to
-within noise.
-
-\emph{Innovation 6 (graph attention).}
-Attention makes the small-battery result \emph{worse} ($0.753$ vs $0.831$).
-The MLP actor is better than the attention actor on this task at this
-budget; the attention's permutation invariance buys nothing the ego-centric
-observation does not already provide.
-
-\emph{Innovation 7 (intrinsic motivation).}
-Count-based intrinsic motivation has no effect ($0.834$ vs $0.831$,
-$+0.003$).  The exploration bonus does not change the policy because the
-coverage reward already provides a dense enough signal.
-
-\emph{Innovation 5 (difference credit).}
-Difference credit is a small positive on the nominal configuration
-($0.959$ vs $0.952$, $+0.007$, not resolved) but \emph{hurts} on
-small-battery ($0.816$ vs $0.831$, $-0.015$).  Per-agent marginal credit
-interferes with the team-level energy management the curriculum teaches.
-
-\emph{Innovation 3, 8, 9, 10 (shuffling, action repeat, adversarial,
-feasibility-aware planning).}  Shuffling is a no-op for a shared policy and
-needs an observation rework; action repeat and adversarial layouts are
-implemented but not yet evaluated; feasibility-aware planning is designed.
-
-\emph{Combination.}  The best single innovation on small-battery is the
-curriculum ($+0.066$, ties the rule).  Combining it with difference credit
-makes the result \emph{worse} ($0.816$), and adding attention makes it
-worse still ($0.753$).  The innovations do not compose; each one that
-touches the reward or the observation interferes with the ego-centric
-summary that is the actual driver of performance.  The residual on energy
-regimes is therefore a genuine limitation of the method class at this
-budget, not a knob that has not been turned.
-
-\emph{The paper's thesis.}  The corrected learner beats the strongest rule
-on 4 of 6 regimes (nominal, low connectivity, failure, multi-failure) and
-ties or loses on 2 (small battery, spread start).  The certification
-framework is what makes the split visible: a single ``does learning beat
-the rule'' number would have hidden it, and the same framework is what
-caught the three defects (sign-flipped entropy, 25 gradient steps,
-train-CK evaluation) that made the original number wrong.
-EOF
 
 \subsection{Network certificate}
 \label{sec:results_network}
@@ -2102,6 +2027,31 @@ over the mission scale (Section~\ref{sec:radio}, artefact
 \texttt{Simulation/omnet\_uav2/}).  The binding constraints are coverage geometry and
 energy; the certificate makes the ideal-observation assumption of the RL
 simulator a measured statement rather than an assumption.
+
+\subsection{Claim audit and physical-layer validation}
+\label{sec:validation}
+
+Every non-measurement claim of this paper --- the physical model, the
+feasibility bounds, the protocol statements and the determinism claims --- is
+recomputed by an automated claim audit that records, for each statement, the
+artefact or derivation that supports it: \tokAuditItems{} items, of which
+\tokAuditPass{} pass, \tokAuditInfo{} are informational, and \tokAuditFail{}
+fail.  The audit does not cover the measurements of this paper; those are the
+artefacts themselves.
+
+The physical-layer claim is the one that is audited most carefully, because
+its cheap version would be a runtime cross-validation and its honest version
+is an algebraic equivalence.  The Python reference PHY and INET's
+\texttt{BreakpointPathLoss} implement the same function to $\tokPhyDelta$~dB
+over $\tokPhyRows$ (distance, exponent) points, and that equivalence is what
+is claimed.  A runtime path-loss cross-validation was attempted with a
+transmit-power negative control: the available per-receiver SNR statistic
+tracks the transmit power exactly but is independent of the receiver's
+distance, so it cannot support such a cross-validation, and the negative
+control is what exposed it.  A dedicated 802.11 physical-layer scenario runs
+to completion in the OMNeT++/INET co-simulation and produces scalar and vector
+outputs; the instrument it provides, and the reason it cannot measure what we
+would like it to measure, are recorded with the scenario.
 
 \subsection{History of this measurement}
 \label{sec:history}
@@ -2213,7 +2163,7 @@ exploration the deployed policy keeps.}
 
 \emph{What the corrected measurement says.}  Two things changed at once, and Table~\ref{tab:remeasured} separates them.  Fixing the implementation alone moves the learner from the pre-correction $0.674$ to \tokBugFixCK{} (95\% interval \tokBugFixCi, \tokBugFixN{} seeds).  Changing the observation and adding the shaping term moves it to \tokEgoShapeCK{} (\tokEgoShapeCi, \tokEgoShapeN{} seeds).  The strongest hand-written rule, the unprivileged local-assignment reactive rule, reaches \tokRuleReactiveLocalCK.  The difference, learner minus rule, is \tokLearnerMinusRule{} of persistent coverage with a 95\% interval of \tokLearnerMinusRuleCi, and \tokGapVerdict.  The gap of $0.298$ that the first version of this report reported is therefore not a property of the method class; it was the learner.
 
-\emph{What this does to the rest of the results section.}  The controlled arms of Section~\ref{sec:results} were run against the broken learner, so they bound the explanation of a gap that no longer exists.  They are not evidence about the corrected controller, and we do not use them as such.  What survives from them is the measurement of the rule baselines and the observation that the local-assignment rule is not worse than the global one, both of which reproduce at the current code.
+\emph{What this does to the rest of the results section.}  The controlled arms of Section~\ref{sec:results} were run against the broken learner, so they bound the explanation of a gap that no longer exists.  They are not evidence about the corrected controller, and we do not use them as such.  What survives from them is the measurement of the rule baselines and the observation that the local-assignment rule is not worse than the global one, both of which reproduce at the current code.  Two further measurements from that version are retracted with it: the ``credit assignment drives collapse'' reading, and the $0.860$ random-baseline figure, which was measured with the wrong configuration.
 
 \emph{Thesis status.}  The paper's thesis is no longer ``learning beats the
 rule''.  It is that a coverage number is not a result until the instance is
@@ -2235,7 +2185,6 @@ This paper defines a persistent and fault-tolerant UAV-IoT coverage problem in w
 
 \emph{Honest limitations.} (i)~All results are on $\tokEpisodeSteps$-step episodes (\tokEpisodeSeconds\,s of flight); the report's 10\,000-step target may change conclusions, and in particular the credit-assignment limitation may be partly a budget artefact; the two convergence measurements bound that possibility but do not resolve it. (ii)~The learned rows are measured with \tokEgoShapeN{} training seeds, and the pairwise differences reported are accompanied by 95\% intervals on the difference; the knob and budget sweeps that would extend the comparison are reported where measured and omitted where not, rather than filled in.  A knob that is redundant at this resolution is invisible to the comparison, and a budget beyond the measured range is not claimed. (iii)~The reactive heuristic is given the exact set of under-covered sensors, which corresponds to an unbounded broadcast, while the learned policy receives a fixed-size summary; part of the gap might therefore be a difference of information and not of control.  The arm reported in the first table, in which the same rule runs without the global coverage state, measures that, and the measurement does not support the caveat. (iv)~The evaluation seed determines both the scene and the action-sampling stream, so the spread reported for a controller does not separate the scene-to-scene variation from the action-sampling variation. The two are common to every controller and cancel in the comparisons this paper draws, but they both enter the absolute numbers. (v)~The comparison is not compute-matched in the sense that a hand-designed rule embeds a human's solution while the learner receives a fixed training budget, and the learned controller's margin over the other learned arms is small compared with the seed-to-seed spread, so the differences between the learned methods should be read with that spread in mind. A learning curve and a budget sweep are what would speak to the first point, and they are the two convergence measurements we report. The four candidate explanations of Section~\ref{sec:experimentaldesign} are the ones the framework's own mechanisms suggest, and they do not exhaust the possibilities; the explanation that survives them was not pre-specified, so a study that had tested a different set of arms could have reached a different conclusion. (vi)~The OMNeT++ Phase-2 scenario ran and its negative control is reported, but the runtime instrument cannot support a path-loss cross-validation, so the equivalence is established from INET's source rather than from a running simulation. (vii)~Phase-3 (Simu5G PHY) is scaffolded but not executed with the learned policy. (viii)~The joint connectivity projection leaves no hole: in a probe that drives the swarm with \tokConnPolicy{}, $\tokConnSteps$ transitions into a disconnected graph occurred, all $\tokConnAsc$ of them after a UAV left the active set, $\tokConnTele$ after a teleport and $\tokConnUnexplained$ unexplained, so \tokConnAllLeaving.  The probe drives the swarm with the stored policies, so it speaks for the deployed controller on those runs; it does not speak for a policy trained with a different observation or a different budget, and the projection's own revision count on the deployed configuration is $\tokProjRevisions$ per episode. The per-agent mask proved sufficient on the configurations tested, and the ablation measures the components' effects rather than asserting them. (ix)~The degenerate service-continuity metric is retained for comparison but supplemented by the non-degenerate alternatives.
 
-\emph{Correction and re-measurement (Nov 2026).} A super-intelligent review identified a sign-flipped entropy term ($+c_2 H$ instead of $-c_2 H$) and severe under-training (25 gradient steps total, no PPO epochs) in the learner, which together explain the reported collapse at episode 675 and the flat budget curve. Part-1 fixes are applied (entropy sign, separate optimisers and grad clipping, 10 PPO epochs with KL early stop, clipped value loss, orthogonal init, active-agent masking, EMA direction). Re-measured under the corrected protocol of Section~\ref{sec:protocol} the learner reaches \tokEgoShapeCK{} over \tokEgoShapeN{} seeds against \tokRuleReactiveLocalCK{} for the strongest rule, a difference of \tokLearnerMinusRule{} (95\% interval \tokLearnerMinusRuleCi), and \tokGapVerdict. The earlier ``credit assignment drives collapse'' reading and the $0.860$ random-baseline figure are retracted; the latter was measured with the wrong configuration. The network is not the binding constraint at 80~m scale (PDR $\approx 0.998$, range margin $22\times$). The paper's thesis is being reframed from ``learning beats the rule'' to ``certifying where learning does not help,'' with the feasibility-certification methodology (C4) as the centrepiece contribution.
 
 \balance
 % The bibliography's items carry a flexible separation (IEEEtran's
