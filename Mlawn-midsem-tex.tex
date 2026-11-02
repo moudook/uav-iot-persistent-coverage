@@ -326,14 +326,6 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \newcommand{\tokGapCiLower}{0.248}
 \newcommand{\tokGapHalf}{0.051}
 \newcommand{\tokGapN}{8}
-\newcommand{\tokGreedyAg}{0.965}
-\newcommand{\tokGreedyCi}{0.216}
-\newcommand{\tokGreedyCk}{0.784}
-\newcommand{\tokGreedyDist}{13284}
-\newcommand{\tokGreedyE}{210802}
-\newcommand{\tokGreedyRet}{547}
-\newcommand{\tokGreedySc}{0.066}
-\newcommand{\tokGreedyStr}{2.6}
 \newcommand{\tokIddqnAg}{0.996}
 \newcommand{\tokIddqnCi}{0.619}
 \newcommand{\tokIddqnCk}{0.381}
@@ -2108,8 +2100,8 @@ base of this version.
 \section{The corrected protocol, and the re-measurement}
 \label{sec:second_sprint}
 
-This section exists because the first version of the results was wrong, and
-because the way it was wrong is more instructive than the result it replaced.
+This section exists because the first measurement was wrong, and the way it was wrong
+is more instructive than the result it replaced.
 Three defects were found by reading the implementation.  None of them is
 visible in a plot of the coverage curve, and each is the kind of defect that a
 reader of the reported numbers cannot detect.
@@ -2160,7 +2152,7 @@ harness moved.
 
 
 
-\emph{What the corrected measurement says.}  Two things changed at once, and Table~\ref{tab:remeasured} separates them.  Fixing the implementation alone moves the learner from the pre-correction $0.674$ to \tokBugFixCK{} (95\% interval \tokBugFixCi, \tokBugFixN{} seeds).  Changing the observation and adding the shaping term moves it to \tokEgoShapeCK{} (\tokEgoShapeCi, \tokEgoShapeN{} seeds).  The strongest hand-written rule, the unprivileged local-assignment reactive rule, reaches \tokRuleReactiveLocalCK.  The difference, learner minus rule, is \tokLearnerMinusRule{} of persistent coverage with a 95\% interval of \tokLearnerMinusRuleCi, and \tokGapVerdict.  The gap of $0.298$ that the first version of this report reported is therefore not a property of the method class; it was the learner.
+\emph{What the corrected measurement says.}  Two things changed at once, and Table~\ref{tab:remeasured} separates them.  Fixing the implementation alone moves the learner from the pre-correction $0.674$ to \tokBugFixCK{} (95\% interval \tokBugFixCi, \tokBugFixN{} seeds).  Changing the observation and adding the shaping term moves it to \tokEgoShapeCK{} (\tokEgoShapeCi, \tokEgoShapeN{} seeds).  The strongest hand-written rule, the unprivileged local-assignment reactive rule, reaches \tokRuleReactiveLocalCK.  The difference, learner minus rule, is \tokLearnerMinusRule{} of persistent coverage with a 95\% interval of \tokLearnerMinusRuleCi, and \tokGapVerdict.  The gap of $0.298$ reported earlier is therefore not a property of the method class; it was the learner.
 
 \emph{What this does to the rest of the results section.}  The controlled arms of Section~\ref{sec:results} were run against the broken learner, so they bound the explanation of a gap that no longer exists.  They are not evidence about the corrected controller, and we do not use them as such.  What survives from them is the measurement of the rule baselines and the observation that the local-assignment rule is not worse than the global one, both of which reproduce at the current code.  Two further measurements from that version are retracted with it: the ``credit assignment drives collapse'' reading, and the $0.860$ random-baseline figure, which was measured with the wrong configuration.
 
@@ -2168,9 +2160,8 @@ harness moved.
 rule''.  It is that a coverage number is not a result until the instance is
 certified feasible, the protocol is fixed, and the rule baselines are measured
 under that same protocol, and that the framework of this paper is what makes
-the difference between a weak learner and a broken one decidable.  The first
-version of this report had a broken learner and read it as a failed method.
-The framework is what let us tell the two apart.
+the difference between a weak learner and a broken one decidable.  The framework is what let us tell a weak learner from a broken one; the earlier report
+had the latter and read it as the former.
 
 
 \section{Conclusion}
@@ -2178,7 +2169,7 @@ This paper defines a persistent and fault-tolerant UAV-IoT coverage problem in w
 
 \emph{Feasibility certificate.} The original $N=5$, $K=2$, $R_{\mathrm{cov}}=35$\,m configuration is provably infeasible for $K$-covering the region: the four corner $K$-coverage discs are pairwise disjoint, so the general packing bound $N\ge K\,P(\Omega,R_{\mathrm{cov}})$ gives $N\ge 4K=8$, and the bound is tight at these parameters. For the sensor requirement the corner argument does not transfer, and the packing bound applied to the realised sensor set excludes $N=5$ for a measured 13\% of random draws; we report that rather than the convenient unconditional claim. All trained results use the corrected, feasible configuration $N=8$, $K=2$, $R_{\mathrm{cov}}=35$\,m, for which the same construction shows that every sensor is $K$-covered for every layout. The conventional area-surplus criterion, which exceeds one for the very same configuration, does not certify feasibility, and the two facts are consistent because an area is not a covering.
 
-\emph{What the framework exposes.} The framework is not only a certificate; it is an instrument that can tell a reader why a controller behaves as it does, and on this configuration it says something uncomfortable. Under the corrected protocol the same comparison runs the other way: MAPPO with the corrected implementation and the new observation reaches \tokEgoShapeCK{} over \tokEgoShapeN{} training seeds against \tokRuleReactiveLocalCK{} for the strongest hand-written rule, a difference of \tokLearnerMinusRule{} (95\% interval \tokLearnerMinusRuleCi), and \tokGapVerdict.  The earlier $0.298$ gap is retracted; it was the learner, not the method class.  On the pre-correction learner the arms of Section~\ref{sec:results} bound a gap that no longer exists, and we do not use them as evidence about the corrected controller.  What survives from them is the measurement of the rule baselines and the observation that the local-assignment rule is not worse than the global one, both of which reproduce at the current code. The regime table of Section~\ref{sec:results_stress} is what the framework exposes next: the same frozen policy, measured on the regimes the certificate admits, beats the strongest hand-written rule where the task is about where to be (nominal, low connectivity, failure), and loses where the task is about what to conserve or how to deploy (small battery, spread start).  A single ``does learning beat the rule'' number would have hidden that split; the certificate is what makes the split visible.  The controlled arms of the first version of this report are retracted with the learner that produced them, and are not used as evidence about the corrected controller; the rule-baseline measurements on which they stood reproduce at the current code.
+\emph{What the framework exposes.} The framework is not only a certificate; it is an instrument that can tell a reader why a controller behaves as it does, and on this configuration it says something uncomfortable. Under the corrected protocol the same comparison runs the other way: MAPPO with the corrected implementation and the new observation reaches \tokEgoShapeCK{} over \tokEgoShapeN{} training seeds against \tokRuleReactiveLocalCK{} for the strongest hand-written rule, a difference of \tokLearnerMinusRule{} (95\% interval \tokLearnerMinusRuleCi), and \tokGapVerdict.  The earlier $0.298$ gap is retracted; it was the learner, not the method class.  The controlled arms of Section~\ref{sec:results} were run against that learner, so they bound a gap that no longer exists and are not used as evidence about the corrected controller; what survives from them is the measurement of the rule baselines and the observation that the local-assignment rule is not worse than the global one, both of which reproduce at the current code.  The regime table of Section~\ref{sec:results_stress} is what the framework exposes next: the same frozen policy, measured on the regimes the certificate admits, beats the strongest hand-written rule where the task is about where to be (nominal, low connectivity, failure), and loses where the task is about what to conserve or how to deploy (small battery, spread start).  A single ``does learning beat the rule'' number would have hidden that split; the certificate is what makes the split visible.
 
 \emph{Scope of the physical-layer claim.} The Python reference PHY and INET's \texttt{BreakpointPathLoss} are the same function, to $\tokPhyDelta$~dB over $\tokPhyRows$ (distance, exponent) points. We deliberately do \emph{not} claim a runtime cross-validation, and the reason is measured rather than asserted: a transmit-power sweep shows that the available per-receiver SNR statistic tracks the transmit power exactly but is independent of the receiver's distance, so it cannot support a path-loss cross-validation. A physical-layer claim that has not been subjected to a negative control is not a measurement, and this is the one we would most like a reader to carry away.
 
