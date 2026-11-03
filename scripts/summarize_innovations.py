@@ -48,20 +48,21 @@ for label, tag in arms.items():
     dm = sum(det) / len(det)
     out.append(f"  {label:28s} mean={m:.4f} CI [{m-h:.4f}, {m+h:.4f}] det={dm:.4f}")
 
-# paired diffs vs base
+# paired diffs vs base (same seed indices; AR has 3 seeds, base has 5)
 base_per, _ = heldout("exp_ego_eval")
 if base_per:
-    out.append("\n--- paired diffs vs base (same seeds) ---")
+    out.append("\n--- paired diffs vs base (same seed indices) ---")
     for label, tag in [("anchor", "exp_anchor_eval"), ("action-repeat", "exp_ar_eval")]:
         r = heldout(tag)
         if not r:
             continue
         per, _ = r
-        diffs = [a - b for a, b in zip(per, base_per)]
+        n = min(len(per), len(base_per))
+        diffs = [a - b for a, b in zip(per[:n], base_per[:n])]
         dm = sum(diffs) / len(diffs)
         dh = t_half(diffs)
         verdict = "RESOLVED" if (dh > 0 and abs(dm) > dh) else "not resolved"
-        out.append(f"  {label:12s} {dm:+.4f} CI [{dm-dh:+.4f}, {dm+dh:+.4f}]  {verdict}")
+        out.append(f"  {label:12s} n={n} {dm:+.4f} CI [{dm-dh:+.4f}, {dm+dh:+.4f}]  {verdict}")
 
 # planning
 pl = os.path.join(RUNS, "exp_ego_eval", "eval_planning_500.json")
