@@ -77,6 +77,7 @@ def main():
         cfg.use_w_penalty = meta.get("use_w", True)
         cfg.credit_mode = meta.get("credit_mode", "team")
         cfg.randomize_layout = meta.get("randomize_layout", False)
+        cfg.use_critical_anchor = meta.get("anchor", False)
         steps = a.steps or meta.get("n_steps", 2000)
         cfg.episode_len = steps
 

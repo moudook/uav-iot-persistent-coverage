@@ -38,7 +38,26 @@ from stress_regimes import get_config, REGIMES
 # bearings + distance shaping); this must be applied on top of every
 # regime override when the learner is evaluated.
 LEARNER_ANCHOR = dict(ego_sensors=True, n_ego=3,
-                      dist_shape_kappa=0.5, use_w_penalty=True)
+                      dist_shape_kappa=0.5, use_w_penalty=True,
+                      use_critical_anchor=False)
+
+def learner_anchor_from_meta(ckpt_list):
+    """Read the learner config flags from the first checkpoint's training
+    metadata, so stress evaluation uses the same observation the policy
+    was trained with (incl. the critical-coverage anchor feature)."""
+    import json as _j
+    anchor = dict(LEARNER_ANCHOR)
+    if ckpt_list:
+        try:
+            meta = _j.load(open(ckpt_list[0].replace(".pt", ".json"), encoding="utf-8"))
+            anchor["ego_sensors"] = meta.get("ego", True)
+            anchor["n_ego"] = meta.get("n_ego", 3)
+            anchor["dist_shape_kappa"] = meta.get("shape", 0.5)
+            anchor["use_w_penalty"] = meta.get("use_w", True)
+            anchor["use_critical_anchor"] = meta.get("anchor", False)
+        except Exception:
+            pass
+    return anchor
 
 # Regimes that change the size of the observation or the state cannot
 # load a checkpoint trained on the nominal architecture: the actor and
@@ -81,6 +100,7 @@ def main():
                     help="only these regimes")
     ap.add_argument("--rules", nargs="+",
                     default=["Fixed", "Reactive-local"])
+    ap.add_argument("--out", default="")
     a = ap.parse_args()
 
     rundir = os.path.join(os.path.dirname(__file__), "..", "ml_impl", "runs", a.tag)
@@ -95,7 +115,8 @@ def main():
         rule_cfg = get_config(regime)
         rule_cfg.episode_len = a.steps
         learner_cfg = get_config(regime)
-        for _k, _v in LEARNER_ANCHOR.items():
+        _anchor_flags = learner_anchor_from_meta(ckpts)
+        for _k, _v in _anchor_flags.items():
             setattr(learner_cfg, _k, _v)
         learner_cfg.episode_len = a.steps
         # rules
@@ -135,7 +156,7 @@ def main():
 
     outdir = os.path.join(os.path.dirname(__file__), "..", "ml_impl", "runs", "stress_eval")
     os.makedirs(outdir, exist_ok=True)
-    out = os.path.join(outdir, "stress_eval.json")
+    out = a.out or os.path.join(outdir, "stress_eval.json")
     # merge with an existing artifact (the --only runs update single regimes)
     merged = {}
     if os.path.exists(out):

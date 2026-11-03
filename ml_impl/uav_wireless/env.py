@@ -64,6 +64,7 @@ class SimConfig:
     randomize_layout: bool = False  # resample sensor/pad layout each episode
     adversarial_layout: bool = False  # worst-case corner-clustered sensors
     ego_sensors: bool = False       # ego-centric bearings to nearest deficient sensors
+    use_critical_anchor: bool = False  # scalar: fraction of UAV i's covered sensors with n_d==K
     n_ego: int = 3                 # number of nearest deficient sensors to report
     use_w_penalty: bool = True      # enable unnecessary-movement penalty W_t
     dist_shape_kappa: float = 0.0   # potential-based distance shaping coefficient
@@ -152,6 +153,8 @@ def obs_dim(cfg: SimConfig) -> int:
     base += 3 if cfg.use_pad_bearing else 0
     if getattr(cfg, "ego_sensors", False):
         base += getattr(cfg, "n_ego", 3) * 3 + 2   # (dx,dy,dist) per sensor + repulsion (x,y)
+    if getattr(cfg, "use_critical_anchor", False):
+        base += 1  # fraction of UAV i's covered sensors with exactly K coverage
     return base
 
 
@@ -1020,6 +1023,20 @@ class UAVIoTEnv:
                         feats[k*3 + 0] = rep[0] / rn
                         feats[k*3 + 1] = rep[1] / rn
                 row = np.concatenate([row, feats])
+            if getattr(c, "use_critical_anchor", False):
+                # critical-coverage anchor: fraction of sensors UAV i covers
+                # that have exactly K total coverage (ncov == K). If UAV i
+                # moves away, those sensors drop below K. Tells the policy
+                # "do not leave this sensor".
+                _crit = 0.0
+                _ncov_i = 0
+                for _d in range(c.M):
+                    if d_s[_d] <= c.R_cov:
+                        _ncov_i += 1
+                        if ncov[_d] == c.K:
+                            _crit += 1.0
+                _anchor = (_crit / _ncov_i) if _ncov_i > 0 else 0.0
+                row = np.concatenate([row, np.array([_anchor], dtype=np.float32)])
             rows.append(row)
 
         obs = np.stack(rows).astype(np.float32)

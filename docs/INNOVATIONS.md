@@ -71,3 +71,21 @@ Attention makes it worse (-0.078).
 The residual on energy regimes is genuine; the rule's explicit recharge
 logic beats the learned policy. This is the paper's publishable finding.
 EOF
+
+
+## INNOVATION 11: Critical-coverage anchor feature
+- What: one scalar added to the ego-centric observation: the fraction of
+  sensors UAV i currently covers that have EXACTLY K total coverage
+  (ncov == K). If UAV i moves, those sensors drop below K.
+  Directly addresses the spread_start weakness: the learner loses there
+  (0.959 vs rule 0.997) because it cannot see that leaving a sensor
+  breaks K-coverage.
+- Status: IMPLEMENTED (cfg.use_critical_anchor, obs_dim +1) and TRAINING
+  under corrected protocol (5 seeds, 200 ep, held-out eval on seeds
+  1000-1019). Results pending.
+- Design intent: zero extra mechanism, one scalar, tests the hypothesis
+  that the spread_start gap is an observation blind-spot rather than a
+  control limitation.
+- Evaluation: compare vs exp_ego_eval (base) on nominal held-out; and on
+  stress regimes via eval_stress.py --tag exp_anchor_eval (separate
+  artifact stress_eval_anchor.json so the report artifact stays intact).
