@@ -2036,10 +2036,11 @@ Difference credit is a small positive on the nominal configuration
 small-battery ($0.816$ vs $0.831$, $-0.015$).  Per-agent marginal credit
 interferes with the team-level energy management the curriculum teaches.
 
-\emph{Innovation 3, 8, 9, 10 (shuffling, action repeat, adversarial,
-feasibility-aware planning).}  Shuffling is a no-op for a shared policy and
-needs an observation rework; action repeat and adversarial layouts are
-implemented but not yet evaluated; feasibility-aware planning is designed.
+\emph{Innovation 3, 9 (shuffling, adversarial).}  Shuffling is a no-op
+for a shared policy and needs an observation rework; the adversarial layouts
+are evaluated in the stress table (Section~\ref{sec:results_stress}).
+Innovations 8 (action repeat) and 10 (feasibility-aware planning) are
+evaluated below, along with Innovation 11 (critical-coverage anchor).
 
 \emph{Combination.}  The best single innovation on small-battery is the
 curriculum ($+0.066$, ties the rule).  Combining it with difference credit
@@ -2049,6 +2050,43 @@ touches the reward or the observation interferes with the ego-centric
 summary that is the actual driver of performance.  The residual on energy
 regimes is therefore a genuine limitation of the method class at this
 budget, not a knob that has not been turned.
+
+\emph{Innovation 10 (feasibility-aware planning, evaluated).}
+At deployment time, instead of executing the actor's single sample, the
+controller draws $K=4$ candidate joint-action vectors from the actor's
+categorical distribution, rolls each forward $H=2$ steps in a cloned
+environment, scores by the cumulative feasibility-masked coverage, and
+executes the best candidate.  This is test-time planning over the trained
+policy's own proposals; no retraining is involved.  Measured on the same
+frozen checkpoints and the same 20 held-out scenes as the headline
+comparison (2000 steps), planning raises the learner from $0.9512$ to
+$0.9723$ (5 seeds), a paired difference of $+0.0211$ with a 95\% interval
+$[+0.0137, +0.0285]$ that excludes zero; every checkpoint improves
+($+0.012$ to $+0.028$).  The margin over the strongest rule grows from
+$+0.028$ to $+0.049$.  On the stress regimes (500-step protocol, same
+5 scenes, same checkpoints) planning improves all six regimes, including
+the two where the learner loses to the rule: small battery $+0.0206$
+(interval $[+0.010, +0.031]$) and spread start $+0.0175$ (interval
+$[+0.014, +0.021]$).  The gain is bought with test-time compute: $K \times
+H$ extra environment rollouts per decision, so the comparison is not
+compute-matched, exactly as the budget limitation of the learned method is
+stated.  The planner uses the same feasibility mask as the actor, so it
+cannot propose an infeasible action; this is the certificate applied at the
+level of the decision rather than the configuration.
+
+\emph{Innovation 8 (action repeat, evaluated).}  Repeating each action for
+4 steps during training (2000 environment steps per episode, matched to the
+protocol) degrades the deployed policy: $0.9086$ vs $0.9512$ on the same
+held-out scenes ($-0.043$).  The policy trained with repetition does not
+transfer to the deployed repetition-free controller; this arm is a clean
+negative result.
+
+\emph{Innovation 11 (critical-coverage anchor, evaluated).}  One scalar is
+added to the observation: the fraction of sensors UAV $i$ covers that have
+exactly $K$ total coverage.  On the nominal protocol the change is not
+resolved ($+0.0009$, interval $[-0.014, +0.016]$); it improves the failure
+regimes marginally and slightly worsens small battery, and it does not close
+the spread-start gap.  The anchor is not a headline result on its own.
 
 \emph{The paper's thesis.}  The corrected learner beats the strongest rule
 on 4 of 6 regimes (nominal, low connectivity, failure, multi-failure) and
