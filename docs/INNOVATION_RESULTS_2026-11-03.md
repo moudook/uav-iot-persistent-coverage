@@ -23,7 +23,11 @@ innovations under the corrected protocol and record results.
     multi_failure  +0.0349 -> +0.0377
 - Verdict: directional improvement on failure regimes and spread_start,
   but small; not resolved at 5 seeds x 20 scenes. Strongest signal is
-  deterministic-mode improvement (+0.0137).
+  deterministic-mode improvement (+0.0137), BUT per-seed inspection shows
+  it is not consistent: seed_3 det +0.062, seed_4 det -0.030, others
+  +0.002..+0.017. No clean story; do not over-read.
+- Per-seed det (base -> anchor): 0.9231->0.9396, 0.9459->0.9482,
+  0.9446->0.9618, 0.9163->0.9783, 0.9764->0.9465.
 
 ## Innovation 10: feasibility-aware planning (v2, working)
 - Fixed the broken prototype (env.summary misuse, dead code). Model-based
