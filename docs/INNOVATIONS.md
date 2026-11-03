@@ -99,3 +99,18 @@ EOF
 - Note: the anchor feature may be most valuable in the deterministic/argmax
   deployment mode (det +0.0137), which is the mode a deployed controller
   uses. Worth reporting as a secondary observation.
+
+
+## INNOVATION 10: Feasibility-aware planning (v2, working)
+- What: at eval time, for each decision sample K candidate joint actions from
+  the trained actor's distribution, roll each forward H steps in a CLONED
+  environment, score by cumulative per-step CK (feasibility-masked coverage),
+  execute the best candidate. Model-based planning using the trained policy
+  as the proposal distribution; no retraining.
+- Implementation: scripts/eval_planning_v2.py (fixed version of the earlier
+  broken prototype; env deepcopy verified).
+- Smoke data (200 steps, H=2, K=4, scenes 1000-1001): planned ~0.906 vs
+  base frozen 0.885 at the same 200-step protocol (+0.020).
+- Full run: 500 steps, H=2, K=4, 20 held-out scenes x 5 ckpts launched
+  (background), with eval_ckpt_500.json as the equal-protocol reference.
+- Status: RUNNING. Results pending.
