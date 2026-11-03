@@ -26,6 +26,8 @@ def main():
     ap.add_argument("--n-steps", type=int, default=2000)
     ap.add_argument("--ego", action="store_true")
     ap.add_argument("--n-ego", type=int, default=3)
+    ap.add_argument("--anchor", action="store_true",
+                    help="add the critical-coverage anchor feature")
     ap.add_argument("--shape", type=float, default=0.0)
     ap.add_argument("--energy-kappa", type=float, default=0.0)
     ap.add_argument("--intrinsic-beta", type=float, default=0.0)
@@ -67,6 +69,7 @@ def main():
         cfg.diff_beta = args.diff_beta
         cfg.ego_sensors = args.ego
         cfg.n_ego = args.n_ego
+        cfg.use_critical_anchor = args.anchor
         cfg.dist_shape_kappa = args.shape
         cfg.energy_shape_kappa = args.energy_kappa
         cfg.intrinsic_beta = args.intrinsic_beta
@@ -99,6 +102,7 @@ def main():
         rec = {
             "seed": s, "episodes": args.episodes, "n_steps": args.n_steps,
             "seconds": dt, "ego": args.ego, "n_ego": args.n_ego,
+            "anchor": args.anchor,
             "shape": args.shape, "energy_kappa": args.energy_kappa,
             "use_w": not args.no_w, "credit_mode": args.credit_mode,
             "diff_beta": args.diff_beta, "curriculum": args.curriculum,

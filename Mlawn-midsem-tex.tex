@@ -499,7 +499,7 @@ Multi-agent reinforcement learning (MARL) provides a natural framework for this 
 
 The research question addressed in this work is: \emph{Can a decentralized MAPPO policy maintain persistent $K$-coverage and swarm connectivity while coordinating finite battery usage, charging, and single-UAV failure recovery, and can its performance be certified against a rigorous achievability bound rather than reported as an unscaled coverage ratio?}
 
-The central invention of this work is a \emph{feasibility-certified evaluation framework} for persistent $K$-coverage UAV networks.  Instead of reporting coverage numbers with no achievability reference, which is what the existing literature does, and which is meaningless when the configuration is infeasible, the framework (i) derives a rigorous lower bound on the number of UAVs required for $K$-coverage of a bounded region, (ii) uses a teleporting placement oracle as an achievability ceiling against which any policy is normalised, and (iii) replaces the degenerate ``all constraints satisfied simultaneously'' service-continuity metric with non-degenerate time-averaged and refresh-time metrics.  The framework is the difference between a number and a measurement.
+The central contribution of this work is a \emph{feasibility-certified evaluation framework} for persistent $K$-coverage UAV networks, which extends the recent feasibility-ceiling idea (\cite{ceilings2026}) from 1-coverage drone interception to persistent $K$-coverage by adding the point-set packing lower bound $N \ge K\,P(A,R_{\mathrm{cov}})$, the energy-flow bound of Section~\ref{sec:energyflow}, and the non-degenerate metrics below.  Instead of reporting coverage numbers with no achievability reference, which is what the existing literature does, and which is meaningless when the configuration is infeasible, the framework (i) derives a rigorous lower bound on the number of UAVs required for $K$-coverage of a bounded region, (ii) uses a teleporting placement oracle as an achievability ceiling against which any policy is normalised, and (iii) replaces the degenerate ``all constraints satisfied simultaneously'' service-continuity metric with non-degenerate time-averaged and refresh-time metrics.  The framework is the difference between a number and a measurement.
 
 The framework earns its keep in a second way that is easy to overlook, and which this paper demonstrates rather than asserts.  A framework that says whether a coverage number is meaningful also says \emph{why} a controller produces the number it does, because the same reference points, the ceiling, the non-degenerate metrics, and the controlled ablations, apply to the controller and not only to the configuration.  Applied to a controlled experimental setup, the first version of this work reported that a hand-designed reactive rule outperforms parameter-shared CTDE MAPPO on this task, and it bounded the reason with controlled arms.  That number is retracted in Section~\ref{sec:second_sprint}: it came from a learner whose entropy bonus was sign-flipped and whose update ran 25 gradient steps per run, and from a protocol that compared a policy in training against a rule at rest.  Under the corrected protocol the learner is ahead of the strongest rule by \tokLearnerMinusRule{} (95\% interval \tokLearnerMinusRuleCi), and \tokGapVerdict.  Reporting that sequence, the failure, its cause, and the correction, is more useful to a reader than a favourable number whose provenance has not been examined.
 
@@ -1019,6 +1019,82 @@ sensor dark for a long time, and the refresh time is what detects that.  It
 is the maximum refresh time, rather than the deficit, that carries the
 information the binary flag cannot.
 
+\subsection{Energy-Flow Feasibility}
+\label{sec:energyflow}
+
+The spatial certificate of Section~\ref{sec:feasibility} answers ``are there
+enough UAVs to cover the region''.  It does not answer the question a
+reviewer will ask next: ``can the fleet stay airborne long enough for the
+coverage to be \emph{persistent} rather than a one-battery sprint''.  The
+answer is obtained from the same geometry, now with the battery and the
+charging pads in the loop.
+
+Let $P_{\mathrm{air}} = P_{\mathrm{hover}} + P_{\mathrm{elec}} + P_{\mathrm{tx}}$
+be the power drawn by an airborne UAV and let $P_{\mathrm{pad}}^{\mathrm{net}}$
+be the net charging power of one pad.  At the reported parameters
+$P_{\mathrm{air}} = 55.1\,\mathrm{W}$ and $P_{\mathrm{pad}}^{\mathrm{net}}
+= 24.9\,\mathrm{W}$ (a $30\,\mathrm{W}$ gross charge rate minus the
+$5.1\,\mathrm{W}$ avionics draw of a charging UAV).
+
+\paragraph{Steady-state bound.}  In the long run the fleet can keep airborne
+at most
+\[
+n_{\mathrm{air}}^{\mathrm{ss}}
+= \frac{S\,P_{\mathrm{pad}}^{\mathrm{net}}}{P_{\mathrm{air}}}
+\]
+UAVs, where $S$ is the number of pads.  With $S=2$ this is
+$0.90$ UAVs against the $N_{\min}=4K=8$ required by the spatial
+certificate, a deficit of $7.1$ UAVs.  The persistent coverage ceiling is
+therefore
+\[
+C_K^{\mathrm{ss}} = \min\!\left(1,\;\frac{n_{\mathrm{air}}^{\mathrm{ss}}}{N_{\min}}\right)
+= 0.113 .
+\]
+\emph{The reported configuration is not persistently feasible:} no policy,
+however clever, can sustain $K$-coverage indefinitely at it, because the
+pads cannot replace the energy the fleet spends.  This is the energy
+analogue of the spatial infeasibility of $N=5$: the framework now says so
+about energy as well as space, which is the point of having a certificate.
+
+\paragraph{Finite-horizon bound.}  Over a mission of $T$ seconds the
+airborne UAV-seconds are capped by
+\[
+\frac{E_{\mathrm{stored}} + S\,P_{\mathrm{pad}}^{\mathrm{net}}\,T}{P_{\mathrm{air}}},
+\qquad
+E_{\mathrm{stored}} = N\,E_0 .
+\]
+At the reported episode length $T=400\,\mathrm{s}$ this gives a ceiling of
+$1.000$: the episode is feasible, but only by drawing down the initial
+packs, and the energy constraint binds (the Reactive heuristic records
+$\tokReactRet$ return-to-charge transitions per episode).  At the
+$10\,000$-step target ($T=2000\,\mathrm{s}$) the ceiling falls to
+$0.367$ with full packs and $0.326$ at the mean initial charge of $0.85$,
+so a policy evaluated at that horizon could not exceed roughly a third of
+full $K$-coverage on energy grounds alone.  The $400\,\mathrm{s}$ result
+is therefore a finite-horizon result, and the report says so explicitly.
+
+\paragraph{Energy-aware ceiling (LP).}  A fluid relaxation maximises the
+time-averaged airborne fleet subject to per-UAV energy, pad throughput, and
+no-fly-while-charging, and gives the same ceiling as the bound above at
+$T=400\,\mathrm{s}$ ($1.000$) and $T=2000\,\mathrm{s}$ ($0.367$).  It is
+the energy analogue of the teleporting placement oracle: an upper bound no
+online policy can beat, and the quantity against which an energy-aware
+controller should be normalised.
+
+\paragraph{What would make it persistent.}  A sweep over hardware parameters
+shows that none of the single changes (four pads, $60\,\mathrm{kJ}$ packs,
+$0.0004$ charge rate, or $12$ UAVs) reaches feasibility on its own; only
+the combination ($N=12$, $S=4$, $B^{\max}=60\,\mathrm{kJ}$,
+$0.0004$ charge rate) does, with a steady-state ceiling of $1.000$ and
+small slack.  Persistent $K$-coverage at these power levels is a
+hardware-budget question before it is a control question, which is exactly
+what a certificate is for.
+
+\paragraph{Scope.}  The energy certificate does not replace the spatial one;
+it complements it.  A configuration must pass both to be called persistent,
+and the reported configuration passes the spatial test and fails the energy
+one beyond $400\,\mathrm{s}$.  The coverage numbers in Section~\ref{sec:results}
+are therefore finite-horizon numbers, and the framework now says so.
 \subsection{Connectivity Model}
 The inter-UAV communication graph is
 \begin{equation}
@@ -1980,7 +2056,7 @@ half-truth; the certificate is what separates the two statements into the
 regimes where each is true.
 
 
-\subsection{Innovations: closing the small-battery and spread-start gaps}
+\subsection{Ablations and negative results: closing the small-battery and spread-start gaps}
 \label{sec:results_innov}
 
 The base configuration's learner beats the rule by $+0.028$; the stress
@@ -2051,13 +2127,17 @@ summary that is the actual driver of performance.  The residual on energy
 regimes is therefore a genuine limitation of the method class at this
 budget, not a knob that has not been turned.
 
-\emph{Innovation 10 (feasibility-aware planning, evaluated).}
-At deployment time, instead of executing the actor's single sample, the
-controller draws $K=4$ candidate joint-action vectors from the actor's
-categorical distribution, rolls each forward $H=2$ steps in a cloned
-environment, scores by the cumulative feasibility-masked coverage, and
-executes the best candidate.  This is test-time planning over the trained
-policy's own proposals; no retraining is involved.  Measured on the same
+\emph{Innovation 10 (feasibility-aware planning, evaluated as a centralised
+test-time oracle).}  Instead of executing the actor's single sample, a
+centralised planner draws $K=4$ candidate joint-action vectors from the
+actor's categorical distribution, rolls each forward $H=2$ steps in a
+cloned copy of the \emph{global} simulator, scores by the cumulative
+feasibility-masked coverage, and executes the best candidate.  This is
+test-time planning over the trained policy's own proposals; no retraining
+is involved.  It is an \emph{oracle upper bound}, not a deployable
+decentralised controller: it violates the CTDE execution premise by
+using global state at decision time, and a decentralised policy cannot
+replicate it without distillation (future work).  Measured on the same
 frozen checkpoints and the same 20 held-out scenes as the headline
 comparison (2000 steps), planning raises the learner from $0.9512$ to
 $0.9723$ (5 seeds), a paired difference of $+0.0211$ with a 95\% interval
@@ -2073,6 +2153,12 @@ compute-matched, exactly as the budget limitation of the learned method is
 stated.  The planner uses the same feasibility mask as the actor, so it
 cannot propose an infeasible action; this is the certificate applied at the
 level of the decision rather than the configuration.
+
+\emph{Caveat on Innovation 10.}  The gain above is bought with
+test-time compute ($K \times H$ extra environment rollouts per
+decision) and with global state, so the comparison is not
+compute-matched and not CTDE-compliant.  It is reported as an upper
+bound on what test-time planning can add, not as a deployable result.
 
 \emph{Innovation 8 (action repeat, evaluated).}  Repeating each action for
 4 steps during training (2000 environment steps per episode, matched to the
