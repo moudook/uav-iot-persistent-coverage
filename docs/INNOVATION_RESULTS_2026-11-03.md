@@ -35,17 +35,32 @@ innovations under the corrected protocol and record results.
   H steps in cloned env, execute best by cumulative CK.
 - Smoke (200 steps, H=2 K=4, 2 scenes): planned ~0.906 vs base frozen
   0.885 at same 200-step protocol (+0.020).
-- Full run launched: 500 steps, H=2 K=4, 20 scenes x 5 ckpts, plus base
-  500-step reference eval. Results pending.
+- Full run (500 steps, H=2 K=4, 20 scenes x 5 ckpts):
+    base   0.9326 [0.9236, 0.9415]
+    planned 0.9531 [0.9487, 0.9575]
+    paired +0.0205, 95% CI [+0.0150, +0.0260] -> RESOLVED (excludes zero).
+    Consistent across all 5 checkpoints (+0.0153 to +0.0270).
+  This is the headline finding of the session: feasibility-masked
+  lookahead planning over trained-policy candidates improves coverage
+  without retraining, at test time only.
 
 ## Innovation 8: action repeat (protocol-corrected re-run)
 - Earlier run had a protocol flaw: action_repeat=4 with n_steps=2000
   creates 8000-step episodes (not comparable to base 2000).
 - Corrected: n_steps=500 decisions x repeat 4 = 2000 env steps/episode.
-- 3 seeds launched under corrected protocol; done at evaluation with
-  repeat=1 (as in eval_ckpt). Results pending.
+- 3 seeds trained under corrected protocol (n_steps=500, repeat=4 =
+  2000 env steps/episode); evaluated at repeat=1 (deployed policy):
+    AR mean 0.9086 (sd 0.0285) vs base 0.9512 -> -0.043. HURTS.
+    Action-repeat training does not transfer to the deployed (repeat=1)
+    policy; the policy is worse, not better. Clean negative result.
 
 ## Pipeline status
 - Background jobs: planning full run, base 500-step reference, AR training.
-- Next: combined curriculum+energy+anchor on small_battery
-  (launcher ready, waits for CPU).
+- Combined curriculum+energy+anchor on small_battery (3 seeds):
+    0.7976 vs rule 0.8290 (-0.0314). Worse than curriculum+energy alone
+    (0.831, ties rule). The anchor feature HURTS the small_battery regime
+    even on top of the best fix. Consistent with anchor hurting
+    small_battery in the plain stress table (-0.0693 vs -0.0644).
+- Session verdict: planning is the only resolved positive innovation
+  (+0.0205). Anchor: directional on failure regimes, hurts small_battery.
+  Action-repeat: hurts. Combined+anchor: hurts.

@@ -1,0 +1,45 @@
+% INNOVATION RESULTS - to be merged into the Results section.
+% {{...}} placeholders filled by the assembler from runs/innov_*/.
+
+\subsection{Innovations: closing the small-battery and spread-start gaps}
+\label{sec:results_innov}
+
+The base configuration's learner beats the rule by $+0.029$; the stress
+table shows it loses on two regimes.  The innovations below target those two.
+
+\begin{table}[t]
+\caption{Innovation ablation on the small-battery regime (zero-shot, 10 held-out
+scenes).  Anchor is the corrected learner (ego+shape) evaluated on the same
+regime.}
+\label{tab:innov_smallbat}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+configuration & CK & sd & n seeds \\
+\midrule
+anchor (ego+shape) & 0.765 & -- & 5 \\
++ curriculum + energy shaping + R\&F & {{INNOV_CE_CK}} & {{INNOV_CE_SD}} & 3 \\
++ attention + curriculum + energy + R\&F & {{INNOV_ATTN_CK}} & {{INNOV_ATTN_SD}} & 3 \\
+\bottomrule
+\end{tabular}
+\tblNote{The anchor value is the zero-shot evaluation of the nominal-trained
+learner on the small-battery regime (0.7646).  A configuration that closes
+the $-0.064$ gap to the rule (0.8290) is a publishable algorithmic result.}
+\end{table}
+
+\emph{Innovation 1 + 2 + 4 (curriculum + energy shaping + R\&F).}
+{{INNOV_CE_VERDICT}}
+
+\emph{Innovation 6 (graph attention).}
+{{INNOV_ATTN_VERDICT}}
+
+\emph{Innovation 7 (intrinsic motivation).}  {{INNOV_INTRINSIC_VERDICT}}
+
+\emph{Innovation 9 (adversarial layouts).}  {{INNOV_ADV_VERDICT}}
+
+\emph{Combination.}  The best single innovation on small_battery is {{BEST_INNOV}},
+and the combined configuration (curriculum + energy shaping + R\&F + attention
++ intrinsic + adversarial) is reported in Table~\ref{tab:innov_combined} once
+measured.
