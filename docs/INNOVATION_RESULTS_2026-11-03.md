@@ -64,3 +64,16 @@ innovations under the corrected protocol and record results.
 - Session verdict: planning is the only resolved positive innovation
   (+0.0205). Anchor: directional on failure regimes, hurts small_battery.
   Action-repeat: hurts. Combined+anchor: hurts.
+
+## Honest caveat on planning (must appear in any write-up)
+- The planner spends K x H extra environment rollouts per decision
+  (K=4 candidates x H=2 steps = 8 rollouts per step) at TEST time. It is
+  a test-time compute tradeoff: the frozen policy + planner uses more
+  compute than the frozen policy alone. This is exactly the tradeoff a
+  deployment engineer faces: more compute per decision for better
+  coverage, no retraining.
+- The comparison is compute-UNmatched in that sense; the paper must state
+  this when reporting the +0.0205 (the same honesty standard as the
+  report's existing "not compute-matched" limitation).
+- Validated only at 500-step episodes so far; the 2000-step run is in
+  flight. Stress-regime planning runs are in flight too.
