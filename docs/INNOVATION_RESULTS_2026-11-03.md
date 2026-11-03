@@ -76,4 +76,19 @@ innovations under the corrected protocol and record results.
   this when reporting the +0.0205 (the same honesty standard as the
   report's existing "not compute-matched" limitation).
 - Validated only at 500-step episodes so far; the 2000-step run is in
-  flight. Stress-regime planning runs are in flight too.
+  flight.
+- STRESS-PLANNING (500 steps, 5 scenes, 5 ckpts) - all six regimes
+  RESOLVED positive:
+    nominal        +0.0236  [+0.017, +0.030]
+    small_battery  +0.0206  [+0.010, +0.031]   (was -0.064 vs rule)
+    low_comm       +0.0300  [+0.004, +0.056]
+    clustered      +0.0175  [+0.014, +0.021]   (spread_start; was -0.038)
+    failure        +0.0246  [+0.018, +0.031]
+    multi_failure  +0.0192  [+0.011, +0.028]
+  The planner helps on the exact regimes where the learned policy loses to
+  rules (small_battery, clustered). It does not fully close those gaps
+  (still -0.04 vs rule on small_battery, -0.0001 on clustered at 500
+  steps), but it consistently shifts the learner up on every regime.
+- Caveat stands: test-time compute cost (K x H env rollouts per decision);
+  comparison is compute-unmatched. The 2000-step protocol validation is
+  the remaining gate before this can be reported as a headline result.
