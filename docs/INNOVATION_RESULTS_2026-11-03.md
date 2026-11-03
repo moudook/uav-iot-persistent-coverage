@@ -75,8 +75,13 @@ innovations under the corrected protocol and record results.
 - The comparison is compute-UNmatched in that sense; the paper must state
   this when reporting the +0.0205 (the same honesty standard as the
   report's existing "not compute-matched" limitation).
-- Validated only at 500-step episodes so far; the 2000-step run is in
-  flight.
+- HEADLINE PROTOCOL (2000 steps, 20 scenes, 5 ckpts):
+    base    0.9512 [0.9381, 0.9643]
+    planned 0.9723 [0.9633, 0.9813]
+    paired +0.0211, 95% CI [+0.0137, +0.0285] -> RESOLVED.
+    All 5 checkpoints positive (+0.0122 to +0.0279).
+    Learner-vs-rule margin: +0.0282 (base) -> +0.0493 (planned).
+    Headroom vs ceiling unchanged (0.077, rule-bound).
 - STRESS-PLANNING (500 steps, 5 scenes, 5 ckpts) - all six regimes
   RESOLVED positive:
     nominal        +0.0236  [+0.017, +0.030]
