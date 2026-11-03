@@ -89,3 +89,13 @@ EOF
 - Evaluation: compare vs exp_ego_eval (base) on nominal held-out; and on
   stress regimes via eval_stress.py --tag exp_anchor_eval (separate
   artifact stress_eval_anchor.json so the report artifact stays intact).
+- Result (2026-11-03): nominal held-out 0.9521 vs base 0.9512, paired
+  +0.0009, 95% CI [-0.014, +0.016] -> NOT resolved. Deterministic eval
+  improved 0.9412 -> 0.9549 (+0.0137). On stress: clustered (spread_start)
+  -0.0384 -> -0.0350 (better, still loses); failure +0.0338 -> +0.0388;
+  multi_failure +0.0349 -> +0.0377; small_battery -0.0644 -> -0.0693
+  (slightly worse). Verdict: directional but small; does not close the
+  spread_start gap. Not a headline result on its own.
+- Note: the anchor feature may be most valuable in the deterministic/argmax
+  deployment mode (det +0.0137), which is the mode a deployed controller
+  uses. Worth reporting as a secondary observation.
