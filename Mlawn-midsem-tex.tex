@@ -2192,18 +2192,18 @@ bound on what test-time planning can add, not as a deployable result.
 edge is real, it should be movable into the decentralised policy.  We
 collected $200{,}000$ per-agent (observation, action) pairs from the
 planner (H=2, K=4, 500-step episodes on the 10 held-out scenes) and
-fine-tuned each checkpoint's actor by behaviour cloning for 5 epochs
+fine-tuned each checkpoint's actor by behaviour cloning for 20 epochs
 (cross-entropy).  The distilled policies deploy exactly like the base
 learner: the same local observation, one forward pass per decision, no
 cloned environment, no joint search.  On the same 20 held-out scenes at
-the 2000-step protocol the distilled learner reaches $0.9595$ vs the
-base $0.9512$; the paired difference is $+0.0083$ with a 95\% interval
-$[-0.0036, +0.0202]$ that includes zero, so the transfer is directional
-rather than resolved at this resolution, and it recovers about two
-fifths of the planner oracle's $+0.0211$ gain, with the CTDE violation
-removed.  The distillable part of the gain is the point: it shows the
-lookahead advantage is not only an artefact of privileged state, and it
-gives a deployable controller that inherits part of it.
+the 2000-step protocol the distilled learner reaches $0.9618$ vs the
+base $0.9512$; the paired difference is $+0.0106$ with a 95\% interval
+$[-0.0019, +0.0231]$ that includes zero, so the transfer is directional
+rather than resolved at this resolution, and it recovers about half of
+the planner oracle's $+0.0211$ gain, with the CTDE violation removed.
+The distillable part of the gain is the point: it shows the lookahead
+advantage is not only an artefact of privileged state, and it gives a
+deployable controller that inherits part of it.
 
 \emph{Innovation 8 (action repeat, evaluated).}  Repeating each action for
 4 steps during training (2000 environment steps per episode, matched to the

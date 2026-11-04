@@ -1636,19 +1636,19 @@ not resolved) but hurts on small-battery (0.816 vs 0.831,                       
 −0.015). Per-agent marginal credit interferes with the team-                             We collected 200,000 per-agent (observation, action) pairs
 level energy management the curriculum teaches.                                          from the planner (H=2, K=4, 500-step episodes on the 10
    Innovation 3, 9 (shuffling, adversarial). Shuffling is a no-                          held-out scenes) and fine-tuned each checkpoint’s actor by
-op for a shared policy and needs an observation rework;                                  behaviour cloning for 5 epochs (cross-entropy). The distilled
+op for a shared policy and needs an observation rework;                                  behaviour cloning for 20 epochs (cross-entropy). The distilled
 the adversarial layouts are evaluated in the stress table (Sec-                          policies deploy exactly like the base learner: the same local
 tion VIII-E). Innovations 8 (action repeat) and 10 (feasibility-                         observation, one forward pass per decision, no cloned envi-
 aware planning) are evaluated below, along with Innovation                               ronment, no joint search. On the same 20 held-out scenes at
-11 (critical-coverage anchor).                                                           the 2000-step protocol the distilled learner reaches 0.9595 vs
-   Combination. The best single innovation on small-battery                              the base 0.9512; the paired difference is +0.0083 with a 95%
-is the curriculum (+0.066, ties the rule). Combining it with                             interval [−0.0036, +0.0202] that includes zero, so the transfer
+11 (critical-coverage anchor).                                                           the 2000-step protocol the distilled learner reaches 0.9618 vs
+   Combination. The best single innovation on small-battery                              the base 0.9512; the paired difference is +0.0106 with a 95%
+is the curriculum (+0.066, ties the rule). Combining it with                             interval [−0.0019, +0.0231] that includes zero, so the transfer
 difference credit makes the result worse (0.816), and adding                             is directional rather than resolved at this resolution, and it
-attention makes it worse still (0.753). The innovations do not                           recovers about two fifths of the planner oracle’s +0.0211 gain,
-compose; each one that touches the reward or the observation                             with the CTDE violation removed. The distillable part of the
-interferes with the ego-centric summary that is the actual driver                        gain is the point: it shows the lookahead advantage is not
-of performance. The residual on energy regimes is therefore                              only an artefact of privileged state, and it gives a deployable
-a genuine limitation of the method class at this budget, not a                           controller that inherits part of it.
+attention makes it worse still (0.753). The innovations do not                           recovers about half of the planner oracle’s +0.0211 gain, with
+compose; each one that touches the reward or the observation                             the CTDE violation removed. The distillable part of the gain
+interferes with the ego-centric summary that is the actual driver                        is the point: it shows the lookahead advantage is not only an
+of performance. The residual on energy regimes is therefore                              artefact of privileged state, and it gives a deployable controller
+a genuine limitation of the method class at this budget, not a                           that inherits part of it.
 knob that has not been turned.                                                              Innovation 8 (action repeat, evaluated). Repeating each
    Innovation 10 (feasibility-aware planning, evaluated as a                             action for 4 steps during training (2000 environment steps per
                                                                                          episode, matched to the protocol) degrades the deployed pol-
