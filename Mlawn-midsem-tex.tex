@@ -66,7 +66,7 @@
 \setcounter{dbltopnumber}{2}
 \setcounter{totalnumber}{4}
 
-\title{Persistent and Fault-Tolerant UAV-IoT Coverage: A Multi-Agent Reinforcement Learning Framework for Joint Coverage, Connectivity, and Energy Management}
+\title{Energy-Flow Feasibility and Learned Redundancy Management for Persistent K-Coverage UAV Networks}
 
 \author{
 \IEEEauthorblockN{
@@ -455,7 +455,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \patchcmd{\IEEEkeywords}{---}{:\relax}{}{}
 \makeatother
 \begin{document}
-\markboth{UAV-IoT Persistent Coverage}{Nagwanshi \textit{et al.}: UAV-IoT Persistent Coverage}
+\markboth{Energy-Flow Feasibility for Persistent K-Coverage}{Nagwanshi \textit{et al.}: Energy-Flow Feasibility}
 
 % The teaser: the paper's argument in one picture.  It is a double-column
 % float placed BEFORE \maketitle, so that it is on the first page, with
@@ -467,7 +467,7 @@ Indian Institute of Technology Dharwad, Dharwad, India}
 \begin{abstract}
 UAV swarms can provide temporary wireless coverage for Internet-of-Things deployments where fixed infrastructure is unavailable, damaged or insufficient, but persistent operation couples coverage, inter-UAV connectivity, battery depletion, charging contention and UAV failures. This paper formulates the problem of maintaining at least $K$ UAVs over every ground sensor while preserving a connected swarm, and models it as a cooperative Decentralized Partially Observable Markov Decision Process (Dec-POMDP). We argue that the evaluation methodology is the unsolved part of this problem: a coverage ratio reported without an achievability reference cannot distinguish a strong controller from an infeasible configuration, and the widely used service-continuity metric is identically zero for every policy on any instance whose sensor set admits no trajectory that keeps it $K$-covered while the swarm stays connected. We therefore introduce a \emph{feasibility-certified evaluation framework} that derives a rigorous lower bound on the fleet size needed for $K$-coverage of a bounded region, supplies a teleporting placement oracle that certifies the instance is coverable, at the reported configuration the ceiling is 1.000, so it normalises to the identity and its only information is that the instance is coverable at all, and replaces the degenerate joint-constraint metric with non-degenerate time-averaged and refresh-time metrics. Applied to the project report's own configuration, the bound shows that configuration to be provably infeasible for the region requirement and for a measured minority of random sensor layouts, and the conventional area-surplus criterion certifies nothing.
 
-On the corrected configuration the framework is paired with a centralized-training decentralized-execution MAPPO controller with parameter-shared actors, a hard connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration and PHY-derived links.  Every controller, learned or hand-written, is frozen and rolled out on the same \tokRuleScenes{} held-out scenes (Section~\ref{sec:protocol}).  The strongest hand-written rule, the unprivileged local-assignment reactive rule, reaches $\tokRuleReactiveLocalCK$; MAPPO with the corrected implementation and an observation that reports the bearing of the nearest under-covered sensors reaches $\tokEgoShapeCK$ over \tokEgoShapeN{} training seeds (95\% interval \tokEgoShapeCi).  The difference, learner minus rule, is \tokLearnerMinusRule{} (95\% interval \tokLearnerMinusRuleCi), and \tokGapVerdict.  The gap of $0.298$ that an earlier version of this work reported is retracted: it came from a learner whose entropy bonus was sign-flipped and whose update ran 25 gradient steps per run, and from a protocol that compared a policy in training against a rule at rest.  The paper's physical-model, feasibility, protocol and determinism claims are recomputed by an automated claim audit (\tokAuditItems{} items, \tokAuditFail{} failing), which does not audit the results of Section~VIII, and every number that comes from a measurement is generated from the artefact it is measured in, and the path-loss expression of the physical-layer model is shown to be algebraically the one an independent standards-faithful simulator evaluates, a constant $\tokPhyDelta$~dB offset at every distance and exponent tested, with a transmit-power negative control that shows why only the algebraic equivalence is claimed.
+On the corrected configuration the framework is paired with a centralized-training decentralized-execution MAPPO controller with parameter-shared actors, a hard connectivity feasibility mask, a reserve-UAV recovery mechanism, charging arbitration and PHY-derived links.  Every controller, learned or hand-written, is frozen and rolled out on the same \tokRuleScenes{} held-out scenes (Section~\ref{sec:protocol}).  The strongest hand-written rule, the unprivileged local-assignment reactive rule, reaches $\tokRuleReactiveLocalCK$; MAPPO with the corrected implementation and an observation that reports the bearing of the nearest under-covered sensors reaches $\tokEgoShapeCK$ over \tokEgoShapeN{} training seeds (95\% interval \tokEgoShapeCi).  The difference, learner minus rule, is \tokLearnerMinusRule{} (95\% interval \tokLearnerMinusRuleCi), and \tokGapVerdict.  An earlier version of this work reported a gap of $0.298$ against the strongest rule; the cause and the correction are documented in Appendix~\ref{sec:second_sprint}, and the corrected number is the one reported here.  The paper's physical-model, feasibility, protocol and determinism claims are recomputed by an automated claim audit (\tokAuditItems{} items, \tokAuditFail{} failing), which does not audit the results of Section~VIII, and every number that comes from a measurement is generated from the artefact it is measured in, and the path-loss expression of the physical-layer model is shown to be algebraically the one an independent standards-faithful simulator evaluates, a constant $\tokPhyDelta$~dB offset at every distance and exponent tested, with a transmit-power negative control that shows why only the algebraic equivalence is claimed.
 \end{abstract}
 
 \begin{figure*}[!t]
@@ -499,7 +499,7 @@ Multi-agent reinforcement learning (MARL) provides a natural framework for this 
 
 The research question addressed in this work is: \emph{Can a decentralized MAPPO policy maintain persistent $K$-coverage and swarm connectivity while coordinating finite battery usage, charging, and single-UAV failure recovery, and can its performance be certified against a rigorous achievability bound rather than reported as an unscaled coverage ratio?}
 
-The central contribution of this work is a \emph{feasibility-certified evaluation framework} for persistent $K$-coverage UAV networks, which extends the recent feasibility-ceiling idea (\cite{ceilings2026}) from 1-coverage drone interception to persistent $K$-coverage by adding the point-set packing lower bound $N \ge K\,P(A,R_{\mathrm{cov}})$, the energy-flow bound of Section~\ref{sec:energyflow}, and the non-degenerate metrics below.  Instead of reporting coverage numbers with no achievability reference, which is what the existing literature does, and which is meaningless when the configuration is infeasible, the framework (i) derives a rigorous lower bound on the number of UAVs required for $K$-coverage of a bounded region, (ii) uses a teleporting placement oracle as an achievability ceiling against which any policy is normalised, and (iii) replaces the degenerate ``all constraints satisfied simultaneously'' service-continuity metric with non-degenerate time-averaged and refresh-time metrics.  The framework is the difference between a number and a measurement.
+This paper contributes a \emph{feasibility-certified evaluation framework} for persistent $K$-coverage UAV networks, which extends the recent feasibility-ceiling idea (\cite{ceilings2026}) from 1-coverage drone interception to persistent $K$-coverage by adding the point-set packing lower bound $N \ge K\,P(A,R_{\mathrm{cov}})$, the energy-flow bound of Section~\ref{sec:energyflow}, and the non-degenerate metrics below.  Instead of reporting coverage numbers with no achievability reference, which is what the existing literature does, and which is meaningless when the configuration is infeasible, the framework (i) derives a rigorous lower bound on the number of UAVs required for $K$-coverage of a bounded region, (ii) uses a teleporting placement oracle as an achievability ceiling against which any policy is normalised, and (iii) replaces the degenerate ``all constraints satisfied simultaneously'' service-continuity metric with non-degenerate time-averaged and refresh-time metrics.  The framework is the difference between a number and a measurement.
 
 The framework earns its keep in a second way that is easy to overlook, and which this paper demonstrates rather than asserts.  A framework that says whether a coverage number is meaningful also says \emph{why} a controller produces the number it does, because the same reference points, the ceiling, the non-degenerate metrics, and the controlled ablations, apply to the controller and not only to the configuration.  Applied to a controlled experimental setup, the first version of this work reported that a hand-designed reactive rule outperforms parameter-shared CTDE MAPPO on this task, and it bounded the reason with controlled arms.  That number is retracted in Section~\ref{sec:second_sprint}: it came from a learner whose entropy bonus was sign-flipped and whose update ran 25 gradient steps per run, and from a protocol that compared a policy in training against a rule at rest.  Under the corrected protocol the learner is ahead of the strongest rule by \tokLearnerMinusRule{} (95\% interval \tokLearnerMinusRuleCi), and \tokGapVerdict.  Reporting that sequence, the failure, its cause, and the correction, is more useful to a reader than a favourable number whose provenance has not been examined.
 
@@ -508,7 +508,7 @@ The contributions are:
     \item A unified system model coupling persistent $K$-coverage, inter-UAV connectivity, finite battery energy, charging contention, and UAV failure recovery.
     \item A \emph{feasibility certificate}: a rigorous covering bound on the number of UAVs required for $K$-coverage, in the general form $N \ge K\,P(A,R_{\mathrm{cov}})$, where $P$ is the packing number of the set to be covered.  Its region instance is $N \ge 4K$ and is \emph{tight} at the reported parameters; its sensor-set instance is computed per layout, and it excludes the reported $N=5$ configuration for a measured 13\% of random draws.  The bound identifies the instances on which no controller can achieve the requirement, and the joint service-continuity metric is identically zero for every policy on the instances where that is so, which is why it must be replaced.
     \item An \emph{achievability ceiling}: a teleporting placement oracle that upper-bounds any policy's coverage, separating ``the policy is weak'' from ``the task is infeasible'' and normalising reported performance as achieved divided by oracle.  The separation is measured rather than asserted: on the report's own infeasible $N=5$ configuration a rule-based controller still reaches a respectable coverage ratio with full connectivity while the joint metric is identically zero, so neither metric alone distinguishes that instance from a feasible one, and it is the certificate that makes the reading decidable (Section~\ref{sec:results}).
-    \item A \emph{measured result, corrected}: on the configuration the paper's own certificate declares feasible, the first version of this work reported that a hand-designed reactive rule outperforms parameter-shared CTDE MAPPO by $\tokGap$ of persistent coverage (95\% interval $\tokGapCi$).  That number is retracted; under the corrected protocol the learner is ahead of the strongest rule by \tokLearnerMinusRule{} (95\% interval \tokLearnerMinusRuleCi), and \tokGapVerdict.  The four single-factor arms bound how much of the pre-correction gap each of them can account for, and are not evidence about the corrected controller.
+    \item A \emph{measured result}: on the configuration the paper's own certificate declares feasible, the learner is ahead of the strongest rule by \tokLearnerMinusRule{} of persistent coverage (95\% interval \tokLearnerMinusRuleCi), and \tokGapVerdict.  The earlier measurement, its cause, and the correction are in Appendix~\ref{sec:second_sprint}.
     \item A CTDE MAPPO framework with parameter-shared decentralized actors, a centralized training critic, hard action feasibility masks with an $H$-step connectivity lookahead, and an explicit reserve-UAV recovery mechanism.
     \item PHY-derived links, the Al-Hourani LoS probability, a log-distance path loss with shadowing, and an IEEE 802.11 OFDM MCS table, that \emph{gate} the abstract coverage and communication discs rather than replacing them, so that a UAV counts as covering a sensor or as adjacent to another UAV only when the link carries a usable service rate, together with a measured validity condition showing when the disc approximation is the binding constraint and when it is not.
     \item A non-degenerate evaluation protocol (time-averaged spatial integral of persistent coverage error, maximum refresh time, and $k$-coverage probability) replacing the degenerate all-simultaneous-constraint service-continuity metric.
@@ -2262,84 +2262,6 @@ to completion in the OMNeT++/INET co-simulation and produces scalar and vector
 outputs; the instrument it provides, and the reason it cannot measure what we
 would like it to measure, are recorded with the scenario.
 
-\subsection{History of this measurement}
-\label{sec:history}
-
-The first version of this report reported a gap of $0.298$ (learner $0.674$
-vs the reactive rule $0.972$) and attributed it, through controlled arms, to
-the learner's observation and credit rules.  Three defects were later found
-in the implementation and in the protocol; each is described in
-Section~\ref{sec:second_sprint}.  The old measurements are retained in the
-repository as a record under \texttt{docs/}, and are not part of the evidence
-base of this version.
-
-\section{The corrected protocol, and the re-measurement}
-\label{sec:second_sprint}
-
-This section exists because the first measurement was wrong, and the way it was wrong
-is more instructive than the result it replaced.
-Three defects were found by reading the implementation.  None of them is
-visible in a plot of the coverage curve, and each is the kind of defect that a
-reader of the reported numbers cannot detect.
-
-\emph{(1) The entropy term had the wrong sign.}  The PPO loss carried
-$+\,c_2 H[\pi]$ where the objective is to \emph{maximise} entropy, so the
-gradient step minimised it: the bonus that exists to keep a policy exploring
-acted as a penalty that drove it to a deterministic corner.  On the recorded
-runs the policy entropy fell to zero within the first tens of episodes, and
-what the first version of this report called a ``collapse'' is that descent.
-
-\emph{(2) The update was under-trained by two orders of magnitude.}  A run of
-25 episodes performed 25 gradient steps in total, one per episode, with no
-PPO epochs and no minibatches.  The clipped surrogate objective that gives the
-method its sample efficiency was never exercised: one pass per rollout is not
-PPO, and a coverage curve that is flat over such a run says that the optimiser
-had not started, not that the objective is unlearnable.
-
-\emph{(3) The evaluation was not a comparison.}  The learner's number was the
-coverage of its last training episode: measured while the policy was still
-changing, on that episode's scene, by the exploratory policy.  The rule
-baselines were measured on five fixed scenes.  Those are two different
-protocols, and nothing in a table that puts them in the same column says so.
-Section~\ref{sec:protocol} now fixes the protocol, freezes the policy before
-measuring it, and draws the evaluation scenes from a seed range that training
-never touches.
-
-\emph{What was fixed in the code.}  The entropy term is subtracted; the actor
-and the critic have separate optimisers with separate gradient clipping; the
-update runs ten PPO epochs over four minibatches with an early stop on the
-approximate KL divergence; the value loss uses the clipped form; the
-initialisation is orthogonal; a UAV that has left the active set is masked out
-of the loss instead of contributing a zero-reward transition; and the
-direction of the reward normaliser's moving average is corrected.  Two changes
-to the \emph{observation} are the subject of the ablation rather than of the
-bug list: the local observation now reports the bearing and distance of the
-three nearest under-covered sensors, and the reward carries a potential-based
-distance-shaping term whose contribution telescopes over an episode and
-therefore does not change the optimal policy.
-
-\emph{The control that makes the table readable.}  Every rule baseline in
-Table~\ref{tab:remeasured} was re-evaluated at the current code before the
-learned rows were looked at.  On the pre-correction scenes they reproduce the
-pre-correction table to three decimal places, and on the held-out scenes they
-reproduce the ordering.  The measuring apparatus therefore did not change, so
-a number that moved is a number the learner moved, and not a number the
-harness moved.
-
-
-
-\emph{What the corrected measurement says.}  Two things changed at once, and Table~\ref{tab:remeasured} separates them.  Fixing the implementation alone moves the learner from the pre-correction $0.674$ to \tokBugFixCK{} (95\% interval \tokBugFixCi, \tokBugFixN{} seeds).  Changing the observation and adding the shaping term moves it to \tokEgoShapeCK{} (\tokEgoShapeCi, \tokEgoShapeN{} seeds).  The strongest hand-written rule, the unprivileged local-assignment reactive rule, reaches \tokRuleReactiveLocalCK.  The difference, learner minus rule, is \tokLearnerMinusRule{} of persistent coverage with a 95\% interval of \tokLearnerMinusRuleCi, and \tokGapVerdict.  The gap of $0.298$ reported earlier is therefore not a property of the method class; it was the learner.
-
-\emph{What this does to the rest of the results section.}  The controlled arms of Section~\ref{sec:results} were run against the broken learner, so they bound the explanation of a gap that no longer exists.  They are not evidence about the corrected controller, and we do not use them as such.  What survives from them is the measurement of the rule baselines and the observation that the local-assignment rule is not worse than the global one, both of which reproduce at the current code.  Two further measurements from that version are retracted with it: the ``credit assignment drives collapse'' reading, and the $0.860$ random-baseline figure, which was measured with the wrong configuration.
-
-\emph{Thesis status.}  The paper's thesis is no longer ``learning beats the
-rule''.  It is that a coverage number is not a result until the instance is
-certified feasible, the protocol is fixed, and the rule baselines are measured
-under that same protocol, and that the framework of this paper is what makes
-the difference between a weak learner and a broken one decidable.  The framework is what let us tell a weak learner from a broken one; the earlier report
-had the latter and read it as the former.
-
-
 \section{Conclusion}
 This paper defines a persistent and fault-tolerant UAV-IoT coverage problem in which the swarm must jointly manage redundant sensor coverage, inter-UAV connectivity, finite battery energy, charging contention, and UAV failures. Its central contribution is a \emph{feasibility-certified evaluation framework}: a rigorous lower bound on the fleet size required for $K$-coverage of a bounded region, a teleporting placement oracle as an achievability ceiling against which every policy is normalised, and a non-degenerate replacement for the all-constraints-simultaneously service-continuity metric.
 
@@ -2503,5 +2425,86 @@ B. Wang, Y. Wang, and S. Huang, ``Priority-aware persistent coverage with unbala
 C. Zhang, C. Xu, G. Li, and B. He, ``A distributed task allocation approach for multi-UAV persistent monitoring in dynamic environments,'' \emph{Scientific Reports}, vol. 15, art. 6437, 2025, doi: 10.1038/s41598-025-89787-3.
 
 \end{thebibliography}
+\appendix
+\section{History of this measurement}
+\label{sec:history}
+
+The first version of this report reported a gap of $0.298$ (learner $0.674$
+vs the reactive rule $0.972$) and attributed it, through controlled arms, to
+the learner's observation and credit rules.  Three defects were later found
+in the implementation and in the protocol; each is described in
+Section~\ref{sec:second_sprint}.  The old measurements are retained in the
+repository as a record under \texttt{docs/}, and are not part of the evidence
+base of this version.
+
+\section{The corrected protocol, and the re-measurement}
+\label{sec:second_sprint}
+
+This section exists because the first measurement was wrong, and the way it was wrong
+is more instructive than the result it replaced.
+Three defects were found by reading the implementation.  None of them is
+visible in a plot of the coverage curve, and each is the kind of defect that a
+reader of the reported numbers cannot detect.
+
+\emph{(1) The entropy term had the wrong sign.}  The PPO loss carried
+$+\,c_2 H[\pi]$ where the objective is to \emph{maximise} entropy, so the
+gradient step minimised it: the bonus that exists to keep a policy exploring
+acted as a penalty that drove it to a deterministic corner.  On the recorded
+runs the policy entropy fell to zero within the first tens of episodes, and
+what the first version of this report called a ``collapse'' is that descent.
+
+\emph{(2) The update was under-trained by two orders of magnitude.}  A run of
+25 episodes performed 25 gradient steps in total, one per episode, with no
+PPO epochs and no minibatches.  The clipped surrogate objective that gives the
+method its sample efficiency was never exercised: one pass per rollout is not
+PPO, and a coverage curve that is flat over such a run says that the optimiser
+had not started, not that the objective is unlearnable.
+
+\emph{(3) The evaluation was not a comparison.}  The learner's number was the
+coverage of its last training episode: measured while the policy was still
+changing, on that episode's scene, by the exploratory policy.  The rule
+baselines were measured on five fixed scenes.  Those are two different
+protocols, and nothing in a table that puts them in the same column says so.
+Section~\ref{sec:protocol} now fixes the protocol, freezes the policy before
+measuring it, and draws the evaluation scenes from a seed range that training
+never touches.
+
+\emph{What was fixed in the code.}  The entropy term is subtracted; the actor
+and the critic have separate optimisers with separate gradient clipping; the
+update runs ten PPO epochs over four minibatches with an early stop on the
+approximate KL divergence; the value loss uses the clipped form; the
+initialisation is orthogonal; a UAV that has left the active set is masked out
+of the loss instead of contributing a zero-reward transition; and the
+direction of the reward normaliser's moving average is corrected.  Two changes
+to the \emph{observation} are the subject of the ablation rather than of the
+bug list: the local observation now reports the bearing and distance of the
+three nearest under-covered sensors, and the reward carries a potential-based
+distance-shaping term whose contribution telescopes over an episode and
+therefore does not change the optimal policy.
+
+\emph{The control that makes the table readable.}  Every rule baseline in
+Table~\ref{tab:remeasured} was re-evaluated at the current code before the
+learned rows were looked at.  On the pre-correction scenes they reproduce the
+pre-correction table to three decimal places, and on the held-out scenes they
+reproduce the ordering.  The measuring apparatus therefore did not change, so
+a number that moved is a number the learner moved, and not a number the
+harness moved.
+
+
+
+\emph{What the corrected measurement says.}  Two things changed at once, and Table~\ref{tab:remeasured} separates them.  Fixing the implementation alone moves the learner from the pre-correction $0.674$ to \tokBugFixCK{} (95\% interval \tokBugFixCi, \tokBugFixN{} seeds).  Changing the observation and adding the shaping term moves it to \tokEgoShapeCK{} (\tokEgoShapeCi, \tokEgoShapeN{} seeds).  The strongest hand-written rule, the unprivileged local-assignment reactive rule, reaches \tokRuleReactiveLocalCK.  The difference, learner minus rule, is \tokLearnerMinusRule{} of persistent coverage with a 95\% interval of \tokLearnerMinusRuleCi, and \tokGapVerdict.  The gap of $0.298$ reported earlier is therefore not a property of the method class; it was the learner.
+
+\emph{What this does to the rest of the results section.}  The controlled arms of Section~\ref{sec:results} were run against the broken learner, so they bound the explanation of a gap that no longer exists.  They are not evidence about the corrected controller, and we do not use them as such.  What survives from them is the measurement of the rule baselines and the observation that the local-assignment rule is not worse than the global one, both of which reproduce at the current code.  Two further measurements from that version are retracted with it: the ``credit assignment drives collapse'' reading, and the $0.860$ random-baseline figure, which was measured with the wrong configuration.
+
+\emph{Thesis status.}  The paper's thesis is no longer ``learning beats the
+rule''.  It is that a coverage number is not a result until the instance is
+certified feasible, the protocol is fixed, and the rule baselines are measured
+under that same protocol, and that the framework of this paper is what makes
+the difference between a weak learner and a broken one decidable.  The framework is what let us tell a weak learner from a broken one; the earlier report
+had the latter and read it as the former.
+
+
+
+
 
 \end{document}
