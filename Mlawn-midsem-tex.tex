@@ -1023,7 +1023,15 @@ information the binary flag cannot.
 \label{sec:energyflow}
 
 The spatial certificate of Section~\ref{sec:feasibility} answers ``are there
-enough UAVs to cover the region''.  It does not answer the question a
+enough UAVs to cover the region''.  The conservation reasoning below is
+not new in substance: fleet-sizing laws express it in time units for
+homogeneous recharge (Arribas et al.~\cite{arribas2023}; Ramesh and
+Thomas~\cite{ramesh2026}), and energy-aware LP scheduling has been used
+for K-coverage with charging platforms (Song et al.~\cite{song2024}).
+The contribution here is the power-flow form used as a certificate, the
+finite-horizon bound, and the explicit no-fly-while-charging constraint,
+which together make the ceiling computable before any learning and
+non-vacuous at the reported configuration.  It does not answer the question a
 reviewer will ask next: ``can the fleet stay airborne long enough for the
 coverage to be \emph{persistent} rather than a one-battery sprint''.  The
 answer is obtained from the same geometry, now with the battery and the
@@ -1916,6 +1924,19 @@ protocol that compared a policy in training against a rule at rest.
 the gap between the two rows is the cost of the exploration the deployed
 policy keeps, and it is small.
 
+\emph{Fourth, a classical scheduler does not beat the learner either.}  The
+rule baselines are hand-written greedy policies; a reviewer may ask whether a
+stronger operations-research scheduler would close the gap.  We implemented
+one: a teleporting-placement oracle formation, Hungarian assignment of UAVs
+to formation slots each step, and a fixed relieve-before-leave charging
+rotation (Section~\ref{sec:results_abl} and
+\texttt{scripts/eval\_classical\_baseline.py}).  On the same 20 held-out
+scenes at the full 2000-step protocol it scores $0.929$ (sd $0.062$),
+below the learner's $0.9512$ and close to the reactive rule's $0.923$.  The
+scheduler's weakest scenes (e.g.\ scene 1005, $0.808$) are precisely the
+failure/energy ones where a fixed rotation cannot adapt; the learner's value
+is that it adapts there without being told.
+
 \subsection{What closes the gap: the observation, not the bug fixes}
 \label{sec:results_abl}
 
@@ -2422,6 +2443,10 @@ IEEE, \emph{IEEE Standard for Information Technology, Telecommunications and inf
 
 \bibitem{pardo2018}
 F. Pardo, A. Tavakoli, V. Levdik, and P. Kormushev, ``Time limits in reinforcement learning,'' in \emph{Proc. 35th Int. Conf. Machine Learning (ICML)}, 2018, pp. 4042--4051.
+
+\bibitem{ramesh2026}
+S. Ramesh and S. Thomas, ``Robust fleet sizing for multi-UAV inspection
+missions under synchronized replacement demand,'' arXiv:2604.15890, 2026.
 
 \bibitem{song2024}
 Z. Song, K.-W. Chin, C. Yang, and M. Ros, ``Methods to assign UAVs for K-coverage and recharging in IoT networks,'' \emph{IEEE Transactions on Mobile Computing}, vol. 23, no. 4, pp. 2504--2519, 2024, doi: 10.1109/TMC.2023.3259461.
