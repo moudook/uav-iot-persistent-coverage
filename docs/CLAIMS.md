@@ -49,3 +49,16 @@ Every claim the paper makes, its evidence file, and its status (supported / weak
 | 22 | The learner is ahead of the strongest rule on the nominal configuration | runs/exp_ego_eval/eval_heldout.json vs runs/rules_heldout/ | supported | +0.0289, 95% CI [+0.0159, +0.0420], excludes zero. |
 | 23 | The learner is ahead on 4/6 same-architecture stress regimes, behind on small battery and spread start | runs/stress_eval/stress_eval.json | supported | zero-shot; NA on regimes whose state dim changes (single_pad). |
 | 24 | The pre-correction gap (0.298) and random baseline (0.860) are retracted | docs/MEASURED_NUMBERS.md | retracted | 0.860 was a config mismatch; 0.298 was a broken learner + train-CK eval. |
+
+## 2026-11-04 session (energy certificate, classical baseline, distilation)
+
+| # | Claim | Evidence file | Status | Notes |
+|---|-------|---------------|--------|-------|
+| 25 | The reported configuration is not persistently feasible: steady-state max airborne fleet = S*P_pad_net/P_air = 0.904 UAVs < N_min = 8, persistent CK ceiling 0.113 | ml_impl/runs/energy_certificate.json + scripts/energy_certificate.py | supported | Power-flow conservation law; equivalent time-domain fleet-sizing laws exist (Arribas 2023, Ramesh-Thomas 2026) - framed as certificate, not new law. |
+| 26 | Finite-horizon energy ceiling: T=400 s -> 1.000 (feasible by drawing down packs); T=2000 s -> 0.367 (full) / 0.326 (mean 0.85 charge) | same | supported | The 400 s result is finite-horizon, not persistent. |
+| 27 | Only N=12, S=4, B=60 kJ, cr=0.0004 among the swept single/combined changes reaches steady-state feasibility (ceiling 1.000) | same | supported | Sweep in energy_certificate.py --sweep. |
+| 28 | Classical OR baseline (oracle formation + Hungarian + rotation) scores 0.929 on nominal 2000-step held-out, below learner 0.9512 | ml_impl/runs/classical_baseline_2000.json | supported | 20 scenes; answers the weak-baseline objection. |
+| 29 | Classical baseline loses to the learner on every same-architecture stress regime; shares the small_battery deficit (0.791 vs rule 0.829) | ml_impl/runs/classical_stress_2000.json | supported | Table tab:stress column added. |
+| 30 | Centralised planning is an oracle upper bound (+0.0211), not a deployable CTDE controller | ml_impl/runs/exp_ego_eval/eval_planning_2000.json | supported | Framing fixed in report; violation documented. |
+| 31 | Decentralised 1-hop kinematic lookahead heuristic does not capture the planner gain (0.816 @200 steps vs base 0.885) | scripts/eval_decentral_lookahead.py (smoke runs) | weak | Naive local scoring; dropped in favour of distillation. |
+| 32 | Planning distillation (BC from planner) - RESULT PENDING | ml_impl/runs/exp_distilled/eval_heldout_2000.json | pending | Fill after eval completes. |
