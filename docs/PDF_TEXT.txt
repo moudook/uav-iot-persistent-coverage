@@ -123,16 +123,16 @@ ized critic to use information unavailable to the individual                    
 UAV during training while retaining decentralized policies                                                         work reported that a hand-designed reactive rule outperforms
 during deployment. MAPPO is particularly suitable because                                                          parameter-shared CTDE MAPPO on this task, and it bounded
 it combines centralized value estimation during training with                                                      the reason with controlled arms. That number is retracted in
-a policy-gradient actor that can be executed independently by                                                      Section A: it came from a learner whose entropy bonus was
-each agent.                                                                                                        sign-flipped and whose update ran 25 gradient steps per run,
-   The research question addressed in this work is: Can a                                                          and from a protocol that compared a policy in training against
-decentralized MAPPO policy maintain persistent K-coverage                                                          a rule at rest. Under the corrected protocol the learner is ahead
-and swarm connectivity while coordinating finite battery us-                                                       of the strongest rule by 0.028 (95% interval [0.015, 0.041]),
-age, charging, and single-UAV failure recovery, and can                                                            and the learned controller is ahead of the strongest rule by
-its performance be certified against a rigorous achievability                                                      an interval that excludes zero. Reporting that sequence, the
-bound rather than reported as an unscaled coverage ratio?                                                          failure, its cause, and the correction, is more useful to a reader
-   This paper contributes a feasibility-certified evaluation                                                       than a favourable number whose provenance has not been
-framework for persistent K-coverage UAV networks, which                                                            examined.
+a policy-gradient actor that can be executed independently by                                                      Appendix A: it came from a learner whose entropy bonus
+each agent.                                                                                                        was sign-flipped and whose update ran 25 gradient steps per
+   The research question addressed in this work is: Can a                                                          run, and from a protocol that compared a policy in training
+decentralized MAPPO policy maintain persistent K-coverage                                                          against a rule at rest. Under the corrected protocol the learner
+and swarm connectivity while coordinating finite battery us-                                                       is ahead of the strongest rule by 0.028 (95% interval [0.015,
+age, charging, and single-UAV failure recovery, and can                                                            0.041]), and the learned controller is ahead of the strongest
+its performance be certified against a rigorous achievability                                                      rule by an interval that excludes zero. Reporting that sequence,
+bound rather than reported as an unscaled coverage ratio?                                                          the failure, its cause, and the correction, is more useful to a
+   This paper contributes a feasibility-certified evaluation                                                       reader than a favourable number whose provenance has not
+framework for persistent K-coverage UAV networks, which                                                            been examined.
 extends the recent feasibility-ceiling idea ( [39]) from 1-                                                           The contributions are:
 coverage drone interception to persistent K-coverage by                                                               1) A unified system model coupling persistent K-coverage,
 adding the point-set packing lower bound N ≥ K P (A, Rcov ),                                                              inter-UAV connectivity, finite battery energy, charging
@@ -164,8 +164,8 @@ tion is infeasible, the framework (i) derives a rigorous lower                  
    certificate declares feasible, the learner is ahead of the        parison models, Section VI the performance metrics and the
    strongest rule by 0.028 of persistent coverage (95% in-           evaluation protocol, and Section VII the experimental design
    terval [0.015, 0.041]), and the learned controller is ahead       matrix. Section VIII reports the results and the claim audit,
-   of the strongest rule by an interval that excludes zero.          Section IX details the protocol correction and re-measurement,
-   The earlier measurement, its cause, and the correction            and Section X concludes the paper.
+   of the strongest rule by an interval that excludes zero.          Section IX concludes the paper, and the Appendix details the
+   The earlier measurement, its cause, and the correction            protocol correction and re-measurement.
    are in Appendix A.
 5) A CTDE MAPPO framework with parameter-shared                                        II. L ITERATURE S URVEY
    decentralized actors, a centralized training critic, hard            The survey is restricted to work that is directly related to
@@ -1492,12 +1492,12 @@ S9     Initial            How much of the achieved coverage is a property of    
   The evaluation varies the dominant environmental factors                                         the cost of the exploration the deployed policy keeps.
 independently before combining them. Table XI maps each
 experiment to a specific research question; every row is run,
-                                                                                   earlier version of this report reported is retracted in Section A:
+                                                                                   that an earlier version of this report reported is retracted in
 and the results are reported in Section VIII.
-                                                                                   it was a property of a learner whose entropy bonus was sign-
-                          VIII. R ESULTS                                           flipped and whose update ran 25 gradient steps per run, and
-   All numbers in this section are produced by the protocol of                     of a protocol that compared a policy in training against a rule
-Section IV-E: a controller is frozen before it is measured, and                    at rest.
+                                                                                   Appendix A: it was a property of a learner whose entropy
+                          VIII. R ESULTS                                           bonus was sign-flipped and whose update ran 25 gradient steps
+   All numbers in this section are produced by the protocol of                     per run, and of a protocol that compared a policy in training
+Section IV-E: a controller is frozen before it is measured, and                    against a rule at rest.
 every controller is measured on the same 20 held-out scenes                           Third, the deployment policy is the sampled one. The
 (seeds from 1000), none of which a training run saw. The                           argmax policy (the deterministic reading of the same network)
 rules and the random control are deterministic given a scene,                      reaches 0.941: the gap between the two rows is the cost of the
@@ -1526,7 +1526,7 @@ for the strongest hand-written rule (the unprivileged local-                    
 assignment reactive rule). The difference, learner minus rule,                          seeds). This is the number the report’s earlier “fixed
 is 0.028 of persistent coverage with a 95% interval of [0.015,                          learner” would have produced under the corrected pro-
 0.041], and the learned controller is ahead of the strongest                            tocol.
-rule by an interval that excludes zero. The gap of 0.298 that an                     • + ego-centric observation and distance shaping (bearings
+rule by an interval that excludes zero. The gap of 0.298                             • + ego-centric observation and distance shaping (bearings
                                                                                         to the three nearest under-covered sensors; potential-
                            TABLE XIII                                                                                   TABLE XIV
 K NOB ABLATION UNDER THE CORRECTED PROTOCOL . E ACH ROW IS THE                               S TRESS REGIMES ( ZERO - SHOT ). E VERY ROW IS THE FROZEN - POLICY
@@ -1801,9 +1801,9 @@ UAV leaving rather than a move. The probe drives the swarm
      doi: 10.1109/LRA.2024.3358581.                                                [34] F. Pardo, A. Tavakoli, V. Levdik, and P. Kormushev, “Time limits in
 [20] M. A. Luna, M. S. Ale Isaac, A. R. Ragab, P. Campoy, P. Flores                     reinforcement learning,” in Proc. 35th Int. Conf. Machine Learning
      Peña, and M. Molina, “Fast multi-UAV path planning for optimal area               (ICML), 2018, pp. 4042–4051.
-     coverage in aerial sensing applications,” Sensors, vol. 22, no. 6, p. 2297,   [35] S. Ramesh and S. Thomas, “Robust fleet sizing for multi-UAV inspection
-     2022, doi: 10.3390/s22062297.                                                      missions under synchronized replacement demand,” arXiv:2604.15890,
-[21] J. Foerster, S. K. H. Phan, and A. F. T. Ho, “Learning to communicate              2026.
+     coverage in aerial sensing applications,” Sensors, vol. 22, no. 6, p. 2297,   [35] V. Ramesh and A. Thomas, “Robust fleet sizing for multi-
+     2022, doi: 10.3390/s22062297.                                                      UAV inspection missions under synchronized replacement demand,”
+[21] J. Foerster, S. K. H. Phan, and A. F. T. Ho, “Learning to communicate              arXiv:2604.15890, 2026.
      with deep multi-agent reinforcement learning,” in Proc. 15th Conf.            [36] Z. Song, K.-W. Chin, C. Yang, and M. Ros, “Methods to assign UAVs
      Autonomous Agents and MultiAgent Systems (AAMAS), 2016, pp. 3–11.                  for K-coverage and recharging in IoT networks,” IEEE Transactions
 [22] J. Foerster, T. Farquhar, F. Afouras, S. Nardelli, and S. Whiteson, “Coun-         on Mobile Computing, vol. 23, no. 4, pp. 2504–2519, 2024, doi:
@@ -1841,7 +1841,7 @@ UAV leaving rather than a move. The probe drives the swarm
 (learner 0.674 vs the reactive rule 0.972) and attributed it,        now reports the bearing and distance of the three nearest
 through controlled arms, to the learner’s observation and credit     under-covered sensors, and the reward carries a potential-based
 rules. Three defects were later found in the implementation          distance-shaping term whose contribution telescopes over an
-and in the protocol; each is described in Section A. The old         episode and therefore does not change the optimal policy.
+and in the protocol; each is described in Appendix A. The old        episode and therefore does not change the optimal policy.
 measurements are retained in the repository as a record under           The control that makes the table readable. Every rule base-
 docs/, and are not part of the evidence base of this version.        line in Table XII was re-evaluated at the current code before
    This section exists because the first measurement was             the learned rows were looked at. On the pre-correction scenes
