@@ -1,0 +1,21 @@
+# Distilled result snippet - fill numbers from compare_distilled.py
+#
+# Expected insert location: Section VIII-F, after the planning oracle bullet,
+# before the Caveat paragraph. Prose draft:
+
+# \emph{Distillation (evaluated).}  The planner's gain is bought with a
+# cloned global simulator at decision time.  We distilled the planner into
+# the decentralised actor: a dataset of $200{,}000$ per-agent
+# (observation, action) pairs collected from the planner (H=2, K=4) was
+# used to fine-tune each checkpoint's actor by behaviour cloning (5 epochs,
+# cross-entropy).  The distilled policies deploy with the same local
+# observation as the base learner, one forward pass per decision, no cloned
+# environment, no joint search.  On the same 20 held-out scenes at the
+# full 2000-step protocol the distilled learner reaches $X$ vs the base
+# $0.9512$ and the planner oracle $0.9723$; the paired difference
+# distilled - base is $+Y$ (95% interval $[A, B]$).  [verdict]
+#
+# This closes the CTDE violation: the lookahead gain is moved INTO the
+# policy, and the deployed controller is fully decentralised.
+#
+# Pending: python scripts/compare_distilled.py after eval completes.
