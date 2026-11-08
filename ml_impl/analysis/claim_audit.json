@@ -273,7 +273,7 @@
     "id": "R1",
     "claim": "the evaluation of a sampled policy is a function of (policy, scene) and does not depend on the ambient state of the global RNG; the sampling stream is seeded from the evaluation seed alone, so every controller is measured on the same stream on the same scene",
     "status": "PASS",
-    "measured": "CK=1.0 and Energy=3329.8 and Distance=169.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3329.8 and Distance=169.0 and CovIntegral=0.0",
+    "measured": "CK=1.0 and Energy=3304.8 and Distance=168.0 and CovIntegral=0.0  |  CK=1.0 and Energy=3304.8 and Distance=168.0 and CovIntegral=0.0",
     "expected": "identical",
     "note": "the policy samples, so the sampling stream is seeded from the evaluation seed; every controller therefore sees the same stream on the same scene"
   },
