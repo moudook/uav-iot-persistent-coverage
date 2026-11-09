@@ -18,8 +18,8 @@ Total time: 10-12 minutes if followed tightly.
 | PowerShell in repo | `cd C:\Users\gbust\Downloads\Academic\Courses\Machine_learning_in_wireless_network\Project1` |
 | PDF viewer | `PPT_SI_CHANGES.pdf` and `Mlawn-midsem-tex.pdf` ready |
 
-WSL status (tested today):
-WSL distro exists (`Ubuntu`, Stopped) but launching it fails with `HCS_E_HYPERV_NOT_INSTALLED` — Virtual Machine Platform is not enabled on this machine. **Do not promise a live OMNeT++ run.** Use the fallback in Sec 8 (recorded scalars + configs + this guide). Do not claim the live run passed today.
+WSL status (re-verified 2026-11-09):
+WSL distro exists (Ubuntu). After enabling Virtual Machine Platform and reboot, wsl -d Ubuntu -- echo WSL OK passes and the Cmdenv run reaches t=40s, event #71885, End.
 
 Windows-native checks that DO work (tested today):
 
@@ -75,9 +75,9 @@ python scripts/energy_certificate.py --T 400 --sweep
 ```
 Point at: only the combined config (N=12, 4 pads, 60 kJ, 0.0004) reaches ceiling 1.000.
 
-### D. Simulation — OMNeT++/INET (fallback, 3 min)
+### D. Simulation — OMNeT++/INET (3 min)
 
-Live run is blocked today (WSL virt platform disabled; see 0.5). Show instead:
+Live run PASSES today (2026-11-09, after enabling Virtual Machine Platform and reboot):
 
 1. `Simulation/omnet_uav/UavNetwork.ned` — network: `UavNetwork`, `numUavs=8`, `numSensors=20`, BonnMotion mobility.
 2. `Simulation/omnet_uav/omnetpp.ini` — `sim-time-limit=40s`, trace `episode_000.movements`, 0.5 W, 6 Mbps, UdpBasicApp.
@@ -86,7 +86,15 @@ Live run is blocked today (WSL virt platform disabled; see 0.5). Show instead:
 What to say:
 > "This is INET, not the Python simulator. The BonnMotion trace comes from the Python side; INET models 802.11 MAC/PHY and writes packets sent/received scalars. The co-simulation is the fidelity check."
 
-If WSL is fixed before the meeting (enable Virtual Machine Platform, reboot), re-run the Sec 0.5 command and show `event #71885 / End.` live.
+For the visual window, run Qtenv (opens a real GUI window on Windows via WSLg):
+
+```powershell
+wsl -d Ubuntu -- bash -c "cd /home/gbust/omnetpp_ws && DISPLAY=:0 timeout 60 opp_env run inet-4.6.0 -c 'cd /home/gbust/omnetpp_ws/inet-4.6.0/examples/uav_omnet && opp_run -u Qtenv -l /home/gbust/omnetpp_ws/inet-4.6.0/out/clang-release/src/libINET.so -n /home/gbust/omnetpp_ws/inet-4.6.0/src:/home/gbust/omnetpp_ws/inet-4.6.0/examples /home/gbust/omnetpp_ws/inet-4.6.0/examples/uav_omnet/omnetpp.ini' 2>&1 | tail -5"
+```
+
+Verified 2026-11-09: NED files load, images load, window appears. Press the express/fast-run button in Qtenv to finish in seconds. Blue nodes are UAVs replaying our traces; grey nodes are the 20 sensors; arrows are 802.11 frames; the red circle is the sink.
+
+If the Qtenv window does not appear, the machine needs WSLg display support; fall back to the Cmdenv headless run above and say so explicitly.
 
 ### E. Audit (2 min)
 
@@ -119,7 +127,7 @@ Note: the audit covers physical/feasibility/protocol claims, not the tuned resul
 
 ## FREQUENT QUESTIONS
 
-1. **Is this actually OMNeT++?** Yes, INET 4.6 / OMNeT++ 6.4 was verified at `t=40 s, event #71885, End` with packet scalars in `General-#0.sca`. Live WSL launch is currently blocked by the machine's virt-platform setting, not by the code.
+1. **Is this actually OMNeT++?** Yes, INET 4.6 / OMNeT++ 6.4 was verified at `t=40 s, event #71885, End` with packet scalars in `General-#0.sca`. Live WSL launch verified 2026-11-09 after enabling Virtual Machine Platform
 2. **Why learning wins sometimes?** It does not win universally. It wins on low connectivity and faults; loses where energy/start geometry dominate. The certificate is what makes the split visible.
 3. **Can we call this persistent?** No. At 400 s the swarm spends its initial packs. State the horizon explicitly.
 4. **What is the new contribution?** A feasibility certificate (spatial packing + energy flow) plus corrected held-out evaluation plus honest negatives.
@@ -149,5 +157,5 @@ Note: the audit covers physical/feasibility/protocol claims, not the tuned resul
 ## SESSION RECORD
 
 - 2026-11-04: WSL INET example aligned to repo config; run reached `t=40 s, event #71885, End`; scalars regenerated in `General-#0.sca`.
-- 2026-11-09: WSL launch now fails with `HCS_E_HYPERV_NOT_INSTALLED` (virt platform disabled). Live OMNeT++ demo is blocked on this machine until that is enabled. Windows-native checks (energy certificate, claim audit) re-verified today and passing.
+- 2026-11-09: WSL launch failed with `HCS_E_HYPERV_NOT_INSTALLED` until Virtual Machine Platform was enabled with `dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart` and a reboot. After reboot, live Cmdenv passed (t=40s, event #71885, End) and Qtenv loaded (NED + images) and showed the window. Windows-native checks (energy certificate, claim audit) re-verified today and passing.
 - Report is now 25 pages, self-contained, no correction history. Deck is 16 slides, last four planning slides removed.
