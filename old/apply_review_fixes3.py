@@ -1,0 +1,133 @@
+P = r"C:\Users\gbust\Downloads\Academic\Courses\Machine_learning_in_wireless_network\Project1\Mlawn-midsem-tex.tex"
+s = open(P, encoding="utf-8").read()
+
+def rep(old, new, tag, count=1):
+    global s
+    n = s.count(old)
+    assert n == count, f"[{tag}] expected {count} occurrence(s), found {n}"
+    s = s.replace(old, new, count)
+
+# ---- E4 para1: index-based ----
+i_eq = s.index("\\label{eq:obs}")
+i_par2 = s.find("Two properties of this observation", i_eq)
+assert i_par2 > 0, "para2 anchor missing"
+p_start = s.index("Here $\\mathcal N_i$", i_eq)
+new_para = ("""Here $\mathcal N_i$ is the set of nearby UAVs, $C_i^{\mathrm{local}}$ is the number of nearby sensors currently covered, $\rho_i$ is a locally computed bridge-risk estimate, $\tau_i^{\mathrm{return}}$ is the estimated time until the return threshold is reached, and $E_i^{\mathrm{pad}}$ is the estimated energy needed to reach a feasible charging pad.  The final block is the ego-centric deficit summary: for the $k=3$ sensors nearest to $i$ whose coverage is below the required level ($n_d(t)<K$), the agent receives the unit bearing $\hat{\mathbf u}_{i,j}$ and the normalised distance $d_{i,j}$; $\mathbf r_i$ is a repulsion vector away from the centroid of the UAVs in communication range, which keeps a shared policy from collapsing all agents onto the same deficit.  Both are computable from local information under the communication model of Section~\ref{sec:radio}, so the observation is decentralised and has fixed size independent of $M$.""")
+s = s[:p_start] + new_para + s[i_par2:]
+print("E4 para1 ok")
+
+# ---- E4 para2+3: index-based ----
+i_par3_end = s.find("Unlike the idealized global articulation-point indicator", i_par2)
+assert i_par3_end > 0, "para3 end anchor missing"
+new_para2 = ("""Three design alternatives to this observation were considered and measured.
+A broadcast $G\times G$ deficit grid $\mathbf M_t^{\mathrm{def}}$ --- a cell
+summary of the share of under-covered sensors --- was the original summary
+term; it is not part of the evaluated configuration, and the value-of-
+information row of Table~\ref{tab:knobs} prices exactly the information it
+would have supplied: replacing the ego-centric summary by the exact
+under-covered set costs $-0.090$, so the summary is neither free nor
+decisive.  A one-hot agent identity is likewise not in the evaluated
+observation; the ego terms depend on the agent's own position relative to the
+deficit, so a parameter-shared network still receives agent-specific inputs.
+The bearing to the charging pad is also not in the evaluated observation; the
+return decision is driven by the energy features above.""")
+s = s[:i_par2] + new_para2 + "\n\n" + s[i_par3_end:]
+print("E4 para2+3 ok")
+
+# ---- E4 table rows ----
+t_start = s.index("Identity & $\\mathbf 1_i$")
+t_end = s.index("\\bottomrule", t_start)
+new_rows = """Deficit bearings & $\\{\\hat{\\mathbf u}_{i,j},d_{i,j}\\}_{j=1}^{k}$ & Unit bearing and normalised distance to the $k=3$ nearest under-covered sensors; decentralised, fixed size. \\\\
+Repulsion & $\\mathbf r_i$ & Away from the centroid of nearby UAVs; prevents the swarm from collapsing onto one deficit. \\\\
+"""
+s = s[:t_start] + new_rows + s[t_end:]
+print("E4 table ok")
+
+# ---- E5 ----
+if "measured specification of what a shared policy's observation must contain" in s:
+    i0 = s.index("A \\emph{measured specification of what a shared policy's observation must contain}")
+    i1 = s.index("CONTRIB\n    \\item Corrected deployment parameters", i0)
+    new_bullet = r"""A \emph{measured specification of what a shared policy's observation must contain}: an ego-centric summary of the coverage deficit --- unit bearings and normalised distances to the $k=3$ nearest under-covered sensors, plus a neighbour-repulsion vector --- is what the evaluated controller receives, and it is sufficient: replacing it by the exact global under-covered set costs $-0.090$ (Table~\ref{tab:knobs}), so more information hurts at this budget, and the one-hot identity and pad bearing of the earlier design are not part of the evaluated configuration.
+"""
+    s = s[:i0] + new_bullet + s[i1:]
+    print("E5 ok")
+
+# ---- E6 ----
+old_b1 = """  \\item      25 episodes: $0.830$ ($n=3$) at 25 episodes,      50 episodes: $0.868$ ($n=3$) at 50,     100 episodes: $0.933$ ($n=3$)
+        at 100,     200 episodes: $0.947$ ($n=3$) at 200 (each the mean over three seeds, frozen
+        evaluation).
+  \\item The increasing budget buys +0.117 of persistent coverage
+        over the range, and over the range 25 to 200 episodes the mean evaluation coverage moves by +0.117."""
+new_b1 = """  \\item 25 episodes: $0.830$ ($n=3$); 50 episodes: $0.868$ ($n=3$);
+        100 episodes: $0.933$ ($n=3$); 200 episodes: $0.947$ ($n=3$);
+        each the mean over three training seeds of the frozen-policy evaluation.
+  \\item The budget is load-bearing: the mean evaluation coverage moves by
+        $+0.117$ over the range 25 to 200 episodes, monotonically."""
+if "at 25 episodes,      50 episodes" in s:
+    rep(old_b1, new_b1, "E6", 1)
+    print("E6 ok")
+
+# ---- E7 ----
+old_cr = """$0.959$ (95\\% interval $[0.956, 0.963]$) against $0.952$, with the difference-credit arm is not separated from the team reward at this resolution.  The
+earlier local-critic arm (a per-agent actor with a per-agent critic, the
+``masked PPO local critic'' row of the old table) is re-run under the fixed
+
+"""
+new_cr = """$0.959$ (95\\% interval $[0.956, 0.963]$) against $0.952$: the difference-credit arm is not separated from the team reward at this resolution.  The
+earlier local-critic arm (a per-agent actor with a per-agent critic, the
+``masked PPO local critic'' row of the old table) was measured with the
+pre-correction learner and has not been re-run under the corrected protocol,
+so it is not claimed as evidence about the corrected controller.
+"""
+if "with the difference-credit arm is not separated" in s:
+    rep(old_cr, new_cr, "E7", 1)
+    print("E7 ok")
+
+# ---- E8 ----
+if "clustered start & 0.997 & 0.959 & -0.038 & 0.003" in s:
+    rep("clustered start & 0.997 & 0.959 & -0.038 & 0.003",
+        "spread start & 0.997 & 0.959 & -0.038 & 0.003", "E8 row", 1)
+    print("E8 row ok")
+old_cap = "\\caption{Stress regimes (zero-shot).  Every row is the frozen-policy\nevaluation on the same held-out scenes, with the configuration of the regime\napplied."
+new_cap = "\\caption{Stress regimes (zero-shot).  Every row is the frozen-policy\nevaluation on the same 5 held-out scenes (seeds 1000--1004), with the\nconfiguration of the regime applied."
+if "on the same held-out scenes, with the configuration" in s:
+    rep(old_cap, new_cap, "E8 cap", 1)
+    print("E8 cap ok")
+
+# ---- E9 ----
+if "anchor (ego+shape) & 0.765 & -- & 5" in s:
+    rep("anchor (ego+shape) & 0.765 & -- & 5 \\\\",
+        "anchor (ego+shape) & 0.765 & 0.081 & 5 \\\\", "E9 anchor", 1)
+    print("E9 anchor ok")
+if "+ difference credit + curriculum + energy + R\\&F" not in s:
+    rep("+ intrinsic + curriculum + energy + R\\&F & 0.834 & 0.068 & 1 \\\\",
+        "+ intrinsic + curriculum + energy + R\\&F & 0.834 & 0.068 & 1 \\\\\n+ difference credit + curriculum + energy + R\\&F & 0.816 & 0.131 & 1 \\\\",
+        "E9 row", 1)
+    print("E9 row ok")
+
+# ---- E10 ----
+old_log = r"""\emph{Correction and re-measurement (Nov 2026).} A super-intelligent review identified a sign-flipped entropy term ($+c_2 H$ instead of $-c_2 H$) and severe under-training (25 gradient steps total, no PPO epochs) in the learner, which together explain the reported collapse at episode 675 and the flat budget curve. Part-1 fixes are applied (entropy sign, separate optimisers and grad clipping, 10 PPO epochs with KL early stop, clipped value loss, orthogonal init, active-agent masking, EMA direction). Re-measured under the corrected protocol of Section~\ref{sec:protocol} the learner reaches \tokEgoShapeCK{} over \tokEgoShapeN{} seeds against \tokRuleReactiveLocalCK{} for the strongest rule, a difference of \tokLearnerMinusRule{} (95\% interval \tokLearnerMinusRuleCi), and \tokGapVerdict. The earlier ``credit assignment drives collapse'' reading and the $0.860$ random-baseline figure are retracted; the latter was measured with the wrong configuration. The network is not the binding constraint at 80~m scale (PDR $\approx 0.998$, range margin $22\times$). The paper's thesis is being reframed from ``learning beats the rule'' to ``certifying where learning does not help,'' with the feasibility-certification methodology (C4) as the centrepiece contribution.
+"""
+if "Correction and re-measurement (Nov 2026)" in s:
+    assert old_log in s, "conclusion log not found"
+    s = s.replace(old_log, "", 1)
+    print("E10 concl ok")
+
+old_sec9 = r"""\emph{What this does to the rest of the results section.}  The controlled arms of Section~\ref{sec:results} were run against the broken learner, so they bound the explanation of a gap that no longer exists.  They are not evidence about the corrected controller, and we do not use them as such.  What survives from them is the measurement of the rule baselines and the observation that the local-assignment rule is not worse than the global one, both of which reproduce at the current code."""
+new_sec9 = r"""\emph{What this does to the rest of the results section.}  The controlled arms of Section~\ref{sec:results} were run against the broken learner, so they bound the explanation of a gap that no longer exists.  They are not evidence about the corrected controller, and we do not use them as such.  What survives from them is the measurement of the rule baselines and the observation that the local-assignment rule is not worse than the global one, both of which reproduce at the current code.  Two further measurements from that version are retracted with it: the ``credit assignment drives collapse'' reading, and the $0.860$ random-baseline figure, which was measured with the wrong configuration."""
+if "we do not use them as such." in s and "Two further measurements" not in s:
+    rep(old_sec9, new_sec9, "E10 sec9", 1)
+    print("E10 sec9 ok")
+
+# ---- dead macro refs ----
+if "Table~\\ref{tab:results_energy} says so" in s:
+    rep("Table~\\ref{tab:results_energy} says so",
+        "Table~\\ref{tab:knobs} says so", "E11 tab energy", 1)
+    print("E11 tab energy ok")
+if "Table~\\ref{tab:results_obs}." in s:
+    rep("Table~\\ref{tab:results_obs}.",
+        "Table~\\ref{tab:knobs}.", "E11 tab obs", 1)
+    print("E11 tab obs ok")
+
+open(P, "w", encoding="utf-8").write(s)
+print("ALL EDITS APPLIED")
