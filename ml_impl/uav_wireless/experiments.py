@@ -435,6 +435,9 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
         # training runs and its spread is much smaller than the spread of
         # either row
         agg["per_seed_CK"] = ";".join(f"{p['CK']:.6f}" for p in per_seed)
+        for metric in ("Denied", "Degraded", "Reserve"):
+            agg[f"per_seed_{metric}"] = ";".join(
+                f"{p[metric]:.6f}" for p in per_seed)
         agg["device"] = device_used
         agg["config_hash"] = config_hash
         print(f"{name:18s} CK={agg['CK']:.3f}+-{agg['CK_std']:.3f} "
@@ -497,7 +500,7 @@ def _ablation_config_hash(base, stress, episodes, eval_seeds, seeds, device,
     protocol = dict(config=config, stress=bool(stress),
                     episodes=int(episodes), eval_seeds=int(eval_seeds),
                     seeds=int(seeds), device=str(device),
-                    variants=variants)
+                    variants=variants, measurement_schema=2)
     encoded = json.dumps(protocol, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 

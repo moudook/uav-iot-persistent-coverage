@@ -526,7 +526,9 @@ class UAVIoTEnv:
         if not requests:
             return {}
         if not self.cfg.use_charging_arbitration:
-            return {requests[0]: 0} if len(self.pads) else {}
+            assign = {requests[0]: 0} if len(self.pads) else {}
+            self.denied_charge += len(requests) - len(assign)
+            return assign
 
         n_pads = len(self.pads)
         max_q = max(self.pad_queue.max(), 1)
@@ -549,8 +551,7 @@ class UAVIoTEnv:
             if self.pad_occupied_by[s] == -1:
                 assign[i] = s
                 self.pad_occupied_by[s] = i
-            else:
-                self.denied_charge += 1
+        self.denied_charge += len(requests) - len(assign)
         return assign
 
     # ------------------------------------------------------------------
@@ -1403,7 +1404,7 @@ class UAVIoTEnv:
         self.prev_w_dist = w_dist
 
         # --- 7. metrics -------------------------------------------------
-        self._update_metrics(ncov, adj, draw, w_dist)
+        self._update_metrics(ncov, adj, draw, w_dist, degraded_now)
         # An episode ends either because the mission time limit is reached or
         # because the swarm can no longer serve the sensors.  These are NOT
         # the same event: a time limit is a TRUNCATION, and the value of the
@@ -1455,7 +1456,7 @@ class UAVIoTEnv:
     # ------------------------------------------------------------------
     # Metrics (Table IX)
     # ------------------------------------------------------------------
-    def _update_metrics(self, ncov, adj, draw, w_dist):
+    def _update_metrics(self, ncov, adj, draw, w_dist, degraded_now):
         c = self.cfg
         m = self.ep
         kcov_frac_this = float(np.mean(ncov >= c.K))
@@ -1469,7 +1470,8 @@ class UAVIoTEnv:
         m["distance"] += w_dist
         m["min_batt"] = min(m["min_batt"], float(np.min(self.E[self._active_idx()])) if len(self._active_idx()) else 0.0)
         m["steps"] += 1
-        m["denied"] += self.denied_charge
+        m["denied"] = self.denied_charge
+        m["degraded_steps"] += int(degraded_now)
         m["reserve_activations"] = self.reserve_used
         m["return_events"] = self.return_events
         m["stranded"] = self.stranded
@@ -1491,6 +1493,7 @@ class UAVIoTEnv:
             Kcov_ok=0.0, Kcov_frac=0.0, under_cov=0.0, connected=0.0,
             service_cont=0.0, crit=0.0, energy=0.0, distance=0.0,
             min_batt=float("inf"), steps=0, denied=0, reserve_activations=0,
+            degraded_steps=0,
             return_events=0, stranded=0, returning=0.0,
             projection_revisions=0, unexecuted_actions=0,
             # The metrics the table promises and the summary did not
@@ -1523,6 +1526,7 @@ class UAVIoTEnv:
             MinBattery=self.ep["min_batt"],
             Distance=self.ep["distance"],
             Denied=self.ep["denied"],
+            Degraded=self.ep["degraded_steps"] / s,
             Reserve=self.ep["reserve_activations"],
             ReturnEvents=self.ep["return_events"],
             Stranded=self.ep["stranded"],
