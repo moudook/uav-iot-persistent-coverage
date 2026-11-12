@@ -24,6 +24,7 @@ import math
 import os
 import re
 import sys
+from unittest.mock import patch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -31,7 +32,8 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "analysis"))
 
 from fill_tokens import (build_tokens, paired_stat, per_seed_ck,  # noqa: E402
-                         sample_std, screen)
+                         require_scipy_stats, sample_std, screen)
+from analysis.summary import reported_ck_std  # noqa: E402
 
 
 class TestTokenTable:
@@ -77,6 +79,17 @@ class TestTokenTable:
         assert sample_std(v) > float(np.std(v))
         assert sample_std([1.0]) == 0.0
 
+    def test_summary_recomputes_sample_standard_deviation(self):
+        values = [0.1, 0.2, 0.4]
+        assert abs(reported_ck_std({
+            "per_seed_CK": ";".join(map(str, values)),
+            "CK_std": 0.1,
+        }) - sample_std(values)) < 1e-12
+        assert abs(reported_ck_std({
+            "per_seed_CK": values,
+            "CK_std": 0.1,
+        }) - sample_std(values)) < 1e-12
+
     def test_paired_stat_pairs_in_the_right_direction(self):
         """paired_stat(a, b) is the statistic of (a - b)."""
         a = [0.80, 0.70, 0.60, 0.50]
@@ -98,6 +111,29 @@ class TestTokenTable:
         se = float(np.std(diffs, ddof=1)) / math.sqrt(len(diffs))
         # the t quantile for df = 4 at 0.975 is 2.7764
         assert abs(half - 2.7764 * se) < 1e-3
+
+    def test_t_inference_fails_clearly_without_scipy(self):
+        real_import = __import__
+
+        def import_without_scipy(name, *args, **kwargs):
+            if name == "scipy" or name.startswith("scipy."):
+                raise ModuleNotFoundError("simulated missing scipy")
+            return real_import(name, *args, **kwargs)
+
+        with patch("builtins.__import__", side_effect=import_without_scipy):
+            try:
+                require_scipy_stats()
+            except RuntimeError as exc:
+                assert "SciPy is required" in str(exc)
+            else:
+                raise AssertionError("missing SciPy must stop t-based inference")
+
+            try:
+                paired_stat([0.8, 0.7], [0.6, 0.5])
+            except RuntimeError as exc:
+                assert "SciPy is required" in str(exc)
+            else:
+                raise AssertionError("paired intervals must not use a z fallback")
 
     def test_the_budget_pairs_the_same_training_seeds(self):
         """The budget sweep trains the same seeds at every budget, so the

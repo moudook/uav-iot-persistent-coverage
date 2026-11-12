@@ -105,6 +105,18 @@ def sample_std(values):
     return float(np.std(v, ddof=1))
 
 
+def require_scipy_stats():
+    """Return scipy.stats or fail clearly when t-based inference is unavailable."""
+    try:
+        from scipy import stats
+    except ImportError as exc:  # pragma: no cover
+        raise RuntimeError(
+            "SciPy is required for Student-t confidence intervals and "
+            "inference; install scipy before generating report tokens."
+        ) from exc
+    return stats
+
+
 def per_seed_ck(row):
     """The per-training-seed CK values of an ablation row, if present."""
     v = row.get("per_seed_CK", "") if row else ""
@@ -186,26 +198,20 @@ def paired_stat(a, b):
     other number: the interval does the work, and the reader can see what
     the measurement resolved.
     """
-    try:
-        from scipy import stats as _st
-    except Exception:                                      # pragma: no cover
-        _st = None
     n = min(len(a), len(b))
     if n < 2:
         return (float("nan"), float("nan"), float("nan"), n)
+    stats = require_scipy_stats()
     d = [float(a[i]) - float(b[i]) for i in range(n)]
     mean = float(np.mean(d))
     sd = float(np.std(d, ddof=1))
-    crit = _st.t.ppf(0.975, n - 1) if _st else 1.96
+    crit = stats.t.ppf(0.975, n - 1)
     half = crit * sd / np.sqrt(n)
-    if _st:
-        if sd > 0:
-            tv = mean / (sd / np.sqrt(n))
-            p = float(2 * (1 - _st.t.cdf(abs(tv), n - 1)))
-        else:
-            p = 0.0 if mean != 0 else 1.0
-    else:                                                   # pragma: no cover
-        p = float("nan")
+    if sd > 0:
+        tv = mean / (sd / np.sqrt(n))
+        p = float(2 * (1 - stats.t.cdf(abs(tv), n - 1)))
+    else:
+        p = 0.0 if mean != 0 else 1.0
     return (mean, float(half), p, n)
 
 
@@ -350,12 +356,8 @@ def build_tokens():
                 s = sample_std(base_seed_cks)
                 n = len(base_seed_cks)
             if s not in (None, "") and n > 1:
-                try:
-                    from scipy import stats as _st
-                    half = (float(_st.t.ppf(0.975, n - 1))
-                            * float(s) / np.sqrt(n))
-                except Exception:                          # pragma: no cover
-                    half = 1.96 * float(s) / np.sqrt(n)
+                half = (float(require_scipy_stats().t.ppf(0.975, n - 1))
+                        * float(s) / np.sqrt(n))
                 tok["GAP_HALF"] = f"{half:.3f}"
                 tok["GAP_CI"] = f"[{gap-half:.3f}, {gap+half:.3f}]"
                 tok["GAP_N"] = str(n)
@@ -367,11 +369,7 @@ def build_tokens():
             cks = [float(b["CK"]) for b in bs]
             n = len(cks)
             if n > 1:
-                try:
-                    from scipy import stats as _st
-                    crit = float(_st.t.ppf(0.975, n - 1))
-                except Exception:                          # pragma: no cover
-                    crit = 1.96
+                crit = float(require_scipy_stats().t.ppf(0.975, n - 1))
                 gap = float(tok["GAP"])
                 half = crit * float(np.std(cks, ddof=1)) / np.sqrt(n)
                 tok["GAP_HALF"] = f"{half:.3f}"
@@ -395,13 +393,17 @@ def build_tokens():
         tok["A_SC"] = f(a["SC"])
         tok["A_DIST"] = f(a["distinct_actions"], 2)
         tok["A_SPREAD"] = f(a["mean_spread_m"], 1)
-        tok["A_CK_STD"] = f(a.get("CK_std", 0.0))
+        tok["A_CK_STD"] = f(sample_std(a["per_seed_CK"])
+                             if len(a.get("per_seed_CK", [])) > 1
+                             else a.get("CK_std", 0.0))
         tok["B_CK"] = f(b["CK"])
         tok["B_AG"] = f(b["AG"])
         tok["B_SC"] = f(b["SC"])
         tok["B_DIST"] = f(b["distinct_actions"], 2)
         tok["B_SPREAD"] = f(b["mean_spread_m"], 1)
-        tok["B_CK_STD"] = f(b.get("CK_std", 0.0))
+        tok["B_CK_STD"] = f(sample_std(b["per_seed_CK"])
+                             if len(b.get("per_seed_CK", [])) > 1
+                             else b.get("CK_std", 0.0))
         delta = b["CK"] - a["CK"]
         tok["B_MINUS_A"] = f"{delta:+.3f}"
         # The share is the arm's effect as a fraction of THE GAP THE PAPER
@@ -418,7 +420,9 @@ def build_tokens():
                 pass
     if c:
         tok["C_CK"] = f(c["CK"])
-        tok["C_CK_STD"] = f(c.get("CK_std", 0.0))
+        tok["C_CK_STD"] = f(sample_std(c["per_seed_CK"])
+                             if len(c.get("per_seed_CK", [])) > 1
+                             else c.get("CK_std", 0.0))
         if a:
             tok["C_DELTA"] = f"{c['CK'] - a['CK']:+.3f}"
         if b:
@@ -824,7 +828,7 @@ def build_tokens():
         bs = json.load(open(bs_path, encoding="utf-8"))
         cks = [float(b["CK"]) for b in bs]
         if len(cks) > 1:
-            yardstick = float(np.std(cks))
+            yardstick = sample_std(cks)
 
     abl = load_csv("results_ablation.csv")
     if abl:
@@ -836,7 +840,7 @@ def build_tokens():
         if full:
             fs = per_seed_ck(full)
             if len(fs) > 1:
-                yardstick = float(np.std(fs))
+                yardstick = sample_std(fs)
         if full and van:
             d = float(full["CK"]) - float(van["CK"])
             tok["ABL_DELTA"] = f"{d:+.3f}"
@@ -893,20 +897,17 @@ def build_tokens():
         # HALF-WIDTH WAS DETECTED -- not that the component is inert.
         # --------------------------------------------------------------
         if paired:
-            try:
-                from scipy import stats as _st
-            except Exception:                                  # pragma: no cover
-                _st = None
             n_p = len(paired[0][1] and [1] or [1])
             R = len(fs)
-            crit = (_st.t.ppf(0.975, R - 1) if (_st and R > 1) else 0.0)
+            stats = require_scipy_stats() if R > 1 else None
+            crit = float(stats.t.ppf(0.975, R - 1)) if stats else 0.0
             rows_p = []
             for n, pmean, pstd in paired:
                 half = crit * pstd / math.sqrt(R) if R > 1 else float("nan")
-                if _st and R > 1 and pstd > 0:
+                if stats and R > 1 and pstd > 0:
                     tv = pmean / (pstd / math.sqrt(R))
-                    pval = 2 * (1 - _st.t.cdf(abs(tv), R - 1))
-                elif _st and R > 1:
+                    pval = 2 * (1 - stats.t.cdf(abs(tv), R - 1))
+                elif stats and R > 1:
                     pval = 0.0 if pmean != 0 else 1.0
                 else:
                     pval = float("nan")
@@ -1863,23 +1864,20 @@ def build_tokens():
         if mean == mean and half == half and n > 1:
             arm_rows.append((key, mean, half, n))
     if len(arm_rows) >= 2:
-        try:
-            from scipy import stats
-            m = len(arm_rows)
-            worst = -1e9
-            for key, mean, half, n in arm_rows:
-                df = n - 1
-                t975 = float(stats.t.ppf(0.975, df))
-                if t975 <= 0:
-                    continue
-                se = half / t975
-                t_adj = float(stats.t.ppf(1.0 - 0.05 / m, df))
-                worst = max(worst, mean + t_adj * se)
-            if worst > -1e8:
-                tok["ARMS_BONF_UPPER"] = f"{worst:.3f}"
-                tok["ARMS_BONF_N"] = str(m)
-        except Exception:                                      # pragma: no cover
-            pass
+        stats = require_scipy_stats()
+        m = len(arm_rows)
+        worst = -1e9
+        for key, mean, half, n in arm_rows:
+            df = n - 1
+            t975 = float(stats.t.ppf(0.975, df))
+            if t975 <= 0:
+                continue
+            se = half / t975
+            t_adj = float(stats.t.ppf(1.0 - 0.05 / m, df))
+            worst = max(worst, mean + t_adj * se)
+        if worst > -1e8:
+            tok["ARMS_BONF_UPPER"] = f"{worst:.3f}"
+            tok["ARMS_BONF_N"] = str(m)
     # the gap's own lower limit, for the comparison the correction is
     # made against
     try:
@@ -1970,12 +1968,6 @@ def build_tokens():
         half_last = float("nan")
         p_last = float("nan")
         n_pair = 0
-        try:
-            from scipy import stats as _st_b
-            crit_b = float(_st_b.t.ppf(0.975, max(n_pair - 1, 1))) \
-                if n_pair > 1 else 0.0
-        except Exception:                                      # pragma: no cover
-            crit_b = 0.0
         if len(rows) >= 2:
             pa = rows[-2].get("per_seed_CK") or []
             pb = rows[-1].get("per_seed_CK") or []
@@ -1984,13 +1976,10 @@ def build_tokens():
                 half_last = _h
                 p_last = _p
                 if n_pair > 1:
-                    try:
-                        from scipy import stats as _st_b
-                        crit_b = float(_st_b.t.ppf(0.975, n_pair - 1))
-                    except Exception:                          # pragma: no cover
-                        crit_b = 1.96
-                se = _h / crit_b if crit_b > 0 else float("nan")
-                t = _m / se if (se == se and se > 0) else float("nan")
+                    crit_b = float(
+                        require_scipy_stats().t.ppf(0.975, n_pair - 1))
+                    se = _h / crit_b
+                    t = _m / se if (se == se and se > 0) else float("nan")
         tok["BUDGET_SE"] = f"{se:.3f}" if se == se else "n/a"
         tok["BUDGET_T"] = f"{t:.2f}" if t == t else "n/a"
         tok["BUDGET_LAST_CI"] = (f"[{incs[-1]-half_last:+.3f}, "
