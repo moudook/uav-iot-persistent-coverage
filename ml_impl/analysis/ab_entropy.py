@@ -107,14 +107,15 @@ def main():
                   f"ent={ents[-1]:.3f} distinct(argmax)={nd:.2f}/8 "
                   f"spread={sp:5.1f} m best_ck={bests[-1]:.3f} "
                   f"({time.time()-t0:.0f}s)", flush=True)
-        print(f"  {name:22s} CK={np.mean(cks):.3f}±{np.std(cks):.3f} "
+        ck_std = float(np.std(cks, ddof=1)) if len(cks) > 1 else 0.0
+        print(f"  {name:22s} CK={np.mean(cks):.3f}±{ck_std:.3f} "
               f"AG={np.mean(ags):.3f} SC={np.mean(scs):.3f} "
               f"CI={np.mean(cis):.3f} entropy={np.mean(ents):.3f} "
               f"distinct(argmax)={np.mean(nds):.2f}/8 "
               f"spread={np.mean(sps):.1f} m best_ck={np.mean(bests):.3f}",
               flush=True)
         rows.append(dict(arm=name, ent_coef=ec,
-                         CK=float(np.mean(cks)), CK_std=float(np.std(cks)),
+                         CK=float(np.mean(cks)), CK_std=ck_std,
                          AG=float(np.mean(ags)), SC=float(np.mean(scs)),
                          CovIntegral=float(np.mean(cis)),
                          entropy=float(np.mean(ents)),

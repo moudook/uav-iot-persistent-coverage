@@ -129,7 +129,8 @@ def main():
                    for e in range(args.eval_seeds)]
             device_used = str(getattr(agent, "device", "cpu"))
             agg = {k: float(np.mean([x[k] for x in evs])) for k in evs[0]}
-            std = {k: float(np.std([x[k] for x in evs])) for k in evs[0]}
+            std = {k: (float(np.std([x[k] for x in evs], ddof=1))
+                       if len(evs) > 1 else 0.0) for k in evs[0]}
             cks.append(agg["CK"]); ags.append(agg["AG"]); scs.append(agg["SC"])
             cis.append(agg["CovIntegral"])
             best = max(h.get("CK", 0) for h in hist)
@@ -137,11 +138,12 @@ def main():
                   f"AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
                   f"CI={agg['CovIntegral']:.3f} best_train_ck={best:.3f} "
                   f"({time.time()-t0:.0f}s)", flush=True)
-        print(f"  {name:44s} CK={np.mean(cks):.3f}±{np.std(cks):.3f} "
+        ck_std = float(np.std(cks, ddof=1)) if len(cks) > 1 else 0.0
+        print(f"  {name:44s} CK={np.mean(cks):.3f}±{ck_std:.3f} "
               f"AG={np.mean(ags):.3f} SC={np.mean(scs):.3f} "
               f"CI={np.mean(cis):.3f}", flush=True)
         rows.append(dict(arm=name, CK=float(np.mean(cks)),
-                         CK_std=float(np.std(cks)), AG=float(np.mean(ags)),
+                         CK_std=ck_std, AG=float(np.mean(ags)),
                          SC=float(np.mean(scs)),
                          device=str(device_used),
                          episodes=int(args.episodes), seeds=int(args.seeds),

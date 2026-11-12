@@ -109,7 +109,8 @@ def main():
                   f"(last training episode "
                   f"{hist[-1].get('CK', float('nan')):.3f})", flush=True)
         row = dict(episodes=b, CK=float(np.mean(cks)),
-                   CK_std=float(np.std(cks)), per_seed_CK=cks,
+                   CK_std=float(np.std(cks, ddof=1)) if len(cks) > 1 else 0.0,
+                   per_seed_CK=cks,
                    seeds=int(args.seeds), eval_seeds=int(args.eval_seeds),
                    device=device)
         rows.append(row)
