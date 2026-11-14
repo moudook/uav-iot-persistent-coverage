@@ -52,20 +52,22 @@ for name, (ck, ag, sc) in report_rules.items():
     check(f"rule {name} SC", sc, round(r["SC"], 3))
 
 # ---- learner headline (corrected retrain) ---------------------------------
+hpath = os.path.join(RUNS, "exp_ego_fixed", "eval_heldout.json")
 seeds_f = sorted(glob.glob(os.path.join(RUNS, "exp_ego_fixed", "seed_*.json")))
-if len(seeds_f) == 5:
-    cks = [jload(f)["eval_ck"] for f in seeds_f]
-    ck = float(np.mean(cks))
-    sd = float(np.std(cks, ddof=1))
-    check("learner CK (corrected retrain)", 0.956, round(ck, 3), tol=0.002)
-    check("learner sd (corrected retrain)", 0.009, round(sd, 3), tol=0.002)
+if os.path.exists(hpath) and len(seeds_f) == 5:
+    h = jload(hpath)
+    cks = [float(v["mean"]) for v in h["per_checkpoint"].values()]
+    ck = float(h["mean_over_seeds"])
+    sd = float(h["sd_over_seeds"])
+    check("learner CK (corrected retrain)", 0.957, round(ck, 3), tol=0.0015)
+    check("learner sd (corrected retrain)", 0.009, round(sd, 3), tol=0.0015)
     diffs = [c - rules["Reactive-local"]["CK"] for c in cks]
     gap = float(np.mean(diffs))
     half = float(__import__("scipy.stats", fromlist=["t"]).t.ppf(0.975, 4)
                  * np.std(diffs, ddof=1) / np.sqrt(5))
-    check("learner gap vs rule", 0.032, round(gap, 3), tol=0.003)
-    check("learner gap CI low", 0.021, round(gap - half, 3), tol=0.003)
-    check("learner gap CI high", 0.044, round(gap + half, 3), tol=0.003)
+    check("learner gap vs rule", 0.033, round(gap, 3), tol=0.002)
+    check("learner gap CI low", 0.022, round(gap - half, 3), tol=0.002)
+    check("learner gap CI high", 0.045, round(gap + half, 3), tol=0.002)
     print(f"      learner CK={ck:.4f} sd={sd:.4f} gap={gap:+.4f} "
           f"CI=[{gap - half:.4f}, {gap + half:.4f}]")
     agsc = os.path.join(RUNS, "exp_ego_fixed", "agsc.json")
