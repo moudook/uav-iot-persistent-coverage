@@ -31,12 +31,15 @@ Completed seeds collapsed:
 
 | seed | held-out CK | final training entropy |
 |---|---|---|
+| 0 | 0.3528 | 0.097 |
 | 1 | 0.2809 | 0.055 |
+| 3 | 0.3582 | 0.050 |
 | 4 | 0.2767 | 0.083 |
 
-The first-generation headline is 0.9566 +/- 0.0092, with training entropy
-around 1.0. The v2 policy became nearly deterministic by episode 40 and never
-recovered.
+Mean held-out CK is 0.317. The first-generation headline is
+0.9566 +/- 0.0092, with training entropy around 1.0. The v2 policy became
+nearly deterministic by episode 40 and never recovered. The four training
+histories are stored under `docs/archive/audits/v2/`.
 
 ## Interpretation
 
