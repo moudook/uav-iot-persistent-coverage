@@ -1,0 +1,12 @@
+[MAPPO ep   0] R=-13.1223 CK=0.282 AG=1.000 Crit=0.000 ent=1.360
+[MAPPO ep  20] R=-6.3704 CK=0.537 AG=1.000 Crit=0.015 ent=1.476
+[MAPPO ep  40] R=+0.0711 CK=0.849 AG=1.000 Crit=0.004 ent=1.380
+[MAPPO ep  60] R=-4.9489 CK=0.795 AG=0.919 Crit=0.229 ent=0.722
+[MAPPO ep  80] R=-3.8559 CK=0.610 AG=1.000 Crit=0.080 ent=1.198
+[MAPPO ep 100] R=+0.1342 CK=0.829 AG=1.000 Crit=0.044 ent=1.205
+[MAPPO ep 120] R=+1.3344 CK=0.921 AG=1.000 Crit=0.015 ent=1.292
+[MAPPO ep 140] R=-1.8480 CK=0.791 AG=1.000 Crit=0.126 ent=1.170
+[MAPPO ep 160] R=-1.0423 CK=0.795 AG=1.000 Crit=0.010 ent=1.196
+[MAPPO ep 180] R=+1.0334 CK=0.941 AG=1.000 Crit=0.011 ent=1.155
+[MAPPO ep 199] R=-3.5878 CK=0.712 AG=1.000 Crit=0.081 ent=1.073
+seed 1: DONE in 2976.9s, final CK=0.7115 -> C:\Users\gbust\Downloads\Academic\Courses\Machine_learning_in_wireless_network\Project1\scripts\..\ml_impl\runs\si_fixed\seed_1.json

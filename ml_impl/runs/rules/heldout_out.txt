@@ -1,0 +1,5 @@
+Fixed            CK=0.3641 (sd 0.1096) n=20
+Greedy           CK=0.7128 (sd 0.1241) n=20
+Reactive         CK=0.8323 (sd 0.1433) n=20
+Reactive-local   CK=0.9233 (sd 0.0777) n=20
+wrote C:\Users\gbust\Downloads\Academic\Courses\Machine_learning_in_wireless_network\Project1\scripts\..\ml_impl\runs\rules_heldout\eval_rules.json

@@ -1,0 +1,8 @@
+[train] loaded BC actor from C:\Users\gbust\Downloads\Academic\Courses\Machine_learning_in_wireless_network\Project1\scripts\..\ml_impl\bc_actor.pt
+[train] loaded ref actor from C:\Users\gbust\Downloads\Academic\Courses\Machine_learning_in_wireless_network\Project1\scripts\..\ml_impl\bc_actor.pt (kl_coef=0.5)
+[MAPPO ep   0] R=-4.3128 CK=0.842 AG=1.000 Crit=0.053 ent=0.134
+[MAPPO ep  50] R=+3.6936 CK=0.947 AG=1.000 Crit=0.006 ent=0.066
+[MAPPO ep 100] R=+3.4160 CK=0.837 AG=1.000 Crit=0.027 ent=0.108
+[MAPPO ep 150] R=-5.3155 CK=0.495 AG=1.000 Crit=0.097 ent=0.186
+[MAPPO ep 199] R=+3.5848 CK=0.888 AG=1.000 Crit=0.063 ent=0.084
+seed 0: DONE in 2910.4s, final CK=0.8885
