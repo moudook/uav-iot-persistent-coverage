@@ -108,12 +108,13 @@ def main():
                   f"distinct={nd:.2f}/8 spread={sp:5.1f} m "
                   f"best_ck={max(h['CK'] for h in hist):.3f} "
                   f"({time.time()-t0:.0f}s)", flush=True)
-        print(f"  {name:20s} CK={np.mean(cks):.3f}±{np.std(cks):.3f} "
+        ck_std = float(np.std(cks, ddof=1)) if len(cks) > 1 else 0.0
+        print(f"  {name:20s} CK={np.mean(cks):.3f}±{ck_std:.3f} "
               f"AG={np.mean(ags):.3f} SC={np.mean(scs):.3f} "
               f"CI={np.mean(cis):.3f} distinct={np.mean(nds):.2f}/8 "
               f"spread={np.mean(sps):.1f} m", flush=True)
         rows.append(dict(arm=name, use_agent_id=use_id,
-                         CK=float(np.mean(cks)), CK_std=float(np.std(cks)),
+                         CK=float(np.mean(cks)), CK_std=ck_std,
                          AG=float(np.mean(ags)), SC=float(np.mean(scs)),
                          CovIntegral=float(np.mean(cis)),
                          distinct_actions=float(np.mean(nds)),

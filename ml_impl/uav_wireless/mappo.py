@@ -331,3 +331,8 @@ class MAPPO:
         if "ret_mean" in d:
             self._ret_mean = float(d["ret_mean"])
             self._ret_std = float(d["ret_std"])
+
+    def load_actor(self, path):
+        """Load only the decentralized policy for frozen evaluation."""
+        d = torch.load(path, map_location=self.device)
+        self.actor.load_state_dict(d["actor"])

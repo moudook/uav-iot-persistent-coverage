@@ -191,7 +191,8 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
         sums = [fn(base, steps=base.episode_len, seed=s)
                 for s in range(eval_seeds)]
         agg = {k: float(np.mean([s[k] for s in sums])) for k in sums[0]}
-        std = {k: float(np.std([s[k] for s in sums])) for k in sums[0]}
+        std = {k: (float(np.std([s[k] for s in sums], ddof=1))
+                   if len(sums) > 1 else 0.0) for k in sums[0]}
         print(f"{name:10s} CK={agg['CK']:.3f}±{std['CK']:.3f} "
               f"AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
               f"CI={agg['CovIntegral']:.3f} E={agg['Energy']:.0f}")
@@ -213,7 +214,8 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
         evs = [eval_agent(agent, base, steps=base.episode_len, seed=s)
                for s in range(eval_seeds)]
         agg = {k: float(np.mean([s[k] for s in evs])) for k in evs[0]}
-        std = {k: float(np.std([s[k] for s in evs])) for k in evs[0]}
+        std = {k: (float(np.std([s[k] for s in evs], ddof=1))
+                   if len(evs) > 1 else 0.0) for k in evs[0]}
         print(f"{'MAPPO':10s} CK={agg['CK']:.3f}+-{std['CK']:.3f} "
               f"AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
               f"CI={agg['CovIntegral']:.3f} E={agg['Energy']:.0f}")
@@ -377,6 +379,9 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
             # from this run's device, which the protocol pins
             row["device"] = str(row.get("device")
                                 or os.environ.get("UAV_DEVICE", "cpu"))
+            per_seed_ck = d.get("per_seed_ck", [])
+            if len(per_seed_ck) > 1:
+                row["CK_std"] = float(np.std(per_seed_ck, ddof=1))
             rows.append(row)
             print(f"  {name:18s} reused from a previous run "
                   f"(CK={row.get('CK', float('nan')):.3f})", flush=True)
@@ -420,7 +425,8 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
         agg["Reserve"] = float(np.mean([p["Reserve"] for p in per_seed]))
         agg["Denied"] = float(np.mean([p["Denied"] for p in per_seed]))
         agg["Stranded"] = float(np.mean([p["Stranded"] for p in per_seed]))
-        agg["CK_std"] = float(np.std([p["CK"] for p in per_seed]))
+        agg["CK_std"] = (float(np.std([p["CK"] for p in per_seed], ddof=1))
+                         if len(per_seed) > 1 else 0.0)
         agg["train_seeds"] = int(seeds)
         agg["episodes"] = int(episodes)
         # the per-seed values are kept, so that a variant can be compared

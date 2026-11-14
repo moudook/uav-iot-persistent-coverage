@@ -653,6 +653,45 @@ class TestEnergyAndFaults:
 # MAPPO
 # ======================================================================
 class TestMAPPO:
+    def test_actor_checkpoint_loads_when_critic_state_dim_changes(self):
+        import copy
+        import os
+        import tempfile
+        import torch
+        from uav_wireless.experiments import eval_agent
+
+        nominal_cfg = SimConfig(N=2, K=1, M=6, n_pads=2,
+                                use_pad_bearing=True, episode_len=2)
+        single_pad_cfg = copy.deepcopy(nominal_cfg)
+        single_pad_cfg.n_pads = 1
+        nominal_env = UAVIoTEnv(nominal_cfg)
+        single_pad_env = UAVIoTEnv(single_pad_cfg)
+        assert nominal_env.obs_dim == single_pad_env.obs_dim
+        assert nominal_env.state_dim == single_pad_env.state_dim + 1
+
+        trained_shape = MAPPO(
+            obs_dim=nominal_env.obs_dim, state_dim=nominal_env.state_dim,
+            n_agents=nominal_cfg.N, hidden=16, device="cpu")
+        eval_agent_model = MAPPO(
+            obs_dim=single_pad_env.obs_dim, state_dim=single_pad_env.state_dim,
+            n_agents=single_pad_cfg.N, hidden=16, device="cpu")
+        critic_before = [p.detach().clone()
+                         for p in eval_agent_model.critic.parameters()]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            checkpoint = os.path.join(temp_dir, "policy.pt")
+            trained_shape.save(checkpoint)
+            eval_agent_model.load_actor(checkpoint)
+
+        assert all(torch.equal(expected, actual)
+                   for expected, actual in zip(
+                       trained_shape.actor.parameters(),
+                       eval_agent_model.actor.parameters()))
+        assert all(torch.equal(before, after)
+                   for before, after in zip(
+                       critic_before, eval_agent_model.critic.parameters()))
+        eval_agent(eval_agent_model, single_pad_cfg, steps=1, seed=1000)
+
     def test_masked_actions_are_never_selected(self):
         """A masked-out action must have zero probability."""
         agent = MAPPO(n_agents=3, device="cpu")

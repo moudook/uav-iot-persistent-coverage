@@ -59,12 +59,12 @@ def learner_anchor_from_meta(ckpt_list):
             pass
     return anchor
 
-# Regimes that change the size of the observation or the state cannot
-# load a checkpoint trained on the nominal architecture: the actor and
-# critic input dims are fixed by N, M and n_pads.  Zero-shot
-# evaluation is therefore only defined on the regimes below.
-SAME_DIM_REGIMES = {"nominal", "small_battery", "low_comm",
-                    "failure", "multi_failure", "clustered"}
+# Frozen evaluation only uses the actor, so regimes are compatible when
+# their local-observation dimensions match the trained policy. The critic
+# is used for training, not action selection.
+ACTOR_COMPATIBLE_REGIMES = {"nominal", "single_pad", "small_battery",
+                            "low_comm", "failure", "multi_failure",
+                            "clustered"}
 
 RULES_ALL = [("Fixed", baseline_fixed), ("Greedy", baseline_greedy),
             ("Reactive", baseline_reactive), ("Reactive-local", baseline_reactive_local)]
@@ -80,7 +80,7 @@ def eval_learner_on_regime(ckpt_list, cfg, scenes, steps):
         env = UAVIoTEnv(cfg)
         ag = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim,
                    state_dim=env.state_dim, device="cpu")
-        ag.load(ck)
+        ag.load_actor(ck)
         cks = []
         with torch.no_grad():
             for s in scenes:
@@ -105,6 +105,9 @@ def main():
 
     rundir = os.path.join(os.path.dirname(__file__), "..", "ml_impl", "runs", a.tag)
     ckpts = sorted(__import__("glob").glob(os.path.join(rundir, "seed_*.pt")))
+    if not ckpts:
+        print("no checkpoints in", rundir)
+        return 1
     scenes = list(range(a.eval_offset, a.eval_offset + a.eval_seeds))
     results = {}
     global RULES
@@ -130,7 +133,7 @@ def main():
         best_name = max(rule_summary, key=lambda k: rule_summary[k]["CK"])
         # learner (its own anchor config on top of the regime); only where
         # the architecture dims are unchanged
-        if regime in SAME_DIM_REGIMES:
+        if regime in ACTOR_COMPATIBLE_REGIMES:
             learner_per_seed = eval_learner_on_regime(ckpts, learner_cfg, scenes, a.steps)
         else:
             learner_per_seed = []

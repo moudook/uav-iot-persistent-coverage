@@ -32,6 +32,24 @@ def json_file(name):
     return json.load(open(p, encoding="utf-8"))
 
 
+def per_seed_values(value):
+    if not value:
+        return []
+    parts = value if isinstance(value, (list, tuple)) else str(value).split(";")
+    try:
+        return [float(part) for part in parts]
+    except (TypeError, ValueError):
+        return []
+
+
+def reported_ck_std(row):
+    values = per_seed_values(row.get("per_seed_CK"))
+    if len(values) > 1:
+        import numpy as np
+        return float(np.std(values, ddof=1))
+    return float(row.get("CK_std") or 0)
+
+
 def main():
     out = {}
 
@@ -63,15 +81,16 @@ def main():
                    ("ab_budget.json", "budget")):
         rs = json_file(f)
         if rs:
-            out[key] = [{k: (round(v, 4) if isinstance(v, float) else v)
-                         for k, v in r.items() if k != "per_seed_CK"}
-                        for r in rs]
+            out[key] = [
+                {k: (round(v, 4) if isinstance(v, float) else v)
+                 for k, v in r.items() if k not in ("per_seed_CK", "CK_std")}
+                | {"CK_std": round(reported_ck_std(r), 4)}
+                for r in rs]
 
     abl = rows_csv("results_ablation.csv")
     if abl:
         out["ablation"] = {r["model"]: {"CK": round(float(r["CK"]), 4),
-                                        "CK_std": round(float(r.get("CK_std")
-                                                             or 0), 4),
+                                        "CK_std": round(reported_ck_std(r), 4),
                                         "device": r.get("device", "")}
                            for r in abl}
     stress = rows_csv("results_ablation_stress.csv")

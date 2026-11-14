@@ -146,12 +146,13 @@ def main():
                   f"SC={agg['SC']:.3f} CI={agg['CovIntegral']:.3f} "
                   f"stranded/ep={strs[-1]:.1f} returns/ep={rets[-1]:.1f} "
                   f"({time.time()-t0:.0f}s)", flush=True)
-        print(f"  {name:32s} CK={np.mean(cks):.3f}±{np.std(cks):.3f} "
+        ck_std = float(np.std(cks, ddof=1)) if len(cks) > 1 else 0.0
+        print(f"  {name:32s} CK={np.mean(cks):.3f}±{ck_std:.3f} "
               f"AG={np.mean(ags):.3f} SC={np.mean(scs):.3f} "
               f"CI={np.mean(cis):.3f} stranded/ep={np.mean(strs):.1f} "
               f"returns/ep={np.mean(rets):.1f}", flush=True)
         rows.append(dict(arm=name, **kw,
-                         CK=float(np.mean(cks)), CK_std=float(np.std(cks)),
+                         CK=float(np.mean(cks)), CK_std=ck_std,
                          AG=float(np.mean(ags)), SC=float(np.mean(scs)),
                          CovIntegral=float(np.mean(cis)),
                          stranded_per_episode=float(np.mean(strs)),
