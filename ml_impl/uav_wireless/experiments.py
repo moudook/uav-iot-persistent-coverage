@@ -8,6 +8,8 @@ metrics table. Results are saved to CSV.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import numpy as np
 
@@ -329,6 +331,8 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
                              use_action_mask=False, use_agent_id=False,
                              map_grid=0, use_pad_bearing=False),
     }
+    config_hash = _ablation_config_hash(
+        base, stress, episodes, eval_seeds, seeds, RUN_DEVICE, variants)
     if only:
         variants = {k: v for k, v in variants.items() if k in only}
     existing = []
@@ -361,6 +365,7 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
                     # trained on the GPU and its partner trained on the
                     # CPU are not a paired comparison
                     and str(d.get("device", "")) == RUN_DEVICE
+                    and d.get("config_hash") == config_hash
                     and d.get("model") in variants):
                 done[d["model"]] = d
     rows = []
@@ -382,6 +387,7 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
             per_seed_ck = d.get("per_seed_ck", [])
             if len(per_seed_ck) > 1:
                 row["CK_std"] = float(np.std(per_seed_ck, ddof=1))
+            row["config_hash"] = config_hash
             rows.append(row)
             print(f"  {name:18s} reused from a previous run "
                   f"(CK={row.get('CK', float('nan')):.3f})", flush=True)
@@ -435,7 +441,11 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
         # training runs and its spread is much smaller than the spread of
         # either row
         agg["per_seed_CK"] = ";".join(f"{p['CK']:.6f}" for p in per_seed)
+        for metric in ("Denied", "Degraded", "Reserve"):
+            agg[f"per_seed_{metric}"] = ";".join(
+                f"{p[metric]:.6f}" for p in per_seed)
         agg["device"] = device_used
+        agg["config_hash"] = config_hash
         print(f"{name:18s} CK={agg['CK']:.3f}+-{agg['CK_std']:.3f} "
               f"AG={agg['AG']:.3f} SC={agg['SC']:.3f} "
               f"CI={agg['CovIntegral']:.3f} Reserve={agg['Reserve']:.1f} "
@@ -483,6 +493,22 @@ def _ablation_payload(row, out_csv, stress, episodes, eval_seeds, seeds,
                    episodes=int(episodes), eval_seeds=int(eval_seeds),
                    seeds=int(seeds), per_seed_ck=list(per_seed_ck))
     return payload
+
+
+def _ablation_config_hash(base, stress, episodes, eval_seeds, seeds, device,
+                          variants):
+    config = base.dict()
+    config.pop("seed", None)
+    if stress:
+        config.update(failure_enabled=True, failure_time=500, n_pads=1,
+                      B_max=15_000.0, charge_rate=0.0004,
+                      R_comm=30.0, R_cov=30.0)
+    protocol = dict(config=config, stress=bool(stress),
+                    episodes=int(episodes), eval_seeds=int(eval_seeds),
+                    seeds=int(seeds), device=str(device),
+                    variants=variants, measurement_schema=2)
+    encoded = json.dumps(protocol, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
 def _write_ablation_csv(out_csv, rows):

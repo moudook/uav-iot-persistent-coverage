@@ -745,8 +745,46 @@ class TestMetrics:
         for _ in range(20):
             e.step(np.zeros(c.N, dtype=np.int64))
         s = e.summary()
-        for k in ("CK", "AG", "SC", "Crit", "Energy", "MinBattery", "Distance"):
+        for k in ("CK", "AG", "SC", "Crit", "Energy", "MinBattery",
+                  "Distance", "Denied", "Degraded", "Reserve"):
             assert k in s, f"missing metric {k}"
+
+    def test_denied_charge_counts_unassigned_requests_with_arbitration(self):
+        c = SimConfig(N=2, n_pads=1, use_charging_arbitration=True)
+        env = UAVIoTEnv(c)
+        env.reset()
+        assigned = env.arbitrate([0, 1])
+        assert len(assigned) == 1
+        assert env.denied_charge == 1
+
+    def test_denied_charge_counts_unassigned_requests_without_arbitration(self):
+        c = SimConfig(N=2, n_pads=1, use_charging_arbitration=False)
+        env = UAVIoTEnv(c)
+        env.reset()
+        assigned = env.arbitrate([0, 1])
+        assert len(assigned) == 1
+        assert env.denied_charge == 1
+
+    def test_denied_summary_is_not_a_cumulative_sum_of_a_counter(self):
+        c = SimConfig(N=2, n_pads=1, episode_len=2)
+        env = UAVIoTEnv(c)
+        env.reset()
+        env.denied_charge = 1
+        env.step(np.zeros(c.N, dtype=np.int64))
+        assert env.summary()["Denied"] == 1
+        env.denied_charge = 2
+        env.step(np.zeros(c.N, dtype=np.int64))
+        assert env.summary()["Denied"] == 2
+
+    def test_summary_reports_fraction_of_degraded_steps(self):
+        c = SimConfig(N=2, M=2, K=1, R_comm=1.0, episode_len=1,
+                      use_joint_projection=False)
+        env = UAVIoTEnv(c)
+        env.reset()
+        env.p[0] = np.array([1.0, 1.0])
+        env.p[1] = np.array([70.0, 70.0])
+        env.step(np.zeros(c.N, dtype=np.int64))
+        assert env.summary()["Degraded"] == 1.0
 
     def test_metrics_in_unit_interval(self):
         c = SimConfig(episode_len=50)

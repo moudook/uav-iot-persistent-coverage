@@ -24,6 +24,32 @@ ORDER = ["Full", "no-criticality", "no-degraded", "no-energy-cost",
          "no-agent-id", "no-map", "no-pad-bearing", "VanillaMAPPO"]
 
 
+def _merge_part_rows(parts):
+    rows = {}
+    proto = set()
+    config_hashes = set()
+    for part in parts:
+        for row in part:
+            model = row.get("model", "")
+            if not model:
+                raise ValueError("a part contains a row with no model")
+            if model in rows:
+                raise ValueError(f"duplicate model row: {model}")
+            config_hash = row.get("config_hash", "").strip()
+            if not config_hash:
+                raise ValueError(f"{model} is missing config_hash")
+            rows[model] = row
+            config_hashes.add(config_hash)
+            proto.add((row.get("episodes"), row.get("train_seeds"),
+                       row.get("device")))
+
+    if len(config_hashes) != 1:
+        raise ValueError("the parts do not share one config_hash")
+    if len(proto) != 1:
+        raise ValueError(f"the parts do not share one protocol: {sorted(proto)}")
+    return rows, next(iter(proto))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--stress", action="store_true")
@@ -34,24 +60,23 @@ def main():
              for k in ("a", "b")]
     out = os.path.join(ML, f"results_ablation{tag}.csv")
 
-    rows = {}
-    proto = set()
+    part_rows = []
     for p in parts:
         if not os.path.exists(p):
             print(f"  MISSING: {os.path.basename(p)}")
             continue
         with open(p, newline="", encoding="utf-8") as f:
-            for r in csv.DictReader(f):
-                rows[r["model"]] = r
-                proto.add((r.get("episodes"), r.get("train_seeds"),
-                           r.get("device")))
+            part_rows.append(list(csv.DictReader(f)))
+
+    try:
+        rows, protocol = _merge_part_rows(part_rows)
+    except ValueError as exc:
+        print(f"  merge refused: {exc}", file=sys.stderr)
+        return 1
 
     missing = [v for v in ORDER if v not in rows]
     if missing:
         print(f"  the merge is INCOMPLETE: {', '.join(missing)}")
-        return 1
-    if len(proto) != 1:
-        print(f"  the parts do not share one protocol: {sorted(proto)}")
         return 1
 
     fields = []
@@ -64,7 +89,7 @@ def main():
         w.writeheader()
         for v in ORDER:
             w.writerow({k: rows[v].get(k, "") for k in fields})
-    print(f"Saved -> {out}  ({len(ORDER)} variants, protocol {proto.pop()})")
+    print(f"Saved -> {out}  ({len(ORDER)} variants, protocol {protocol})")
     return 0
 
 

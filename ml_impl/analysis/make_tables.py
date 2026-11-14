@@ -372,8 +372,29 @@ def _per_seed_ck(row):
     return out
 
 
+def _validated_ablation_rows(rows):
+    by_model = {}
+    config_hashes = set()
+    missing_hash = False
+    for row in rows:
+        model = row.get("model", "")
+        if not model:
+            raise ValueError("ablation row has no model")
+        if model in by_model:
+            raise ValueError(f"duplicate ablation model row: {model}")
+        by_model[model] = row
+        config_hash = row.get("config_hash", "").strip()
+        if config_hash:
+            config_hashes.add(config_hash)
+        else:
+            missing_hash = True
+    if len(config_hashes) > 1 or (config_hashes and missing_hash):
+        raise ValueError("ablation rows do not share one config_hash")
+    return by_model
+
+
 def table_abl(rows, label, caption):
-    by = {r["model"]: r for r in rows}
+    by = _validated_ablation_rows(rows)
     full = by.get("Full")
     fs = _per_seed_ck(full) if full else []
     # The highlighted row is the full configuration: the row against which
@@ -398,7 +419,7 @@ def table_abl(rows, label, caption):
     lines += head
     lines.append(r"\midrule")
     for name in ORDER:
-        r = next((x for x in rows if x["model"] == name), None)
+        r = by.get(name)
         if r is None:
             continue
         # the paired difference: the variants share the training seeds, so
