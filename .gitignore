@@ -39,12 +39,13 @@ results/*
 *.vci
 *.elog
 
-# The PHY-validation scalar outputs are EVIDENCE for the physical-layer
-# section of the report, not build artefacts: the claim audit checks for
-# their presence and the negative control is reproducible from them.  They
-# are therefore tracked, while the rest of the simulation output is not.
+# The PHY-validation scalar output is EVIDENCE for the physical-layer
+# section of the report: the claim audit checks its presence.  It is
+# therefore tracked, while the rest of the simulation output is not.
 !Simulation/UAV_IoT_Demo/results/phy_validation_*.sca
-!Simulation/UAV_IoT_Demo/results/phy_probe_*.sca
+
+# ---- Local experiment outputs ----
+outputs/
 
 # ---- Intermediate PDF renders used for reading feedback ----
 _fbpg-*.png

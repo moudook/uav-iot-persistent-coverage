@@ -211,14 +211,14 @@
     "id": "C6",
     "claim": "the connectivity constraint is live in the deployed regime",
     "status": "PASS",
-    "measured": "mean node degree 3.63 of a possible 7; the graph was complete in 12.1% of steps; 22.6% of UAV-steps left a node of degree <= 1",
+    "measured": "mean node degree 4.04 of a possible 7; the graph was complete in 0.9% of steps; 24.6% of UAV-steps left a node of degree <= 1",
     "expected": "< 7.00 (the graph must not be complete throughout)",
     "note": "measured on a 2000-step flight in the clustered deployment, the configuration the experiments use. The graph is not complete throughout, so a single UAV can be critical and the H-step feasibility mask and the reserve mechanism are load-bearing rather than decorative.",
     "data": {
-      "mean_degree": 3.628863968795709,
+      "mean_degree": 4.038625,
       "max_degree": 7,
-      "frac_complete": 0.12059158134243458,
-      "frac_leaves": 0.22618031854379977
+      "frac_complete": 0.0085,
+      "frac_leaves": 0.245875
     }
   },
   {

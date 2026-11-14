@@ -1,3 +1,0 @@
-model,CK,CK_std,AG,SC,CovIntegral
-Independent DQN (value-based),0.42250000000000004,0.0,1.0,0.0,0.5774999999999999
-"Masked PPO, local critic",0.16916666666666666,0.0,1.0,0.0,0.830833333333333

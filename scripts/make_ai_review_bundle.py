@@ -31,13 +31,16 @@ CODE_FILES = [
     "ml_impl/tests/test_token_table.py",
     "ml_impl/tests/test_simulator_fixes.py",
     "ml_impl/tests/test_ablation_provenance.py",
-    "scripts/train_mappo.py",
+    "ml_impl/tests/test_v2_fixes.py",
     "scripts/run_exp.py",
     "scripts/eval_ckpt.py",
     "scripts/eval_stress.py",
     "scripts/eval_rules.py",
     "scripts/eval_planning.py",
     "scripts/eval_classical_baseline.py",
+    "scripts/eval_agsc.py",
+    "scripts/compare_v1_v2.py",
+    "scripts/eval_scenarios_transfer.py",
     "scripts/distill_actor.py",
     "scripts/energy_certificate.py",
     "scripts/export_policy_trace.py",
@@ -69,8 +72,10 @@ SYSTEM SUMMARY
 - Coverage radius R_cov=35 m; communication radius R_comm=40 m.
 - Energy: B_max=30 kJ, flight draw 80.1 W, hover draw 55.1 W,
   pad net charge 24.9 W; arm/disarm and return thresholds gate charging.
-- Observation: 68 dims per agent (own state, 4 neighbour slots, 4x4 map
-  summary, one-hot identity, pad bearing, ego bearings to 3 at-risk sensors).
+- Observation: v1 headline 69 dims per agent (own state, 4 neighbour slots,
+  4x4 map summary, 8-dim one-hot identity, pad bearing, ego bearings to 3
+  at-risk sensors, critical anchor). v2 replaces the one-hot with a 3-dim
+  scalable identity and adds PHY-aware ego features, for 64 dims.
 - Actions: hover, 4 axis moves, return-to-charge. A hard mask + joint
   projection keep the graph connected and the fleet recoverable.
 - Reward: negative weighted cost (under-coverage, energy, degraded service,
@@ -217,11 +222,15 @@ def bundle_results():
 
 def main():
     code = bundle_code()
-    with open(os.path.join(ROOT, "CODE_CONTEXT.txt"), "w",
+    review_dir = os.path.join(ROOT, "docs", "review")
+    os.makedirs(review_dir, exist_ok=True)
+    code_path = os.path.join(review_dir, "CODE_CONTEXT.txt")
+    wins_path = os.path.join(review_dir, "WINS_VS_RULES.txt")
+    with open(code_path, "w",
               encoding="utf-8", newline="\n") as f:
         f.write(code)
     res = bundle_results()
-    with open(os.path.join(ROOT, "WINS_VS_RULES.txt"), "w",
+    with open(wins_path, "w",
               encoding="utf-8", newline="\n") as f:
         f.write(res)
     print("CODE_CONTEXT.txt", round(len(code) / 1024, 1), "KB")
