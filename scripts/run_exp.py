@@ -34,6 +34,8 @@ def main():
                     help="N-invariant 3-dim agent identity")
     ap.add_argument("--per-agent-adv", action="store_true",
                     help="normalise each agent's advantages over its own history")
+    ap.add_argument("--domain-rand", action="store_true",
+                    help="mix clustered, small-battery, low-comm and failure scenes")
     ap.add_argument("--no-agent-id", action="store_true",
                     help="drop the N-dimensional one-hot identity")
     ap.add_argument("--anchor", action="store_true",
@@ -99,6 +101,7 @@ def main():
                                   n_steps=args.n_steps, seed=s, verbose=True,
                                   log_every=20, epochs=10, n_minibatch=4,
                                   per_agent_adv_norm=args.per_agent_adv,
+                                  domain_rand=args.domain_rand,
                                   curriculum=args.curriculum,
                                   rf_at=args.rf_at, lr_decay=args.lr_decay,
                                   attn=args.attn,
@@ -123,7 +126,7 @@ def main():
             "seconds": dt, "ego": args.ego, "n_ego": args.n_ego,
             "phy_ego": args.phy_ego, "assist_return": args.assist_return,
             "scalable_id": args.scalable_id, "use_agent_id": cfg.use_agent_id,
-            "per_agent_adv": args.per_agent_adv,
+            "per_agent_adv": args.per_agent_adv, "domain_rand": args.domain_rand,
             "anchor": args.anchor,
             "shape": args.shape, "energy_kappa": args.energy_kappa,
             "use_w": not args.no_w, "credit_mode": args.credit_mode,

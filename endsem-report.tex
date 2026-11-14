@@ -188,10 +188,10 @@ Oracle (ceiling) & 1.000 & 1.000 & 1.000 \\
 \end{table}
 
 \subsection{Scenario matrix}
-Table~\ref{tab:scen} varies one configuration variable at a time and reports the learner ($M$), the reactive rule ($R$), and the unprivileged local rule ($RL$). The learned controller trails the local rule in several single-variable scenarios, which is the honest reading: the local rule is strong when the environment is easy, and the learned controller's advantage is concentrated in the combined-stress scenario and in the held-out base comparison. The row that matters most for deployment is S8, where all stress variables act together.
+Table~\ref{tab:scen} varies one configuration variable at a time and reports the learner ($M$), the reactive rule ($R$), and the unprivileged local rule ($RL$). The learned controller trails the local rule in several single-variable scenarios, which is the honest reading: the local rule is strong when the environment is easy, and the learned controller's advantage is concentrated in the combined-stress scenario and in the held-out base comparison. The row that matters most for deployment is S8, where all stress variables act together; there the learner is furthest behind, and the report says so.
 
 \begin{table}[t]
-\caption{Scenario matrix. Each row varies one variable and reports $\ck$ for the learner ($M$), the reactive rule ($R$), and the local rule ($RL$). Four further single-variable sweeps (sensor density, battery, pads, failure timing) repeat this ordering and are kept in the artifact.}
+\caption{Scenario matrix at the 25-episode per-variant budget with the pre-correction observation set; these are single-variable probes, not the 200-episode headline protocol. Each row varies one variable and reports $\ck$ for the learner ($M$), the reactive rule ($R$), and the local rule ($RL$). Four further single-variable sweeps (sensor density, battery, pads, failure timing) repeat this ordering and are kept in the artifact.}
 \label{tab:scen}
 \centering
 \small

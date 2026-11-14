@@ -18,18 +18,23 @@ TAG = "exp_ego_fixed"
 
 
 def main():
-    seeds = sorted(glob.glob(os.path.join(RUNS, TAG, "seed_*.json")))
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tag", default="exp_ego_fixed")
+    args = ap.parse_args()
+    tag = args.tag
+    seeds = sorted(glob.glob(os.path.join(RUNS, tag, "seed_*.json")))
     if len(seeds) < 5:
-        print(f"only {len(seeds)}/5 seeds finished for {TAG}")
+        print(f"only {len(seeds)}/5 seeds finished for {tag}")
         return 1
     per_seed = [json.load(open(f, encoding="utf-8"))["eval_ck"] for f in seeds]
-    heldout = os.path.join(RUNS, TAG, "eval_heldout.json")
+    heldout = os.path.join(RUNS, tag, "eval_heldout.json")
     if os.path.exists(heldout):
         h = json.load(open(heldout, encoding="utf-8"))
         ck = float(h["mean_over_seeds"])
         sd = float(h["sd_over_seeds"])
         n = int(h.get("n_seeds", len(per_seed)))
-        per_seed = [float(v) for v in h["per_checkpoint"].values()] if False else per_seed
+        per_seed = [float(v["mean"]) for v in h["per_checkpoint"].values()]
     else:
         ck = float(np.mean(per_seed))
         sd = float(np.std(per_seed, ddof=1))
@@ -48,7 +53,7 @@ def main():
     crit = float(stats.t.ppf(0.975, n - 1))
     half = crit * sd_d / np.sqrt(n)
 
-    out = dict(tag=TAG, ck=round(ck, 4), sd=round(sd, 4), n=n,
+    out = dict(tag=tag, ck=round(ck, 4), sd=round(sd, 4), n=n,
                per_seed=[round(p, 4) for p in per_seed],
                rule=best_name, rule_ck=round(rule_ck, 4),
                gap=round(mean_d, 4),

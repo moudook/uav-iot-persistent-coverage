@@ -203,13 +203,43 @@ def agent_obs_dim(agent):
 # ----------------------------------------------------------------------
 # Training
 # ----------------------------------------------------------------------
+def _domain_env(base_cfg, ep, episodes, seed):
+    """Scene mixture for domain-randomised training.
+
+    Keeps N, M and the pad count fixed (they change the critic input), and
+    randomises only quantities that leave obs_dim and state_dim intact:
+    uniform or corner-clustered sensors, pack size, communication radius,
+    coverage radius and mid-episode failures.  The last 20% of training is
+    the target nominal distribution, so the final policy is sharp on the
+    configuration the report evaluates.
+    """
+    import copy
+    c = copy.deepcopy(base_cfg)
+    c.randomize_layout = True
+    if ep < int(0.8 * episodes):
+        mode = ep % 5
+        if mode == 1:
+            c.adversarial_layout = True
+        elif mode == 2:
+            c.B_max = 0.5 * base_cfg.B_max
+            c.charge_rate = 2.0 * base_cfg.charge_rate
+        elif mode == 3:
+            c.R_comm = max(25.0, 0.72 * base_cfg.R_comm)
+        elif mode == 4:
+            c.failure_enabled = True
+            c.failure_time = -1
+            c.R_cov = max(28.0, 0.90 * base_cfg.R_cov)
+    c.seed = int(seed) * 100003 + int(ep) * 7919 + 13
+    return UAVIoTEnv(c)
+
+
 def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
                verbose=True, per_agent_adv_norm=False, ent_coef=0.01,
                value_norm=True, device=None, bc_path=None,
                gamma=0.99, gae_lambda=0.95, epochs=10, n_minibatch=4,
                curriculum=False, rf_at=None, lr_decay=1.0,
                attn=False, action_repeat=1,
-               ckpt_dir=None, ckpt_every=25):
+               ckpt_dir=None, ckpt_every=25, domain_rand=False):
     """Train the proposed controller.
 
     THE DEVICE IS A PROTOCOL CHOICE, NOT A RESOURCE ACCIDENT.  The
@@ -281,6 +311,8 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
     hist = []
     base_bmax = cfg.B_max
     for ep in range(episodes):
+        if domain_rand:
+            env = _domain_env(cfg, ep, episodes, seed)
         # Innovation 1: curriculum over battery stress.  B_max ramps from
         # 2x down to 1x of the base over the first half of training, so the
         # policy sees depletion gradually instead of never (the cause of the
