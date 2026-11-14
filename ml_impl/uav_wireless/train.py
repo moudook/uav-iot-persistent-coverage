@@ -88,8 +88,32 @@ def collect_rollout(env, agent, n_steps, deterministic=False, action_repeat=1):
         r_acc = 0.0
         ar_acc = None
         done_acc = False
-        for _ in range(action_repeat):
-            obs, state, r, done, _ = env.step(acts)
+        for rep in range(action_repeat):
+            next_obs, next_state, r, done, info = env.step(acts)
+            if rep == 0 and action_repeat == 1 and agent is not None:
+                exec_a = info.get("executed_actions")
+                if exec_a is not None and not np.array_equal(
+                        np.asarray(exec_a, dtype=np.int64), acts):
+                    # The safety mask or the joint projection changed the
+                    # action before the physics saw it.  Store what was
+                    # EXECUTED and its probability under the same policy, or
+                    # PPO reinforces a move that never happened.
+                    import torch
+                    exec_a = np.asarray(exec_a, dtype=np.int64)
+                    mask_t = torch.as_tensor(
+                        mask, dtype=torch.bool, device=agent.device).clone()
+                    for ii in range(n):
+                        mask_t[ii, int(exec_a[ii])] = True
+                    with torch.no_grad():
+                        lp = torch.log_softmax(agent.masked_logits(
+                            torch.as_tensor(obs, dtype=torch.float32,
+                                            device=agent.device), mask_t), -1)
+                        logp_exec = lp.gather(
+                            -1, torch.as_tensor(exec_a, device=lp.device)
+                            .unsqueeze(-1)).squeeze(-1).cpu().numpy()
+                    B["acts"][t] = exec_a
+                    B["logp"][t] = logp_exec
+            obs, state = next_obs, next_state
             r_acc += r
             ar = getattr(env, "last_agent_rewards", None)
             if ar is not None:

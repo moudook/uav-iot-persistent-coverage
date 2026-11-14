@@ -26,6 +26,16 @@ def main():
     ap.add_argument("--n-steps", type=int, default=2000)
     ap.add_argument("--ego", action="store_true")
     ap.add_argument("--n-ego", type=int, default=3)
+    ap.add_argument("--phy-ego", action="store_true",
+                    help="PHY-aware ego bearings and self-served-sensor exclusion")
+    ap.add_argument("--assist-return", action="store_true",
+                    help="force a pad-approaching move in return mode")
+    ap.add_argument("--scalable-id", action="store_true",
+                    help="N-invariant 3-dim agent identity")
+    ap.add_argument("--per-agent-adv", action="store_true",
+                    help="normalise each agent's advantages over its own history")
+    ap.add_argument("--no-agent-id", action="store_true",
+                    help="drop the N-dimensional one-hot identity")
     ap.add_argument("--anchor", action="store_true",
                     help="add the critical-coverage anchor feature")
     ap.add_argument("--shape", type=float, default=0.0)
@@ -71,6 +81,11 @@ def main():
         cfg.diff_beta = args.diff_beta
         cfg.ego_sensors = args.ego
         cfg.n_ego = args.n_ego
+        cfg.phy_ego_sensors = args.phy_ego
+        cfg.assist_return_mask = args.assist_return
+        cfg.use_scalable_id = args.scalable_id
+        if args.no_agent_id:
+            cfg.use_agent_id = False
         cfg.use_critical_anchor = args.anchor
         cfg.dist_shape_kappa = args.shape
         cfg.energy_shape_kappa = args.energy_kappa
@@ -83,6 +98,7 @@ def main():
         agent, hist = train_mappo(cfg, episodes=args.episodes,
                                   n_steps=args.n_steps, seed=s, verbose=True,
                                   log_every=20, epochs=10, n_minibatch=4,
+                                  per_agent_adv_norm=args.per_agent_adv,
                                   curriculum=args.curriculum,
                                   rf_at=args.rf_at, lr_decay=args.lr_decay,
                                   attn=args.attn,
@@ -90,7 +106,7 @@ def main():
                                   device=args.device,
                                   ckpt_dir=outdir, ckpt_every=25)
         dt = time.time() - t0
-        agent.save(os.path.join(outdir, "seed_%d.pt" % s))
+        agent.save(os.path.join(outdir, "seed_%d.pt" % s), cfg=cfg)
 
         scenes = list(range(args.eval_offset, args.eval_offset + args.eval_seeds))
         ev = []
@@ -105,6 +121,9 @@ def main():
         rec = {
             "seed": s, "episodes": args.episodes, "n_steps": args.n_steps,
             "seconds": dt, "ego": args.ego, "n_ego": args.n_ego,
+            "phy_ego": args.phy_ego, "assist_return": args.assist_return,
+            "scalable_id": args.scalable_id, "use_agent_id": cfg.use_agent_id,
+            "per_agent_adv": args.per_agent_adv,
             "anchor": args.anchor,
             "shape": args.shape, "energy_kappa": args.energy_kappa,
             "use_w": not args.no_w, "credit_mode": args.credit_mode,

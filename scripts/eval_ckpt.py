@@ -73,6 +73,11 @@ def main():
         cfg = base_config()
         cfg.ego_sensors = meta.get("ego", False)
         cfg.n_ego = meta.get("n_ego", 3)
+        cfg.phy_ego_sensors = meta.get("phy_ego", False)
+        cfg.assist_return_mask = meta.get("assist_return", False)
+        cfg.use_scalable_id = meta.get("scalable_id", False)
+        if "use_agent_id" in meta:
+            cfg.use_agent_id = bool(meta["use_agent_id"])
         cfg.dist_shape_kappa = meta.get("shape", 0.0)
         cfg.use_w_penalty = meta.get("use_w", True)
         cfg.credit_mode = meta.get("credit_mode", "team")

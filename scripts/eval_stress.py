@@ -55,6 +55,11 @@ def learner_anchor_from_meta(ckpt_list):
             anchor["dist_shape_kappa"] = meta.get("shape", 0.5)
             anchor["use_w_penalty"] = meta.get("use_w", True)
             anchor["use_critical_anchor"] = meta.get("anchor", False)
+            anchor["phy_ego_sensors"] = meta.get("phy_ego", False)
+            anchor["assist_return_mask"] = meta.get("assist_return", False)
+            anchor["use_scalable_id"] = meta.get("scalable_id", False)
+            if "use_agent_id" in meta:
+                anchor["use_agent_id"] = bool(meta["use_agent_id"])
         except Exception:
             pass
     return anchor

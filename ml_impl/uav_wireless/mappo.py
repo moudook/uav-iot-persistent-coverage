@@ -112,7 +112,12 @@ class MAPPO:
         # normalised space defined by running statistics of the return
         # distribution; the value is un-normalised at every point of use.
         self.value_norm = value_norm
-        self.ret_ema_beta = 0.99
+        # 0.90, not 0.99: the statistics are updated once per ROLLOUT, so a
+        # 0.99 decay needs ~100 episodes to absorb the true return scale.
+        # Every short-budget run (the 12-25 episode scenario matrix) spent
+        # its entire budget with a critic normalized around ~0.  The first
+        # batch now initialises the statistics exactly (see update()).
+        self.ret_ema_beta = 0.90
         # KL anchor attributes (optional; used by residual/BC experiments)
         self.ref_actor = None
         self.kl_coef = 0.0
@@ -126,6 +131,7 @@ class MAPPO:
         self.ret_std_floor = 1.0
         self._ret_mean = 0.0
         self._ret_std = 1.0
+        self._ret_initialized = False
 
     # ------------------------------------------------------------------
     def masked_logits(self, obs, mask):
@@ -194,11 +200,21 @@ class MAPPO:
         if self.value_norm:
             with torch.no_grad():
                 b = self.ret_ema_beta
-                # b weights the OLD estimate (smoothing), (1-b) the new batch
-                self._ret_mean = b * self._ret_mean + (1 - b) * float(ret_c.mean())
-                sd = float(ret_c.std())
-                self._ret_std = max(b * self._ret_std + (1 - b) * sd,
-                                    self.ret_std_floor)
+                batch_mean = float(ret_c.mean())
+                batch_sd = max(float(ret_c.std()), self.ret_std_floor)
+                if not self._ret_initialized:
+                    # Exact initialisation on the first batch.  Starting from
+                    # (0, 1) and smoothing at 0.99 leaves the critic targets
+                    # mis-scaled for the first ~100 episodes.
+                    self._ret_mean = batch_mean
+                    self._ret_std = batch_sd
+                    self._ret_initialized = True
+                else:
+                    # b weights the OLD estimate (smoothing), (1-b) the batch
+                    self._ret_mean = b * self._ret_mean + (1 - b) * batch_mean
+                    self._ret_std = max(
+                        b * self._ret_std + (1 - b) * batch_sd,
+                        self.ret_std_floor)
 
         if self.value_norm:
             target_c = (ret_c - self._ret_mean) / (self._ret_std + 1e-8)
@@ -339,6 +355,7 @@ class MAPPO:
         if "ret_mean" in d:
             self._ret_mean = float(d["ret_mean"])
             self._ret_std = float(d["ret_std"])
+            self._ret_initialized = True
 
     def load_actor(self, path):
         """Load only the decentralized policy for frozen evaluation."""

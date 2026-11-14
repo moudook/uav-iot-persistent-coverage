@@ -66,6 +66,20 @@ class SimConfig:
     ego_sensors: bool = False       # ego-centric bearings to nearest deficient sensors
     use_critical_anchor: bool = False  # scalar: fraction of UAV i's covered sensors with n_d==K
     n_ego: int = 3                 # number of nearest deficient sensors to report
+    # PHY-aware ego features: rank sensors this UAV does NOT already serve
+    # ahead of sensors it does, and use the true SINR usability matrix
+    # instead of raw Euclidean distance.  This stops a UAV hovering over a
+    # sensor with n_d = K-1 from being told to fly to that same sensor: it
+    # cannot add the missing second link by itself, a teammate must.
+    phy_ego_sensors: bool = False
+    # N-invariant agent identity: [rank, sin(2*pi*i/N), cos(2*pi*i/N)]
+    # instead of an N-dimensional one-hot, so one actor transfers across
+    # fleet sizes without changing obs_dim.
+    use_scalable_id: bool = False
+    # In return mode (E_i <= return_threshold) and away from a pad, mask out
+    # hovering when at least one pad-approaching move is feasible.  Without
+    # this a UAV can hover until the pack empties instead of flying home.
+    assist_return_mask: bool = False
     use_w_penalty: bool = True      # enable unnecessary-movement penalty W_t
     dist_shape_kappa: float = 0.0   # potential-based distance shaping coefficient
     energy_shape_kappa: float = 0.0  # potential-based ENERGY shaping coefficient
@@ -149,6 +163,7 @@ def obs_dim(cfg: SimConfig) -> int:
     """
     base = 7 + 4 * 4 + 7            # own(7) + 4 neighbour slots x 4 + tail(7)
     base += cfg.N if cfg.use_agent_id else 0
+    base += 3 if getattr(cfg, "use_scalable_id", False) else 0
     base += cfg.map_grid ** 2 if cfg.map_grid else 0
     base += 3 if cfg.use_pad_bearing else 0
     if getattr(cfg, "ego_sensors", False):
@@ -250,8 +265,11 @@ class UAVIoTEnv:
         self.prev_w_dist = 0.0
         self.last_cost = dict(U_t=1.0, E_t=0.0, D_t=1.0, W_t=0.0, R_t=0.0, Crit_t=1.0)
         self.last_agent_rewards = None
-        self._prev_phi = 0.0
-        self._prev_phi_e = 0.0
+        # None, not 0.0: the first step must initialise the potential to the
+        # CURRENT state, otherwise the Ng telescoping term injects a spurious
+        # one-step reward of kappa*(gamma*Phi(s_1) - 0) at every episode start.
+        self._prev_phi = None
+        self._prev_phi_e = None
         self._visit_counts = {}
         self.recovery_start = -1
         self._episode_idx += 1
@@ -327,12 +345,15 @@ class UAVIoTEnv:
     def _active_idx(self):
         return np.where(~self.failed)[0]
 
-    def coverage_counts(self):
-        """n_d(t) for each sensor: how many ACTIVE UAVs can actually SERVE it."""
+    def usable_matrix(self):
+        """(active_ids, usable) with usable[m, j] true if UAV act[j] can serve sensor m.
+
+        One shared PHY+geometric link matrix for the coverage count, the local
+        observation and the difference reward, so the three cannot disagree.
+        """
         act = self._active_idx()
         if len(act) == 0:
-            return np.zeros(self.cfg.M)
-        # geometric ceiling first
+            return act, np.zeros((self.cfg.M, 0), dtype=bool)
         d = np.linalg.norm(self.sensors[:, None, :] - self.p[act][None, :, :], axis=-1)
         within = d <= self.cfg.R_cov
         # PHY gate: a UAV only "counts" if ITS OWN serving link clears the rate
@@ -341,7 +362,13 @@ class UAVIoTEnv:
         sinr = self._access_sinr_matrix(self.p[act], self.sensors, act)   # (M, K)
         rate = self.radio.rate_mbps(self.radio.snr_db(sinr))              # (M, K)
         phy_ok = rate >= self.radio.rate_min_mbps                         # (M, K)
-        usable = within & phy_ok
+        return act, within & phy_ok
+
+    def coverage_counts(self):
+        """n_d(t) for each sensor: how many ACTIVE UAVs can actually SERVE it."""
+        _act, usable = self.usable_matrix()
+        if usable.shape[1] == 0:
+            return np.zeros(self.cfg.M)
         return usable.sum(axis=1)
 
     def _access_sinr_matrix(self, uav_xy, sensor_xy, uav_idx):
@@ -650,6 +677,19 @@ class UAVIoTEnv:
         near = np.any(np.linalg.norm(self.pads - self.p[i], axis=1) <= c.pad_service_radius)
         needs = self.E[i] < c.B_max - 1e-6
         m[A_CHARGE] = bool(near and needs)
+        if getattr(c, "assist_return_mask", False) and (not near) \
+                and self.E[i] <= self.return_threshold(i):
+            # In return mode and away from a pad, hovering burns power
+            # without reducing the distance home.  If at least one
+            # pad-approaching move is admissible, restrict the choice to
+            # those moves.  If every approach is blocked (connectivity or
+            # separation), the mask falls back to its previous behaviour.
+            approach = [a for a_dir, a in enumerate(dirs)
+                        if m[a] and float(pad_energies[a_dir + 1]) < pad_now - 1e-6]
+            if approach:
+                for a in dirs:
+                    m[a] = a in approach
+                m[A_HOVER] = False
         return m
 
     @staticmethod
@@ -925,7 +965,8 @@ class UAVIoTEnv:
         """
         c = self.cfg
         act, adj, _ = self.comm_graph()
-        ncov = self.coverage_counts()
+        _, usable = self.usable_matrix()
+        ncov = usable.sum(axis=1) if usable.shape[1] else np.zeros(c.M)
         ap = self.articulation_points(adj) if len(adj) else np.zeros(0, bool)
 
         rows = []
@@ -976,7 +1017,10 @@ class UAVIoTEnv:
             thresh = self.return_threshold(i)
             tail = np.array([
                 min(len(near), self.NB_SLOTS) / self.NB_SLOTS,
-                float(np.sum(d_s <= c.R_cov)) / max(c.M, 1),
+                (float(usable[pos_i].sum()) / max(c.M, 1))
+                if (getattr(c, "phy_ego_sensors", False)
+                    and pos_i < usable.shape[1])
+                else float(np.sum(d_s <= c.R_cov)) / max(c.M, 1),
                 bridge,
                 np.clip((thresh - self.E[i]) / max(thresh, 1.0), -1, 1),
                 self.pad_energy(i) / c.B_max,
@@ -1001,15 +1045,36 @@ class UAVIoTEnv:
                 ident = np.zeros(c.N, dtype=np.float32)
                 ident[i] = 1.0
                 row = np.concatenate([row, ident])
+            if getattr(c, "use_scalable_id", False):
+                # N-invariant identity: same three numbers for the same rank
+                # fraction regardless of fleet size, so one actor transfers
+                # across N without changing obs_dim.
+                rank = float(i) / max(c.N - 1, 1)
+                ang = 2.0 * np.pi * float(i) / max(c.N, 1)
+                sid = np.array([rank, np.sin(ang), np.cos(ang)], dtype=np.float32)
+                row = np.concatenate([row, sid])
             if getattr(c, "ego_sensors", False):
                 # ego-centric bearings to the nearest deficient sensors
                 # (n_d < K) plus a neighbour-repulsion vector.
                 k = getattr(c, "n_ego", 3)
                 deficient = [d for d in range(c.M) if ncov[d] < c.K]
-                # sort by distance to agent i
                 def _dist(d):
                     return float(np.linalg.norm(self.sensors[d] - self.p[i]))
-                deficient.sort(key=_dist)
+                if getattr(c, "phy_ego_sensors", False):
+                    # A sensor this UAV already serves cannot gain a second
+                    # link from this UAV; put those after the sensors where
+                    # this UAV's motion can actually add coverage.
+                    if pos_i < usable.shape[1]:
+                        i_serves = usable[:, pos_i]
+                    else:
+                        i_serves = np.zeros(c.M, dtype=bool)
+                    primary = [d for d in deficient if not i_serves[d]]
+                    secondary = [d for d in deficient if i_serves[d]]
+                    primary.sort(key=_dist)
+                    secondary.sort(key=_dist)
+                    deficient = primary + secondary
+                else:
+                    deficient.sort(key=_dist)
                 feats = np.zeros(k * 3 + 2, dtype=np.float32)
                 for kk, d in enumerate(deficient[:k]):
                     vec = self.sensors[d] - self.p[i]
@@ -1018,11 +1083,18 @@ class UAVIoTEnv:
                         feats[kk*3 + 0] = vec[0] / dn
                         feats[kk*3 + 1] = vec[1] / dn
                     feats[kk*3 + 2] = dn / (1.414 * c.side)
-                # neighbour repulsion: away from centroid of nearby UAVs
+                # neighbour repulsion: away from centroid of nearby UAVs.
+                # PHY mode uses inverse-square repulsion so close clumps are
+                # pushed apart more strongly.
                 near_js = [j for j in act if j != i]
                 if near_js:
-                    cent = np.mean(self.p[near_js], axis=0)
-                    rep = self.p[i] - cent
+                    if getattr(c, "phy_ego_sensors", False):
+                        vecs = self.p[i][None, :] - self.p[near_js]
+                        dists = np.linalg.norm(vecs, axis=1, keepdims=True) + 1.0
+                        rep = np.sum(vecs / (dists ** 2), axis=0)
+                    else:
+                        cent = np.mean(self.p[near_js], axis=0)
+                        rep = self.p[i] - cent
                     rn = float(np.linalg.norm(rep))
                     if rn > 1e-9:
                         feats[k*3 + 0] = rep[0] / rn
@@ -1033,13 +1105,18 @@ class UAVIoTEnv:
                 # that have exactly K total coverage (ncov == K). If UAV i
                 # moves away, those sensors drop below K. Tells the policy
                 # "do not leave this sensor".
-                _crit = 0.0
-                _ncov_i = 0
-                for _d in range(c.M):
-                    if d_s[_d] <= c.R_cov:
-                        _ncov_i += 1
-                        if ncov[_d] == c.K:
-                            _crit += 1.0
+                if getattr(c, "phy_ego_sensors", False) and pos_i < usable.shape[1]:
+                    served_mask = usable[:, pos_i]
+                    _ncov_i = int(served_mask.sum())
+                    _crit = float(np.sum(served_mask & (ncov == c.K)))
+                else:
+                    _crit = 0.0
+                    _ncov_i = 0
+                    for _d in range(c.M):
+                        if d_s[_d] <= c.R_cov:
+                            _ncov_i += 1
+                            if ncov[_d] == c.K:
+                                _crit += 1.0
                 _anchor = (_crit / _ncov_i) if _ncov_i > 0 else 0.0
                 row = np.concatenate([row, np.array([_anchor], dtype=np.float32)])
             rows.append(row)
@@ -1145,6 +1222,19 @@ class UAVIoTEnv:
                        if not np.allclose(self.p[i], old_p[i]))
         self.unexecuted_actions += masked_actions + max(0, len(moved) - reverted)
 
+        # The actions the physics actually executed.  A masked move holds
+        # position, and the joint projection can revert an admissible move;
+        # both must be billed as hover, not as flight, and the learner must
+        # train on the executed action (see train.collect_rollout).
+        exec_actions = np.asarray(actions, dtype=np.int64).copy()
+        for i in self._active_idx():
+            a = int(actions[i])
+            if a in (A_PX, A_NX, A_PY, A_NY):
+                if np.allclose(self.p[i], old_p[i]):
+                    exec_actions[i] = A_HOVER
+            elif a == A_CHARGE and not masks[i][a]:
+                exec_actions[i] = A_HOVER
+
         # --- 2. failure injection --------------------------------------
         if self.failure_t >= 0 and self.t == self.failure_t:
             victim = act_before[self.rng.integers(len(act_before))]
@@ -1183,6 +1273,10 @@ class UAVIoTEnv:
         for i in self._active_idx():
             if i not in assign:
                 self.pad_assigned[i] = -1
+                if int(exec_actions[i]) == A_CHARGE:
+                    # The request was queued, not granted: the rotors are
+                    # still holding the UAV in the air, so it must pay hover.
+                    exec_actions[i] = A_HOVER
                 if self.mode[i] == 2:
                     self.mode[i] = 0
                 self.charging_wait[i] = min(self.charging_wait[i] + 1, 999)
@@ -1190,7 +1284,11 @@ class UAVIoTEnv:
                     self.charging_wait[i] = 0
 
         # --- 4. battery update (14)-(15) -------------------------------
-        draw = self.power_draw(actions)
+        # Bill the EXECUTED action.  A move that the mask or the joint
+        # projection reverted is a hover, and a charge request that lost the
+        # arbitration is a hover; billing the sampled action either charged
+        # flight power for standing still or granted free rotor power.
+        draw = self.power_draw(exec_actions)
         self.E = np.clip(self.E - draw * c.dt, 0, c.B_max)
         for i in range(c.N):
             if self.failed[i]:
@@ -1402,19 +1500,19 @@ class UAVIoTEnv:
             beta = getattr(c, "diff_beta", 1.0)
             n = c.N
             r_arr = np.full(n, r, dtype=np.float64)
-            act = self._active_idx()
+            act_u, usable_u = self.usable_matrix()
             ncov_arr = np.asarray(ncov)
-            for i in act:
-                # sensors within R_cov of agent i
-                d_i = 0.0
-                for d in range(c.M):
-                    dist = ((self.p[i, 0] - self.sensors[d, 0]) ** 2 +
-                            (self.p[i, 1] - self.sensors[d, 1]) ** 2) ** 0.5
-                    if dist <= c.R_cov:
-                        nd = int(ncov_arr[d])
-                        marg = min(nd, c.K) - min(nd - 1, c.K)
-                        d_i += marg / max(c.K * c.M, 1)
-                r_arr[i] = r + beta * d_i
+            if usable_u.shape[1]:
+                for pos_u, i in enumerate(act_u):
+                    serves = usable_u[:, pos_u]
+                    # Marginal value of this UAV's actual PHY links: a link
+                    # is worth 1 only while the sensor is below K.  Euclidean
+                    # distance alone over-credited links that the SINR gate
+                    # rejects.
+                    nd = ncov_arr[serves]
+                    marg = np.minimum(nd, c.K) - np.minimum(nd - 1, c.K)
+                    d_i = float(marg.sum()) / max(c.K * c.M, 1)
+                    r_arr[i] = r + beta * d_i
             self.last_agent_rewards = r_arr.astype(np.float32)
 
         self.prev_cov_score = cov_now
@@ -1434,7 +1532,8 @@ class UAVIoTEnv:
         # case the episode simply hit the time limit, which is a truncation.
         self.terminated = (len(self._active_idx()) == 0) and not self.truncated
         done = self.truncated or self.terminated
-        return self.local_obs(), self.global_state(), r, done, {}
+        return self.local_obs(), self.global_state(), r, done, {
+            "executed_actions": exec_actions}
 
     # ------------------------------------------------------------------
     # Reward, eq. (23)

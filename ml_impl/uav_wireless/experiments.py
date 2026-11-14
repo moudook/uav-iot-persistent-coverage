@@ -135,6 +135,10 @@ def eval_agent(agent, cfg, steps=1000, seed=0, deterministic=False):
     import copy
     c = copy.deepcopy(cfg)
     c.seed = seed
+    # Evaluation scenes are a function of the seed ALONE.  If training used
+    # randomized layouts, leaving the flag on here would make reset() draw a
+    # different scene for the learner than the rule baselines see.
+    c.randomize_layout = False
     # The policy samples, and the sampling draws from the global torch RNG.
     # Seed it from the evaluation seed alone, so that the evaluation is a
     # function of (policy, scene) and every controller sees the same stream
