@@ -63,6 +63,7 @@ P_HOVER = 50.0
 P_MOVE = 75.0
 P_ELEC = 5.0
 P_TX = 0.5
+N_PADS = 2
 CHARGE_STEP = 0.0002
 EPISODE = 10_000          # the report's target episode length
 EPISODE_USED = 2_000     # the episode the reported results use
@@ -344,12 +345,19 @@ def main():
 
     # --- C4d: area surplus sigma ----------------------------------------
     sigma = supplied / A
+    # The claim is that an area surplus does not certify feasibility.  Show
+    # sigma > 1 while the energy balance says the mission is infeasible:
+    # the pads cannot keep N UAVs airborne in steady state.
+    p_pad_net = CHARGE_STEP * B_MAX / 0.2 - (P_ELEC + P_TX)
+    p_air_flight = P_MOVE + P_ELEC + P_TX
+    n_air_ss = N_PADS * p_pad_net / p_air_flight
+    energy_feasible = n_air_ss >= N
     check("C4d", "area surplus sigma = N*pi*R^2/A is NOT a feasibility "
                  "criterion (report claim)",
-          sigma > 1.0 and ratio < 1.0 or True,
-          f"sigma={sigma:.3f}", "sigma>1 is NOT sufficient for feasibility",
-          "sigma is an area ratio; a positive sigma does not imply a "
-          "covering exists (this is the report's stated finding)")
+          sigma > 1.0 and not energy_feasible,
+          f"sigma={sigma:.3f}, steady-state airborne={n_air_ss:.2f} of {N}",
+          "sigma>1 is NOT sufficient for feasibility",
+          "sigma is an area ratio; the energy balance, not the area, decides")
 
     # --- Region covering bound: N >= 4K --------------------------------
     check("B1", "corner separation S=80 m exceeds 2*R_cov=70 m, so the four "

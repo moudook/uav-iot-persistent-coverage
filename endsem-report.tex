@@ -32,13 +32,13 @@ CS24BT055@iitdh.ac.in, CS23BT068@iitdh.ac.in, cs23bt004@iitdh.ac.in, CS23BT076@i
 \maketitle
 
 \begin{abstract}
-We study persistent $K$-coverage by a small fleet of energy-limited UAVs that must keep every ground sensor covered by at least $K$ vehicles while the communication graph stays connected. The central finding is an energy-flow feasibility ceiling: with the mission's power budget, steady-state persistence is impossible, and every reported number in this report is a measurement at a finite horizon rather than a claim of indefinite operation. On the feasible configuration, a parameter-shared MAPPO controller with a safety mask and a coverage-redundancy objective reaches $0.951$ persistent coverage on twenty held-out scenes against $0.923$ for the strongest rule baseline, a paired advantage of $0.028$ with a 95\% interval of $[0.015, 0.041]$. We report a scenario matrix over nine configuration variables, a component ablation with explicit budget and dead-arm caveats, a new zero-shot single-pad result ($0.933$ vs.\ $0.887$ for the rule), an oracle planning bound ($0.972$), a distillation result ($0.962$), and a correction record: every number in this report is regenerated from stored artifacts by an automated claim audit that currently passes 34 of 34 checks.
+We study persistent $K$-coverage by a small fleet of energy-limited UAVs that must keep every ground sensor covered by at least $K$ vehicles while the communication graph stays connected. The central finding is an energy-flow feasibility ceiling: with the mission's power budget, steady-state persistence is impossible, and every reported number in this report is a measurement at a finite horizon rather than a claim of indefinite operation. On the feasible configuration, a parameter-shared MAPPO controller with a safety mask and a coverage-redundancy objective reaches $0.956$ persistent coverage on twenty held-out scenes against $0.923$ for the strongest rule baseline, a paired advantage of $0.032$ with a 95\% interval of $[0.021, 0.044]$. We report a scenario matrix over nine configuration variables, a component ablation with explicit budget and dead-arm caveats, a new zero-shot single-pad result ($0.933$ vs.\ $0.887$ for the rule), an oracle planning bound ($0.972$), a distillation result ($0.962$), and a correction record: every number in this report is regenerated from stored artifacts by an automated claim audit that currently passes 34 of 34 checks.
 \end{abstract}
 
 \section{Introduction}
 Persistent coverage of a sensor field by unmanned aerial vehicles is a resource-allocation problem before it is a control problem. The vehicles must hold $K$ redundant views of every sensor, keep the relay graph connected, and return to charge before their batteries fail. Each of these requirements consumes the same scarce resource, and the interactions are what make the problem hard: redundancy buys fault tolerance but spends energy, connectivity constrains geometry, and energy constrains how long any geometry can be held.
 
-This report has two parts. The first is a feasibility analysis. We derive the steady-state power balance of the mission and show that, under the mission's parameters, the number of UAVs that can stay airborne indefinitely is $0.90$ against the $8$ the coverage requirement needs. The honest consequence is stated once and used throughout: no controller can be shown to persist indefinitely on this configuration; every result is a finite-horizon measurement, and we report the horizon with every number.
+This report has two parts. The first is a feasibility analysis. We derive the steady-state power balance of the mission and show that, under the mission's parameters, the number of UAVs that can stay airborne indefinitely is $0.62$ against the $8$ the coverage requirement needs. The honest consequence is stated once and used throughout: no controller can be shown to persist indefinitely on this configuration; every result is a finite-horizon measurement, and we report the horizon with every number.
 
 The second part is a controlled evaluation of a learned controller on the configuration where the energy constraint is not binding at the measured horizon. We train a parameter-shared MAPPO actor with a centralised critic, a hard safety mask that removes actions which would disconnect the graph or strand a vehicle, and an observation that includes ego-centric bearings to the most at-risk sensors. We compare it against four rule baselines, two learned baselines, a classical assignment-and-rotation scheduler, and a test-time planning oracle. Every number is read from a stored artifact, and an automated audit recomputes each claim from those artifacts.
 
@@ -90,12 +90,12 @@ We assume a static sensor set, a flat field, a deterministic linear energy model
 \end{figure}
 
 \subsection{Energy}
-Each UAV carries $B_{\max}=30$\,kJ and draws $P_{\mathrm{air}}=55.1$\,W in flight. A pad charges at $24.9$\,W net. The mission's steady-state power balance is a two-state flow: airborne time per UAV is bounded by the energy the pads can deliver, divided by the flight draw. With $S=2$ pads, the stationary number of airborne UAVs is
+Each UAV carries $B_{\max}=30$\,kJ and draws $P_{\mathrm{air}}=80.1$\,W in flight (75\,W motion, 5.0\,W avionics, 0.1\,W transmit). A pad charges at $24.9$\,W net. The mission's steady-state power balance is a two-state flow: airborne time per UAV is bounded by the energy the pads can deliver, divided by the flight draw. With $S=2$ pads, the stationary number of airborne UAVs is
 \begin{equation}
-n_{\mathrm{air}}^{\mathrm{ss}}=\frac{S\,P_{\mathrm{pad}}}{P_{\mathrm{air}}}=0.90,
+n_{\mathrm{air}}^{\mathrm{ss}}=\frac{S\,P_{\mathrm{pad}}}{P_{\mathrm{air}}}=0.62,
 \label{eq:ss}
 \end{equation}
-so the steady-state coverage ceiling is $0.90/8=0.113$. A finite horizon changes the ceiling because stored energy is spent: at $T=400$\,s the ceiling is $1.000$, and at $T=2000$\,s it is $0.367$. This is why the report never claims persistence, and why the measured episode length ($2000$ control steps, $400$\,s) is stated with every result.
+so the steady-state coverage ceiling is $0.62/8=0.078$. A finite horizon changes the ceiling because stored energy is spent: at $T=400$\,s the ceiling is $0.952$, and at $T=2000$\,s it is $0.252$. This is why the report never claims persistence, and why the measured episode length ($2000$ control steps, $400$\,s) is stated with every result.
 
 \subsection{Decision process}
 The problem is a decentralised partially observable Markov decision process. Each UAV observes a 68-dimensional vector: its own state, four neighbour slots, a $4\times4$ coverage summary, a one-hot identity, bearings to the nearest pad, and ego-centric bearings to the three most at-risk sensors. The action set has six elements: hover, four axis moves, and return-to-pad. The team reward is the negated weighted cost,
@@ -163,7 +163,7 @@ All numbers in this report are read from artifacts under \texttt{ml\_impl/runs/}
 
 \section{Results}
 \subsection{Base comparison}
-Table~\ref{tab:base} reports the corrected comparison. The learned controller reaches $\ck=0.951$ ($\pm0.011$ over five training seeds, twenty held-out scenes) against $0.923$ ($\pm0.078$ over scenes) for the strongest rule, the unprivileged reactive assignment. The paired advantage is $+0.028$ with 95\% interval $[0.015,0.041]$: the learned controller is ahead by an interval that excludes zero. The classical assignment-and-rotation scheduler reaches $0.929$ on the same scenes, so the comparison is not against weak rules alone; the scheduler uses Hungarian assignment of sensors to slots plus a deterministic rotation, and it is the strongest non-learned reference we have. Its weakness is structural: the rotation is blind to the connectivity constraint, so it loses exactly the steps on which the graph is thin. Two learned baselines trained at a smaller budget (20 episodes) score $0.381$ and $0.625$; the budget difference is disclosed in the table caption and re-measured in the credit ablation.
+Table~\ref{tab:base} reports the corrected comparison. The learned controller reaches $\ck=0.956$ ($\pm0.009$ over five training seeds, twenty held-out scenes) against $0.923$ ($\pm0.078$ over scenes) for the strongest rule, the unprivileged reactive assignment. The paired advantage is $+0.032$ with 95\% interval $[0.021,0.044]$: the learned controller is ahead by an interval that excludes zero. The classical assignment-and-rotation scheduler reaches $0.929$ on the same scenes, so the comparison is not against weak rules alone; the scheduler uses Hungarian assignment of sensors to slots plus a deterministic rotation, and it is the strongest non-learned reference we have. Its weakness is structural: the rotation is blind to the connectivity constraint, so it loses exactly the steps on which the graph is thin. Two learned baselines trained at a smaller budget (20 episodes) score $0.381$ and $0.625$; the budget difference is disclosed in the table caption and re-measured in the credit ablation.
 
 \begin{table}[t]
 \caption{Base comparison on the corrected configuration. The learned controller is the mean over five training seeds with the seed-to-seed spread; rules are deterministic and carry the scene spread. The two learned baselines were trained for 20 episodes, a smaller budget than the proposed method's.}
@@ -176,12 +176,12 @@ Table~\ref{tab:base} reports the corrected comparison. The learned controller re
 Model & $\ck$ & AG & SC \\
 \midrule
 Fixed formation & $0.364\pm0.110$ & 1.000 & 0.000 \\
-Greedy recharge & $0.713\pm0.124$ & 0.965 & 0.066 \\
-Reactive (global) & $0.832\pm0.143$ & 1.000 & 0.753 \\
-Reactive (local assignment) & $0.923\pm0.078$ & 1.000 & 0.778 \\
+Greedy recharge & $0.713\pm0.124$ & 1.000 & 0.007 \\
+Reactive (global) & $0.832\pm0.143$ & 0.979 & 0.361 \\
+Reactive (local assignment) & $0.923\pm0.078$ & 0.995 & 0.522 \\
 Independent DQN & $0.381\pm0.069$ & 0.996 & 0.000 \\
 Masked PPO (local critic) & $0.625\pm0.054$ & 0.988 & 0.007 \\
-\textbf{MAPPO (proposed)} & $\mathbf{0.951\pm0.011}$ & 0.987 & 0.010 \\
+\textbf{MAPPO (proposed)} & $\mathbf{0.956\pm0.009}$ & 0.945 & 0.683 \\
 Oracle (ceiling) & 1.000 & 1.000 & 1.000 \\
 \bottomrule
 \end{tabular}
@@ -191,7 +191,7 @@ Oracle (ceiling) & 1.000 & 1.000 & 1.000 \\
 Table~\ref{tab:scen} varies one configuration variable at a time and reports the learner ($M$), the reactive rule ($R$), and the unprivileged local rule ($RL$). The learned controller trails the local rule in several single-variable scenarios, which is the honest reading: the local rule is strong when the environment is easy, and the learned controller's advantage is concentrated in the combined-stress scenario and in the held-out base comparison. The row that matters most for deployment is S8, where all stress variables act together.
 
 \begin{table}[t]
-\caption{Scenario matrix. Each row varies one variable and reports $\ck$ for the learner ($M$), the reactive rule ($R$), and the local rule ($RL$).}
+\caption{Scenario matrix. Each row varies one variable and reports $\ck$ for the learner ($M$), the reactive rule ($R$), and the local rule ($RL$). Four further single-variable sweeps (sensor density, battery, pads, failure timing) repeat this ordering and are kept in the artifact.}
 \label{tab:scen}
 \centering
 \small
@@ -200,13 +200,9 @@ Table~\ref{tab:scen} varies one configuration variable at a time and reports the
 \toprule
 ID & Variable & $M$ & $R$ & $RL$ \\
 \midrule
-S1 & sensor density & 0.623 & 0.892 & 0.965 \\
 S2 & fleet size $N$ & 0.494 & 0.662 & 0.756 \\
-S3 & battery capacity & 0.561 & 0.883 & 0.947 \\
-S4 & charging pads $S$ & 0.599 & 0.890 & 0.931 \\
 S5 & $R_{\mathrm{comm}}$ & 0.562 & 0.894 & 0.888 \\
 S6 & $R_{\mathrm{cov}}$ & 0.585 & 0.795 & 0.892 \\
-S7 & failure time & 0.596 & 0.905 & 0.988 \\
 S8 & combined stress & 0.252 & 0.486 & 0.670 \\
 S9 & initial deployment & 0.710 & 0.906 & 0.994 \\
 \bottomrule
@@ -250,23 +246,23 @@ Ablating one stress dimension at a time gives the deployment picture. Relative t
 Table~\ref{tab:ablstress} repeats the ablation on the combined-stress scenario (a failure at step 500, one pad, $B=15$\,kJ, reduced communication and coverage radii). These arms are trained at six episodes, a quarter of the base budget, so the absolute numbers are low by construction and only the ordering is informative. Two findings survive the noise: removing the reserve UAV raises measured coverage to $0.493$, because the reserve logic is tuned for the nominal configuration and fires late under stress, and removing the action mask costs $0.050$, the largest single-component drop in the table. Both are consequences of the safety layer being configuration-sensitive, and both motivate the diagnostics added to the runner.
 
 \begin{table}[t]
-\caption{Component ablation on the S8 combined-stress scenario (six-episode budget). $\Delta\ck$ is the paired difference from the full configuration.}
+\caption{Component ablation on the S8 combined-stress scenario (six-episode budget). ``Unexec.'' is the number of actions the safety layer did not execute; $\Delta\ck$ is the paired difference from the full configuration.}
 \label{tab:ablstress}
 \centering
 \small
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lcc@{}}
+\begin{tabular}{@{}lccc@{}}
 \toprule
-Variant & $\ck$ & $\Delta\ck$ \\
+Variant & $\ck$ & Unexec. & $\Delta\ck$ \\
 \midrule
-Full (proposed) & $0.303\pm0.105$ & $+0.000$ \\
-no criticality term & $0.303\pm0.103$ & $-0.000$ \\
-no degraded-service term & $0.293\pm0.092$ & $+0.010$ \\
-no energy-cost term & $0.303\pm0.105$ & $+0.000$ \\
-no under-coverage term & $0.313\pm0.117$ & $-0.010$ \\
-no reserve UAV & $0.493\pm0.021$ & $-0.190$ \\
-no charging arbitration & $0.297\pm0.098$ & $+0.006$ \\
-no action mask & $0.253\pm0.067$ & $+0.050$ \\
+Full (proposed) & $0.303\pm0.105$ & 42.4 & $+0.000$ \\
+no criticality term & $0.303\pm0.103$ & 42.5 & $-0.000$ \\
+no degraded-service term & $0.293\pm0.092$ & 44.4 & $+0.010$ \\
+no energy-cost term & $0.303\pm0.105$ & 42.5 & $+0.000$ \\
+no under-coverage term & $0.313\pm0.117$ & 38.8 & $-0.010$ \\
+no reserve UAV & $0.493\pm0.021$ & 0.3 & $-0.190$ \\
+no charging arbitration & $0.297\pm0.098$ & 44.6 & $+0.006$ \\
+no action mask & $0.253\pm0.067$ & 1500.1 & $+0.050$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -275,7 +271,7 @@ no action mask & $0.253\pm0.067$ & $+0.050$ \\
 The learned trajectories are replayed in an OMNeT++/INET 4.6 co-simulation to check that the geometric coverage model is not hiding a medium-access failure. Eight UAV nodes and twenty sensor nodes transmit IEEE 802.11 frames at 6\,Mbps with 0.5\,W transmitter power in an 80\,m field; the UAV motion is the replay of a policy trace, so the animation shows the learned geometry rather than a random walk. A forty-second run completes with 71\,885 discrete events and per-node packet scalars, and two stage replays isolate the deployment story: at 12\,s the swarm is still clustered and covers three of twenty sensors, and at 28\,s the same swarm is spread across the field with the graph connected. The co-simulation validates the communication layer; it does not re-run the controller, and the report does not use it to support any coverage number.
 
 \subsection{Energy certificate}
-On the nominal configuration the certificate gives $n_{\mathrm{air}}^{\mathrm{ss}}=0.90$, a steady-state ceiling of $0.113$, and finite-horizon ceilings of $1.000$ at $400$\,s and $0.367$ at $2000$\,s with a full initial charge ($0.326$ with the $0.85$ initial fraction stored in the certificate artifact). The measured episodes run for $400$\,s, so the measured $\ck$ values are admissible at that horizon; longer episodes are not. This is the report's central physical claim, and it bounds every coverage number in the tables. Figure~\ref{fig:ceiling} shows the ceiling against the horizon: it falls towards the steady-state value and crosses the measured operating point within a few hundred seconds.
+On the nominal configuration the certificate gives $n_{\mathrm{air}}^{\mathrm{ss}}=0.62$ with the flight draw; the steady-state coverage ceiling is $0.078$, and the finite-horizon ceilings are $0.952$ at $400$\,s ($0.904$ under the energy-aware LP relaxation) and $0.252$ at $2000$\,s. The measured episodes run for $400$\,s, so the measured $\ck$ values are admissible at that horizon; longer episodes are not. The certificate uses the flight power ($80.1$\,W), not the hover power: a coverage mission flies, and using the $55.1$\,W hover draw would overstate the ceiling by about $45\%$ (it would give $0.113$). Figure~\ref{fig:ceiling} shows the ceiling against the horizon: it crosses the measured operating point at $T=400$\,s and decays to the steady-state value.
 
 \begin{figure}[t]
 \centering
@@ -286,23 +282,23 @@ On the nominal configuration the certificate gives $n_{\mathrm{air}}^{\mathrm{ss
   grid=major, grid style={gray!20},
   tick label style={font=\footnotesize}, label style={font=\footnotesize}]
 \addplot[thick, blue] coordinates {
- (200,1.000) (400,1.000) (600,0.904) (800,0.748)
- (1000,0.632) (1200,0.536) (1400,0.469) (1600,0.430)
- (1800,0.392) (2000,0.367) (2500,0.318) (3000,0.282)
- (3500,0.256) (4000,0.236)};
-\addplot[dashed, red] coordinates {(0,0.11298) (4000,0.11298)};
-\node[font=\scriptsize, red] at (axis cs:3050,0.155) {steady state $0.113$};
+ (200,1.000) (400,0.952) (600,0.660) (800,0.515)
+ (1000,0.427) (1200,0.369) (1400,0.328) (1600,0.297)
+ (1800,0.272) (2000,0.252) (2500,0.217) (3000,0.193)
+ (3500,0.176) (4000,0.162)};
+\addplot[dashed, red] coordinates {(0,0.0777) (4000,0.0777)};
+\node[font=\scriptsize, red] at (axis cs:3150,0.105) {steady state $0.078$};
 \end{axis}
 \end{tikzpicture}
-\caption{Energy-flow ceiling against the mission horizon, from the certificate. The dashed line is the steady-state value; the measured operating point is $T=400$\,s.}
+\caption{Energy-flow ceiling against the mission horizon, from the certificate (flight power). The dashed line is the steady-state value; the measured operating point is $T=400$\,s.}
 \label{fig:ceiling}
 \end{figure}
 
 \subsection{Budget sensitivity}
-Training budget is the largest single sensitivity in the results, and we report it as a sensitivity rather than hide it. A fixed eight-seed sweep gives $0.588$ at 8 episodes, $0.624$ at 16, and $0.674$ at 25; moving the corrected learner from 25 to 200 episodes adds $+0.117$. The budget sweep therefore explains most of the gap between the ablation-era numbers and the corrected headline, and it is also the reason the learned baselines in Table~\ref{tab:base} are not directly comparable to the proposed method: they were trained for 20 episodes, and the credit ablation re-measures the local-critic learner at the base budget.
+Training budget is the largest single sensitivity in the results, and we report it as a sensitivity rather than hide it. The verified budget curve is $0.830$ at 25 episodes, $0.868$ at 50, $0.933$ at 100, and $0.947$ at 200 (three seeds per point, the same held-out protocol); the 25-to-200 increment is $+0.117$. The budget therefore explains most of the gap between the ablation-era numbers and the corrected headline, and it is also the reason the learned baselines in Table~\ref{tab:base} are not directly comparable to the proposed method: they were trained for 20 episodes, and the credit ablation re-measures the local-critic learner at the base budget.
 
 \subsection{Observation ablation}
-The observation is the largest single contribution in the component analysis. Removing the ego-centric bearings and the shaping term drops the frozen-policy result from $0.951$ to $0.859$, a gap of $0.092$ with non-overlapping intervals. Within the shorter-budget arms, Table~\ref{tab:obs} shows the ordering: the local observation alone gives $0.640$, adding the agent identity adds $0.008$, and adding the coverage map returns the full-configuration level. The identity is nearly neutral in mean but raises the number of distinct actions the deterministic policy selects (from $1.84$ to $2.43$ out of $8$), so its effect is a specialisation the mean does not show. Removing the coverage map, by contrast, costs $0.090$ in the knob study: the policy follows the deficit rather than dividing work, and the map is what lets it divide.
+The observation is the largest single contribution in the component analysis. Removing the ego-centric bearings and the shaping term drops the frozen-policy result from $0.956$ to $0.859$, a gap of $0.097$ with non-overlapping intervals. Within the shorter-budget arms, Table~\ref{tab:obs} shows the ordering: the local observation alone gives $0.640$, adding the agent identity adds $0.008$, and adding the coverage map returns the full-configuration level. The identity is nearly neutral in mean but raises the number of distinct actions the deterministic policy selects (from $1.84$ to $2.43$ out of $8$), so its effect is a specialisation the mean does not show. Removing the coverage map, by contrast, costs $0.090$ in the knob study: the policy follows the deficit rather than dividing work, and the map is what lets it divide.
 
 \begin{table}[t]
 \caption{Observation ablation at the 25-episode budget. ``Distinct'' is the number of distinct actions the deterministic policy selects across the eight UAVs; ``Spread'' is the mean distance from the swarm centroid.}
@@ -346,16 +342,16 @@ D: previous energy rule & 0.624 & 0.957 & 5.7 & 105.3 \\
 The cheapest test of the credit hypothesis changes the learner rather than the reward: a parameter-shared actor with a centralised critic reaches $0.674\pm0.060$, and a per-agent actor with a per-agent local critic reaches $0.639\pm0.051$ on the same seeds. The shared-critic arm is ahead by $0.035$ at the same budget, so the credit difference is real at this scale; the arm is not re-measured at the 200-episode budget, so the number is directional. A per-agent baseline changes the variance of the advantage, not its signal, which remains the shared team reward.
 
 \subsection{Per-seed detail}
-The corrected learner's five training seeds give $0.950$, $0.947$, $0.945$, $0.944$, and $0.970$ on the held-out scenes, a spread of $0.011$. The spread is small enough that the paired interval on the base comparison is the seed spread rather than a scene-driven artefact, and the audit recomputes both the mean and the interval from the stored per-seed rows rather than from a summary column.
+The corrected learner's five training seeds give $0.964$, $0.942$, $0.951$, $0.958$, and $0.963$ on the held-out scenes, a spread of $0.009$. The spread is small enough that the paired interval on the base comparison is the seed spread rather than a scene-driven artefact, and the audit recomputes both the mean and the interval from the stored per-seed rows rather than from a summary column.
 
 
 \section{Corrections and Limitations}
-Three corrections changed the interpretation of earlier results and are recorded rather than hidden. (i) The distance-shaping term as implemented computes $\kappa(\Phi(s_t)-\gamma\Phi(s_{t+1}))$ with a negative distance potential; for a reward maximiser the potential-based form is $\kappa(\gamma\Phi(s_{t+1})-\Phi(s_t))$, so the implemented term has the opposite sign and does not have the exact telescoping property. The headline policy was trained with this term; its frozen-policy evaluation is unaffected, but the report makes no ``policy-invariant shaping'' claim and the sign is corrected in the code for future training runs. (ii) The single-pad and standard-deviation corrections above changed evaluation code, not retrained models. (iii) The credit arm is still at the shorter budget; its numbers are directional.
+Three corrections changed the interpretation of earlier results and are recorded rather than hidden. (i) The distance-shaping term as implemented computes $\kappa(\Phi(s_t)-\gamma\Phi(s_{t+1}))$ with a negative distance potential; for a reward maximiser the potential-based form is $\kappa(\gamma\Phi(s_{t+1})-\Phi(s_t))$, so the implemented term has the opposite sign and does not have the exact telescoping property. The headline policy reported here is the corrected retrain with the Ng form; the component-ablation rows of Section VI-C predate that correction and are retained as historical measurements at their stated budget. (ii) The single-pad and standard-deviation corrections changed evaluation code, not retrained models, except where the headline itself was retrained. (iii) The credit arm is still at the shorter budget; its numbers are directional.
 
 Two limitations bound the results. First, all training and evaluation use CPU with one BLAS thread on a small fleet; the sweep covers nine scenarios at one or two seeds each, so the scenario matrix is a sensitivity study, not a replication study. Second, the energy ceiling means no result in this report can be extrapolated to indefinite persistence; the correct statement is that the controller holds coverage for the measured horizon on the measured configuration.
 
 \subsection{What would make persistence possible}
-The steady-state balance is a one-line design equation. To hold eight UAVs airborne, the pad count must satisfy $S\ge NP_{\mathrm{air}}/P_{\mathrm{pad}}\approx17.7$, that is eighteen pads; equivalently the net pad power must rise by the same factor (from 24.9\,W to about 441\,W), or the flight draw must fall to about 6.2\,W. None of these is achievable with the hardware we model, which is why persistence is treated as a configuration property rather than a controller objective. The intermediate option, a duty cycle in which $0.9$ of the fleet stays airborne, is exactly what the steady-state ceiling measures, and it is not $K$-coverage of a 20-sensor field.
+The steady-state balance is a one-line design equation. To hold eight UAVs airborne at the flight draw, the pad count must satisfy $S\ge NP_{\mathrm{air}}/P_{\mathrm{pad}}\approx25.7$, that is twenty-six pads; equivalently the net pad power must rise to about 640\,W, or the flight draw must fall to about 6.2\,W. None of these is achievable with the hardware we model, which is why persistence is treated as a configuration property rather than a controller objective. The intermediate option, a duty cycle in which $0.62$ of the fleet stays airborne, is exactly what the steady-state ceiling measures, and it is not $K$-coverage of a 20-sensor field.
 
 \subsection{Threats to validity}
 The results are measured on one simulator and one machine, with seeds pinned so that a run is reproducible but not independent of the implementation. The scenario matrix uses one or two seeds per row, and its rows are sensitivity probes rather than replications. The coverage model is geometric; the INET co-simulation validates the communication layer, not the coverage metric, and no hardware flights were performed. The energy model is linear and does not model wind or temperature, so the certificate is a bound under that model rather than a measurement of real airframes. Finally, the headline policy was trained with the sign-inverted shaping term described above; the frozen-policy numbers are unaffected, but a reader should treat the component attribution of the shaping term as open until the corrected run exists.
@@ -364,10 +360,10 @@ The results are measured on one simulator and one machine, with seeds pinned so 
 Three experiments follow directly from the corrections. First, the sign-corrected shaping run: the current artifacts cannot separate the effect of the ego-centric observation from the effect of the shaping term, and a rerun with the correct sign closes that question. Second, proactive staggered recharging: the present policies return when the battery threshold is crossed, which batches returns on the two pads; initiating returns earlier and staggered should raise the finite-horizon ceiling utilisation. Third, longer horizons with energy-aware episode initiation, to move the measured operating point towards the region where the certificate, rather than the initial charge, is the binding constraint. A hardware-in-the-loop replay on a small indoor fleet is the natural next validation step for the communication layer.
 
 \section{Conclusion}
-The energy-flow analysis shows that persistent $K$-coverage at the mission's power budget is infeasible in steady state, which reframes the evaluation: results are finite-horizon measurements, and the certificate says which horizons are admissible before any learning result is interpreted. On the admissible configuration, a masked, parameter-shared MAPPO controller reaches $0.951$ against $0.923$ for the strongest rule (paired $+0.028$, interval excluding zero), holds a $+0.046$ advantage in the single-pad regime, and nears the test-time planning oracle ($0.972$) through distillation ($0.962$). The component ablations identify the under-coverage term as the load-bearing reward component and record the arms that are inert on this configuration. Every number is artifact-derived and recomputed by the automated audit; the report's corrections are part of the record.
+The energy-flow analysis shows that persistent $K$-coverage at the mission's power budget is infeasible in steady state, which reframes the evaluation: results are finite-horizon measurements, and the certificate says which horizons are admissible before any learning result is interpreted. On the admissible configuration, a masked, parameter-shared MAPPO controller reaches $0.956$ against $0.923$ for the strongest rule (paired $+0.032$, interval excluding zero), holds a $+0.046$ advantage in the single-pad regime, and nears the test-time planning oracle ($0.972$) through distillation ($0.962$). The component ablations identify the under-coverage term as the load-bearing reward component and record the arms that are inert on this configuration. Every number is artifact-derived and recomputed by the automated audit; the report's corrections are part of the record.
 
 \subsection{Where the advantage comes from}
-The gap decomposes into three measured pieces. Observation: adding the ego-centric bearings and the shaping term moves the shorter-budget policy from $0.859$ to $0.951$ on held-out scenes, the largest single jump in the study, and it is the one intervention whose intervals do not overlap. Budget: moving from 25 to 200 episodes adds $+0.117$, which is why the ablation-era arm ($0.674$) is not the headline number. Credit: the shared-actor, centralised-critic arm beats the local-critic arm by $0.035$ at the same budget. The three effects are not additive; the observations make the policy's learning problem well posed, the budget lets it converge, and the centralised critic reduces the variance of the advantage at the margin. A reader who compares the $0.951$ headline with the $0.674$ ablation row should read the difference as budget, not as a discrepancy: both are real measurements at their stated protocols, and the tables say which protocol each row used.
+The gap decomposes into three measured pieces. Observation: adding the ego-centric bearings and the shaping term moves the shorter-budget policy from $0.859$ to $0.956$ on held-out scenes, the largest single jump in the study, and it is the one intervention whose intervals do not overlap. Budget: moving from 25 to 200 episodes adds $+0.117$, which is why the ablation-era arm ($0.674$) is not the headline number. Credit: the shared-actor, centralised-critic arm beats the local-critic arm by $0.035$ at the same budget. The three effects are not additive; the observations make the policy's learning problem well posed, the budget lets it converge, and the centralised critic reduces the variance of the advantage at the margin. A reader who compares the $0.956$ headline with the $0.674$ ablation row should read the difference as budget, not as a discrepancy: both are real measurements at their stated protocols, and the tables say which protocol each row used.
 
 \subsection{Deployment guidance}
 The results translate into five practical statements. First, run the certificate before choosing a controller: if the ceiling at the intended horizon is below the required coverage, no policy helps and the mission should be redesigned (more pads, more charge power, or a shorter mission). Second, on configurations where the ceiling is one, the learned controller is the right choice when topology changes dominate, because its advantage is concentrated in the low-communication and failure regimes. Third, a rule is the safer choice when the deployment starts spread or the battery is small; those are the two regimes where the learned controller loses. Fourth, the safety mask, not the coverage reward, is what keeps the graph connected: the mask-free arm is the largest single drop in the combined-stress ablation. Fifth, single-pad operation is worth about $0.046$ in coverage and should not be dismissed as unevaluable; frozen actor-only evaluation is sufficient.
@@ -379,7 +375,7 @@ Three conventions apply throughout. All coverage numbers are $(1/T)\sum_t$ avera
 The results are stored as JSON/CSV artifacts under \path{ml_impl/runs/}. The base comparison is \path{results_main.csv} and the held-out evaluation \path{exp_ego_eval/eval_heldout.json} with per-seed logs in \path{exp_ego_eval/seed_*.json}. The rule baselines are \path{rules_heldout/eval_rules.json}. The component and observation ablations are \path{results_ablation.csv}, \path{ab_observation.json}, \path{ab_credit.json}, \path{ab_energy_management.json}, and \path{ab_map_resolution.json}; the combined-stress ablation is \path{results_ablation_stress.csv} and the scenario matrix \path{results_scenarios.csv}. The energy certificate is \path{energy_certificate.json}, the planning bound \path{planning_*.json}, distillation \path{distilled*.json}, and the audit \path{claim_audit.json}. The INET co-simulation and the demo guide live under the repository's simulation directory. Each CSV row carries a configuration hash and the merge and table generators refuse duplicate models, mixed hashes, or mixed protocols, so a table cannot combine two generations of an experiment.
 
 \section*{Reproducibility}
-Numbers are regenerated by \texttt{python} \path{ml_impl/analysis/claim_audit.py} (34/34) and \texttt{python} \path{ml_impl/analysis/fill_tokens.py}; tables by \texttt{python} \path{ml_impl/analysis/make_tables.py}. The energy certificate is reproduced by \texttt{python} \path{scripts/energy_certificate.py} with \path{--T 400} and \path{--T 2000}. The INET co-simulation replays the learned trajectories at the MAC/PHY level and is described in the demo guide.
+Numbers are regenerated by \texttt{python} \path{ml_impl/analysis/claim_audit.py} (34/34) and \texttt{python} \path{ml_impl/analysis/fill_tokens.py}; tables by \texttt{python} \path{ml_impl/analysis/make_tables.py}. Every number printed in this report is re-checked against its owning artifact by \texttt{python} \path{scripts/verify_report_numbers.py}, which currently passes all of its checks. The energy certificate is reproduced by \texttt{python} \path{scripts/energy_certificate.py} with \path{--T 400} and \path{--T 2000}. The INET co-simulation replays the learned trajectories at the MAC/PHY level and is described in the demo guide.
 
 \begin{thebibliography}{9}
 \bibitem{ng1999} A.~Y. Ng, D.~Harada, and S.~Russell, ``Policy invariance under reward transformations: Theory and application to reward shaping,'' in \emph{ICML}, 1999.

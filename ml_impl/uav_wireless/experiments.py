@@ -190,8 +190,10 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
                      # the same rule WITHOUT the privileged global coverage
                      # state: the information-asymmetry arm
                      ("Reactive-local", baseline_reactive_local)]:
+        # Held-out evaluation scenes: the rule rows must not be measured on
+        # the same seed space training consumed (0..eval_seeds-1).
         sums = [fn(base, steps=base.episode_len, seed=s)
-                for s in range(eval_seeds)]
+                for s in range(1000, 1000 + eval_seeds)]
         agg = {k: float(np.mean([s[k] for s in sums])) for k in sums[0]}
         std = {k: (float(np.std([s[k] for s in sums], ddof=1))
                    if len(sums) > 1 else 0.0) for k in sums[0]}

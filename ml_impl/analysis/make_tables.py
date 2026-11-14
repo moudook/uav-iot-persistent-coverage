@@ -411,8 +411,13 @@ def table_abl(rows, label, caption):
     lines.append(r"\centering")
     lines.append(r"\scriptsize")
     lines.append(NARROW)
+    # The SC column is dead in the stress table (every row has SC = 0).  When
+    # a column carries no variation, print the executed-action gap instead:
+    # it is the column that tells a reader something on that scenario.
+    sc_varies = len({fmt(r.get("SC"), 3) for r in rows}) > 1
+    fifth = "SC" if sc_varies else "Unexec."
     head = grouped_head(["Variant"],
-                        [("Task metrics", ["CK", "AG", "SC", "CovDef"])],
+                        [("Task metrics", ["CK", "AG", fifth, "CovDef"])],
                         ["Stranded", r"$\Delta$CK"])
     lines.append(r"\begin{tabular}{@{}lcccccc@{}}")
     lines.append(r"\toprule")
@@ -429,8 +434,10 @@ def table_abl(rows, label, caption):
         if fs and len(vs) == len(fs):
             diffs = [fs[i] - vs[i] for i in range(len(fs))]
             d = f"{sum(diffs)/len(diffs):+.3f}"
+        fifth_val = (fmt(r.get("SC")) if sc_varies
+                     else fmt(r.get("UnexecutedActions"), 2))
         lines.append(_row(
-            [NAMES[name], ck_cell(r), fmt(r.get('AG')), fmt(r.get('SC')),
+            [NAMES[name], ck_cell(r), fmt(r.get('AG')), fifth_val,
              fmt(r.get('CovIntegral')), fmt(r.get('Stranded'), 1), d],
             hl=(full is not None and r == full)))
     lines.append(r"\bottomrule")
@@ -453,6 +460,13 @@ def table_scen(rows):
     by = {}
     for r in rows:
         by.setdefault(r["scenario"], []).append(r)
+    # Prune the scenarios that repeat the same ordering as the combined-stress
+    # scenario (sensor density, battery, pad count, failure timing).  The
+    # report keeps the four axes that change the conclusion (fleet size,
+    # communication radius, coverage radius, combined stress) plus the
+    # deployment axis; the remaining rows stay in the artifact.
+    KEEP = ("S2", "S5", "S6", "S8", "S9")
+    by = {k: v for k, v in by.items() if k in KEEP}
     lines = []
     lines.append(r"\begin{table}[t]")
     lines.append(THEME_BLOCK)
@@ -460,8 +474,10 @@ def table_scen(rows):
                  r"variants of that scenario; \emph{M} is the proposed "
                  r"controller, \emph{R} the reactive heuristic and "
                  r"\emph{RL} the same rule without its global access to the "
-                 r"coverage state, which is the stronger of the two rules on "
-                 r"the base configuration.}")
+                 r"coverage state.  Four further single-variable sweeps "
+                 r"(sensor density, battery capacity, pad count, failure "
+                 r"timing) repeat this ordering and are kept in the artifact "
+                 r"rather than printed.}")
     lines.append(r"\label{tab:results_scen}")
     lines.append(r"\centering")
     lines.append(r"\scriptsize")

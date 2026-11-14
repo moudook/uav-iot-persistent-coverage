@@ -44,6 +44,8 @@ def main():
     ap.add_argument("--tag", default="exp")
     ap.add_argument("--attn", action="store_true")
     ap.add_argument("--action-repeat", type=int, default=1)
+    ap.add_argument("--device", default=None,
+                    help="cpu or cuda; default lets torch choose")
     ap.add_argument("--regime", default="nominal",
                     help="stress regime name (nominal, small_battery, "
                          "low_comm, failure, etc.)")
@@ -85,6 +87,7 @@ def main():
                                   rf_at=args.rf_at, lr_decay=args.lr_decay,
                                   attn=args.attn,
                                   action_repeat=args.action_repeat,
+                                  device=args.device,
                                   ckpt_dir=outdir, ckpt_every=25)
         dt = time.time() - t0
         agent.save(os.path.join(outdir, "seed_%d.pt" % s))

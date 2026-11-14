@@ -552,6 +552,10 @@ class UAVIoTEnv:
                 assign[i] = s
                 self.pad_occupied_by[s] = i
         self.denied_charge += len(requests) - len(assign)
+        for i in requests:
+            if i not in assign:
+                d = np.linalg.norm(self.pads - self.p[i], axis=1)
+                self.pad_queue[int(np.argmin(d))] += 1
         return assign
 
     # ------------------------------------------------------------------
@@ -1103,28 +1107,20 @@ class UAVIoTEnv:
                 masked_actions += 1
         for i in self._active_idx():
             a = int(actions[i])
+            executed = bool(masks[i][a])
             if a in (A_PX, A_NX, A_PY, A_NY):
-                self.v[i] = ACTION_VECTORS[a] * c.v_max
-            elif a == A_CHARGE:
-                self.v[i] = np.zeros(2)
+                delta = ACTION_VECTORS[a] * c.v_max
             else:
+                delta = np.zeros(2)
+            if executed:
+                self.v[i] = delta
+                self.p[i] = np.clip(self.p[i] + delta * c.dt, 0, c.side)
+            else:
+                # A masked move holds position.  The velocity must be zero
+                # too: the observation and the movement-waste term are built
+                # from self.v, and a phantom velocity would report motion
+                # that never happened.
                 self.v[i] = np.zeros(2)
-            p_new = np.clip(self.p[i] + self.v[i] * c.dt, 0, c.side)
-            # Apply the motion if the CHOSEN action is feasible.
-            #
-            # The previous revision tested `np.all(self.action_mask(i))`,
-            # i.e. it moved the UAV only when EVERY action in the mask was
-            # feasible.  A_CHARGE is feasible only when the UAV is at a pad
-            # with low energy, so that test was false for essentially every
-            # UAV at every step, and NO UAV EVER MOVED.  The whole simulator
-            # was static: coverage could not change, every controller scored
-            # the same, and the only motion that occurred was by agents that
-            # happened to have a full action set available.  The feasibility
-            # mask is a property of the chosen action, not of the whole set.
-            if masks[i][a]:
-                self.p[i] = p_new
-            elif a in (A_PX, A_NX, A_PY, A_NY):
-                pass    # masked movement -> hold position (mask made this infeasible)
 
         # --- 1b. joint connectivity projection ------------------------
         # The per-agent mask checks each candidate move against the PRE-move
@@ -1159,12 +1155,13 @@ class UAVIoTEnv:
             self.failure_t = -1
             self.recovered = False
         elif c.use_reserve and self.reserve_used < c.N_reserve and not self.recovered:
-            # activate reserve
-            self.reserve_used += 1
-            self.failed = self.failed.copy()
-            # re-seat one failed slot with a fresh UAV at a pad
+            # Activate the reserve only when there is a failed slot to
+            # re-seat: the previous revision consumed the reserve budget on
+            # every step while a failure was unresolved.
             dead = np.where(self.failed)[0]
             if len(dead):
+                self.reserve_used += 1
+                self.failed = self.failed.copy()
                 j = int(dead[0])
                 self.p[j] = self.pads[self.rng.integers(len(self.pads))]
                 self.E[j] = c.B_max
@@ -1256,8 +1253,8 @@ class UAVIoTEnv:
         # CONNECTIVITY invariant -- the one that collapsed to 0.2 and left
         # SC = 0 in the first run. This gives the learner a discrete, learnable
         # signal for the thing it was previously not being told about.
-        degraded_now = not connected_now
         ok_now = (float(np.mean(ncov >= c.K)) >= 1.0) and connected_now
+        degraded_now = not ok_now
         if not self.recovered and ok_now:
             self.recovered = True
         rec_delay = 0.0
@@ -1276,15 +1273,26 @@ class UAVIoTEnv:
         E_cons = float(np.sum(draw) * c.dt / (c.N * c.B_max))
         D_t = 1.0 if degraded_now else 0.0
         w_dist = float(np.linalg.norm(self.v, axis=1).sum() * c.dt) if act_before.size else 0.0
-        # W_t = "distance flown / distance that changed coverage". A move that
-        # buys no new coverage is pure waste, so penalise the fraction of flown
-        # distance that did not improve the covered-sensor count.
-        cov_now = float(np.mean(ncov >= c.K))
-        newly_covered = max(cov_now - self.prev_cov_score, 0.0)
+        # W_t is the fraction of the distance flown this step that did not
+        # change the moving UAV's covered-sensor set.  The previous revision
+        # divided a fraction of sensors by a distance in metres, so the
+        # ratio was ~1 for every moving step and the term was a near
+        # constant tax on motion rather than a measure of waste.
         if getattr(c, "use_w_penalty", True) and w_dist > 1e-9:
-            W_t = float(np.clip(1.0 - newly_covered / (w_dist + 1e-9), 0.0, 1.0))
+            useful = 0.0
+            for i in range(c.N):
+                d_i = float(np.linalg.norm(self.v[i])) * c.dt
+                if d_i <= 1e-9 or self.failed[i]:
+                    continue
+                before = np.linalg.norm(self.sensors - old_p[i], axis=1) <= c.R_cov
+                after = np.linalg.norm(self.sensors - self.p[i], axis=1) <= c.R_cov
+                if not np.array_equal(before, after):
+                    useful += d_i
+            W_t = float(np.clip(1.0 - useful / (w_dist + 1e-9), 0.0, 1.0))
         else:
             W_t = 0.0
+        cov_now = float(np.mean(ncov >= c.K))
+        self.prev_cov_score = cov_now
         crit = float(self.articulation_points(adj).mean()) if len(adj) else 1.0
         R_rec = rec_delay
 
@@ -1310,7 +1318,14 @@ class UAVIoTEnv:
         )
         r = self.reward_from_terms(self.last_cost)
 
-        # Potential-based distance shaping (SI-1): telescopic, policy-invariant.
+        # Potential-based distance shaping (SI-1).
+        #
+        # For a reward maximiser, Ng et al. define
+        #     F = kappa * (gamma*Phi(s') - Phi(s)).
+        # The previous revision implemented kappa*(Phi(s) - gamma*Phi(s')), the
+        # negative of F: with Phi = -distance it paid the UAV for retreating
+        # from the deficit.  The sign below is the Ng form; gamma is the
+        # learner's discount (0.99 for every reported run).
         kappa = getattr(c, "dist_shape_kappa", 0.0)
         if kappa and kappa > 0:
             def _phi(positions):
@@ -1326,21 +1341,23 @@ class UAVIoTEnv:
                     ds = [float(np.linalg.norm(self.sensors[d]-positions[i])) for d in defd]
                     vals.append(-min(ds) / max(c.side * 1.414, 1.0))
                 return float(np.mean(vals)) if vals else 0.0
-            phi_before = _phi(self.p.copy()) if False else None
-            # phi_before should use previous positions; we approximate with current pre-move not stored.
-            # Use a stored previous phi instead.
             phi_after = _phi(self.p)
-            prev_phi = getattr(self, "_prev_phi", phi_after)
-            r = r + kappa * (prev_phi - 0.99 * phi_after)
+            prev_phi = getattr(self, "_prev_phi", None)
+            if prev_phi is None:
+                prev_phi = phi_after
+            r = r + kappa * (0.99 * phi_after - prev_phi)
             self._prev_phi = phi_after
 
-        # Potential-based ENERGY shaping (Innovation 2): telescoping
-        # potential on the minimum battery fraction.
+        # Potential-based ENERGY shaping (Innovation 2): the same Ng form on
+        # the minimum-battery potential.  The previous revision had the same
+        # sign flip, which paid the fleet for draining its pack.
         kappa_e = getattr(c, "energy_shape_kappa", 0.0)
         if kappa_e and kappa_e > 0:
             phi_e = float(np.min(self.E) / max(c.B_max, 1.0))
-            prev_phi_e = getattr(self, "_prev_phi_e", phi_e)
-            r = r + kappa_e * (prev_phi_e - 0.99 * phi_e)
+            prev_phi_e = getattr(self, "_prev_phi_e", None)
+            if prev_phi_e is None:
+                prev_phi_e = phi_e
+            r = r + kappa_e * (0.99 * phi_e - prev_phi_e)
             self._prev_phi_e = phi_e
 
         # Innovation 7: count-based intrinsic motivation.  The state key is
@@ -1468,7 +1485,8 @@ class UAVIoTEnv:
         m["crit"] += float(self.articulation_points(adj).mean()) if len(adj) else 1.0
         m["energy"] += float(np.sum(draw) * c.dt)
         m["distance"] += w_dist
-        m["min_batt"] = min(m["min_batt"], float(np.min(self.E[self._active_idx()])) if len(self._active_idx()) else 0.0)
+        m["min_batt"] = min(m["min_batt"], float(np.min(self.E)))
+        self.pad_queue = np.maximum(self.pad_queue * 0.99, 0.0)
         m["steps"] += 1
         m["denied"] = self.denied_charge
         m["degraded_steps"] += int(degraded_now)

@@ -82,22 +82,32 @@ def collect_rollout(env, agent, n_steps, deterministic=False, action_repeat=1):
         B["values"][t] = v
         B["active"][t] = (~env.failed) & (env.mode != -1)
 
-        # Innovation 8: action repeat.
-        r_acc = 0.0; done_acc = False
+        # Innovation 8: action repeat.  The decision's reward is the sum of
+        # the sub-step rewards, and the decision-level discount is gamma^k:
+        # with a raw gamma the horizon is wrong by the repeat factor.
+        r_acc = 0.0
+        ar_acc = None
+        done_acc = False
         for _ in range(action_repeat):
             obs, state, r, done, _ = env.step(acts)
             r_acc += r
+            ar = getattr(env, "last_agent_rewards", None)
+            if ar is not None:
+                ar_np = np.asarray(ar, np.float32)
+                ar_acc = ar_np if ar_acc is None else ar_acc + ar_np
             done_acc = done_acc or done
             if done: break
         # Per-agent rewards (difference rewards) take precedence when present.
-        ar = getattr(env, "last_agent_rewards", None)
-        if ar is not None:
-            B["adv"][t] = ar
+        if ar_acc is not None:
+            B["adv"][t] = ar_acc
         else:
-            B["adv"][t] = r
+            B["adv"][t] = r_acc
         t += 1
         if done_acc:
             break
+    # Effective decision-level discount and GAE trace decay.
+    gamma_eff = float(agent_gamma(agent)) ** int(action_repeat)
+    lam_eff = float(agent_lam(agent)) ** int(action_repeat)
     # Distinguish a genuine terminal state from a truncation.
     #
     # The environment ends an episode when the mission time limit is reached.
@@ -132,8 +142,8 @@ def collect_rollout(env, agent, n_steps, deterministic=False, action_repeat=1):
             next_val = B["values"][step + 1]
         else:
             next_val = bootstrap_val
-        delta = B["adv"][step] + agent_gamma(agent) * next_val - B["values"][step]
-        last_gae = delta + agent_gamma(agent) * agent_lam(agent) * last_gae
+        delta = B["adv"][step] + gamma_eff * next_val - B["values"][step]
+        last_gae = delta + gamma_eff * lam_eff * last_gae
         adv[step] = last_gae
     B["adv"] = adv
     # The batch must be truncated to the number of steps actually collected
@@ -274,7 +284,7 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
         # intermediate checkpoint (survives power cuts)
         if ckpt_dir and (ep % ckpt_every == 0 or ep == episodes - 1):
             os.makedirs(ckpt_dir, exist_ok=True)
-            agent.save(os.path.join(ckpt_dir, "latest.pt"))
+            agent.save(os.path.join(ckpt_dir, "latest.pt"), cfg=cfg)
             with open(os.path.join(ckpt_dir, "partial.json"), "w") as _f:
                 json.dump({"ep": ep, "episodes": episodes,
                            "train_ck": float(hist[-1].get("CK", 0.0)),

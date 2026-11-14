@@ -82,20 +82,20 @@ no-charging arbitration & 0.661\,$\pm$\,0.050 & 0.985 & 0.006 & 0.339 & 0.6 & +0
 \toprule
  & \tblGroup{4}{Task metrics} & Stranded & $\Delta$CK \\
 \cmidrule(lr){2-5}
-Variant & CK & AG & SC & CovDef &  &  \\
+Variant & CK & AG & Unexec. & CovDef &  &  \\
 \midrule
-\tblHl \textbf{Full (proposed)} & \textbf{0.303\,$\pm$\,0.105} & \textbf{0.808} & \textbf{0.000} & \textbf{0.697} & \textbf{5.0} & \textbf{+0.000} \\
-no-criticality term & 0.303\,$\pm$\,0.103 & 0.808 & 0.000 & 0.697 & 5.1 & -0.000 \\
-no-degraded-service term & 0.293\,$\pm$\,0.092 & 0.800 & 0.000 & 0.707 & 5.2 & +0.010 \\
-no-energy-cost term & 0.303\,$\pm$\,0.105 & 0.808 & 0.000 & 0.697 & 5.0 & +0.000 \\
-no-under-coverage term & 0.313\,$\pm$\,0.117 & 0.806 & 0.000 & 0.687 & 5.0 & -0.010 \\
-no-reserve UAV & 0.493\,$\pm$\,0.021 & 0.981 & 0.000 & 0.507 & 2.1 & -0.190 \\
-no-charging arbitration & 0.297\,$\pm$\,0.098 & 0.800 & 0.000 & 0.703 & 5.2 & +0.006 \\
-no-action mask & 0.253\,$\pm$\,0.067 & 0.829 & 0.000 & 0.747 & 5.5 & +0.050 \\
-no agent identity & 0.299\,$\pm$\,0.087 & 0.803 & 0.000 & 0.701 & 5.0 & +0.004 \\
-no coverage map & 0.319\,$\pm$\,0.120 & 0.821 & 0.000 & 0.681 & 4.8 & -0.016 \\
-no pad bearing & 0.295\,$\pm$\,0.091 & 0.803 & 0.000 & 0.705 & 5.2 & +0.007 \\
-Vanilla MAPPO & 0.484\,$\pm$\,0.036 & 0.996 & 0.000 & 0.516 & 2.0 & -0.181 \\
+\tblHl \textbf{Full (proposed)} & \textbf{0.303\,$\pm$\,0.105} & \textbf{0.808} & \textbf{42.38} & \textbf{0.697} & \textbf{5.0} & \textbf{+0.000} \\
+no-criticality term & 0.303\,$\pm$\,0.103 & 0.808 & 42.50 & 0.697 & 5.1 & -0.000 \\
+no-degraded-service term & 0.293\,$\pm$\,0.092 & 0.800 & 44.40 & 0.707 & 5.2 & +0.010 \\
+no-energy-cost term & 0.303\,$\pm$\,0.105 & 0.808 & 42.45 & 0.697 & 5.0 & +0.000 \\
+no-under-coverage term & 0.313\,$\pm$\,0.117 & 0.806 & 38.83 & 0.687 & 5.0 & -0.010 \\
+no-reserve UAV & 0.493\,$\pm$\,0.021 & 0.981 & 0.28 & 0.507 & 2.1 & -0.190 \\
+no-charging arbitration & 0.297\,$\pm$\,0.098 & 0.800 & 44.57 & 0.703 & 5.2 & +0.006 \\
+no-action mask & 0.253\,$\pm$\,0.067 & 0.829 & 1500.12 & 0.747 & 5.5 & +0.050 \\
+no agent identity & 0.299\,$\pm$\,0.087 & 0.803 & 51.03 & 0.701 & 5.0 & +0.004 \\
+no coverage map & 0.319\,$\pm$\,0.120 & 0.821 & 43.15 & 0.681 & 4.8 & -0.016 \\
+no pad bearing & 0.295\,$\pm$\,0.091 & 0.803 & 48.83 & 0.705 & 5.2 & +0.007 \\
+Vanilla MAPPO & 0.484\,$\pm$\,0.036 & 0.996 & 69.15 & 0.516 & 2.0 & -0.181 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -109,7 +109,7 @@ Vanilla MAPPO & 0.484\,$\pm$\,0.036 & 0.996 & 0.000 & 0.516 & 2.0 & -0.181 \\
   \errmessage{the tables need ml_impl/analysis/theme_tables.tex}}}
 \fi
 
-\caption{Scenario matrix.  Each row is the mean over the variants of that scenario; \emph{M} is the proposed controller, \emph{R} the reactive heuristic and \emph{RL} the same rule without its global access to the coverage state, which is the stronger of the two rules on the base configuration.}
+\caption{Scenario matrix.  Each row is the mean over the variants of that scenario; \emph{M} is the proposed controller, \emph{R} the reactive heuristic and \emph{RL} the same rule without its global access to the coverage state.  Four further single-variable sweeps (sensor density, battery capacity, pad count, failure timing) repeat this ordering and are kept in the artifact rather than printed.}
 \label{tab:results_scen}
 \centering
 \scriptsize
@@ -120,13 +120,9 @@ Vanilla MAPPO & 0.484\,$\pm$\,0.036 & 0.996 & 0.000 & 0.516 & 2.0 & -0.181 \\
 \cmidrule(lr){3-5} \cmidrule(lr){6-8}
 ID & Variable & M & R & RL & M & R & RL \\
 \midrule
-S1 & sensor density & 0.623 & 0.892 & 0.965 & 0.016 & 0.263 & 0.730 \\
 \tblHl \textbf{S2} & \textbf{fleet size N} & \textbf{0.494} & \textbf{0.662} & \textbf{0.756} & \textbf{0.003} & \textbf{0.241} & \textbf{0.482} \\
-S3 & battery capacity & 0.561 & 0.883 & 0.947 & 0.004 & 0.363 & 0.706 \\
-S4 & charging pads S & 0.599 & 0.890 & 0.931 & 0.013 & 0.333 & 0.447 \\
 S5 & $R_{\mathrm{comm}}$ & 0.562 & 0.894 & 0.888 & 0.002 & 0.478 & 0.723 \\
 S6 & $R_{\mathrm{cov}}$ & 0.585 & 0.795 & 0.892 & 0.054 & 0.483 & 0.461 \\
-S7 & failure time & 0.596 & 0.905 & 0.988 & 0.012 & 0.481 & 0.962 \\
 S8 & combined stress & 0.252 & 0.486 & 0.670 & 0.000 & 0.000 & 0.190 \\
 S9 & initial deployment & 0.710 & 0.906 & 0.994 & 0.054 & 0.491 & 0.980 \\
 \bottomrule

@@ -316,18 +316,26 @@ class MAPPO:
         if not last:
             last = dict(actor=0.0, critic=0.0, entropy=0.0, value=0.0, kl=0.0, beta=0.0)
         return last
-    def save(self, path):
-        torch.save(
-            dict(actor=self.actor.state_dict(), critic=self.critic.state_dict(),
-                 value_norm=self.value_norm,
-                 ret_mean=self._ret_mean, ret_std=self._ret_std),
-            path,
-        )
+    def save(self, path, cfg=None):
+        blob = dict(actor=self.actor.state_dict(),
+                    critic=self.critic.state_dict(),
+                    value_norm=self.value_norm,
+                    ret_mean=self._ret_mean, ret_std=self._ret_std)
+        if cfg is not None:
+            # The evaluation path rebuilds the networks from the checkpoint's
+            # own configuration; without it, a checkpoint trained on a
+            # non-default configuration is silently evaluated on the default.
+            blob["cfg"] = cfg.dict() if hasattr(cfg, "dict") else dict(cfg)
+        torch.save(blob, path)
 
     def load(self, path):
         d = torch.load(path, map_location=self.device)
         self.actor.load_state_dict(d["actor"])
         self.critic.load_state_dict(d["critic"])
+        if "value_norm" in d and bool(d["value_norm"]) != bool(self.value_norm):
+            raise RuntimeError(
+                "checkpoint value_norm does not match the agent: "
+                f"{d['value_norm']} vs {self.value_norm}")
         if "ret_mean" in d:
             self._ret_mean = float(d["ret_mean"])
             self._ret_std = float(d["ret_std"])

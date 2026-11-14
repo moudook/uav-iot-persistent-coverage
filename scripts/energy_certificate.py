@@ -42,7 +42,14 @@ from uav_wireless.env import SimConfig
 
 
 def params(cfg: SimConfig) -> dict:
-    p_air = cfg.P_hover + cfg.P_elec + cfg.P_tx
+    # The mission is a coverage mission: the fleet flies, it does not hover in
+    # place.  The airborne power is therefore the FLIGHT draw; the hover draw
+    # is reported alongside as the optimistic bound.  Using hover as P_air
+    # (the previous revision) understated the power by ~30% and made the
+    # steady-state ceiling ~45% too high.
+    p_air_flight = cfg.P_move + cfg.P_elec + cfg.P_tx
+    p_air_hover = cfg.P_hover + cfg.P_elec + cfg.P_tx
+    p_air = p_air_flight
     p_pad_gross = cfg.charge_rate * cfg.B_max / cfg.dt
     p_pad_net = p_pad_gross - (cfg.P_elec + cfg.P_tx)
     n_min = 4 * cfg.K
@@ -50,7 +57,8 @@ def params(cfg: SimConfig) -> dict:
         N=cfg.N, K=cfg.K, M=cfg.M, side=cfg.side,
         B_max=cfg.B_max, E_reserve=cfg.E_reserve,
         charge_rate=cfg.charge_rate, n_pads=cfg.n_pads,
-        p_air=p_air, p_pad_gross=p_pad_gross, p_pad_net=p_pad_net,
+        p_air=p_air, p_air_flight=p_air_flight, p_air_hover=p_air_hover,
+        p_pad_gross=p_pad_gross, p_pad_net=p_pad_net,
         n_min=n_min, dt=cfg.dt, episode_len=cfg.episode_len,
     )
 
@@ -138,8 +146,9 @@ def print_report(r: dict, label: str = "") -> None:
         print(label)
     print(f"N={p['N']} K={p['K']} M={p['M']} side={p['side']} n_pads={p['n_pads']} "
           f"B_max={p['B_max']:.0f} charge_rate={p['charge_rate']} E_reserve={p['E_reserve']:.0f}")
-    print(f"P_air (hover+elec+tx) = {p['p_air']:.2f} W   "
-          f"P_pad gross = {p['p_pad_gross']:.2f} W   net = {p['p_pad_net']:.2f} W")
+    print(f"P_air (flight+elec+tx) = {p['p_air_flight']:.2f} W   "
+          f"hover-only bound = {p['p_air_hover']:.2f} W")
+    print(f"P_pad gross = {p['p_pad_gross']:.2f} W   net = {p['p_pad_net']:.2f} W")
     print(f"Spatial certificate: N_min = 4K = {p['n_min']} UAVs needed for full K-coverage")
     print()
     print("Steady-state (T -> inf):")

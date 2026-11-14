@@ -147,9 +147,9 @@
     "id": "C4d",
     "claim": "area surplus sigma = N*pi*R^2/A is NOT a feasibility criterion (report claim)",
     "status": "PASS",
-    "measured": "sigma=4.811",
+    "measured": "sigma=4.811, steady-state airborne=0.61 of 8",
     "expected": "sigma>1 is NOT sufficient for feasibility",
-    "note": "sigma is an area ratio; a positive sigma does not imply a covering exists (this is the report's stated finding)"
+    "note": "sigma is an area ratio; the energy balance, not the area, decides"
   },
   {
     "id": "B1",
