@@ -1,8 +1,0 @@
-seed_0.pt      CK=0.9502 (sd over scenes 0.0167)  argmax 0.9231
-seed_1.pt      CK=0.9472 (sd over scenes 0.0335)  argmax 0.9459
-seed_2.pt      CK=0.9450 (sd over scenes 0.0352)  argmax 0.9446
-seed_3.pt      CK=0.9441 (sd over scenes 0.0224)  argmax 0.9163
-seed_4.pt      CK=0.9696 (sd over scenes 0.0142)  argmax 0.9764
-
-exp_ego_eval: mean over 5 seeds = 0.9512 (sd 0.0105)
-wrote C:\Users\gbust\Downloads\Academic\Courses\Machine_learning_in_wireless_network\Project1\scripts\..\ml_impl\runs\exp_ego_eval\eval_heldout.json

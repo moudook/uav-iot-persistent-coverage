@@ -1,7 +1,0 @@
-[train] loaded BC actor from C:\Users\gbust\Downloads\Academic\Courses\Machine_learning_in_wireless_network\Project1\scripts\..\ml_impl\bc_actor.pt
-[MAPPO ep   0] R=-3.3650 CK=0.903 AG=1.000 Crit=0.082 ent=0.106
-[MAPPO ep  50] R=+1.8390 CK=0.799 AG=1.000 Crit=0.000 ent=0.010
-[MAPPO ep 100] R=-4.7358 CK=0.248 AG=1.000 Crit=0.000 ent=0.008
-[MAPPO ep 150] R=+0.0618 CK=0.400 AG=1.000 Crit=0.000 ent=0.001
-[MAPPO ep 199] R=+1.4615 CK=0.450 AG=1.000 Crit=0.000 ent=0.001
-seed 3: DONE in 3076.5s, final CK=0.4500

@@ -1,3 +1,0 @@
-random baseline CK: mean=0.5612 sd(sample)=0.1252 n=20
-per-seed CK: [0.6169, 0.5842, 0.4049, 0.566, 0.4793, 0.6639, 0.7336, 0.3593, 0.4738, 0.5795, 0.4451, 0.688, 0.3895, 0.5963, 0.6701, 0.6796, 0.6779, 0.6994, 0.3281, 0.5884]
-wrote C:\Users\gbust\Downloads\Academic\Courses\Machine_learning_in_wireless_network\Project1\scripts\..\ml_impl\runs\diag\random_baseline.json

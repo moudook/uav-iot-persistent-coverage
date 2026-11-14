@@ -1,5 +1,0 @@
-R_cov = 15 m at L472 gives N*pi*R^2 = 3,534 m^2 against K*|Omega| = 20,000 m^2, ratio 0.1767, K_max = 0 (.tex L471-L474)
-Solving N*pi*R^2 = K*|Omega| at those values gives R_cov >= sqrt(K*|Omega|/(pi*N)) = 35.68 m, packing-corrected 37.47 m (.tex L471-L474)
-a_i is bound to the action at L333, L525, L577 and to the articulation-point indicator at L315, L320 (.tex L315, L320, L333, L525, L577)
-V_t^act appears in Eq. (8) at L255 and Eq. (13) at L320 with no displayed definition, prose only at L180 (.tex L180, L255, L320)
-Reference [12] at L794-L795 prints first initial Z. Chen; the ICCCS 2025 programme lists the author as Zhuang Chen, pp. 856-861, cite at L111 (.tex L111, L794, L795)
